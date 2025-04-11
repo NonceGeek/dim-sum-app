@@ -62,7 +62,7 @@ export default function HomePage() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.div 
-          className="flex flex-col items-center space-y-6 flex-grow"
+          className="flex flex-col items-center space-y-6 flex-grow pt-14 md:pt-0"
           initial={{ justifyContent: "center", opacity: 0, y: 20 }}
           animate={{ 
             justifyContent: results && results.length > 0 ? "flex-start" : "center",
@@ -137,7 +137,7 @@ export default function HomePage() {
             
             {results === null && (
               <motion.div 
-                className="w-full max-w-2xl space-y-4"
+                className="w-full max-w-2xl space-y-4 mb-20"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
