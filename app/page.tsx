@@ -315,7 +315,7 @@ export default function HomePage() {
                       No results found
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                      We couldn't find any matches for "{searchPrompt}". Try searching with different keywords or check out our example searches below.
+                      We couldn&apos;t find any matches for &quot;{searchPrompt}&quot;. Try searching with different keywords or check out our example searches below.
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
