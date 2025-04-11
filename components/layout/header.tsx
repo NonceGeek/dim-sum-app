@@ -23,7 +23,7 @@ export function Header() {
             <span className="sr-only">Open menu</span>
           </Button>
           <Link className="flex items-center space-x-2" href="/">
-            <span className="font-bold">DimSum AI Labs</span>
+            {/* <span className="font-bold">DimSum AI Labs</span> */}
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">

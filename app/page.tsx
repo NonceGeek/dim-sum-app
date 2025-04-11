@@ -71,7 +71,7 @@ export default function HomePage() {
         }}
       >
         <motion.h1 
-          className="text-4xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent"
+          className="text-4xl font-bold bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 bg-clip-text text-transparent"
           initial={{ scale: 1, y: 0, opacity: 0 }}
           animate={{ 
             scale: results.length > 0 ? 0.8 : 1,
@@ -124,7 +124,7 @@ export default function HomePage() {
             <Button 
               onClick={handleSearch}
               disabled={isPending}
-              className="bg-blue-500 hover:bg-blue-600 text-white h-12 px-6"
+              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
             >
               {isPending ? "Searching..." : "Search"}
             </Button>
