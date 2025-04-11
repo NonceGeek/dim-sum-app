@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
+import { usePathname } from "next/navigation";
 
-export function Header() {
+interface HeaderProps {
+  showLogo?: boolean;
+}
+
+export function Header({ showLogo = false }: HeaderProps) {
   const setOpen = useSidebarStore((state) => state.setOpen);
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -22,18 +30,29 @@ export function Header() {
             <Menu className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
-          <Link className="flex items-center space-x-2" href="/">
-            {/* <span className="font-bold">DimSum AI Labs</span> */}
-          </Link>
+          {showLogo && (
+            <Link className="flex items-center space-x-2" href="/">
+              <Image
+                src="/logo.png"
+                alt="DimSum AI Labs Logo"
+                width={24}
+                height={24}
+                className="w-6 h-6"
+              />
+              <span className="font-bold">DimSum AI Labs</span>
+            </Link>
+          )}
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-2">
-          <div className="w-full max-w-sm">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-8" />
+        {!isHomePage && (
+          <div className="flex flex-1 items-center justify-end space-x-2">
+            <div className="w-full max-w-sm">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search..." className="pl-8" />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

@@ -173,7 +173,7 @@ export function AppSidebar() {
             <div className="flex-1 overflow-auto py-2">
               <SidebarContentBase>
                 <SidebarGroup>
-                  <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                  {/* <SidebarGroupLabel>Navigation</SidebarGroupLabel> */}
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {menuItems.map((item) => (
@@ -187,6 +187,7 @@ export function AppSidebar() {
                                   ? 'bg-primary/10 text-primary'
                                   : 'hover:bg-primary/5'
                               )}
+                              onClick={() => setSheetOpen(false)}
                             >
                               <item.icon className="h-4 w-4 shrink-0" />
                               <span>{item.label}</span>
@@ -208,6 +209,7 @@ export function AppSidebar() {
                     ? 'bg-primary/10 text-primary'
                     : 'hover:bg-primary/5'
                 )}
+                onClick={() => setSheetOpen(false)}
               >
                 <User className="h-4 w-4 shrink-0" />
                 <span>Profile</span>
