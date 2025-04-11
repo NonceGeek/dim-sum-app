@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Bell, Building2, ChevronLeft, ChevronRight, Compass, Home, User } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSidebarStore } from '@/stores/use-sidebar-store';
@@ -50,7 +51,16 @@ export function AppSidebar() {
       <div className="flex h-14 items-center border-b px-4">
         {open ? (
           <>
-            <span className="font-semibold">DimSum AI Labs</span>
+            <div className="flex items-center gap-2">
+              <Image
+                src="/logo.png"
+                alt="DimSum AI Labs Logo"
+                width={24}
+                height={24}
+                className="rounded-sm"
+              />
+              <span className="font-semibold">DimSum AI Labs</span>
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -77,7 +87,7 @@ export function AppSidebar() {
       </div>
       <SidebarContentBase>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          {/* <SidebarGroupLabel>Navigation</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -149,7 +159,16 @@ export function AppSidebar() {
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex h-full flex-col">
             <div className="flex h-14 items-center border-b px-4">
-              <span className="font-semibold">DimSum AI Labs</span>
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/logo.png"
+                  alt="DimSum AI Labs Logo"
+                  width={24}
+                  height={24}
+                  className="rounded-sm"
+                />
+                <span className="font-semibold">DimSum AI Labs</span>
+              </div>
             </div>
             <div className="flex-1 overflow-auto py-2">
               <SidebarContentBase>

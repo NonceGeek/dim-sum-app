@@ -29,7 +29,7 @@ export default function HomePage() {
         },
         onError: (error: Error) => {
           console.error("Search failed:", error);
-          toast.error("搜索失败", {
+          toast.error("Search failed", {
             description: error.message,
           });
         },
@@ -83,7 +83,7 @@ export default function HomePage() {
             ease: [0.16, 1, 0.3, 1]
           }}
         >
-          DimSum AI Labs
+          Try Some Cantonese
         </motion.h1>
         
         <motion.div 
@@ -114,7 +114,7 @@ export default function HomePage() {
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <Input
-                placeholder="搜索粤语内容..."
+                placeholder="Search Cantonese content..."
                 value={searchPrompt}
                 onChange={(e) => setSearchPrompt(e.target.value)}
                 onKeyDown={handleKeyPress}
@@ -126,13 +126,13 @@ export default function HomePage() {
               disabled={isPending}
               className="bg-blue-500 hover:bg-blue-600 text-white h-12 px-6"
             >
-              {isPending ? "搜索中..." : "搜索"}
+              {isPending ? "Searching..." : "Search"}
             </Button>
           </motion.div>
           
           {results.length === 0 && (
             <motion.div 
-              className="text-sm text-gray-600 dark:text-gray-400 text-center"
+              className="w-full max-w-2xl space-y-4"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -142,10 +142,86 @@ export default function HomePage() {
                 ease: [0.16, 1, 0.3, 1]
               }}
             >
-              <p><b>搜索示例：</b></p>
-              <p>* 淡淡交會過</p>
-              <p>* 故乡</p>
-              <p>* 好</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card 
+                  className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    const prompt = "淡淡交會過";
+                    setSearchPrompt(prompt);
+                    search(
+                      { keyword: prompt },
+                      {
+                        onSuccess: (data: SearchResult[]) => {
+                          setResults(data);
+                        },
+                        onError: (error: Error) => {
+                          console.error("Search failed:", error);
+                          toast.error("Search failed", {
+                            description: error.message,
+                          });
+                        },
+                      }
+                    );
+                  }}
+                >
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Cantonese Lyrics</h3>
+                    <p className="text-gray-600 dark:text-gray-400">淡淡交會過</p>
+                  </div>
+                </Card>
+                <Card 
+                  className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    const prompt = "故乡";
+                    setSearchPrompt(prompt);
+                    search(
+                      { keyword: prompt },
+                      {
+                        onSuccess: (data: SearchResult[]) => {
+                          setResults(data);
+                        },
+                        onError: (error: Error) => {
+                          console.error("Search failed:", error);
+                          toast.error("Search failed", {
+                            description: error.message,
+                          });
+                        },
+                      }
+                    );
+                  }}
+                >
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Chinese Words</h3>
+                    <p className="text-gray-600 dark:text-gray-400">故乡</p>
+                  </div>
+                </Card>
+                <Card 
+                  className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    const prompt = "好";
+                    setSearchPrompt(prompt);
+                    search(
+                      { keyword: prompt },
+                      {
+                        onSuccess: (data: SearchResult[]) => {
+                          setResults(data);
+                        },
+                        onError: (error: Error) => {
+                          console.error("Search failed:", error);
+                          toast.error("Search failed", {
+                            description: error.message,
+                          });
+                        },
+                      }
+                    );
+                  }}
+                >
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Single Character</h3>
+                    <p className="text-gray-600 dark:text-gray-400">好</p>
+                  </div>
+                </Card>
+              </div>
             </motion.div>
           )}
         </motion.div>
@@ -181,12 +257,12 @@ export default function HomePage() {
                       <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         {result.note.map((note, idx) => (
                           <div key={idx}>
-                            <p><b>发音：</b> {note.context.pron}</p>
-                            <p><b>作者：</b> {note.context.author}</p>
+                            <p><b>Pronunciation:</b> {note.context.pron}</p>
+                            <p><b>Author:</b> {note.context.author}</p>
                           </div>
                         ))}
-                        <p><b>分类：</b> {result.category}</p>
-                        <p><b>标签：</b> {result.tags.join(", ")}</p>
+                        <p><b>Category:</b> {result.category}</p>
+                        <p><b>Tags:</b> {result.tags.join(", ")}</p>
                       </div>
                     </div>
                   </Card>

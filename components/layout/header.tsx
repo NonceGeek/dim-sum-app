@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Search, Menu } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useSidebarStore } from '@/stores/use-sidebar-store';
+import Link from "next/link";
+import { Search, Menu } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useSidebarStore } from "@/stores/use-sidebar-store";
 
 export function Header() {
   const setOpen = useSidebarStore((state) => state.setOpen);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-14 items-center">
+      <div className="container mx-auto px-4 flex h-14 items-center">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -30,14 +30,11 @@ export function Header() {
           <div className="w-full max-w-sm">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                className="pl-8"
-              />
+              <Input placeholder="Search..." className="pl-8" />
             </div>
           </div>
         </div>
       </div>
     </header>
   );
-} 
+}
