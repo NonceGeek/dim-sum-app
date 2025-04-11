@@ -13,7 +13,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className="flex flex-1">
           <AppSidebar />
           <main className="flex-1 overflow-auto">
-            <div className="container max-w-7xl mx-auto py-6">
+            <div className="container max-w-7xl mx-auto">
               {children}
             </div>
           </main>
