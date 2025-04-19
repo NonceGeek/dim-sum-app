@@ -5,8 +5,10 @@ export type SearchResult = {
   data: string;
   note: Array<{
     context: {
-      pron: string;
-      author: string;
+      pron?: string;
+      author?: string;
+      video?: string;
+      subtitle?: string;
     };
     contributor: string;
   }>;

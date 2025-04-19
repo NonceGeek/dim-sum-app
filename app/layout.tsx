@@ -13,7 +13,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/logo.png" type="image/png" />
       </head>
-      <body className="h-screen overflow-hidden">
+      <body className="h-screen flex flex-col">
         <Providers>
           <MainLayout>{children}</MainLayout>
           <Toaster />

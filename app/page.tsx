@@ -4,12 +4,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import ReactMarkdown from "react-markdown";
 import { useSearch, type SearchResult } from "@/hooks/useSearch";
 import { toast } from "sonner";
 import { Search, SearchX } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Header } from '@/components/layout/header';
+import ReactPlayer from 'react-player';
 
 export default function HomePage() {
   const [searchPrompt, setSearchPrompt] = useState("");
@@ -147,7 +147,7 @@ export default function HomePage() {
                   ease: [0.16, 1, 0.3, 1]
                 }}
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-wrap justify-center gap-4">
                   <Card 
                     className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                     onClick={() => {
@@ -226,22 +226,67 @@ export default function HomePage() {
                       <p className="text-gray-600 dark:text-gray-400">好</p>
                     </div>
                   </Card>
+                  <Card 
+                    className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    onClick={() => {
+                      const prompt = "歡聚一堂";
+                      setSearchPrompt(prompt);
+                      search(
+                        { keyword: prompt },
+                        {
+                          onSuccess: (data: SearchResult[]) => {
+                            setResults(data);
+                          },
+                          onError: (error: Error) => {
+                            console.error("Search failed:", error);
+                            toast.error("Search failed", {
+                              description: error.message,
+                            });
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">Video Example</h3>
+                      <p className="text-gray-600 dark:text-gray-400">歡聚一堂</p>
+                    </div>
+                  </Card>
                 </div>
               </motion.div>
             )}
           </motion.div>
 
           <AnimatePresence mode="wait">
-            {results && results.length > 0 ? (
-              <motion.div 
-                className="w-full max-w-4xl space-y-4"
-                initial={{ opacity: 0, y: 40 }}
+            {results === null && !isPending ? (
+              <motion.div
+                key="initial"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-center items-center h-32"
+              >
+                
+              </motion.div>
+            ) : isPending ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-center items-center h-32"
+              >
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </motion.div>
+            ) : results && results.length > 0 ? (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 40 }}
-                transition={{ 
-                  duration: 0.8,
-                  ease: [0.16, 1, 0.3, 1]
-                }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
               >
                 {currentResults.map((result, index) => (
                   <motion.div
@@ -254,20 +299,63 @@ export default function HomePage() {
                       ease: [0.16, 1, 0.3, 1]
                     }}
                   >
-                    <Card className="p-6">
-                      <div className="space-y-4">
+                    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200">
+                      <div className="space-y-6">
                         <div className="prose dark:prose-invert max-w-none">
-                          <ReactMarkdown>{result.data}</ReactMarkdown>
+                          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{result.data}</h3>
                         </div>
-                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">
                           {result.note.map((note, idx) => (
-                            <div key={idx}>
-                              <p><b>Pronunciation:</b> {note.context.pron}</p>
-                              <p><b>Author:</b> {note.context.author}</p>
+                            <div key={idx} className="space-y-4">
+                              {note.context.video ? (
+                                <div className="space-y-4">
+                                  <div className="relative pt-[56.25%] rounded-lg overflow-hidden shadow-md">
+                                    <ReactPlayer
+                                      url={note.context.video}
+                                      controls
+                                      width="100%"
+                                      height="100%"
+                                      className="absolute top-0 left-0"
+                                      config={{
+                                        file: {
+                                          attributes: {
+                                            controlsList: 'nodownload',
+                                            disablePictureInPicture: true
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                                    <p className="whitespace-pre-line leading-relaxed"><b className="text-primary">Subtitles:</b> {note.context.subtitle}</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
+                                  {note.context.pron && (
+                                    <p className="leading-relaxed">
+                                      <b className="text-primary">Pronunciation:</b> {note.context.pron}
+                                    </p>
+                                  )}
+                                  {note.context.author && (
+                                    <p className="leading-relaxed">
+                                      <b className="text-primary">Author:</b> {note.context.author}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           ))}
-                          <p><b>Category:</b> {result.category}</p>
-                          <p><b>Tags:</b> {result.tags.join(", ")}</p>
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                              {result.category}
+                            </span>
+                            {result.tags.map((tag, idx) => (
+                              <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs border border-gray-200 dark:border-gray-700">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </Card>
@@ -297,6 +385,60 @@ export default function HomePage() {
                     ))}
                   </motion.div>
                 )}
+
+                {/* 示例卡片 */}
+                {results && results.length > 0 && (
+                  <motion.div 
+                    className="mt-12"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 text-center">
+                      Try other searches
+                    </h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {[
+                        { title: "Cantonese Lyrics", prompt: "淡淡交會過" },
+                        { title: "Chinese Words", prompt: "故乡" },
+                        { title: "Single Character", prompt: "好" },
+                        { title: "Video Example", prompt: "歡聚一堂" }
+                      ].map((example) => (
+                        example.prompt !== searchPrompt && (
+                          <Card 
+                            key={example.prompt}
+                            className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200"
+                            onClick={() => {
+                              if (isPending) return;
+                              setResults(null);
+                              search(
+                                { keyword: example.prompt },
+                                {
+                                  onSuccess: (data: SearchResult[]) => {
+                                    setSearchPrompt(example.prompt);
+                                    setResults(data);
+                                    setCurrentPage(1);
+                                  },
+                                  onError: (error: Error) => {
+                                    console.error("Search failed:", error);
+                                    toast.error("Search failed", {
+                                      description: error.message,
+                                    });
+                                  },
+                                }
+                              );
+                            }}
+                          >
+                            <div className="space-y-2">
+                              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{example.title}</h3>
+                              <p className="text-gray-600 dark:text-gray-400">{example.prompt}</p>
+                            </div>
+                          </Card>
+                        )
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             ) : results && results.length === 0  && (
               <motion.div
@@ -318,7 +460,7 @@ export default function HomePage() {
                       We couldn&apos;t find any matches for &quot;{searchPrompt}&quot;. Try searching with different keywords or check out our example searches below.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
                     <Card 
                       className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => {
@@ -395,6 +537,32 @@ export default function HomePage() {
                       <div className="space-y-2">
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">Single Character</h3>
                         <p className="text-gray-600 dark:text-gray-400">好</p>
+                      </div>
+                    </Card>
+                    <Card 
+                      className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                      onClick={() => {
+                        const prompt = "歡聚一堂";
+                        setSearchPrompt(prompt);
+                        search(
+                          { keyword: prompt },
+                          {
+                            onSuccess: (data: SearchResult[]) => {
+                              setResults(data);
+                            },
+                            onError: (error: Error) => {
+                              console.error("Search failed:", error);
+                              toast.error("Search failed", {
+                                description: error.message,
+                              });
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Video Example</h3>
+                        <p className="text-gray-600 dark:text-gray-400">歡聚一堂</p>
                       </div>
                     </Card>
                   </div>
