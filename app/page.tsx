@@ -20,6 +20,7 @@ export default function HomePage() {
   const { mutate: search, isPending } = useSearch();
 
   const handleSearch = () => {
+    
     if (!searchPrompt.trim()) return;
     setCurrentPage(1);
     search(
@@ -331,17 +332,36 @@ export default function HomePage() {
                                   </div>
                                 </div>
                               ) : (
+                                // TODO: dynamic to render key value pairs in note.context, as the follow style
                                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-                                  {note.context.pron && (
-                                    <p className="leading-relaxed">
-                                      <b className="text-primary">Pronunciation:</b> {note.context.pron}
-                                    </p>
-                                  )}
-                                  {note.context.author && (
-                                    <p className="leading-relaxed">
-                                      <b className="text-primary">Author:</b> {note.context.author}
-                                    </p>
-                                  )}
+                                  {Object.entries(note.context)
+                                    .filter(([key]) => key !== "video" && key !== "subtitle")
+                                    .map(([key, value]) => (
+                                      value && (
+                                        <p className="leading-relaxed" key={key}>
+                                          <b className="text-primary">
+                                            {key.charAt(0).toUpperCase() + key.slice(1)}:
+                                          </b>{" "}
+                                          {/* if value is array, join with comma */}
+                                          {/* if value is url, be shown as iframe */}
+                                          {/* TODO: to optimize for diff type of url, such as audio */}
+                                          {Array.isArray(value) ? (
+                                            value.join(", ")
+                                          ) : (
+                                            typeof value === "string" && value.startsWith("http") ? (
+                                              <iframe
+                                                src={value}
+                                                title={key}
+                                                className="w-full h-64 rounded border mt-2"
+                                                allowFullScreen
+                                              />
+                                            ) : (
+                                              value
+                                            )
+                                          )}
+                                        </p>
+                                      )
+                                    ))}
                                 </div>
                               )}
                             </div>

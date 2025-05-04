@@ -18,7 +18,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { Bell, Building2, ChevronLeft, ChevronRight, Compass, Home, User } from 'lucide-react';
+import { Bell, LibraryBig, ChevronLeft, ChevronRight, Compass, Home, User, AppWindow, FileCode2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -27,8 +27,10 @@ import { useSidebarStore } from '@/stores/use-sidebar-store';
 
 const menuItems = [
   { icon: Home, label: 'Home', href: '/' },
+  { icon: LibraryBig, label: 'Library', href: '/library' },
+  { icon: AppWindow, label: 'App Store', href: '/appStore' },
   { icon: Compass, label: 'Discover', href: '/discover' },
-  { icon: Building2, label: 'Loft', href: '/loft' },
+  { icon: FileCode2, label: 'Docs', href: '/docs' },
 ];
 
 export function AppSidebar() {
