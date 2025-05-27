@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// 用户角色枚举
+enum Role {
+  USER      // 普通用户
+  MARKER    // 标记员
+}
+
+/// 第三方账号信息表
+/// 存储用户通过第三方平台（如微信）登录的账号信息
+model Account {
+  id                String  @id @default(cuid())  // 主键，自动生成的唯一ID
+  userId            String                        // 关联到User表的ID
+  type              String                        // 账号类型，如"oauth"
+  provider          String                        // 提供商，如"wechat"
+  providerAccountId String                        // 第三方平台的用户ID
+  refresh_token     String? @db.Text              // 刷新令牌，用于获取新的访问令牌
+  access_token      String? @db.Text              // 访问令牌，用于访问第三方API
+  expires_at        Int?                          // 令牌过期时间戳
+  token_type        String?                       // 令牌类型，如"Bearer"
+  scope             String?                       // 授权范围，如"snsapi_userinfo"
+  id_token          String? @db.Text              // ID令牌，用于身份验证
+  session_state     String?                       // 会话状态，用于OAuth流程
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)  // 关联到User表，用户删除时级联删除账号
+
+  @@unique([provider, providerAccountId])  // 确保每个提供商下的账号ID唯一
+}
+
+/// 用户信息表
+/// 存储用户的基本信息
+model User {
+  id            String    @id @default(cuid())  // 主键，自动生成的唯一ID
+  name          String?                         // 用户名
+  email         String?   @unique               // 邮箱，唯一
+  emailVerified DateTime?                       // 邮箱验证时间
+  image         String?                         // 头像URL
+  phoneNumber   String?                         // 手机号码
+  role          Role      @default(USER)        // 用户角色，默认为普通用户
+  accounts      Account[]                       // 关联的第三方账号列表
+} 

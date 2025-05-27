@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useSearch, type SearchResult } from "@/hooks/useSearch";
+import { useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
 import { Search, SearchX } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";

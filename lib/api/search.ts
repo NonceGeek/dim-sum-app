@@ -22,7 +22,6 @@ type SearchParams = {
 };
 
 export function useSearch() {
-  // console.log("useSearch");
   return useMutation<SearchResult[], Error, SearchParams>({
     mutationFn: async (params: SearchParams) => {
       const response = await fetch(

@@ -18,12 +18,15 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { Bell, LibraryBig, ChevronLeft, ChevronRight, Compass, Home, User, AppWindow, FileCode2 } from 'lucide-react';
+import { Bell, LibraryBig, ChevronLeft, ChevronRight, Compass, Home, User, AppWindow, FileCode2, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSidebarStore } from '@/stores/use-sidebar-store';
+import { useAuthStore } from '@/lib/store/useAuthStore';
+import { signOut } from 'next-auth/react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const menuItems = [
   { icon: Home, label: 'Home', href: '/' },
@@ -35,8 +38,10 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { open, setOpen } = useSidebar();
   const { isOpen, setOpen: setSheetOpen, isMobile, setMobile } = useSidebarStore();
+  const { user, isAuthenticated, clearUser } = useAuthStore();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -47,6 +52,12 @@ export function AppSidebar() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, [setMobile]);
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    clearUser();
+    router.push('/auth/signin');
+  };
 
   const SidebarContent = () => (
     <>
@@ -115,6 +126,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContentBase>
       <div className="border-t p-4 space-y-4">
+        {isAuthenticated ? (
+          <>
         {open ? (
           <>
             <Link
@@ -126,29 +139,75 @@ export function AppSidebar() {
                   : 'hover:bg-primary/5'
               )}
             >
-              <User className="h-4 w-4 shrink-0" />
-              <span>Profile</span>
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
+                    <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <span>{user?.name || 'User'}</span>
             </Link>
             <div className="flex items-center justify-between">
               <Button variant="ghost" size="icon">
                 <Bell className="h-4 w-4" />
                 <span className="sr-only">Notifications</span>
               </Button>
-              <ThemeToggle />
             </div>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </Button>
           </>
         ) : (
           <div className="flex flex-col items-center gap-4">
             <Link href="/profile">
-              <Button variant="ghost" size="icon">
-                <User className="h-4 w-4" />
-                <span className="sr-only">Profile</span>
-              </Button>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
+                    <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
+                  </Avatar>
             </Link>
             <Button variant="ghost" size="icon">
               <Bell className="h-4 w-4" />
               <span className="sr-only">Notifications</span>
             </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  <span className="sr-only">Sign Out</span>
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {open ? (
+              <Button
+                variant="default"
+                className="w-full"
+                onClick={() => router.push('/auth/signin')}
+              >
+                Sign In
+              </Button>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.push('/auth/signin')}
+                  className="h-8 w-8"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="sr-only">Sign In</span>
+                </Button>
+                <ThemeToggle />
+              </div>
+            )}
+          </>
+        )}
+        {open && (
+          <div className="flex items-center justify-end">
+            <ThemeToggle />
           </div>
         )}
       </div>
@@ -203,6 +262,8 @@ export function AppSidebar() {
               </SidebarContentBase>
             </div>
             <div className="border-t p-4 space-y-4">
+              {isAuthenticated ? (
+                <>
               <Link
                 href="/profile"
                 className={cn(
@@ -213,14 +274,43 @@ export function AppSidebar() {
                 )}
                 onClick={() => setSheetOpen(false)}
               >
-                <User className="h-4 w-4 shrink-0" />
-                <span>Profile</span>
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
+                      <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <span>{user?.name || 'User'}</span>
               </Link>
               <div className="flex items-center justify-between">
                 <Button variant="ghost" size="icon">
                   <Bell className="h-4 w-4" />
                   <span className="sr-only">Notifications</span>
                 </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      handleLogout();
+                      setSheetOpen(false);
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => {
+                    router.push('/auth/signin');
+                    setSheetOpen(false);
+                  }}
+                >
+                  Sign In
+                </Button>
+              )}
+              <div className="flex items-center justify-end">
                 <ThemeToggle />
               </div>
             </div>
