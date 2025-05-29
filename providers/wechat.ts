@@ -26,11 +26,11 @@ export default function WechatProvider(
     name: "WeChat",
     type: "oauth",
     authorization: {
-      url: "https://open.weixin.qq.com/connect/oauth2/authorize",
+      url: "https://open.weixin.qq.com/connect/qrconnect",
       params: {
         appid: options.clientId,
         response_type: "code",
-        scope: "snsapi_userinfo",
+        scope: "snsapi_login",
         state: "STATE",
         redirect_uri: options.redirectUri,
       },

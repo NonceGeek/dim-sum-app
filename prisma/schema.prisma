@@ -48,5 +48,24 @@ model User {
   image         String?                         // 头像URL
   phoneNumber   String?                         // 手机号码
   role          Role      @default(USER)        // 用户角色，默认为普通用户
+  openId        String?   @unique               // 微信开放ID
+  unionId       String?                         // 微信联合ID
   accounts      Account[]                       // 关联的第三方账号列表
+  sessions      Session[]                       // 关联的会话列表
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 } 
