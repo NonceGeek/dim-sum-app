@@ -4,18 +4,25 @@ import { useSearchParams } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Suspense } from 'react';
+import { signIn } from 'next-auth/react';
+import { toast } from 'sonner';
 
 function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
-  const handleWeChatLogin = () => {
-    const state = Math.random().toString(36).substring(7);
-    const redirectUri = encodeURIComponent(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/wechat?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-
-    const authUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${process.env.NEXT_PUBLIC_WECHAT_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}#wechat_redirect`;
-    
-    window.location.href = authUrl;
+  const handleWeChatLogin = async () => {
+    try {
+      await signIn('wechat', {
+        callbackUrl,
+        redirect: true,
+      });
+    } catch (error) {
+      console.error('WeChat login error:', error);
+      toast.error("Sign in failed", {
+        description: "Please try again later",
+      });
+    }
   };
 
   return (

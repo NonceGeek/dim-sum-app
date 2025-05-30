@@ -42,13 +42,29 @@ export default function WechatProvider(
         secret: options.clientSecret,
         grant_type: "authorization_code",
       },
+      async request({ client, params, checks, provider }) {
+        const response = await client.oauthCallback(
+          provider.callbackUrl,
+          params,
+          checks,
+          { exchangeBody: { appid: options.clientId, secret: options.clientSecret } }
+        );
+        return {
+          tokens: response,
+        };
+      },
     },
     userinfo: {
       url: "https://api.weixin.qq.com/sns/userinfo",
+      async request({ tokens, client }) {
+        const response = await client.userinfo(tokens.access_token!, {
       params: {
-        access_token: "ACCESS_TOKEN",
-        openid: "OPENID",
+            access_token: tokens.access_token,
+            openid: tokens.openid,
         lang: "zh_CN",
+          },
+        });
+        return response;
       },
     },
     profile(profile: WechatProfile) {
@@ -57,6 +73,8 @@ export default function WechatProvider(
         name: profile.nickname,
         email: null,
         image: profile.headimgurl,
+        openId: profile.openid,
+        unionId: profile.unionid,
       };
     },
     options,

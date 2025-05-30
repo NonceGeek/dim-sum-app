@@ -44,9 +44,9 @@ export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     WechatProvider({
-      clientId: process.env.WECHAT_CLIENT_ID!,
+      clientId: process.env.NEXT_PUBLIC_WECHAT_CLIENT_ID!,
       clientSecret: process.env.WECHAT_CLIENT_SECRET!,
-      redirectUri: process.env.NEXTAUTH_URL + "/api/auth/callback/wechat",
+      redirectUri: `${process.env.NEXTAUTH_URL}/api/auth/callback/wechat`,
     }),
   ],
   pages: {
@@ -58,27 +58,56 @@ export const authOptions: AuthOptions = {
   debug: true,
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // 允许相对URL和同源的绝对URL
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      console.log('Redirect callback start:', { url, baseUrl });
+      
+      // 添加 login 参数到 URL
+      const targetUrl = url.startsWith("/") 
+        ? `${baseUrl}${url}` 
+        : new URL(url).origin === baseUrl 
+          ? url 
+          : baseUrl;
+      
+      // 添加 login 参数
+      const urlObj = new URL(targetUrl);
+      urlObj.searchParams.set('login', 'success');
+      
+      console.log('Redirect callback end:', { result: urlObj.toString() });
+      return urlObj.toString();
     },
     async jwt({ token, user, account, profile }) {
-      console.log('JWT Callback:', { token, user, account, profile });
+      console.log('JWT Callback start:', { token, user, account, profile });
+      const startTime = Date.now();
       
       if (account?.provider === 'wechat' && profile) {
         const wechatProfile = profile as WeChatProfile;
-        // 保存微信的 OpenID 和 UnionID
         token.openId = wechatProfile.openid;
         token.unionId = wechatProfile.unionid;
         
-        // 如果是新用户，设置默认角色
-        if (!token.role) {
-          const dbUser = await prisma.user.findUnique({
-            where: { openId: wechatProfile.openid },
-            select: { role: true }
+        // 只在需要时查询用户角色
+        if (!token.role && !token.id) {
+          console.log('Fetching user role...');
+          const dbAccount = await prisma.account.findFirst({
+            where: { 
+              provider: 'wechat',
+              providerAccountId: wechatProfile.openid 
+            },
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  role: true
+                }
+              }
+            }
           });
-          token.role = dbUser?.role || 'USER';
+          
+          if (dbAccount?.user) {
+            token.id = dbAccount.user.id;
+            token.role = dbAccount.user.role;
+          } else {
+            token.role = 'USER';
+          }
+          console.log('User role fetched:', token.role);
         }
       }
       
@@ -86,47 +115,120 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
       }
       
+      console.log('JWT Callback end:', { 
+        executionTime: Date.now() - startTime,
+        token 
+      });
       return token;
     },
     async session({ session, token }) {
-      console.log('Session Callback:', { session, token });
+      console.log('Session Callback start:', { session, token });
+      const startTime = Date.now();
+      
       if (session.user) {
         session.user.id = token.id;
         session.user.openId = token.openId;
         session.user.unionId = token.unionId;
         session.user.role = token.role;
       }
+      
+      console.log('Session Callback end:', { 
+        executionTime: Date.now() - startTime,
+        session 
+      });
       return session;
     },
     async signIn({ user, account, profile }) {
-      console.log('SignIn Callback:', { user, account, profile });
+      console.log('SignIn Callback start:', { user, account, profile });
+      const startTime = Date.now();
       
       if (account?.provider === 'wechat' && profile) {
         try {
           const wechatProfile = profile as WeChatProfile;
-          // 使用 OpenID 查找用户
-          const existingUser = await prisma.user.findUnique({
-            where: { openId: wechatProfile.openid },
-          });
-
-          if (!existingUser) {
-            // 创建新用户，使用 OpenID 作为唯一标识
-            await prisma.user.create({
-              data: {
-                openId: wechatProfile.openid,
-                unionId: wechatProfile.unionid,
-                name: wechatProfile.nickname || `User_${Math.random().toString(36).substring(7)}`,
-                image: wechatProfile.headimgurl,
-                role: 'USER',
+          console.log('Checking existing account...');
+          
+          // 使用事务来确保数据一致性
+          const result = await prisma.$transaction(async (tx) => {
+            const existingAccount = await tx.account.findFirst({
+              where: { 
+                provider: 'wechat',
+                providerAccountId: wechatProfile.openid 
               },
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    id: true,
+                    role: true,
+                    wechatAvatar: true
+                  }
+                }
+              }
             });
-          }
+
+            if (!existingAccount) {
+              console.log('Creating new user and account...');
+              const newUser = await tx.user.create({
+                data: {
+                  name: wechatProfile.nickname || `User_${Math.random().toString(36).substring(7)}`,
+                  wechatAvatar: wechatProfile.headimgurl,  // 保存微信头像
+                  role: 'USER',
+                  accounts: {
+                    create: {
+                      type: 'oauth',
+                      provider: 'wechat',
+                      providerAccountId: wechatProfile.openid,
+                      openId: wechatProfile.openid,
+                      unionId: wechatProfile.unionid,
+                      access_token: account.access_token,
+                      refresh_token: account.refresh_token,
+                      expires_at: account.expires_at,
+                      scope: account.scope,
+                    }
+                  }
+                },
+                select: {
+                  id: true,
+                  role: true,
+                  wechatAvatar: true
+                }
+              });
+              console.log('New user and account created');
+              return newUser;
+            }
+            
+            // 如果用户存在但微信头像为空，更新微信头像
+            if (!existingAccount.user.wechatAvatar) {
+              await tx.user.update({
+                where: { id: existingAccount.user.id },
+                data: { wechatAvatar: wechatProfile.headimgurl }
+              });
+            }
+            
+            console.log('Existing account found');
+            return existingAccount.user;
+          });
+          
+          console.log('SignIn Callback end:', { 
+            executionTime: Date.now() - startTime,
+            success: true,
+            userId: result.id
+          });
           return true;
         } catch (error) {
           console.error('Error in signIn callback:', error);
+          console.log('SignIn Callback end with error:', { 
+            executionTime: Date.now() - startTime,
+            error 
+          });
           return false;
         }
       }
+      
+      console.log('SignIn Callback end:', { 
+        executionTime: Date.now() - startTime,
+        success: true 
+      });
       return true;
     },
   },
