@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 function SignInContent() {
   const searchParams = useSearchParams();
@@ -49,7 +50,7 @@ function SignInContent() {
             </div>
 
             <div className="mt-8 text-center text-xs text-muted-foreground">
-              By signing in, you agree to our <a href="#" className="underline hover:text-primary">Terms of Service</a> and <a href="#" className="underline hover:text-primary">Privacy Policy</a>.
+              By signing in, you agree to our <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
             </div>
           </div>
         </div>

@@ -37,6 +37,7 @@ declare module "next-auth/jwt" {
     openId?: string;
     unionId?: string;
     role?: string;
+    image?: string | null;
   }
 }
 
@@ -55,10 +56,10 @@ export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt" as const,
   },
-  debug: true,
+  debug: false,
   callbacks: {
     async redirect({ url, baseUrl }) {
-      console.log('Redirect callback start:', { url, baseUrl });
+      // console.log('Redirect callback start:', { url, baseUrl });
       
       // 添加 login 参数到 URL
       const targetUrl = url.startsWith("/") 
@@ -71,21 +72,22 @@ export const authOptions: AuthOptions = {
       const urlObj = new URL(targetUrl);
       urlObj.searchParams.set('login', 'success');
       
-      console.log('Redirect callback end:', { result: urlObj.toString() });
+      // console.log('Redirect callback end:', { result: urlObj.toString() });
       return urlObj.toString();
     },
     async jwt({ token, user, account, profile }) {
-      console.log('JWT Callback start:', { token, user, account, profile });
-      const startTime = Date.now();
+      // console.log('JWT Callback start:', { token, user, account, profile });
+      // const startTime = Date.now();
       
       if (account?.provider === 'wechat' && profile) {
         const wechatProfile = profile as WeChatProfile;
         token.openId = wechatProfile.openid;
         token.unionId = wechatProfile.unionid;
+        token.image = wechatProfile.headimgurl;
         
         // 只在需要时查询用户角色
         if (!token.role && !token.id) {
-          console.log('Fetching user role...');
+          // console.log('Fetching user role...');
           const dbAccount = await prisma.account.findFirst({
             where: { 
               provider: 'wechat',
@@ -95,7 +97,8 @@ export const authOptions: AuthOptions = {
               user: {
                 select: {
                   id: true,
-                  role: true
+                  role: true,
+                  image: true
                 }
               }
             }
@@ -104,10 +107,11 @@ export const authOptions: AuthOptions = {
           if (dbAccount?.user) {
             token.id = dbAccount.user.id;
             token.role = dbAccount.user.role;
+            token.image = dbAccount.user.image || wechatProfile.headimgurl;
           } else {
             token.role = 'USER';
           }
-          console.log('User role fetched:', token.role);
+          // console.log('User role fetched:', token.role);
         }
       }
       
@@ -115,40 +119,41 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
       }
       
-      console.log('JWT Callback end:', { 
-        executionTime: Date.now() - startTime,
-        token 
-      });
+      // console.log('JWT Callback end:', { 
+      //   executionTime: Date.now() - startTime,
+      //   token 
+      // });
       return token;
     },
     async session({ session, token }) {
-      console.log('Session Callback start:', { session, token });
-      const startTime = Date.now();
+      // console.log('Session Callback start:', { session, token });
+      // const startTime = Date.now();
       
       if (session.user) {
         session.user.id = token.id;
         session.user.openId = token.openId;
         session.user.unionId = token.unionId;
         session.user.role = token.role;
+        session.user.image = token.image;
       }
       
-      console.log('Session Callback end:', { 
-        executionTime: Date.now() - startTime,
-        session 
-      });
+      // console.log('Session Callback end:', { 
+      //   executionTime: Date.now() - startTime,
+      //   session 
+      // });
       return session;
     },
-    async signIn({ user, account, profile }) {
-      console.log('SignIn Callback start:', { user, account, profile });
+    async signIn({ account, profile }) {
+      // console.log('SignIn Callback start:', { user, account, profile });
       const startTime = Date.now();
       
       if (account?.provider === 'wechat' && profile) {
         try {
           const wechatProfile = profile as WeChatProfile;
-          console.log('Checking existing account...');
+          // console.log('Checking existing account...');
           
           // 使用事务来确保数据一致性
-          const result = await prisma.$transaction(async (tx) => {
+          await prisma.$transaction(async (tx) => {
             const existingAccount = await tx.account.findFirst({
               where: { 
                 provider: 'wechat',
@@ -167,7 +172,7 @@ export const authOptions: AuthOptions = {
             });
 
             if (!existingAccount) {
-              console.log('Creating new user and account...');
+              // console.log('Creating new user and account...');
               const newUser = await tx.user.create({
                 data: {
                   name: wechatProfile.nickname || `User_${Math.random().toString(36).substring(7)}`,
@@ -193,7 +198,7 @@ export const authOptions: AuthOptions = {
                   wechatAvatar: true
                 }
               });
-              console.log('New user and account created');
+              // console.log('New user and account created');
               return newUser;
             }
             
@@ -205,15 +210,15 @@ export const authOptions: AuthOptions = {
               });
             }
             
-            console.log('Existing account found');
+            // console.log('Existing account found');
             return existingAccount.user;
           });
           
-          console.log('SignIn Callback end:', { 
-            executionTime: Date.now() - startTime,
-            success: true,
-            userId: result.id
-          });
+          // console.log('SignIn Callback end:', { 
+          //   executionTime: Date.now() - startTime,
+          //   success: true,
+          //   userId: result.id
+          // });
           return true;
         } catch (error) {
           console.error('Error in signIn callback:', error);
@@ -225,10 +230,10 @@ export const authOptions: AuthOptions = {
         }
       }
       
-      console.log('SignIn Callback end:', { 
-        executionTime: Date.now() - startTime,
-        success: true 
-      });
+      // console.log('SignIn Callback end:', { 
+      //   executionTime: Date.now() - startTime,
+      //   success: true 
+      // });
       return true;
     },
   },

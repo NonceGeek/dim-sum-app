@@ -128,29 +128,30 @@ export function AppSidebar() {
       <div className="border-t p-4 space-y-4">
         {isAuthenticated ? (
           <>
-        {open ? (
-          <>
-            <Link
-              href="/profile"
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full',
-                pathname === '/profile'
-                  ? 'bg-primary/10 text-primary'
-                  : 'hover:bg-primary/5'
-              )}
-            >
+            {open ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-4 w-4" />
+                    <span className="sr-only">Notifications</span>
+                  </Button>
+                  <ThemeToggle />
+                </div>
+                <Link
+                  href="/profile"
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full',
+                    pathname === '/profile'
+                      ? 'bg-primary/10 text-primary'
+                      : 'hover:bg-primary/5'
+                  )}
+                >
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
                     <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
                   <span>{user?.name || 'User'}</span>
-            </Link>
-            <div className="flex items-center justify-between">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-4 w-4" />
-                <span className="sr-only">Notifications</span>
-              </Button>
-            </div>
+                </Link>
                 <Button
                   variant="ghost"
                   className="w-full justify-start"
@@ -159,19 +160,22 @@ export function AppSidebar() {
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign Out</span>
                 </Button>
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <Link href="/profile">
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-2">
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-4 w-4" />
+                    <span className="sr-only">Notifications</span>
+                  </Button>
+                  <ThemeToggle />
+                </div>
+                <Link href="/profile">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
                     <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
-            </Link>
-            <Button variant="ghost" size="icon">
-              <Bell className="h-4 w-4" />
-              <span className="sr-only">Notifications</span>
-            </Button>
+                </Link>
                 <Button variant="ghost" size="icon" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                   <span className="sr-only">Sign Out</span>
@@ -182,15 +186,31 @@ export function AppSidebar() {
         ) : (
           <>
             {open ? (
-              <Button
-                variant="default"
-                className="w-full"
-                onClick={() => router.push('/auth/signin')}
-              >
-                Sign In
-              </Button>
+              <>
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-4 w-4" />
+                    <span className="sr-only">Notifications</span>
+                  </Button>
+                  <ThemeToggle />
+                </div>
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => router.push('/auth/signin')}
+                >
+                  Sign In
+                </Button>
+              </>
             ) : (
               <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-2">
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-4 w-4" />
+                    <span className="sr-only">Notifications</span>
+                  </Button>
+                  <ThemeToggle />
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -200,15 +220,9 @@ export function AppSidebar() {
                   <User className="h-4 w-4" />
                   <span className="sr-only">Sign In</span>
                 </Button>
-                <ThemeToggle />
               </div>
             )}
           </>
-        )}
-        {open && (
-          <div className="flex items-center justify-end">
-            <ThemeToggle />
-          </div>
         )}
       </div>
     </>
@@ -264,27 +278,27 @@ export function AppSidebar() {
             <div className="border-t p-4 space-y-4">
               {isAuthenticated ? (
                 <>
-              <Link
-                href="/profile"
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full',
-                  pathname === '/profile'
-                    ? 'bg-primary/10 text-primary'
-                    : 'hover:bg-primary/5'
-                )}
-                onClick={() => setSheetOpen(false)}
-              >
+                  <Link
+                    href="/profile"
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full',
+                      pathname === '/profile'
+                        ? 'bg-primary/10 text-primary'
+                        : 'hover:bg-primary/5'
+                    )}
+                    onClick={() => setSheetOpen(false)}
+                  >
                     <Avatar className="h-6 w-6">
                       <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
                       <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                     </Avatar>
                     <span>{user?.name || 'User'}</span>
-              </Link>
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" size="icon">
-                  <Bell className="h-4 w-4" />
-                  <span className="sr-only">Notifications</span>
-                </Button>
+                  </Link>
+                  <div className="flex items-center justify-between">
+                    <Button variant="ghost" size="icon">
+                      <Bell className="h-4 w-4" />
+                      <span className="sr-only">Notifications</span>
+                    </Button>
                   </div>
                   <Button
                     variant="ghost"
