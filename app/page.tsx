@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
@@ -204,7 +206,7 @@ export default function HomePage() {
                   <Card 
                     className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                     onClick={() => {
-                      const prompt = "好";
+                      const prompt = "行";
                       setSearchPrompt(prompt);
                       search(
                         { keyword: prompt },
@@ -224,7 +226,7 @@ export default function HomePage() {
                   >
                     <div className="space-y-2">
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100">Single Character</h3>
-                      <p className="text-gray-600 dark:text-gray-400">好</p>
+                      <p className="text-gray-600 dark:text-gray-400">行</p>
                     </div>
                   </Card>
                   <Card 
@@ -300,6 +302,7 @@ export default function HomePage() {
                       ease: [0.16, 1, 0.3, 1]
                     }}
                   >
+                    {/* HINT: not delete, to render the result here. */}
                     <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200">
                       <div className="space-y-6">
                         <div className="prose dark:prose-invert max-w-none">
@@ -367,15 +370,34 @@ export default function HomePage() {
                             </div>
                           ))}
                           <div className="flex flex-wrap gap-2 pt-2">
+                            {/* TODO: Trick here, to impl the real func here.*/}
                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
                               {result.category}
                             </span>
+                            {/* if result.category == "广州话正音字典", show the "推荐应用: " + 卡片生成 button with a href link */}
                             {result.tags.map((tag, idx) => (
                               <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs border border-gray-200 dark:border-gray-700">
                                 {tag}
                               </span>
                             ))}
                           </div>
+                          <br></br>
+                            {/* TODO: Trick here, to impl the real func here.*/}
+                            {/* if result.category == "广州话正音字典", show the "推荐应用: " + 卡片生成 button with a href link */}
+                            {result.category == "广州话正音字典" && (
+                              <div>
+                                <p>关联应用:&nbsp;&nbsp;&nbsp;
+                                <a href={`/inner-apps/card-generator?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                                  🎴 卡片生成
+                                </a>
+                                <br></br><br></br>
+                                推荐应用:&nbsp;&nbsp;&nbsp;
+                                <a href={`https://baidu.com?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                                  🤖 语言学 Agent
+                                </a>
+                              </p>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </Card>
@@ -421,7 +443,7 @@ export default function HomePage() {
                       {[
                         { title: "Cantonese Lyrics", prompt: "淡淡交會過" },
                         { title: "Chinese Words", prompt: "故乡" },
-                        { title: "Single Character", prompt: "好" },
+                        { title: "Single Character", prompt: "行" },
                         { title: "Video Example", prompt: "歡聚一堂" }
                       ].map((example) => (
                         example.prompt !== searchPrompt && (
@@ -556,7 +578,7 @@ export default function HomePage() {
                     >
                       <div className="space-y-2">
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100">Single Character</h3>
-                        <p className="text-gray-600 dark:text-gray-400">好</p>
+                        <p className="text-gray-600 dark:text-gray-400">行</p>
                       </div>
                     </Card>
                     <Card 
