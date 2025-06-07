@@ -1,6 +1,7 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@aqzhyi/chinese-conv@^3.2.2": "3.2.2",
     "jsr:@oak/commons@1": "1.0.0",
     "jsr:@std/assert@1": "1.0.7",
     "jsr:@std/bytes@1": "1.0.3",
@@ -15,6 +16,9 @@
     "npm:path-to-regexp@6.2.1": "6.2.1"
   },
   "jsr": {
+    "@aqzhyi/chinese-conv@3.2.2": {
+      "integrity": "cdc934cd2373cf1df80d12a6efc9fb06d2a295d9ec20378742e6d9e8fb40f512"
+    },
     "@oak/commons@1.0.0": {
       "integrity": "49805b55603c3627a9d6235c0655aa2b6222d3036b3a13ff0380c16368f607ac",
       "dependencies": [
@@ -537,5 +541,10 @@
     "https://esm.sh/whatwg-url@5.0.0?target=denonext": "f001a2cadf81312d214ca330033f474e74d81a003e21e8c5d70a1f46dc97b02d",
     "https://esm.sh/ws@8.18.2/denonext/ws.mjs": "b9211ecb1511b09f418c1330920c66800b66710b2cd2997b64b7e0525bd895d2",
     "https://esm.sh/ws@8.18.2?target=denonext": "2ee7b1bb11543dda3e7e1c685ad8599b6f18aea785302374c3def5da468a1e51"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@aqzhyi/chinese-conv@^3.2.2"
+    ]
   }
 }

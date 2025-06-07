@@ -13,6 +13,21 @@ import { motion, AnimatePresence } from "motion/react";
 import { Header } from '@/components/layout/header';
 import ReactPlayer from 'react-player';
 
+// Type guard for dictionary note
+function isDictionaryNote(note: SearchResult['note']): note is {
+  page?: number;
+  number?: string;
+  others?: {
+    異體?: any[];
+    校訂註?: string | null;
+  };
+  pinyin?: string[];
+  meaning?: string[];
+  contributor?: string;
+} {
+  return !Array.isArray(note) && 'meaning' in note;
+}
+
 export default function HomePage() {
   const [searchPrompt, setSearchPrompt] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
@@ -309,66 +324,124 @@ export default function HomePage() {
                           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{result.data}</h3>
                         </div>
                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">
-                          {result.note.map((note, idx) => (
-                            <div key={idx} className="space-y-4">
-                              {note.context.video ? (
-                                <div className="space-y-4">
-                                  <div className="relative pt-[56.25%] rounded-lg overflow-hidden shadow-md">
-                                    <ReactPlayer
-                                      url={note.context.video}
-                                      controls
-                                      width="100%"
-                                      height="100%"
-                                      className="absolute top-0 left-0"
-                                      config={{
-                                        file: {
-                                          attributes: {
-                                            controlsList: 'nodownload',
-                                            disablePictureInPicture: true
+                          {/* Display note content */}
+                          {result.note && (
+                            <div className="space-y-2">
+                              {result.category === "zyzd" || result.category === "广州话正音字典" ? (
+                                // Detailed display for zyzd category
+                                <>
+                                  {isDictionaryNote(result.note) && (
+                                    <>
+                                      {result.note.meaning && (
+                                        <div>
+                                          <span className="font-medium"><b>釋義：</b></span>
+                                          <ul className="list-disc list-inside pl-2">
+                                            {Array.isArray(result.note.meaning) 
+                                              ? result.note.meaning.map((m, idx) => <li key={idx}>{m}</li>)
+                                              : <li>{result.note.meaning}</li>
+                                            }
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {result.note.pinyin && (
+                                        <div>
+                                          <span className="font-medium"><b>粵拼：</b></span>
+                                          {Array.isArray(result.note.pinyin)
+                                            ? result.note.pinyin.join('、 ')
+                                            : result.note.pinyin
                                           }
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
-                                    <p className="whitespace-pre-line leading-relaxed"><b className="text-primary">Subtitles:</b> {note.context.subtitle}</p>
-                                  </div>
-                                </div>
+                                        </div>
+                                      )}
+                                      {result.note.contributor && (
+                                        <div>
+                                          <span className="font-medium"><b>貢獻者：</b></span>
+                                          {result.note.contributor}
+                                        </div>
+                                      )}
+                                      {result.note.page && (
+                                        <div>
+                                          <span className="font-medium"><b>頁碼：</b></span>
+                                          {result.note.page}
+                                        </div>
+                                      )}
+                                      {result.note.number && (
+                                        <div>
+                                          <span className="font-medium"><b>編號：</b></span>
+                                          {result.note.number}
+                                        </div>
+                                      )}
+                                      {result.note.others && (
+                                        <div>
+                                          <span className="font-medium"><b>其他：</b></span>
+                                          {JSON.stringify(result.note.others)}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </>
                               ) : (
-                                // TODO: dynamic to render key value pairs in note.context, as the follow style
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-                                  {Object.entries(note.context)
-                                    .filter(([key]) => key !== "video" && key !== "subtitle")
-                                    .map(([key, value]) => (
-                                      value && (
-                                        <p className="leading-relaxed" key={key}>
-                                          <b className="text-primary">
-                                            {key.charAt(0).toUpperCase() + key.slice(1)}:
-                                          </b>{" "}
-                                          {/* if value is array, join with comma */}
-                                          {/* if value is url, be shown as iframe */}
-                                          {/* TODO: to optimize for diff type of url, such as audio */}
-                                          {Array.isArray(value) ? (
-                                            value.join(", ")
-                                          ) : (
-                                            typeof value === "string" && value.startsWith("http") ? (
-                                              <iframe
-                                                src={value}
-                                                title={key}
-                                                className="w-full h-64 rounded border mt-2"
-                                                allowFullScreen
-                                              />
-                                            ) : (
-                                              value
-                                            )
-                                          )}
-                                        </p>
-                                      )
-                                    ))}
+                                // Simple display for other categories
+                                <div>
+                                  {Array.isArray(result.note) && result.note.map((note, idx) => (
+                                    <div key={idx} className="space-y-4">
+                                      {note.context.video ? (
+                                        <div className="space-y-4">
+                                          <div className="relative pt-[56.25%] rounded-lg overflow-hidden shadow-md">
+                                            <ReactPlayer
+                                              url={note.context.video}
+                                              controls
+                                              width="100%"
+                                              height="100%"
+                                              className="absolute top-0 left-0"
+                                              config={{
+                                                file: {
+                                                  attributes: {
+                                                    controlsList: 'nodownload',
+                                                    disablePictureInPicture: true
+                                                  }
+                                                }
+                                              }}
+                                            />
+                                          </div>
+                                          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <p className="whitespace-pre-line leading-relaxed"><b className="text-primary">Subtitles:</b> {note.context.subtitle}</p>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
+                                          {Object.entries(note.context)
+                                            .filter(([key]) => key !== "video" && key !== "subtitle")
+                                            .map(([key, value]) => (
+                                              value && (
+                                                <p className="leading-relaxed" key={key}>
+                                                  <b className="text-primary">
+                                                    {key.charAt(0).toUpperCase() + key.slice(1)}:
+                                                  </b>{" "}
+                                                  {Array.isArray(value) ? (
+                                                    value.join(", ")
+                                                  ) : (
+                                                    typeof value === "string" && value.startsWith("http") ? (
+                                                      <iframe
+                                                        src={value}
+                                                        title={key}
+                                                        className="w-full h-64 rounded border mt-2"
+                                                        allowFullScreen
+                                                      />
+                                                    ) : (
+                                                      String(value)
+                                                    )
+                                                  )}
+                                                </p>
+                                              )
+                                            ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
                                 </div>
                               )}
                             </div>
-                          ))}
+                          )}
                           <div className="flex flex-wrap gap-2 pt-2">
                             {/* TODO: Trick here, to impl the real func here.*/}
                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">

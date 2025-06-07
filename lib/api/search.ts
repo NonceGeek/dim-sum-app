@@ -4,12 +4,23 @@ export type SearchResult = {
   id: number;
   data: string;
   unique_id: string;
-  note: Array<{
+  note: {
+    page?: number;
+    number?: string;
+    others?: {
+      異體?: any[];
+      校訂註?: string | null;
+    };
+    pinyin?: string[];
+    meaning?: string[];
+    contributor?: string;
+  } | Array<{
     context: {
       pron?: string;
       author?: string;
       video?: string;
       subtitle?: string;
+      [key: string]: any;
     };
     contributor: string;
   }>;

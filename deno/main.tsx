@@ -6,8 +6,8 @@ the api for ai dimsum devs.
 // This enables autocomplete, go to definition, etc.
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { tify, sify } from '@aqzhyi/chinese-conv'
 
 console.log("Hello from AI Dimsum Devs API!");
 
@@ -111,6 +111,7 @@ router
     console.log("Processing item:", item.編號);
     console.log("item", item);
     /*
+    HINT: DO NOT DELETE THE EXAMPLE BELOW.
     here is the item example: 
     - if 字頭 has multiple items, make multiple corpus items, 字頭 = data
     - note = {"meaning": ["釋義 1", "釋義 2"...], "pinyin": ["粵拼讀音_1", "粵拼讀音_2"...], contributor: "0x04"}
@@ -240,6 +241,11 @@ router
 .get("/text_search_v2", async (context) => { 
   const queryParams = context.request.url.searchParams;
   const key = queryParams.get("keyword");
+  // Convert the key to both traditional and simplified Chinese
+  const traditionalKey = tify(key);
+  const simplifiedKey = sify(key);
+  console.log("traditionalKey", traditionalKey);
+  console.log("simplifiedKey", simplifiedKey);
   const tableName = queryParams.get("table_name");
   // const column = queryParams.get("column");
   const limit = parseInt(queryParams.get("limit"), 10); // Get limit from query and convert to integer
@@ -262,21 +268,31 @@ router
       };
       return;
     }
-    let query = supabase
-    .rpc('search_cantonese_corpus', { search_term: key })
-    .order("id", { ascending: false });
-    
+    // Search for both traditional and simplified versions
+    const [traditionalResults, simplifiedResults] = await Promise.all([
+      supabase
+        .rpc('search_cantonese_corpus', { search_term: traditionalKey })
+        .order("id", { ascending: false }),
+      supabase
+        .rpc('search_cantonese_corpus', { search_term: simplifiedKey })
+        .order("id", { ascending: false })
+    ]);
+
+    // Merge and deduplicate results based on unique_id
+    let mergedData = [...(traditionalResults.data || []), ...(simplifiedResults.data || [])];
+    mergedData = Array.from(new Map(mergedData.map(item => [item.unique_id, item])).values());
+
+    // Apply limit after merging if specified
     if (!isNaN(limit) && limit > 0) {
-      query = query.limit(limit); // Apply limit to the query if valid
+      mergedData = mergedData.slice(0, limit);
     }
 
-    const { data, error } = await query;
-
-    console.log("data", data);
+    console.log("data", mergedData);
     context.response.status = 200;
-    context.response.body = data;
-    if (error) {
-      throw error;
+    context.response.body = mergedData;
+    
+    if (traditionalResults.error || simplifiedResults.error) {
+      throw traditionalResults.error || simplifiedResults.error;
     }
   } catch (error) { 
     console.error("Error fetching data:", error);
