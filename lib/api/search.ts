@@ -25,7 +25,7 @@ type SearchParams = {
 const fetchCategory = async (categoryName: string) => {
   console.log("fetchCategory", categoryName);
   try {
-    const response = await fetch(`https://bodhi-data.deno.dev/corpus_category?name=${categoryName}`);
+    const response = await fetch(`https://dim-sum-prod.deno.dev/corpus_category?name=${categoryName}`);
     const data = await response.json();
     // get the first item of data
     const firstItem = data[0];
@@ -46,7 +46,7 @@ export function useSearch() {
   const search = async (params: SearchParams) => {
     try {
       const response = await fetch(
-        `https://bodhi-data.deno.dev/text_search_v2?table_name=cantonese_corpus_all&column=data&keyword=${encodeURIComponent(params.keyword)}`,
+        `https://dim-sum-prod.deno.dev/text_search_v2?table_name=cantonese_corpus_all&column=data&keyword=${encodeURIComponent(params.keyword)}`,
         {
           method: "GET",
           headers: {

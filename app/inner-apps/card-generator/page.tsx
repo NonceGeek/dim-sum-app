@@ -153,7 +153,7 @@ function CardGeneratorContent() {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://bodhi-data.deno.dev/corpus_item?unique_id=${uniqueId}`);
+        const response = await fetch(`https://dim-sum-prod.deno.dev/corpus_item?unique_id=${uniqueId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }

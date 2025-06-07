@@ -133,7 +133,7 @@ export default function LibraryPage() {
   useEffect(() => {
     const fetchCorpus = async () => {
       try {
-        const response = await fetch("https://bodhi-data.deno.dev/corpus_categories");
+        const response = await fetch("https://dim-sum-prod.deno.dev/corpus_categories");
         const data = await response.json();
         setCorpus(data);
       } catch (error) {

@@ -1,0 +1,32 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read --watch main.tsx",
+    "start": "deno run --allow-net --allow-env --allow-read main.tsx"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": [
+      "deno.window"
+    ],
+    "strict": true
+  },
+  "imports": {
+    "@std/": "https://deno.land/std@0.208.0/",
+    "oak": "https://deno.land/x/oak@v12.6.1/mod.ts",
+    "oak/": "https://deno.land/x/oak@v12.6.1/",
+    "cors": "https://deno.land/x/cors@v1.2.2/mod.ts",
+    "gfm": "https://deno.land/x/gfm@0.2.5/mod.ts",
+    "graphql_tag": "https://deno.land/x/graphql_tag@0.0.1/mod.ts",
+    "graphql_deno": "https://deno.land/x/graphql_deno@v15.0.0/mod.ts",
+    "ethers": "https://cdn.skypack.dev/ethers@5.6.8",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+  },
+  "deploy": {
+    "project": "a055f504-8e69-49bf-a92e-9f2c51a9ce84",
+    "exclude": [
+      "**/node_modules"
+    ],
+    "include": [],
+    "entrypoint": "main.tsx"
+  }
+}

@@ -59,7 +59,7 @@ export default function AppStorePage() {
   useEffect(() => {
     const fetchApps = async () => {
       try {
-        const response = await fetch("https://bodhi-data.deno.dev/corpus_apps");
+        const response = await fetch("https://dim-sum-prod.deno.dev/corpus_apps");
         const data = await response.json();
         setApps(data);
       } catch (error) {
