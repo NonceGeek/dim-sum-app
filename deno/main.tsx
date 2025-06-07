@@ -23,7 +23,12 @@ async function verifyAdminPassword(context: any, password: string): Promise<bool
 }
 
 // Supabase insert function
-async function insertCorpusItem(data: string, note: string, category: string, tags: string) {
+async function insertCorpusItem(
+  data: string, 
+  note: Record<string, unknown>, 
+  category: string, 
+  tags: string[]
+) {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -100,12 +105,86 @@ router
   */
   const zyzdCorpus = await Deno.readTextFile("../corpus/zyzd.json");
   const zyzdCorpusArray = JSON.parse(zyzdCorpus);
+  const results = [];
+
   for (const item of zyzdCorpusArray) {
+    console.log("Processing item:", item.編號);
     console.log("item", item);
-    // const { data, note, category, tags } = item;
-    // await insertCorpusItem(data, note, category, tags);
+    /*
+    here is the item example: 
+    - if 字頭 has multiple items, make multiple corpus items, 字頭 = data
+    - note = {"meaning": ["釋義 1", "釋義 2"...], "pinyin": ["粵拼讀音_1", "粵拼讀音_2"...], contributor: "0x04"}
+    - category = "zyzd"
+    - tags = ["word"]
+    {
+        "編號": "0005",
+        "頁": 1,
+        "字頭": [
+            "為",
+            "爲"
+        ],
+        "義項": [
+            {
+                "釋義": "㈠①作～．事在人～。②能者～師．一分～二",
+                "讀音": [
+                    {
+                        "粵拼讀音": "wai4",
+                        "讀音標記": null,
+                        "變調": null
+                    }
+                ]
+            },
+            {
+                "釋義": "㈡①～社會服務。②表目的。③幫助。④對、向",
+                "讀音": [
+                    {
+                        "粵拼讀音": "wai6",
+                        "讀音標記": null,
+                        "變調": null
+                    }
+                ]
+            }
+        ],
+        "_校訂補充": {
+            "異體": [],
+            "校訂註": null
+        }
+    },
+    */
+    // For each character in 字頭, create a separate entry
+    for (const char of item.字頭) {
+      // Format the note object
+      const note = {
+        meaning: item.義項.map(entry => entry.釋義),
+        pinyin: item.義項.flatMap(entry => 
+          entry.讀音.map(sound => sound.粵拼讀音)
+        ),
+        contributor: "0x04",
+        page: item.頁,
+        number: item.編號,
+        others: item._校訂補充
+      };
+      console.log("note", note);
+
+      try {
+        // Insert the item into the database
+        const result = await insertCorpusItem(
+          char,  // data (the character)
+          note,  // note (stringified object)
+          "zyzd",  // category
+          ["word"]  // tags
+        );
+        console.log("result", result);
+      } catch (error) {
+        console.error(`Error inserting character ${char}:`, error);
+      }
+    }
   }
   
+  context.response.body = {
+    message: "ZYZD corpus processing completed",
+    results
+  };
 })
 .post("/insert_corpus_item", async (context) => {
   let body = await context.request.body();
