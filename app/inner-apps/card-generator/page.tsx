@@ -9,20 +9,37 @@ import { useAppStore } from "@/stores/use-app-store";
 import domtoimage from 'dom-to-image';
 import { Download } from 'lucide-react';
 
+interface DictionaryNote {
+  page?: number;
+  number?: string;
+  others?: {
+    異體?: any[];
+    校訂註?: string | null;
+  };
+  pinyin?: string[];
+  meaning?: string[];
+  contributor?: string;
+}
+
+interface ArrayNote {
+  context: {
+    pron?: string;
+    author?: string;
+    video?: string;
+    subtitle?: string;
+    [key: string]: any;
+  };
+  contributor?: string;
+}
+
+type Note = DictionaryNote | ArrayNote[];
+
 interface CorpusItem {
   id: string;
   unique_id: string;
   data: string;
   category: string;
-  note: Array<{
-    context: {
-      pron?: string;
-      author?: string;
-      video?: string;
-      subtitle?: string;
-      [key: string]: any;
-    };
-  }>;
+  note: Note;
   tags: string[];
 }
 
@@ -32,7 +49,9 @@ const keyTranslations: { [key: string]: string } = {
   'pinyin': '拼音',
   'meaning': '含义',
   'phrases': '词组',
-  'chinese_pinyin': '普通话拼音'
+  'chinese_pinyin': '普通话拼音',
+  'pron': '粵拼',
+  'author': '作者'
 };
 
 const colorOptions = [
@@ -43,6 +62,11 @@ const colorOptions = [
   { name: 'Pink', value: 'bg-[#fff5f7]' },
   { name: 'Yellow', value: 'bg-[#fffbeb]' },
 ];
+
+// Type guard for dictionary note
+function isDictionaryNote(note: Note): note is DictionaryNote {
+  return !Array.isArray(note) && 'meaning' in note;
+}
 
 // YueCard component definition
 const YueCard = ({ item }: { item: CorpusItem }) => {
@@ -95,24 +119,78 @@ const YueCard = ({ item }: { item: CorpusItem }) => {
             <h1 className="text-4xl font-semibold text-[#111827] mb-4">{item.data}</h1>
           </div>
           <div className="mt-2 text-sm text-[#4b5563] space-y-4">
-            {item.note.map((note, idx) => (
-              <div key={idx} className="space-y-4">
-                <div className="bg-[#ffffff]/50 p-4 rounded-lg border border-[#f3f4f6] space-y-2">
-                  {Object.entries(note.context)
-                    .filter(([key]) => key !== "video" && key !== "subtitle")
-                    .map(([key, value]) => (
-                      value && (
-                        <p className="leading-relaxed" key={key}>
-                          <b className="text-[#3b82f6]">
-                            {keyTranslations[key]}:
-                          </b>{" "}
-                          {Array.isArray(value) ? value.join(", ") : value}
-                        </p>
-                      )
-                    ))}
-                </div>
+            {!Array.isArray(item.note) ? (
+              // Dictionary note display
+              <div className="bg-[#ffffff]/50 p-4 rounded-lg border border-[#f3f4f6] space-y-2">
+                {(item.note as DictionaryNote).meaning && (
+                  <p className="leading-relaxed">
+                    <b className="text-[#3b82f6]">釋義：</b>{" "}
+                    {Array.isArray((item.note as DictionaryNote).meaning) 
+                      ? (item.note as DictionaryNote).meaning.map((m, idx) => (
+                          <span key={idx}>
+                            {m}
+                            {idx < (item.note as DictionaryNote).meaning.length - 1 && <br />}
+                          </span>
+                        ))
+                      : (item.note as DictionaryNote).meaning
+                    }
+                  </p>
+                )}
+                {(item.note as DictionaryNote).pinyin && (
+                  <p className="leading-relaxed">
+                    <b className="text-[#3b82f6]">粵拼：</b>{" "}
+                    {Array.isArray((item.note as DictionaryNote).pinyin)
+                      ? (item.note as DictionaryNote).pinyin.join("、 ")
+                      : (item.note as DictionaryNote).pinyin
+                    }
+                  </p>
+                )}
+                {(item.note as DictionaryNote).contributor && (
+                  <p className="leading-relaxed">
+                    <b className="text-[#3b82f6]">貢獻者：</b>{" "}
+                    {(item.note as DictionaryNote).contributor}
+                  </p>
+                )}
+                {(item.note as DictionaryNote).page && (
+                  <p className="leading-relaxed">
+                    <b className="text-[#3b82f6]">頁碼：</b>{" "}
+                    {(item.note as DictionaryNote).page}
+                  </p>
+                )}
+                {(item.note as DictionaryNote).number && (
+                  <p className="leading-relaxed">
+                    <b className="text-[#3b82f6]">編號：</b>{" "}
+                    {(item.note as DictionaryNote).number}
+                  </p>
+                )}
+                {(item.note as DictionaryNote).others && (
+                  <p className="leading-relaxed">
+                    <b className="text-[#3b82f6]">其他：</b>{" "}
+                    {JSON.stringify((item.note as DictionaryNote).others)}
+                  </p>
+                )}
               </div>
-            ))}
+            ) : (
+              // Array note display
+              item.note.map((note, idx) => (
+                <div key={idx} className="space-y-4">
+                  <div className="bg-[#ffffff]/50 p-4 rounded-lg border border-[#f3f4f6] space-y-2">
+                    {Object.entries(note.context)
+                      .filter(([key]) => key !== "video" && key !== "subtitle")
+                      .map(([key, value]) => (
+                        value && (
+                          <p className="leading-relaxed" key={key}>
+                            <b className="text-[#3b82f6]">
+                              {keyTranslations[key] || key}:
+                            </b>{" "}
+                            {Array.isArray(value) ? value.join(", ") : value}
+                          </p>
+                        )
+                      ))}
+                  </div>
+                </div>
+              ))
+            )}
             {/* TODO: 智能发音 */}
           </div>
         </div>
@@ -123,7 +201,6 @@ const YueCard = ({ item }: { item: CorpusItem }) => {
           onClick={handleDownload}
           className="flex items-center gap-2 px-4 py-2 bg-[#3b82f6] text-white rounded-lg hover:bg-[#2563eb] transition-colors"
         >
-          {/* TODO: color not render good when download. */}
           <Download className="w-4 h-4" />
           下载卡片
         </button>

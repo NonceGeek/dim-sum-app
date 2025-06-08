@@ -331,52 +331,50 @@ export default function HomePage() {
                                 // Detailed display for zyzd category
                                 <>
                                   {isDictionaryNote(result.note) && (
-                                    <>
+                                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
                                       {result.note.meaning && (
-                                        <div>
-                                          <span className="font-medium"><b>釋義：</b></span>
-                                          <ul className="list-disc list-inside pl-2">
-                                            {Array.isArray(result.note.meaning) 
-                                              ? result.note.meaning.map((m, idx) => <li key={idx}>{m}</li>)
-                                              : <li>{result.note.meaning}</li>
-                                            }
-                                          </ul>
-                                        </div>
+                                        <p className="leading-relaxed">
+                                          <b className="text-primary">釋義：</b>{" "}
+                                          {Array.isArray(result.note.meaning) 
+                                            ? result.note.meaning.join("、 ")
+                                            : result.note.meaning
+                                          }
+                                        </p>
                                       )}
                                       {result.note.pinyin && (
-                                        <div>
-                                          <span className="font-medium"><b>粵拼：</b></span>
+                                        <p className="leading-relaxed">
+                                          <b className="text-primary">粵拼：</b>{" "}
                                           {Array.isArray(result.note.pinyin)
-                                            ? result.note.pinyin.join('、 ')
+                                            ? result.note.pinyin.join("、 ")
                                             : result.note.pinyin
                                           }
-                                        </div>
+                                        </p>
                                       )}
                                       {result.note.contributor && (
-                                        <div>
-                                          <span className="font-medium"><b>貢獻者：</b></span>
+                                        <p className="leading-relaxed">
+                                          <b className="text-primary">貢獻者：</b>{" "}
                                           {result.note.contributor}
-                                        </div>
+                                        </p>
                                       )}
                                       {result.note.page && (
-                                        <div>
-                                          <span className="font-medium"><b>頁碼：</b></span>
+                                        <p className="leading-relaxed">
+                                          <b className="text-primary">頁碼：</b>{" "}
                                           {result.note.page}
-                                        </div>
+                                        </p>
                                       )}
                                       {result.note.number && (
-                                        <div>
-                                          <span className="font-medium"><b>編號：</b></span>
+                                        <p className="leading-relaxed">
+                                          <b className="text-primary">編號：</b>{" "}
                                           {result.note.number}
-                                        </div>
+                                        </p>
                                       )}
                                       {result.note.others && (
-                                        <div>
-                                          <span className="font-medium"><b>其他：</b></span>
+                                        <p className="leading-relaxed">
+                                          <b className="text-primary">其他：</b>{" "}
                                           {JSON.stringify(result.note.others)}
-                                        </div>
+                                        </p>
                                       )}
-                                    </>
+                                    </div>
                                   )}
                                 </>
                               ) : (
@@ -443,11 +441,9 @@ export default function HomePage() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-2 pt-2">
-                            {/* TODO: Trick here, to impl the real func here.*/}
                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
                               {result.category}
                             </span>
-                            {/* if result.category == "广州话正音字典", show the "推荐应用: " + 卡片生成 button with a href link */}
                             {result.tags.map((tag, idx) => (
                               <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs border border-gray-200 dark:border-gray-700">
                                 {tag}
@@ -455,22 +451,20 @@ export default function HomePage() {
                             ))}
                           </div>
                           <br></br>
-                            {/* TODO: Trick here, to impl the real func here.*/}
-                            {/* if result.category == "广州话正音字典", show the "推荐应用: " + 卡片生成 button with a href link */}
-                            {result.category == "广州话正音字典" && (
-                              <div>
-                                <p>关联应用:&nbsp;&nbsp;&nbsp;
-                                <a href={`/inner-apps/card-generator?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
-                                  🎴 卡片生成
-                                </a>
-                                <br></br><br></br>
-                                推荐应用:&nbsp;&nbsp;&nbsp;
-                                <a href={`https://baidu.com?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
-                                  🤖 语言学 Agent
-                                </a>
+                          {(result.category === "广州话正音字典" || result.category === "广州话正音字典（例）") && (
+                            <div>
+                              <p>关联应用:&nbsp;&nbsp;&nbsp;
+                              <a href={`/inner-apps/card-generator?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                                🎴 卡片生成
+                              </a>
+                              <br></br><br></br>
+                              推荐应用:&nbsp;&nbsp;&nbsp;
+                              <a href={`https://baidu.com?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                                🤖 语言学 Agent
+                              </a>
                               </p>
-                              </div>
-                            )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Card>
