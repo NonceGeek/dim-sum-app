@@ -1,59 +1,49 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
-}
-
-// 用户角色枚举
-enum Role {
-  USER      // 普通用户
-  MARKER    // 标记员
 }
 
 /// 第三方账号信息表
 /// 存储用户通过第三方平台（如微信）登录的账号信息
 model Account {
-  id                String  @id @default(cuid())  // 主键，自动生成的唯一ID
-  userId            String                        // 关联到User表的ID
-  type              String                        // 账号类型，如"oauth"
-  provider          String                        // 提供商，如"wechat"
-  providerAccountId String                        // 第三方平台的用户ID
-  openId            String?                       // 微信开放ID
-  unionId           String?                       // 微信联合ID
-  refresh_token     String? @db.Text              // 刷新令牌，用于获取新的访问令牌
-  access_token      String? @db.Text              // 访问令牌，用于访问第三方API
-  expires_at        Int?                          // 令牌过期时间戳
-  token_type        String?                       // 令牌类型，如"Bearer"
-  scope             String?                       // 授权范围，如"snsapi_userinfo"
-  id_token          String? @db.Text              // ID令牌，用于身份验证
-  session_state     String?                       // 会话状态，用于OAuth流程
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  openId            String?
+  unionId           String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)  // 关联到User表，用户删除时级联删除账号
-
-  @@unique([provider, providerAccountId])  // 确保每个提供商下的账号ID唯一
-  @@index([openId])  // 添加索引以提高查询性能
+  @@unique([provider, providerAccountId])
+  @@index([openId])
 }
 
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
-  id            String    @id @default(cuid())  // 主键，自动生成的唯一ID
-  name          String?                         // 用户名
-  email         String?   @unique               // 邮箱，唯一
-  emailVerified DateTime?                       // 邮箱验证时间
-  image         String?                         // 用户自定义头像URL
-  wechatAvatar  String?                         // 微信头像URL
-  phoneNumber   String?                         // 手机号码
-  role          Role      @default(USER)        // 用户角色，默认为普通用户
-  accounts      Account[]                       // 关联的第三方账号列表
-  sessions      Session[]                       // 关联的会话列表
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  phoneNumber   String?
+  wechatAvatar  String?
+  role          Role      @default(LEARNER)
+  accounts      Account[]
+  sessions      Session[]
 }
 
 model Session {
@@ -70,4 +60,106 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-} 
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model api_key {
+  id         BigInt    @id @default(autoincrement())
+  use_id     String?
+  api_key    String
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  status     APIStatus @default(PENDING)
+}
+
+model cantonese_categories {
+  id          BigInt    @id(map: "categories_pkey") @default(autoincrement())
+  name        String?
+  nickname    String?
+  description String?
+  likes       BigInt?   @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  cover       String?
+}
+
+model cantonese_corpus_all {
+  id             BigInt   @unique @default(autoincrement())
+  data           String
+  note           Json?
+  category       String?
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  tags           Json?
+  editable_level Int      @default(1) @db.SmallInt
+  liked          BigInt   @default(0)
+  unique_id      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@id([id, data])
+  @@index([data], map: "cantonese_corpus_all_data_pgroonga_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cantonese_corpus_apps {
+  id           BigInt    @id @default(autoincrement())
+  name         String?
+  description  String?
+  authors      Json?
+  url          String?
+  homepage_url String?
+  github_url   String?
+  intro_video  String?
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  likes        BigInt    @default(0)
+  icon_img     String?
+  type         String    @default("STUDY")
+}
+
+model cantonese_corpus_dict_yin {
+  id             BigInt    @id(map: "cantonese_corpus_dict_sound_pkey") @default(autoincrement())
+  key            String?
+  key_others     Json?
+  pinyin         Json?
+  word           Json?
+  chinese_pinyin Json?
+  meaning        Json?
+  phrases        Json?
+  sentences      Json?
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cantonese_corpus_update_history {
+  id               BigInt    @id @default(autoincrement())
+  unique_id        String    @db.Uuid
+  note             Json
+  status           Status    @default(PENDING)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  user_id          String
+  approver_user_id String?
+}
+
+enum Role {
+  LEARNER // 学习者
+  TAGGER_PARTNER // 合作伙伴标记员
+  TAGGER_OUTSOURCING // 外包标记员
+  RESEARCHER // 研究员
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APIStatus {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum Status {
+  PENDING
+  APPROVED
+  BANNED
+}

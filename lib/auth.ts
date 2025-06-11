@@ -177,7 +177,6 @@ export const authOptions: AuthOptions = {
                 data: {
                   name: wechatProfile.nickname || `User_${Math.random().toString(36).substring(7)}`,
                   wechatAvatar: wechatProfile.headimgurl,  // 保存微信头像
-                  role: 'USER',
                   accounts: {
                     create: {
                       type: 'oauth',
