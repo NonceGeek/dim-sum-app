@@ -380,6 +380,62 @@ export default function HomePage() {
                               ) : (
                                 // Simple display for other categories
                                 <div>
+                                  {typeof result.note === 'object' && !Array.isArray(result.note) && !('meaning' in result.note) && 'context' in result.note && (
+                                    <div className="space-y-4">
+                                      {(result.note as { context: { video?: string; subtitle?: string } }).context.video ? (
+                                        <div className="space-y-4">
+                                          <div className="relative pt-[56.25%] rounded-lg overflow-hidden shadow-md">
+                                            <ReactPlayer
+                                              url={(result.note as { context: { video: string } }).context.video}
+                                              controls
+                                              width="100%"
+                                              height="100%"
+                                              className="absolute top-0 left-0"
+                                              config={{
+                                                file: {
+                                                  attributes: {
+                                                    controlsList: 'nodownload',
+                                                    disablePictureInPicture: true
+                                                  }
+                                                }
+                                              }}
+                                            />
+                                          </div>
+                                          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <p className="whitespace-pre-line leading-relaxed"><b className="text-primary">Subtitles:</b> {(result.note as { context: { subtitle: string } }).context.subtitle}</p>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
+                                          {Object.entries((result.note as { context: Record<string, unknown> }).context)
+                                            .filter(([key]) => key !== "video" && key !== "subtitle")
+                                            .map(([key, value]) => (
+                                              value && (
+                                                <p className="leading-relaxed" key={key}>
+                                                  <b className="text-primary">
+                                                    {key.charAt(0).toUpperCase() + key.slice(1)}:
+                                                  </b>{" "}
+                                                  {Array.isArray(value) ? (
+                                                    value.join(", ")
+                                                  ) : (
+                                                    typeof value === "string" && value.startsWith("http") ? (
+                                                      <iframe
+                                                        src={value}
+                                                        title={key}
+                                                        className="w-full h-64 rounded border mt-2"
+                                                        allowFullScreen
+                                                      />
+                                                    ) : (
+                                                      String(value)
+                                                    )
+                                                  )}
+                                                </p>
+                                              )
+                                            ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                   {Array.isArray(result.note) && result.note.map((note, idx) => (
                                     <div key={idx} className="space-y-4">
                                       {note.context.video ? (
