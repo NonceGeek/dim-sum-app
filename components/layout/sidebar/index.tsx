@@ -6,41 +6,17 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Sidebar,
   SidebarContent as SidebarContentBase,
-  SidebarGroup,
-  SidebarGroupContent,
-  // SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import {
-  Bell,
-  LibraryBig,
-  ChevronLeft,
-  ChevronRight,
-  Compass,
-  Home,
-  User,
-  AppWindow,
-  FileCode2,
-  LogOut,
-  Settings,
-  CreditCard,
-  Key,
   ArrowLeft,
-  UserCircle,
-  Building2,
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { signOut } from "next-auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarHeader } from "./sidebar-header";
 import { MainMenu } from "./main-menu";
 import { SubMenu } from "./sub-menu";
@@ -69,6 +45,19 @@ export function AppSidebar() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, [setMobile]);
+
+  useEffect(() => {
+    const isAccountPath = accountSubmenuItems.some(item => pathname === item.href);
+    const isWorkplacePath = workplaceSubmenuItems.some(item => pathname === item.href);
+    
+    if (isAccountPath) {
+      setActiveSubmenu('account');
+    } else if (isWorkplacePath) {
+      setActiveSubmenu('workplace');
+    } else {
+      setActiveSubmenu(null);
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
