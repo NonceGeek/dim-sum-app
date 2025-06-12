@@ -1,11 +1,8 @@
-'use client';
+"use client";
 
-import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-} from '@/components/ui/sheet';
+import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   Sidebar,
   SidebarContent as SidebarContentBase,
@@ -16,31 +13,48 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils';
-import { Bell, LibraryBig, ChevronLeft, ChevronRight, Compass, Home, User, AppWindow, FileCode2, LogOut } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { useSidebarStore } from '@/stores/use-sidebar-store';
-import { useAuthStore } from '@/lib/store/useAuthStore';
-import { signOut } from 'next-auth/react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import {
+  Bell,
+  LibraryBig,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  Home,
+  User,
+  AppWindow,
+  FileCode2,
+  LogOut,
+  Settings,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useSidebarStore } from "@/stores/use-sidebar-store";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { signOut } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const menuItems = [
-  { icon: Home, label: 'Home', href: '/' },
-  { icon: LibraryBig, label: 'Library', href: '/library' },
-  { icon: AppWindow, label: 'App Store', href: '/appStore' },
-  { icon: Compass, label: 'Discover', href: '/discover' },
-  { icon: FileCode2, label: 'Docs', href: '/docs' },
+  { icon: Home, label: "Home", href: "/" },
+  { icon: LibraryBig, label: "Library", href: "/library" },
+  { icon: AppWindow, label: "App Store", href: "/appStore" },
+  { icon: Compass, label: "Discover", href: "/discover" },
+  { icon: FileCode2, label: "Docs", href: "/docs" },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { open, setOpen } = useSidebar();
-  const { isOpen, setOpen: setSheetOpen, isMobile, setMobile } = useSidebarStore();
+  const {
+    isOpen,
+    setOpen: setSheetOpen,
+    isMobile,
+    setMobile,
+  } = useSidebarStore();
   const { user, isAuthenticated, clearUser } = useAuthStore();
 
   useEffect(() => {
@@ -49,14 +63,14 @@ export function AppSidebar() {
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, [setMobile]);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
     clearUser();
-    router.push('/auth/signin');
+    router.push("/auth/signin");
   };
 
   const SidebarContent = () => (
@@ -109,10 +123,10 @@ export function AppSidebar() {
                     <Link
                       href={item.href}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary',
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
                         pathname === item.href
-                          ? 'bg-primary/10 text-primary'
-                          : 'hover:bg-primary/5'
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-primary/5"
                       )}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -130,27 +144,37 @@ export function AppSidebar() {
           <>
             {open ? (
               <>
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                   <Button variant="ghost" size="icon">
                     <Bell className="h-4 w-4" />
                     <span className="sr-only">Notifications</span>
                   </Button>
-                  <ThemeToggle />
-                </div>
+                <ThemeToggle />
+                </div> */}
                 <Link
                   href="/profile"
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full',
-                    pathname === '/profile'
-                      ? 'bg-primary/10 text-primary'
-                      : 'hover:bg-primary/5'
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full",
+                    pathname === "/profile"
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-primary/5"
                   )}
                 >
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
-                    <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
-                  </Avatar>
-                  <span>{user?.name || 'User'}</span>
+                  <div className="flex items-center w-full justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage
+                          src={user?.avatar || ""}
+                          alt={user?.name || ""}
+                        />
+                        <AvatarFallback>
+                          {user?.name?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{user?.name || "User"}</span>
+                    </div>
+                    <Settings className="h-4 w-4" />
+                  </div>
                 </Link>
                 <Button
                   variant="ghost"
@@ -163,17 +187,20 @@ export function AppSidebar() {
               </>
             ) : (
               <div className="flex flex-col items-center gap-4">
-                <div className="flex flex-col items-center gap-2">
-                  <Button variant="ghost" size="icon">
+                {/* <div className="flex flex-col items-center gap-2"> */}
+                {/* <Button variant="ghost" size="icon">
                     <Bell className="h-4 w-4" />
                     <span className="sr-only">Notifications</span>
                   </Button>
                   <ThemeToggle />
-                </div>
+                </div> */}
                 <Link href="/profile">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
-                    <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
+                    <AvatarImage
+                      src={user?.avatar || ""}
+                      alt={user?.name || ""}
+                    />
+                    <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
                   </Avatar>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -187,34 +214,34 @@ export function AppSidebar() {
           <>
             {open ? (
               <>
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                   <Button variant="ghost" size="icon">
                     <Bell className="h-4 w-4" />
                     <span className="sr-only">Notifications</span>
                   </Button>
                   <ThemeToggle />
-                </div>
+                </div> */}
                 <Button
                   variant="default"
                   className="w-full"
-                  onClick={() => router.push('/auth/signin')}
+                  onClick={() => router.push("/auth/signin")}
                 >
                   Sign In
                 </Button>
               </>
             ) : (
               <div className="flex flex-col items-center gap-4">
-                <div className="flex flex-col items-center gap-2">
+                {/* <div className="flex flex-col items-center gap-2">
                   <Button variant="ghost" size="icon">
                     <Bell className="h-4 w-4" />
                     <span className="sr-only">Notifications</span>
                   </Button>
                   <ThemeToggle />
-                </div>
+                </div> */}
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => router.push('/auth/signin')}
+                  onClick={() => router.push("/auth/signin")}
                   className="h-8 w-8"
                 >
                   <User className="h-4 w-4" />
@@ -257,10 +284,10 @@ export function AppSidebar() {
                             <Link
                               href={item.href}
                               className={cn(
-                                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary',
+                                "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
                                 pathname === item.href
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'hover:bg-primary/5'
+                                  ? "bg-primary/10 text-primary"
+                                  : "hover:bg-primary/5"
                               )}
                               onClick={() => setSheetOpen(false)}
                             >
@@ -281,25 +308,28 @@ export function AppSidebar() {
                   <Link
                     href="/profile"
                     className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full',
-                      pathname === '/profile'
-                        ? 'bg-primary/10 text-primary'
-                        : 'hover:bg-primary/5'
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full",
+                      pathname === "/profile"
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-primary/5"
                     )}
                     onClick={() => setSheetOpen(false)}
                   >
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={user?.avatar || ''} alt={user?.name || ''} />
-                      <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
+                      <AvatarImage
+                        src={user?.avatar || ""}
+                        alt={user?.name || ""}
+                      />
+                      <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
                     </Avatar>
-                    <span>{user?.name || 'User'}</span>
+                    <span>{user?.name || "User"}</span>
                   </Link>
-                  <div className="flex items-center justify-between">
+                  {/* <div className="flex items-center justify-between">
                     <Button variant="ghost" size="icon">
                       <Bell className="h-4 w-4" />
                       <span className="sr-only">Notifications</span>
                     </Button>
-                  </div>
+                  </div> */}
                   <Button
                     variant="ghost"
                     className="w-full justify-start"
@@ -317,7 +347,7 @@ export function AppSidebar() {
                   variant="default"
                   className="w-full"
                   onClick={() => {
-                    router.push('/auth/signin');
+                    router.push("/auth/signin");
                     setSheetOpen(false);
                   }}
                 >
@@ -339,4 +369,4 @@ export function AppSidebar() {
       <SidebarContent />
     </Sidebar>
   );
-} 
+}
