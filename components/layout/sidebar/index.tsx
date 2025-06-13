@@ -157,7 +157,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className={`${activeSubmenu ? 'bg-sidebar-accent-background' : 'bg-sidebar-background'}`}>
       <SidebarContent />
     </Sidebar>
   );
