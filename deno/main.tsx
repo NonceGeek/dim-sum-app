@@ -316,7 +316,7 @@ router
   context.response.body = resp;
 })
 /* ↓↓↓ sepc APIs ↓↓↓ */
-.get("/insert_zyzd", async (context) => {
+.get("/spec/insert_zyzd", async (context) => {
   /*
     read zyzd corpus from ../corpus/zyzd.json
   */
@@ -373,14 +373,17 @@ router
     for (const char of item.字頭) {
       // Format the note object
       const note = {
+        "context": {
         meaning: item.義項.map(entry => entry.釋義),
         pinyin: item.義項.flatMap(entry => 
           entry.讀音.map(sound => sound.粵拼讀音)
         ),
-        contributor: "0x04",
         page: item.頁,
         number: item.編號,
         others: item._校訂補充
+      },
+        contributor: "0x05",
+
       };
       console.log("note", note);
 
@@ -389,7 +392,7 @@ router
         const result = await insertCorpusItem(
           char,  // data (the character)
           note,  // note (stringified object)
-          "zyzd",  // category
+          "zyzdv2",  // category
           ["word"]  // tags
         );
         console.log("result", result);

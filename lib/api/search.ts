@@ -5,6 +5,7 @@ export type SearchResult = {
   data: string;
   unique_id: string;
   note: {
+    context: {
     page?: number;
     number?: string;
     others?: {
@@ -13,8 +14,9 @@ export type SearchResult = {
     };
     pinyin?: string[];
     meaning?: string[];
+  };
     contributor?: string;
-  } | Array<{
+  } | {
     context: {
       pron?: string;
       author?: string;
@@ -23,7 +25,7 @@ export type SearchResult = {
       [key: string]: any;
     };
     contributor: string;
-  }>;
+  };
   category: string;
   created_at: string;
   tags: string[];
