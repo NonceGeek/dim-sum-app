@@ -41,6 +41,7 @@ model User {
   image         String?
   phoneNumber   String?
   wechatAvatar  String?
+  bio           String?   @db.Text
   role          Role      @default(LEARNER)
   accounts      Account[]
   sessions      Session[]
@@ -66,8 +67,8 @@ model VerificationToken {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model api_key {
   id         BigInt    @id @default(autoincrement())
-  use_id     String?
-  api_key    String
+  user_id    String?
+  key        String
   created_at DateTime  @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamp(6)
   status     APIStatus @default(PENDING)
@@ -141,13 +142,14 @@ model cantonese_corpus_update_history {
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   user_id          String
   approver_user_id String?
+  last_note        Json
 }
 
 enum Role {
-  LEARNER // 学习者
-  TAGGER_PARTNER // 合作伙伴标记员
-  TAGGER_OUTSOURCING // 外包标记员
-  RESEARCHER // 研究员
+  LEARNER
+  TAGGER_PARTNER
+  TAGGER_OUTSOURCING
+  RESEARCHER
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

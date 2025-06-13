@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
         image: true,
         wechatAvatar: true,
         phoneNumber: true,
+        bio: true,
         role: true,
       },
     });
@@ -34,7 +35,7 @@ export async function PUT(req: NextRequest) {
     const data = await req.json();
 
     // 验证更新数据
-    const { name, phoneNumber } = data;
+    const { name, phoneNumber, image, bio } = data;
     
     // 更新用户资料
     const updatedUser = await prisma.user.update({
@@ -42,6 +43,8 @@ export async function PUT(req: NextRequest) {
       data: {
         name,
         phoneNumber,
+        image,
+        bio,
       },
       select: {
         id: true,
@@ -50,6 +53,7 @@ export async function PUT(req: NextRequest) {
         image: true,
         wechatAvatar: true,
         phoneNumber: true,
+        bio: true,
         role: true,
       },
     });

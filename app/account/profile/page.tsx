@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Phone, Mail } from 'lucide-react';
 import Image from 'next/image';
+import { formatRole } from '@/lib/utils';
+import { EditProfileDialog } from '@/components/dialogs/edit-profile-dialog';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -37,6 +39,12 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+            {profile && (
+              <EditProfileDialog 
+                profile={profile} 
+                onProfileUpdate={setProfile} 
+              />
+            )}
           </div>
 
           {loading && (
@@ -90,8 +98,8 @@ export default function ProfilePage() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <h2 className="text-2xl font-bold text-foreground">{profile.name}</h2>
-                      <Badge variant="secondary" className="text-sm capitalize">
-                        {profile.role}
+                      <Badge variant="secondary" className="text-sm">
+                        {formatRole(profile.role)}
                       </Badge>
                     </div>
                     <div className="mt-2 space-y-2">
@@ -106,6 +114,22 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
+                {profile.bio && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">About</h3>
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                      {profile.bio}
+                    </p>
+                  </div>
+                )}
+                {!profile.bio && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">About</h3>
+                    <p className="text-sm text-muted-foreground italic">
+                      No bio added yet
+                    </p>
+                  </div>
+                )}
               </Card>
             </div>
           )}
