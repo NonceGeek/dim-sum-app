@@ -1,23 +1,32 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Pencil, Loader2 } from 'lucide-react';
-import Image from 'next/image';
-import { UserProfile, userApi } from '@/lib/api/user';
-import { toast } from 'sonner';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Pencil, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { UserProfile, userApi } from "@/lib/api/user";
+import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 interface EditProfileDialogProps {
   profile: UserProfile;
   onProfileUpdate: (profile: UserProfile) => void;
 }
 
-export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialogProps) {
+export function EditProfileDialog({
+  profile,
+  onProfileUpdate,
+}: EditProfileDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(profile.name);
-  const [bio, setBio] = useState(profile.bio || '');
+  const [bio, setBio] = useState(profile.bio || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +45,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
     setIsSubmitting(true);
     try {
       let imageUrl = profile.image;
-      
+
       if (selectedFile) {
         imageUrl = await userApi.uploadAvatar(selectedFile);
       }
@@ -49,9 +58,9 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
 
       onProfileUpdate(updatedProfile);
       setIsOpen(false);
-      toast.success('Profile updated successfully');
+      toast.success("Profile updated successfully");
     } catch (err) {
-      toast.error('Failed to update profile');
+      toast.error("Failed to update profile");
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -62,8 +71,8 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Pencil className="w-4 h-4 mr-2" />
           Edit Profile
+          <Pencil className="w-4 h-4 mr-2" />
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -93,7 +102,7 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
             {(previewUrl || profile.image) && (
               <div className="mt-2">
                 <Image
-                  src={previewUrl || profile.image || ''}
+                  src={previewUrl || profile.image || ""}
                   alt="Avatar preview"
                   width={100}
                   height={100}
@@ -120,11 +129,11 @@ export function EditProfileDialog({ profile, onProfileUpdate }: EditProfileDialo
                 Saving...
               </>
             ) : (
-              'Save Changes'
+              "Save Changes"
             )}
           </Button>
         </form>
       </DialogContent>
     </Dialog>
   );
-} 
+}

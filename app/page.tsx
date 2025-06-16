@@ -144,7 +144,7 @@ export default function HomePage() {
                   value={searchPrompt}
                   onChange={(e) => setSearchPrompt(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  className="pl-10 h-12 text-lg"
+                  className="pl-10 h-12 text-lg dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
                 />
               </div>
               <Button 
@@ -321,7 +321,7 @@ export default function HomePage() {
                     }}
                   >
                     {/* HINT: not delete, to render the result here. */}
-                    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200">
+                    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200">
                       <div className="space-y-6">
                         <div className="prose dark:prose-invert max-w-none">
                           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{result.data}</h3>
@@ -523,7 +523,7 @@ export default function HomePage() {
                         example.prompt !== searchPrompt && (
                           <Card 
                             key={example.prompt}
-                            className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200"
+                            className="p-4 hover:shadow-lg cursor-pointer hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200"
                             onClick={() => {
                               if (isPending) return;
                               setResults(null);

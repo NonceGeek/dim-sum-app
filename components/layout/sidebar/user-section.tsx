@@ -47,8 +47,8 @@ export function UserSection({
             <>
               <div
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full cursor-pointer",
-                  activeSubmenu ? "bg-primary/10 text-primary" : "hover:bg-primary/5"
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:text-sidebar-foreground w-full cursor-pointer",
+                  activeSubmenu ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50" : "hover:bg-sidebar-accent-foreground/10"
                 )}
                 onClick={() => {
                   setActiveSubmenu(activeSubmenu ? null : "Account");

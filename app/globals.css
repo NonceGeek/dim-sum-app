@@ -104,9 +104,9 @@
 }
 
 .dark {
-  --background: #b2c7ff;
+  --background: #181818;
   --foreground: #1d1c1c;
-  --card: oklch(0.25 0.1 280);
+  --card: #1d1c1c;
   --card-foreground: oklch(0.9 0.1 280);
   --popover: oklch(0.25 0.1 280);
   --popover-foreground: oklch(0.9 0.1 280);
@@ -118,7 +118,7 @@
   --muted-foreground: oklch(0.7 0.1 280);
   --accent: #7b7a7a;
   --accent-foreground: oklch(0.9 0.1 290);
-  --accent-background: #1d1c1c;
+  --accent-background: #3f4145;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(0.5 0.2 280 / 0.2);
   --input: oklch(0.5 0.2 280 / 0.15);
