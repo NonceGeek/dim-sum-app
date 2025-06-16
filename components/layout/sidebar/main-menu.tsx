@@ -18,10 +18,10 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-sidebar-foreground",
                     pathname === item.href
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-primary/5"
+                      ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
+                      : "hover:bg-sidebar-accent-foreground/10"
                   )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />

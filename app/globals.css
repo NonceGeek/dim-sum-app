@@ -28,6 +28,7 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-background: var(--accent-background);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
@@ -103,8 +104,8 @@
 }
 
 .dark {
-  --background: oklch(0.2 0.1 280);
-  --foreground: oklch(0.9 0.1 280);
+  --background: #b2c7ff;
+  --foreground: #1d1c1c;
   --card: oklch(0.25 0.1 280);
   --card-foreground: oklch(0.9 0.1 280);
   --popover: oklch(0.25 0.1 280);
@@ -115,8 +116,9 @@
   --secondary-foreground: oklch(0.9 0.1 300);
   --muted: oklch(0.3 0.1 280);
   --muted-foreground: oklch(0.7 0.1 280);
-  --accent: oklch(0.5 0.2 290);
+  --accent: #7b7a7a;
   --accent-foreground: oklch(0.9 0.1 290);
+  --accent-background: #1d1c1c;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(0.5 0.2 280 / 0.2);
   --input: oklch(0.5 0.2 280 / 0.15);
@@ -129,12 +131,12 @@
   --sidebar: oklch(0.25 0.1 280);
   --sidebar-foreground: oklch(0.9 0.1 280);
   --sidebar-background: oklch(0.25 0.1 280);
-  --sidebar-primary-background: oklch(0.25 0.1 280);
+  --sidebar-primary-background: #1d1c1c;
   --sidebar-primary: oklch(0.5 0.2 280);
   --sidebar-primary-foreground: oklch(0.9 0.1 280);
-  --sidebar-accent: oklch(0.5 0.2 290);
+  --sidebar-accent: #7b7a7a;
   --sidebar-accent-foreground: oklch(0.9 0.1 290);
-  --sidebar-accent-background: oklch(0.25 0.1 280);
+  --sidebar-accent-background: #262525;
   --sidebar-border: oklch(0.5 0.2 280 / 0.2);
   --sidebar-ring: oklch(0.5 0.2 280);
 }
@@ -145,5 +147,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .dark body {
+    background: linear-gradient(135deg, #b2c7ff 0%, #d7d7fe 100%);
+    background-attachment: fixed;
   }
 }
