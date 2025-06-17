@@ -5,7 +5,7 @@ import { AuthOptions } from "next-auth";
 // import { User } from "next-auth";
 import WechatProvider from "@/providers/wechat";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -26,7 +26,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
-      role?: string;
+      role?: Role;
     }
   }
 }
@@ -36,7 +36,7 @@ declare module "next-auth/jwt" {
     id?: string;
     openId?: string;
     unionId?: string;
-    role?: string;
+    role?: Role;
     image?: string | null;
   }
 }
@@ -51,7 +51,7 @@ export const authOptions: AuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/auth/signin",
+    signIn: "",
   },
   session: {
     strategy: "jwt" as const,
@@ -109,7 +109,8 @@ export const authOptions: AuthOptions = {
             token.role = dbAccount.user.role;
             token.image = dbAccount.user.image || wechatProfile.headimgurl;
           } else {
-            token.role = 'USER';
+            // 使用从 URL 中获取的角色，如果没有则默认为 LEARNER
+            token.role = (account.role as Role) || Role.LEARNER;
           }
           // console.log('User role fetched:', token.role);
         }
@@ -273,7 +274,7 @@ export async function requireMarker(
     );
   }
 
-  if (session.user.role !== 'MARKER') {
+  if (session.user.role !== Role.TAGGER_PARTNER && session.user.role !== Role.TAGGER_OUTSOURCING) {
     return NextResponse.json(
       { error: "Permission denied. Marker role required." },
       { status: 403 }

@@ -1,6 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { Role } from "@prisma/client";
 
 export default withAuth(
   function middleware(req: NextRequest) {
@@ -19,7 +20,7 @@ export default withAuth(
 
         // 标记员专用路由
         if (path.startsWith('/api/marker') || path.startsWith('/marker')) {
-          return token.role === 'MARKER';
+          return token.role === Role.TAGGER_PARTNER || token.role === Role.TAGGER_OUTSOURCING;
         }
 
         // 普通用户路由
@@ -40,6 +41,7 @@ export const config = {
     // 保护需要认证的页面
     "/dashboard/:path*",
     "/profile/:path*",
+    "/account/:path*",
     // 标记员专用路由
     "/marker/:path*",
     "/api/marker/:path*",

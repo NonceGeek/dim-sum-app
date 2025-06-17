@@ -150,8 +150,8 @@ export default function LibraryPage() {
     <>
       <Header />
       <div className="h-[calc(100vh-56px)] p-6 overflow-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">语料库</h1>
+        <div className="flex items-center justify-center w-full mb-8">
+          <h1 className="text-4xl font-bold text-center">粤语语料集</h1>
         </div>
         
         {loading ? (
@@ -168,8 +168,8 @@ export default function LibraryPage() {
       </div>
       {/* TODO: 两个 div 间距离太宽 */}
       <div className="h-[calc(100vh-56px)] p-6 overflow-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">图书馆</h1>
+        <div className="flex items-center justify-center w-full mb-8">
+          <h1 className="text-4xl font-bold text-center">图书馆</h1>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

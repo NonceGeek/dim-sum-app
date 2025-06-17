@@ -12,20 +12,23 @@ import { Search, SearchX } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Header } from '@/components/layout/header';
 import ReactPlayer from 'react-player';
+import { stringify } from "querystring";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult['note']): note is {
-  page?: number;
-  number?: string;
-  others?: {
-    異體?: any[];
-    校訂註?: string | null;
+  context: {
+    page?: number;
+    number?: string;
+    others?: {
+      異體?: any[];
+      校訂註?: string | null;
+    };
+    pinyin?: string[];
+    meaning?: string[];
   };
-  pinyin?: string[];
-  meaning?: string[];
   contributor?: string;
 } {
-  return !Array.isArray(note) && 'meaning' in note;
+  return !Array.isArray(note) && 'context' in note;
 }
 
 export default function HomePage() {
@@ -141,7 +144,7 @@ export default function HomePage() {
                   value={searchPrompt}
                   onChange={(e) => setSearchPrompt(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  className="pl-10 h-12 text-lg"
+                  className="pl-10 h-12 text-lg dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
                 />
               </div>
               <Button 
@@ -318,7 +321,7 @@ export default function HomePage() {
                     }}
                   >
                     {/* HINT: not delete, to render the result here. */}
-                    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200">
+                    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200">
                       <div className="space-y-6">
                         <div className="prose dark:prose-invert max-w-none">
                           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{result.data}</h3>
@@ -327,26 +330,30 @@ export default function HomePage() {
                           {/* Display note content */}
                           {result.note && (
                             <div className="space-y-2">
-                              {result.category === "zyzd" || result.category === "广州话正音字典" ? (
+                              {result.category === "广州话正音字典" ? (
                                 // Detailed display for zyzd category
                                 <>
+                                  {/* <p>isDictionaryNote check result: {String(isDictionaryNote(result.note))}</p>
+                                  <pre className="whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                                    {JSON.stringify(result.note, null, 2)}
+                                  </pre> */}
                                   {isDictionaryNote(result.note) && (
                                     <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-                                      {result.note.meaning && (
+                                      {result.note.context.meaning && (
                                         <p className="leading-relaxed">
                                           <b className="text-primary">釋義：</b>{" "}
-                                          {Array.isArray(result.note.meaning) 
-                                            ? result.note.meaning.join("、 ")
-                                            : result.note.meaning
+                                          {Array.isArray(result.note.context.meaning) 
+                                            ? result.note.context.meaning.join("、 ")
+                                            : result.note.context.meaning
                                           }
                                         </p>
                                       )}
-                                      {result.note.pinyin && (
+                                      {result.note.context.pinyin && (
                                         <p className="leading-relaxed">
                                           <b className="text-primary">粵拼：</b>{" "}
-                                          {Array.isArray(result.note.pinyin)
-                                            ? result.note.pinyin.join("、 ")
-                                            : result.note.pinyin
+                                          {Array.isArray(result.note.context.pinyin)
+                                            ? result.note.context.pinyin.join("、 ")
+                                            : result.note.context.pinyin
                                           }
                                         </p>
                                       )}
@@ -356,22 +363,22 @@ export default function HomePage() {
                                           {result.note.contributor}
                                         </p>
                                       )}
-                                      {result.note.page && (
+                                      {result.note.context.page && (
                                         <p className="leading-relaxed">
                                           <b className="text-primary">頁碼：</b>{" "}
-                                          {result.note.page}
+                                          {result.note.context.page}
                                         </p>
                                       )}
-                                      {result.note.number && (
+                                      {result.note.context.number && (
                                         <p className="leading-relaxed">
                                           <b className="text-primary">編號：</b>{" "}
-                                          {result.note.number}
+                                          {result.note.context.number}
                                         </p>
                                       )}
-                                      {result.note.others && (
+                                      {result.note.context.others && (
                                         <p className="leading-relaxed">
                                           <b className="text-primary">其他：</b>{" "}
-                                          {JSON.stringify(result.note.others)}
+                                          {JSON.stringify(result.note.context.others)}
                                         </p>
                                       )}
                                     </div>
@@ -380,13 +387,13 @@ export default function HomePage() {
                               ) : (
                                 // Simple display for other categories
                                 <div>
-                                  {Array.isArray(result.note) && result.note.map((note, idx) => (
-                                    <div key={idx} className="space-y-4">
-                                      {note.context.video ? (
+                                  {typeof result.note === 'object' && !Array.isArray(result.note) && !('meaning' in result.note) && 'context' in result.note && (
+                                    <div className="space-y-4">
+                                      {(result.note as { context: { video?: string; subtitle?: string } }).context.video ? (
                                         <div className="space-y-4">
                                           <div className="relative pt-[56.25%] rounded-lg overflow-hidden shadow-md">
                                             <ReactPlayer
-                                              url={note.context.video}
+                                              url={(result.note as { context: { video: string } }).context.video}
                                               controls
                                               width="100%"
                                               height="100%"
@@ -402,12 +409,12 @@ export default function HomePage() {
                                             />
                                           </div>
                                           <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
-                                            <p className="whitespace-pre-line leading-relaxed"><b className="text-primary">Subtitles:</b> {note.context.subtitle}</p>
+                                            <p className="whitespace-pre-line leading-relaxed"><b className="text-primary">Subtitles:</b> {(result.note as { context: { subtitle: string } }).context.subtitle}</p>
                                           </div>
                                         </div>
                                       ) : (
                                         <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
-                                          {Object.entries(note.context)
+                                          {Object.entries((result.note as { context: Record<string, unknown> }).context)
                                             .filter(([key]) => key !== "video" && key !== "subtitle")
                                             .map(([key, value]) => (
                                               value && (
@@ -435,7 +442,7 @@ export default function HomePage() {
                                         </div>
                                       )}
                                     </div>
-                                  ))}
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -516,7 +523,7 @@ export default function HomePage() {
                         example.prompt !== searchPrompt && (
                           <Card 
                             key={example.prompt}
-                            className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-200"
+                            className="p-4 hover:shadow-lg cursor-pointer hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200"
                             onClick={() => {
                               if (isPending) return;
                               setResults(null);

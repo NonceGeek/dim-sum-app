@@ -1,4 +1,10 @@
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -9,7 +15,12 @@ interface SubMenuProps {
   open: boolean;
 }
 
-export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, open }: SubMenuProps) {
+export function SubMenu({
+  accountSubmenuItems,
+  workplaceSubmenuItems,
+  pathname,
+  open,
+}: SubMenuProps) {
   return (
     <SidebarGroup>
       <SidebarGroupContent>
@@ -17,7 +28,9 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
           {open ? (
             <>
               <div className="px-3 py-2">
-                <div className="text-sm font-medium text-muted-foreground mb-2">Account</div>
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Account
+                </div>
                 <SidebarMenu>
                   {accountSubmenuItems.map((item) => (
                     <SidebarMenuItem key={item.href}>
@@ -25,10 +38,10 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+                            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:text-sidebar-foreground",
                             pathname === item.href
-                              ? "bg-primary/10 text-primary"
-                              : "hover:bg-primary/5"
+                              ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
+                              : "hover:bg-sidebar-accent-foreground/10"
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
@@ -40,7 +53,9 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
                 </SidebarMenu>
               </div>
               <div className="px-3 py-2">
-                <div className="text-sm font-medium text-muted-foreground mb-2">Workplace</div>
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Workplace
+                </div>
                 <SidebarMenu>
                   {workplaceSubmenuItems.map((item) => (
                     <SidebarMenuItem key={item.href}>
@@ -48,10 +63,10 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+                            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:text-sidebar-foreground",
                             pathname === item.href
-                              ? "bg-primary/10 text-primary"
-                              : "hover:bg-primary/5"
+                              ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
+                              : "hover:bg-sidebar-accent-foreground/10"
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
@@ -73,10 +88,10 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+                            "flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:text-sidebar-foreground",
                             pathname === item.href
-                              ? "bg-primary/10 text-primary"
-                              : "hover:bg-primary/5"
+                              ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
+                              : "hover:bg-sidebar-accent-foreground/10"
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
@@ -95,10 +110,10 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary",
+                            "flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:text-sidebar-foreground",
                             pathname === item.href
-                              ? "bg-primary/10 text-primary"
-                              : "hover:bg-primary/5"
+                              ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
+                              : "hover:bg-sidebar-accent-foreground/10"
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
@@ -115,4 +130,4 @@ export function SubMenu({ accountSubmenuItems, workplaceSubmenuItems, pathname, 
       </SidebarGroupContent>
     </SidebarGroup>
   );
-} 
+}

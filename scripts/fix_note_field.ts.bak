@@ -33,6 +33,7 @@
  * created in your Supabase database first.
  */
 
+// @ts-nocheck
 // scripts/fix_note_field.ts
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";

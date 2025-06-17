@@ -62,7 +62,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     await signOut({ redirect: false });
     clearUser();
-    router.push("/auth/signin");
+    router.push("/");
   };
 
   const SidebarContent = () => (
@@ -157,7 +157,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className={`${activeSubmenu ? 'bg-sidebar-accent-background' : 'bg-sidebar-background'}`}>
       <SidebarContent />
     </Sidebar>
   );

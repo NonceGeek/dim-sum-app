@@ -2,6 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Settings, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { LoginDialog } from "@/components/dialogs/login-dialog";
+import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
 
 interface UserSectionProps {
   isAuthenticated: boolean;
@@ -22,6 +25,20 @@ export function UserSection({
   handleLogout,
   router,
 }: UserSectionProps) {
+  const [showRoleSelect, setShowRoleSelect] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+
+  const handleRoleSelect = (role: UserRole) => {
+    setSelectedRole(role);
+    setShowLoginDialog(true);
+  };
+
+  const handleLoginClose = () => {
+    setShowLoginDialog(false);
+    setSelectedRole(null);
+  };
+
   return (
     <div className="border-t p-4 space-y-4">
       {isAuthenticated ? (
@@ -30,10 +47,13 @@ export function UserSection({
             <>
               <div
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary w-full cursor-pointer",
-                  activeSubmenu ? "bg-primary/10 text-primary" : "hover:bg-primary/5"
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all hover:text-sidebar-foreground w-full cursor-pointer",
+                  activeSubmenu ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50" : "hover:bg-sidebar-accent-foreground/10"
                 )}
-                onClick={() => setActiveSubmenu(activeSubmenu ? null : "Account")}
+                onClick={() => {
+                  setActiveSubmenu(activeSubmenu ? null : "Account");
+                  router.push("/account/profile");
+                }}
               >
                 <div className="flex items-center w-full justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -64,7 +84,10 @@ export function UserSection({
             <div className="flex flex-col items-center gap-4">
               <div
                 className="cursor-pointer"
-                onClick={() => setActiveSubmenu(activeSubmenu ? null : "Account")}
+                onClick={() => {
+                  setActiveSubmenu(activeSubmenu ? null : "Account");
+                  router.push("/account/profile");
+                }}
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
@@ -87,7 +110,7 @@ export function UserSection({
             <Button
               variant="default"
               className="w-full"
-              onClick={() => router.push("/auth/signin")}
+              onClick={() => setShowRoleSelect(true)}
             >
               Sign In
             </Button>
@@ -96,7 +119,7 @@ export function UserSection({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => router.push("/auth/signin")}
+                onClick={() => setShowRoleSelect(true)}
                 className="h-8 w-8"
               >
                 <User className="h-4 w-4" />
@@ -105,6 +128,21 @@ export function UserSection({
             </div>
           )}
         </>
+      )}
+
+      <RoleSelectDialog
+        isOpen={showRoleSelect}
+        onClose={() => setShowRoleSelect(false)}
+        onConfirm={handleRoleSelect}
+      />
+
+      {selectedRole && (
+        <LoginDialog
+          isOpen={showLoginDialog}
+          onClose={handleLoginClose}
+          callbackUrl={`/?role=${selectedRole}`}
+          role={selectedRole}
+        />
       )}
     </div>
   );
