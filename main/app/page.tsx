@@ -763,8 +763,8 @@ export default function HomePage() {
                       </tr>
                   }
                   <tr className="border-t border-white/20">
-                    <td className="px-2 py-2 text-center font-medium text-white border border-white/20">釋義</td>
-                    <td colSpan={2} className="px-2 py-2 text-purple-300 whitespace-pre-line leading-relaxed border border-white/20">
+                    <td className="px-2 py-2 text-center font-medium text-white border border-white/20">释义</td>
+                    <td colSpan={2} className="px-2 py-2 text-purple-400 whitespace-pre-line leading-relaxed border border-white/20">
                       {
                         (editingResult.note?.context['meaning'] as string[]).map((item, idx) => <div key={idx}>{item}</div>)
                       }
