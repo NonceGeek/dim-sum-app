@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Header } from '@/components/layout/header';
 import ReactPlayer from 'react-player';
 import { stringify } from "querystring";
+import { useRouter } from "next/navigation";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult['note']): note is {
@@ -38,6 +39,7 @@ export default function HomePage() {
   const itemsPerPage = 5;
   
   const { mutate: search, isPending } = useSearch();
+  const router = useRouter();
 
   const handleSearch = () => {
     
@@ -153,6 +155,12 @@ export default function HomePage() {
                 className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
               >
                 {isPending ? "Searching..." : "Search"}
+              </Button>
+              <Button 
+                onClick={() => router.push('/account/data-annotation')}
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
+              >
+                Add
               </Button>
             </motion.div>
             
