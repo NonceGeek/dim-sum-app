@@ -24,12 +24,41 @@ export interface UploadResponse {
   name: string;
 }
 
+export interface ApiKey {
+  id: number;
+  key: string;
+  created_at: string;
+  status: 'PENDING' | 'APPROVED' | 'BANNED';
+}
+
+export interface ApiKeysResponse {
+  data: ApiKey[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface GetApiKeysParams {
+  page?: number;
+  limit?: number;
+}
+
 export const userApi = {
   getProfile: () => 
     api.get<UserProfile>('/api/user/profile'),
 
   updateProfile: (data: UpdateProfileData) =>
     api.put<UserProfile>('/api/user/profile', data),
+
+  getApiKeys: (params: GetApiKeysParams = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    return api.get<ApiKeysResponse>(`/api/user/api-keys?${searchParams.toString()}`);
+  },
 
   uploadAvatar: async (file: File): Promise<string> => {
     // 验证文件类型

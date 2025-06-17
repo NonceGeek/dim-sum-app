@@ -41,8 +41,8 @@ model User {
   image         String?
   phoneNumber   String?
   wechatAvatar  String?
-  bio           String?   @db.Text
   role          Role      @default(LEARNER)
+  bio           String?
   accounts      Account[]
   sessions      Session[]
 }
