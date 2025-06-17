@@ -454,7 +454,7 @@ export default function HomePage() {
                           {(result.category === "广州话正音字典" || result.category === "广州话正音字典（例）") && (
                             <div>
                               <p>关联应用:&nbsp;&nbsp;&nbsp;
-                              <a href={`/inner-apps/card-generator?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                              <a href={`https://dim-sum-miniapps-card-z9zh.vercel.app/?uuid=${result.unique_id}`} target="_blank" className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
                                 🎴 卡片生成
                               </a>
                               <br></br><br></br>
