@@ -56,7 +56,7 @@ export default function DataAnnotationPage() {
           <div className="grid gap-8">
             {mockData.map((group) => (
               <Card key={group.group} className="p-6 bg-card transition-all duration-200 hover:shadow-lg">
-                <Table className="w-full border-separate border-spacing-0 rounded-lg overflow-hidden bg-transparent text-white text-base">
+                <Table className="w-full border-separate border-spacing-0 overflow-hidden bg-transparent text-white text-base">
                   <TableHeader>
                     <TableRow className="text-gray-300 bg-[#23242a] text-base text-white">
                       <TableHead className="border border-gray-600 px-4 py-2 w-24 text-center text-base text-white">字</TableHead>
@@ -70,9 +70,6 @@ export default function DataAnnotationPage() {
                         <TableCell className="border border-gray-600 px-4 py-3 text-center text-lg">{item.word}</TableCell>
                         <TableCell className="border border-gray-600 px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span>
-                              <svg className="inline-block w-6 h-6 mr-1 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6h13M9 6l-7 7m0 0l7 7" /></svg>
-                            </span>
                             <span>音节：{item.audio}</span>
                           </div>
                         </TableCell>
