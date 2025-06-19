@@ -1,3 +1,5 @@
+"use client";
+
 import { Header } from "@/components/layout/header";
 import React from "react";
 import { Card } from "@/components/ui/card";
@@ -38,6 +40,16 @@ const buttonClass =
   "rounded-full border border-gray-400 px-6 py-2 text-white bg-transparent hover:bg-gray-700 transition-colors duration-150 mr-2";
 
 export default function DataAnnotationPage() {
+  const downloadTemplate = () => {
+
+    const link = document.createElement('a');
+    link.href = '/templates/data_annotation_template.xlsx';
+    link.download = 'data_annotation_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <Header />
@@ -50,13 +62,13 @@ export default function DataAnnotationPage() {
               <button className={buttonClass}>Save</button>
               <button className={buttonClass}>Delete</button>
               <button className={buttonClass}>Batch Upload</button>
-              <button className={buttonClass}>Download template</button>
+              <button className={buttonClass} onClick={downloadTemplate}>Download template</button>
             </div>
           </div>
           <div className="grid gap-8">
             {mockData.map((group) => (
               <Card key={group.group} className="p-6 bg-card transition-all duration-200 hover:shadow-lg">
-                <Table className="w-full border-separate border-spacing-0 overflow-hidden bg-transparent text-white text-base">
+                <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20">
                   <TableHeader>
                     <TableRow className="text-gray-300 bg-[#23242a] text-base text-white">
                       <TableHead className="border border-gray-600 px-4 py-2 w-24 text-center text-base text-white">字</TableHead>
