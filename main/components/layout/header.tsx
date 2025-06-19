@@ -45,12 +45,22 @@ export function Header({ showLogo = false }: HeaderProps) {
         </div>
         {!isHomePage && (
           <div className="flex flex-1 items-center justify-end space-x-2">
-            <div className="w-full max-w-sm">
+            {/* <div className="w-full max-w-sm">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search..." className="pl-8" />
               </div>
-            </div>
+            </div> */}
+              <Link className="flex items-center space-x-2" href="/">
+                <Image
+                  src="/logo.png"
+                  alt="DimSum AI Labs Logo"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                />
+                <span className="font-bold">DimSum AI Labs</span>
+              </Link>
           </div>
         )}
       </div>

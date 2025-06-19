@@ -8,7 +8,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <div className="h-full w-full flex flex-col">
         <div className="flex flex-1 h-full">
           <AppSidebar />

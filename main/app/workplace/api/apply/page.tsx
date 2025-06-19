@@ -113,7 +113,14 @@ export default function ApplyPage() {
           <div className="max-w-5xl mx-auto">
             <Card className="p-4 sm:p-6 bg-card">
               <div className="flex justify-between items-center mb-6">
-                <Button variant="common" size="lg" className="w-full sm:w-auto">
+                <Button 
+                  variant="common" 
+                  size="lg" 
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    window.open('https://wcn3glqwz3m6.feishu.cn/share/base/form/shrcnMOPUTn1f97EpPSinEIex7d', '_blank', 'noopener,noreferrer');
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Create API Key
                 </Button>
