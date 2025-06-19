@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Header } from '@/components/layout/header';
 import ReactPlayer from 'react-player';
 import { stringify } from "querystring";
 import { useRouter } from "next/navigation";
+import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult['note']): note is {
@@ -40,6 +41,8 @@ export default function HomePage() {
   
   const { mutate: search, isPending } = useSearch();
   const router = useRouter();
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
 
   const handleSearch = () => {
     
@@ -72,6 +75,21 @@ export default function HomePage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   ) || [];
+
+  useEffect(() => {
+    if (editingResult) {
+      const pinyin = (editingResult.note?.context as any)['pinyin'];
+      const meaning = (editingResult.note?.context as any)['meaning'];
+      const collocation = (editingResult.note?.context as any)['collocation'];
+      console.log('pinyin:', pinyin);
+      console.log('meaning:', meaning);
+      console.log('collocation:', collocation);
+    }
+  }, [editingResult]);
+
+  const handleSave = () => {
+    // TODO: implement save logic
+  };
 
   return (
     <>
@@ -383,8 +401,19 @@ export default function HomePage() {
                     {/* HINT: not delete, to render the result here. */}
                     <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200">
                       <div className="space-y-6">
-                        <div className="prose dark:prose-invert max-w-none">
-                          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{result.data}</h3>
+                        <div className="prose dark:prose-invert max-w-none relative">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{result.data}</h3>
+                            <Button
+                              onClick={() => {
+                                setEditingResult(result);
+                                setUpdateDialogOpen(true);
+                              }}
+                              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
+                            >
+                              Update
+                            </Button>
+                          </div>
                         </div>
                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">
                           {/* Display note content */}
@@ -748,6 +777,13 @@ export default function HomePage() {
           </AnimatePresence>
         </motion.div>
       </motion.div>
+      {/* Update Dialog */}
+      <EditCorpusDialog
+        open={updateDialogOpen}
+        onOpenChange={setUpdateDialogOpen}
+        editingResult={editingResult}
+        onSave={handleSave}
+      />
     </>
   );
 } 
