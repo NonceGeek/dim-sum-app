@@ -9,7 +9,7 @@ Base URL: `https://dim-sum-prod.deno.dev`
 
 ## GET API KEY!
 
-微信：19765681，目前阶段联系我获得 API KEY，未来会有更自动化的方式。
+[点击填写信息获取API Key](https://wcn3glqwz3m6.feishu.cn/share/base/form/shrcnMOPUTn1f97EpPSinEIex7d)
 
 ## Public APIs
 
