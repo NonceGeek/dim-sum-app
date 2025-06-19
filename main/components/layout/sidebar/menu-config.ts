@@ -14,7 +14,8 @@ export const menuItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: LibraryBig, label: "Library", href: "/library" },
   { icon: AppWindow, label: "App Store", href: "/appStore" },
-  { icon: Compass, label: "Discover", href: "/discover" },
+  // TODO: impl in the future.
+  // { icon: Compass, label: "Discover", href: "/discover" },
   { icon: FileCode2, label: "Docs", href: "/docs" },
 ];
 

@@ -156,12 +156,13 @@ export default function HomePage() {
               >
                 {isPending ? "Searching..." : "Search"}
               </Button>
-              <Button 
+              {/* TODO: impl in the future.
+                <Button 
                 onClick={() => router.push('/account/data-annotation')}
                 className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
               >
                 Add
-              </Button>
+              </Button> */}
             </motion.div>
             
             {results === null && (
@@ -281,9 +282,60 @@ export default function HomePage() {
                       <p className="text-gray-600 dark:text-gray-400">歡聚一堂</p>
                     </div>
                   </Card>
+                  <Card 
+                    className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    onClick={() => {
+                      const prompt = "帆船";
+                      setSearchPrompt(prompt);
+                      search(
+                        { keyword: prompt },
+                        {
+                          onSuccess: (data: SearchResult[]) => {
+                            setResults(data);
+                          },
+                          onError: (error: Error) => {
+                            console.error("Search failed:", error);
+                            toast.error("Search failed", {
+                              description: error.message,
+                            });
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">3D Model</h3>
+                      <p className="text-gray-600 dark:text-gray-400">帆船</p>
+                    </div>
+                  </Card>
+                </div>
+                <hr></hr>
+                <h2 className="text-2xl font-semibold text-center text-gray-900 dark:text-black-100">数据情况</h2>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 mb-6">
+                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">文本资料</h3>
+                       <p className="text-2xl font-bold text-primary">20,000+</p>
+                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">条记录</p>
+                   </div>
+                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">音视资料</h3>
+                       <p className="text-3xl font-bold text-primary">4 +</p>
+                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">GB</p>
+                   </div>
+                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">语料集数量</h3>
+                       <p className="text-3xl font-bold text-primary">20 +</p>
+                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">个</p>
+                   </div>
+                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">总数据规模</h3>
+                       <p className="text-3xl font-bold text-primary">6 +</p>
+                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">GB</p>
+                   </div>
                 </div>
               </motion.div>
             )}
+
           </motion.div>
 
           <AnimatePresence mode="wait">
