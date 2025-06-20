@@ -650,7 +650,7 @@ export default function HomePage() {
                               <p>
                                 关联应用:&nbsp;&nbsp;&nbsp;
                                 <a
-                                  href={`https://dim-sum-miniapps-card-z9zh.vercel.app/?uuid=${result.unique_id}`}
+                                  href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
                                   target="_blank"
                                   className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20"
                                 >
