@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 interface SidebarHeaderProps {
   activeSubmenu: string | null;
@@ -27,7 +28,7 @@ export function SidebarHeader({ activeSubmenu, open, setOpen, setActiveSubmenu }
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Back to main menu</span>
               </Button>
-              <div className="flex items-center gap-2 flex-1 justify-center">
+              <Link href="/" className="flex items-center gap-2 flex-1 justify-center">
                 <Image
                   src="/logo.png"
                   alt="DimSum AI Labs Logo"
@@ -35,7 +36,7 @@ export function SidebarHeader({ activeSubmenu, open, setOpen, setActiveSubmenu }
                   height={24}
                   className="rounded-sm"
                 />
-              </div>
+              </Link>
               <Button
                 variant="ghost"
                 size="icon"
@@ -64,7 +65,7 @@ export function SidebarHeader({ activeSubmenu, open, setOpen, setActiveSubmenu }
         <>
           {open ? (
             <>
-              <div className="flex items-center gap-2 flex-1 justify-center">
+              <Link href="/" className="flex items-center gap-2 flex-1 justify-center">
                 <Image
                   src="/logo.png"
                   alt="DimSum AI Labs Logo"
@@ -73,7 +74,7 @@ export function SidebarHeader({ activeSubmenu, open, setOpen, setActiveSubmenu }
                   className="rounded-sm"
                 />
                 {showTitle && <span className="text-sm font-medium">DimSum AI Labs</span>}
-              </div>
+              </Link>
               <Button
                 variant="ghost"
                 size="icon"
