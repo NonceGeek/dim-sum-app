@@ -157,21 +157,6 @@ export default function HomePage() {
       currentPage * itemsPerPage
     ) || [];
 
-  useEffect(() => {
-    if (editingResult) {
-      const pinyin = (editingResult.note?.context as any)["pinyin"];
-      const meaning = (editingResult.note?.context as any)["meaning"];
-      const collocation = (editingResult.note?.context as any)["collocation"];
-      console.log("pinyin:", pinyin);
-      console.log("meaning:", meaning);
-      console.log("collocation:", collocation);
-    }
-  }, [editingResult]);
-
-  const handleSave = () => {
-    // TODO: implement save logic
-  };
-
   return (
     <>
       {/* <div className="md:hidden fixed top-0 left-0 right-0 z-50">
@@ -849,7 +834,6 @@ export default function HomePage() {
         open={updateDialogOpen}
         onOpenChange={setUpdateDialogOpen}
         editingResult={editingResult}
-        onSave={handleSave}
       />
     </>
   );
