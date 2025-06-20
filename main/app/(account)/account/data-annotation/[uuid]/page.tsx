@@ -65,14 +65,12 @@ export default function CorpusItemDetailsPage({
   }, [uuid]);
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
+    return Array.from({ length: 3 }).map((_, index) => (
+      <Card key={index} className="p-6 bg-card">
+        <Skeleton className="h-8 w-1/4 mb-4" />
+        <Skeleton className="h-24 w-full" />
+      </Card>
+    ));
   }
 
   if (error) {
