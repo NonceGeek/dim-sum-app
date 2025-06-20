@@ -49,7 +49,24 @@ export const editApi = {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        let errorMessage = 'API request failed';
+        if (errorData && errorData.error) {
+          switch (errorData.error) {
+            case 'Invalid API key':
+              errorMessage = 'Invalid API Key';
+              break;
+            case 'API key not approved':
+              errorMessage = 'API Key Not Approved';
+              break;
+            case 'Corpus item not found':
+              errorMessage = 'Corpus Item Not Found';
+              break;
+            default:
+              errorMessage = errorData.error;
+              break;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();
