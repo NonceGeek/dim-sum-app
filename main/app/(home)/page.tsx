@@ -673,7 +673,8 @@ export default function HomePage() {
                                 >
                                   🎴 卡片生成
                                 </a>
-                                <br></br>
+                                {/* TODO: Be implemented in the future. */}
+                                {/* <br></br>
                                 <br></br>
                                 推荐应用:&nbsp;&nbsp;&nbsp;
                                 <a
@@ -682,7 +683,7 @@ export default function HomePage() {
                                   className="px-3 py-1 bg-primary/10 bg-fuchsia-300 rounded-full text-xs font-medium border border-primary/20"
                                 >
                                   🤖 语言学 Agent
-                                </a>
+                                </a> */}
                               </p>
                             </div>
                           )}
