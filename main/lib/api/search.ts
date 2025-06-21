@@ -54,6 +54,42 @@ const fetchCategory = async (categoryName: string) => {
   }
 };
 
+/**
+ * 根据 unique_id 获取单个语料库项目
+ * @param uniqueId - 要获取的语料库项目的 unique_id
+ * @returns 返回匹配的语料库项目
+ */
+export async function getCorpusItemByUniqueId(uniqueId: string): Promise<SearchResult | null> {
+  try {
+    const response = await fetch(`https://dim-sum-prod.deno.dev/corpus_item?unique_id=${uniqueId}`);
+
+    if (!response.ok) {
+
+      if (response.status === 404) {
+        console.warn(`Corpus item with unique_id ${uniqueId} not found.`);
+        return null;
+      }
+      throw new Error(`Failed to fetch corpus item with unique_id ${uniqueId}. Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      return null;
+    }
+
+    const item = Array.isArray(data) ? data[0] : data;
+
+    const realCategory = await fetchCategory(item.category);
+    return { ...item, category: realCategory };
+
+  } catch (error) {
+    console.error(`Error fetching corpus item with unique_id ${uniqueId}:`, error);
+    throw error;
+  }
+}
+
 export function useSearch() {
   // console.log("useSearch");
   const search = async (params: SearchParams) => {

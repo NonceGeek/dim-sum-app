@@ -29,11 +29,10 @@ export const editApi = {
       throw new Error('API key not found in environment variables');
     }
 
-    // 打印要发送的整个包体
-    console.log("updateCorpusItem payload", {
-      ...data,
-      api_key: apiKey
-    });
+    // console.log("updateCorpusItem requst", {
+    //   ...data,
+    //   api_key: apiKey
+    // });
 
     try {
       const response = await fetch('https://dim-sum-prod.deno.dev/dev/insert_corpus_item', {
@@ -49,7 +48,24 @@ export const editApi = {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        let errorMessage = 'API request failed';
+        if (errorData && errorData.error) {
+          switch (errorData.error) {
+            case 'Invalid API key':
+              errorMessage = 'Invalid API Key';
+              break;
+            case 'API key not approved':
+              errorMessage = 'API Key Not Approved';
+              break;
+            case 'Corpus item not found':
+              errorMessage = 'Corpus Item Not Found';
+              break;
+            default:
+              errorMessage = errorData.error;
+              break;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();
