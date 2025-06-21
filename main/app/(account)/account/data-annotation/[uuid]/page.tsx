@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Volume2 } from "lucide-react"; // Speaker Icon
+import { useParams } from "next/navigation";
 
 // Mock data to represent the detailed structure, will be replaced by API data
 const mockDetailedData = {
@@ -30,15 +31,13 @@ const mockDetailedData = {
 const buttonClass =
   "rounded-full border border-gray-400 px-6 py-2 text-white bg-transparent hover:bg-gray-700 transition-colors duration-150";
 
-export default function CorpusItemDetailsPage({
-  params,
-}: {
-  params: { uuid: string };
-}) {
+export default function CorpusItemDetailsPage() {
+  const params = useParams();
+  const uuid = params?.uuid as string;
+
   const [item, setItem] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { uuid } = params;
 
   useEffect(() => {
     if (!uuid) return;
