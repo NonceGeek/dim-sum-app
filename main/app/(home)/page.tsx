@@ -327,42 +327,62 @@ export default function HomePage() {
                 <h2 className="text-2xl font-semibold text-center text-gray-900 dark:text-black-100">
                   数据情况
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 mb-6">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                      文本资料
-                    </h3>
-                    <p className="text-2xl font-bold text-primary">20,000+</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      条记录
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                      音视资料
-                    </h3>
-                    <p className="text-3xl font-bold text-primary">4 +</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      GB
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                      语料集数量
-                    </h3>
-                    <p className="text-3xl font-bold text-primary">20 +</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      个
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                      总数据规模
-                    </h3>
-                    <p className="text-3xl font-bold text-primary">6 +</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      GB
-                    </p>
+                <div className="w-[150%] -ml-[25%]">
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-6 mb-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        文本资料
+                      </h3>
+                      <p className="text-2xl font-bold text-fuchsia-300">20,000+</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        条记录
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        音视频资料
+                      </h3>
+                      <p className="text-3xl font-bold text-fuchsia-300">100+</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        GB
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        图片资料
+                      </h3>
+                      <p className="text-3xl font-bold text-fuchsia-300">100 +</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        张
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        语料集数量
+                      </h3>
+                      <p className="text-3xl font-bold text-fuchsia-300">20 +</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        个
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        应用数量
+                      </h3>
+                      <p className="text-3xl font-bold text-fuchsia-300">10 +</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        个
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        总数据规模
+                      </h3>
+                      <p className="text-3xl font-bold text-fuchsia-300">100+</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        GB
+                      </p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -442,8 +462,8 @@ export default function HomePage() {
                                   {isDictionaryNote(result.note) && (
                                     <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
                                       {result.note.context.meaning && (
-                                        <p className="leading-relaxed">
-                                          <b className="text-primary">釋義：</b>{" "}
+                                          <p className="leading-relaxed">
+                                           <b className="text-fuchsia-300">釋義：</b>{" "}
                                           {Array.isArray(
                                             result.note.context.meaning
                                           )
@@ -455,7 +475,7 @@ export default function HomePage() {
                                       )}
                                       {result.note.context.pinyin && (
                                         <p className="leading-relaxed">
-                                          <b className="text-primary">粵拼：</b>{" "}
+                                          <b className="text-fuchsia-300">粵拼：</b>{" "}
                                           {Array.isArray(
                                             result.note.context.pinyin
                                           )
@@ -467,7 +487,7 @@ export default function HomePage() {
                                       )}
                                       {result.note.contributor && (
                                         <p className="leading-relaxed">
-                                          <b className="text-primary">
+                                          <b className="text-fuchsia-300">
                                             貢獻者：
                                           </b>{" "}
                                           {result.note.contributor}
@@ -475,19 +495,19 @@ export default function HomePage() {
                                       )}
                                       {result.note.context.page && (
                                         <p className="leading-relaxed">
-                                          <b className="text-primary">頁碼：</b>{" "}
+                                          <b className="text-fuchsia-300">頁碼：</b>{" "}
                                           {result.note.context.page}
                                         </p>
                                       )}
                                       {result.note.context.number && (
                                         <p className="leading-relaxed">
-                                          <b className="text-primary">編號：</b>{" "}
+                                          <b className="text-fuchsia-300">編號：</b>{" "}
                                           {result.note.context.number}
                                         </p>
                                       )}
                                       {result.note.context.others && (
                                         <p className="leading-relaxed">
-                                          <b className="text-primary">其他：</b>{" "}
+                                          <b className="text-fuchsia-300">其他：</b>{" "}
                                           {JSON.stringify(
                                             result.note.context.others
                                           )}
@@ -542,8 +562,8 @@ export default function HomePage() {
                                             </div>
                                             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                                               <p className="whitespace-pre-line leading-relaxed">
-                                                <b className="text-primary">
-                                                  Subtitles:
+                                                                                          <b className="text-fuchsia-300">
+                                            Subtitles:
                                                 </b>{" "}
                                                 {
                                                   (
@@ -581,7 +601,7 @@ export default function HomePage() {
                                                       className="leading-relaxed"
                                                       key={key}
                                                     >
-                                                      <b className="text-primary">
+                                                      <b className="text-fuchsia-300">
                                                         {key
                                                           .charAt(0)
                                                           .toUpperCase() +
@@ -616,7 +636,7 @@ export default function HomePage() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-2 pt-2">
-                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
+                            <span className="px-3 py-1 bg-primary/10 text-fuchsia-300 rounded-full text-xs font-medium border border-primary/20">
                               {result.category}
                             </span>
                             {result.tags.map((tag, idx) => (
@@ -637,7 +657,7 @@ export default function HomePage() {
                                 <a
                                   href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
                                   target="_blank"
-                                  className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20"
+                                  className="px-3 py-1 bg-primary/10 bg-fuchsia-300 rounded-full text-xs font-medium border border-primary/20"
                                 >
                                   🎴 卡片生成
                                 </a>
@@ -647,7 +667,7 @@ export default function HomePage() {
                                 <a
                                   href={`https://baidu.com?uuid=${result.unique_id}`}
                                   target="_blank"
-                                  className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20"
+                                  className="px-3 py-1 bg-primary/10 bg-fuchsia-300 rounded-full text-xs font-medium border border-primary/20"
                                 >
                                   🤖 语言学 Agent
                                 </a>

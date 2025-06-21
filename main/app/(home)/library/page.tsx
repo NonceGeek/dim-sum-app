@@ -65,6 +65,8 @@ interface Corpus {
   comments: number;
   tags: string[];
   link: string;
+  pinned: boolean;
+  status: "INPROGRESS" | "RAW";
 }
 
 // Create a client component for the book card
@@ -117,8 +119,24 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
     }
   };
 
+  const getStatusDisplay = (status: string): string => {
+    switch (status) {
+      case "INPROGRESS":
+        return "入库中";
+      case "RAW":
+        return "生语料";
+      default:
+        return status;
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
+      {corpus.pinned && (
+        <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white rounded-md text-xs z-10">
+          置顶
+        </div>
+      )}
       <div className="h-48 bg-gray-200 relative">
         <Image
           src={corpus.cover}
@@ -131,6 +149,12 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
           height={200}
           unoptimized
         />
+        {/* TODO: to see if this field is necessary. */}
+        {/* {corpus.status && (
+          <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white rounded-md text-xs">
+            {getStatusDisplay(corpus.status)}
+          </div>
+        )} */}
       </div>
       <div className="p-4">
         <h3 className="text-xl font-semibold">{corpus.nickname}</h3>
@@ -180,7 +204,13 @@ export default function LibraryPage() {
           "https://dim-sum-prod.deno.dev/corpus_categories"
         );
         const data = await response.json();
-        setCorpus(data);
+        // Sort the data to put pinned items first
+        const sortedData = data.sort((a, b) => {
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          return 0;
+        });
+        setCorpus(sortedData);
       } catch (error) {
         console.error("Error fetching books:", error);
       } finally {
@@ -210,8 +240,8 @@ export default function LibraryPage() {
           </div>
         )}
       </div>
-      {/* TODO: 两个 div 间距离太宽 */}
-      <div className="h-full p-6 overflow-auto">
+      {/* TODO: not necessary for now. */}
+      {/* <div className="h-full p-6 overflow-auto">
         <div className="flex items-center justify-center w-full mb-8">
           <h1 className="text-4xl font-bold text-center">图书馆</h1>
         </div>
@@ -236,7 +266,7 @@ export default function LibraryPage() {
             <BookCard key={book.id} book={book} />
           ))}
         </div>
-      </div>
+      </div> */}
     </>
   );
 }
