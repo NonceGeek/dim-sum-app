@@ -278,13 +278,13 @@ export default function HomePage() {
                   </Card>
                   <Card
                     className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-                    onClick={() => handleExampleSearch("故乡")}
+                    onClick={() => handleExampleSearch("唔")}
                   >
                     <div className="space-y-2">
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                        Chinese Words
+                        News
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400">故乡</p>
+                      <p className="text-gray-600 dark:text-gray-400">唔</p>
                     </div>
                   </Card>
                   <Card
@@ -296,6 +296,18 @@ export default function HomePage() {
                         Single Character
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">行</p>
+                    </div>
+                  </Card>
+                  <div className="w-full"></div>
+                  <Card
+                    className="p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    onClick={() => handleExampleSearch("故乡")}
+                  >
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                        Chinese Words
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">故乡</p>
                     </div>
                   </Card>
                   <Card
