@@ -29,11 +29,10 @@ export const editApi = {
       throw new Error('API key not found in environment variables');
     }
 
-    // 打印要发送的整个包体
-    console.log("updateCorpusItem payload", {
-      ...data,
-      api_key: apiKey
-    });
+    // console.log("updateCorpusItem requst", {
+    //   ...data,
+    //   api_key: apiKey
+    // });
 
     try {
       const response = await fetch('https://dim-sum-prod.deno.dev/dev/insert_corpus_item', {

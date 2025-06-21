@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchResult } from "@/lib/api/search";
-import { editApi } from "@/lib/api/edit";
+import { editApi } from "@/lib/api/edit-corpus";
 import { toast } from "sonner";
 import React, { useState, useEffect } from "react";
 
