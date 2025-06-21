@@ -339,59 +339,59 @@ export default function HomePage() {
                 <h2 className="text-2xl font-semibold text-center text-gray-900 dark:text-black-100">
                   数据情况
                 </h2>
-                <div className="w-[150%] -ml-[25%]">
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-6 mb-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                <div className="w-full md:w-[150%] md:-ml-[25%]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 md:gap-4 mt-6 mb-6">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         文本资料
                       </h3>
-                      <p className="text-2xl font-bold text-fuchsia-300">20,000+</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-fuchsia-300">20,000+</p>
+                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         条记录
                       </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         音视频资料
                       </h3>
-                      <p className="text-3xl font-bold text-fuchsia-300">100+</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100+</p>
+                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         GB
                       </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         图片资料
                       </h3>
-                      <p className="text-3xl font-bold text-fuchsia-300">100 +</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100 +</p>
+                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         张
                       </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         语料集数量
                       </h3>
-                      <p className="text-3xl font-bold text-fuchsia-300">20 +</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">20 +</p>
+                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         个
                       </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         应用数量
                       </h3>
-                      <p className="text-3xl font-bold text-fuchsia-300">10 +</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">10 +</p>
+                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         个
                       </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         总数据规模
                       </h3>
-                      <p className="text-3xl font-bold text-fuchsia-300">100+</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100+</p>
+                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         GB
                       </p>
                     </div>
