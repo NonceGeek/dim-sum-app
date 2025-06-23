@@ -4,6 +4,7 @@ import { AuthOptions } from "next-auth";
 // import { JWT } from "next-auth/jwt";
 // import { User } from "next-auth";
 import WechatProvider from "@/providers/wechat";
+import { EmailProvider } from "@/providers/email-provider";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient, Role } from "@prisma/client";
 
@@ -49,6 +50,7 @@ export const authOptions: AuthOptions = {
       clientSecret: process.env.WECHAT_CLIENT_SECRET!,
       redirectUri: `${process.env.NEXTAUTH_URL}/api/auth/callback/wechat`,
     }),
+    EmailProvider(),
   ],
   pages: {
     signIn: "",
@@ -118,6 +120,7 @@ export const authOptions: AuthOptions = {
       
       if (user) {
         token.id = user.id;
+        token.role = (user as any).role;
       }
       
       // console.log('JWT Callback end:', { 
@@ -144,7 +147,7 @@ export const authOptions: AuthOptions = {
       // });
       return session;
     },
-    async signIn({ account, profile }) {
+    async signIn({ account, profile, user }) {
       // console.log('SignIn Callback start:', { user, account, profile });
       const startTime = Date.now();
       
@@ -222,6 +225,62 @@ export const authOptions: AuthOptions = {
           return true;
         } catch (error) {
           console.error('Error in signIn callback:', error);
+          console.log('SignIn Callback end with error:', { 
+            executionTime: Date.now() - startTime,
+            error 
+          });
+          return false;
+        }
+      }
+      
+      if (account?.provider === 'email' && user && user.email) {
+        try {
+          // console.log('Processing email login...');
+          
+          // 使用事务来确保数据一致性
+          await prisma.$transaction(async (tx) => {
+            // 检查是否已存在邮箱账号记录
+            const existingAccount = await tx.account.findFirst({
+              where: { 
+                provider: 'email',
+                providerAccountId: user.email
+              },
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    id: true,
+                    role: true
+                  }
+                }
+              }
+            });
+
+            if (!existingAccount) {
+              // console.log('Creating email account record...');
+              // 为邮箱用户创建 Account 记录
+              await tx.account.create({
+                data: {
+                  type: 'credentials',
+                  provider: 'email',
+                  providerAccountId: user.email || '',
+                  userId: user.id,
+                }
+              });
+              // console.log('Email account record created');
+            }
+            
+            return existingAccount?.user || user;
+          });
+          
+          // console.log('SignIn Callback end:', { 
+          //   executionTime: Date.now() - startTime,
+          //   success: true,
+          //   userId: user.id
+          // });
+          return true;
+        } catch (error) {
+          console.error('Error in email signIn callback:', error);
           console.log('SignIn Callback end with error:', { 
             executionTime: Date.now() - startTime,
             error 
