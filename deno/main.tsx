@@ -47,6 +47,103 @@ router
 .get("/", async (context) => {
   context.response.body = { result: "Hello, Devs for AI Dimsum!" };
 })
+.get("/random_item", async (context) => {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  const queryParams = context.request.url.searchParams;
+  const corpus_name = queryParams.get("corpus_name");
+  
+  // Validate corpus_name parameter
+  if (!corpus_name) {
+    context.response.status = 400;
+    context.response.body = { error: "corpus_name parameter is required" };
+    return;
+  }
+
+  // Construct the table name corpus_<corpus_name>
+  const tableName = `corpus_${corpus_name}`;
+  
+  try {
+    // First, get the total count of items in the table
+    const { count, error: countError } = await supabase
+      .from(tableName)
+      .select("*", { count: "exact", head: true });
+
+    if (countError) {
+      console.error("Error getting count:", countError);
+      context.response.status = 500;
+      context.response.body = { error: `Failed to access table ${tableName}` };
+      return;
+    }
+
+    if (!count || count === 0) {
+      context.response.status = 404;
+      context.response.body = { error: `No items found in table ${tableName}` };
+      return;
+    }
+
+    // Loop until we find a corpus item with valid meaning
+    let corpusItem = null;
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loops
+
+    while (!corpusItem && attempts < maxAttempts) {
+      attempts++;
+      
+      // Generate a random offset
+      const randomOffset = Math.floor(Math.random() * count);
+
+      // Get a random item using the random offset
+      const { data, error } = await supabase
+        .from(tableName)
+        .select("*")
+        .range(randomOffset, randomOffset)
+        .single();
+
+      if (error || !data) {
+        console.error("Error fetching random item:", error);
+        continue; // Try again
+      }
+
+      const unique_id = data.unique_id.toString();
+
+      const { data: fetchedCorpusItem, error: corpusError } = await supabase
+        .from("cantonese_corpus_all")
+        .select("*")
+        .eq("unique_id", unique_id)
+        .single();
+      
+      if (corpusError || !fetchedCorpusItem) {
+        console.error("Error fetching corpus item:", corpusError);
+        continue; // Try again
+      }
+
+      // Check if the meaning is valid (not null or [null])
+      const meaning = fetchedCorpusItem.note?.context?.meaning;
+      // console.log("meaning", meaning);
+      if (meaning && Array.isArray(meaning) && meaning.length > 0 && meaning[0] !== null) {
+        corpusItem = fetchedCorpusItem;
+        break;
+      }
+    }
+
+    if (!corpusItem) {
+      context.response.status = 404;
+      context.response.body = { error: `No valid corpus items found in ${tableName} after ${maxAttempts} attempts` };
+      return;
+    }
+
+    // Respond with the item
+    context.response.status = 200;
+    context.response.body = corpusItem;
+  } catch (error) {
+    console.error("Error in random_item endpoint:", error);
+    context.response.status = 500;
+    context.response.body = { error: "Internal server error" };
+  }
+})
 // APIs for corpus things.
 .get("/corpus_apps", async (context) => {
   const supabase = createClient(

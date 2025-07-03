@@ -344,7 +344,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         文本资料
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-fuchsia-300">20,000+</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-fuchsia-300">100 万+</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         条记录
                       </p>
@@ -389,7 +389,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         总数据规模
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100+</p>
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">150+</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         GB
                       </p>
