@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchResult } from "@/lib/api/search";
 import { editApi } from "@/lib/api/edit-corpus";
 import { toast } from "sonner";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 import React, { useState, useEffect } from "react";
 
 interface OtherCorpusDialogProps {
@@ -36,6 +37,10 @@ export const OtherCorpusDialog = ({
   const [traditional, setTraditional] = useState("");
   const [contextFields, setContextFields] = useState<ContextField[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuthStore();
+
+  // Check if user has tagger role
+  const canEdit = user?.role === 'TAGGER_PARTNER' || user?.role === 'TAGGER_OUTSOURCING';
 
   useEffect(() => {
     if (editingResult) {
@@ -138,15 +143,17 @@ export const OtherCorpusDialog = ({
           <div key={field.key} className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="block text-sm font-medium">{field.key}：</label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addArrayItem(index)}
-                className="h-8"
-              >
-                添加{field.key}
-              </Button>
+              {canEdit && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addArrayItem(index)}
+                  className="h-8"
+                >
+                  添加{field.key}
+                </Button>
+              )}
             </div>
             <div className="space-y-2">
               {field.value.map((item: string, itemIndex: number) => (
@@ -159,8 +166,9 @@ export const OtherCorpusDialog = ({
                     onChange={(e) => handleArrayItemChange(index, itemIndex, e.target.value)}
                     placeholder={`输入${field.key}${itemIndex + 1}`}
                     className="flex-1"
+                    readOnly={!canEdit}
                   />
-                  {field.value.length > 1 && (
+                  {canEdit && field.value.length > 1 && (
                     <Button
                       type="button"
                       variant="outline"
@@ -193,6 +201,7 @@ export const OtherCorpusDialog = ({
               }}
               placeholder={`输入${field.key}（JSON格式）`}
               className="min-h-[100px]"
+              readOnly={!canEdit}
             />
           </div>
         );
@@ -206,6 +215,7 @@ export const OtherCorpusDialog = ({
               onChange={(e) => handleFieldChange(index, e.target.value)}
               placeholder={`输入${field.key}`}
               className="w-full"
+              readOnly={!canEdit}
             />
           </div>
         );
@@ -225,6 +235,7 @@ export const OtherCorpusDialog = ({
                   onChange={(e) => setSimplified(e.target.value)}
                   placeholder={`输入简体`}
                   className="flex-1"
+                  readOnly={!canEdit}
                 />
               </div>
             </div>
@@ -236,6 +247,7 @@ export const OtherCorpusDialog = ({
                   onChange={(e) => setTraditional(e.target.value)}
                   placeholder={`输入繁体`}
                   className="flex-1"
+                  readOnly={!canEdit}
                 />
               </div>
             </div>
@@ -247,16 +259,18 @@ export const OtherCorpusDialog = ({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" className="h-12 px-6">
-              Revert
+              {canEdit ? "Revert" : "Close"}
             </Button>
           </DialogClose>
-          <Button
-            onClick={handleSave}
-            disabled={isSubmitting}
-            className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
-          >
-            {isSubmitting ? "Saving..." : "Save"}
-          </Button>
+          {canEdit && (
+            <Button
+              onClick={handleSave}
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
+            >
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

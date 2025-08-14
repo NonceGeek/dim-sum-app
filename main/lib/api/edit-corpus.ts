@@ -24,48 +24,21 @@ export interface UpdateCorpusResponse {
 export const editApi = {
 
   updateCorpusItem: async (data: UpdateCorpusData): Promise<UpdateCorpusResponse> => {
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY;
-    if (!apiKey) {
-      throw new Error('API key not found in environment variables');
-    }
-
-    // console.log("updateCorpusItem requst", {
-    //   ...data,
-    //   api_key: apiKey
-    // });
-
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + '/dev/insert_corpus_item', {
+      const response = await fetch('/api/marker/corpus/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...data,
-          api_key: apiKey
+          uuid: data.uuid,
+          note: data.note
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        let errorMessage = 'API request failed';
-        if (errorData && errorData.error) {
-          switch (errorData.error) {
-            case 'Invalid API key':
-              errorMessage = 'Invalid API Key';
-              break;
-            case 'API key not approved':
-              errorMessage = 'API Key Not Approved';
-              break;
-            case 'Corpus item not found':
-              errorMessage = 'Corpus Item Not Found';
-              break;
-            default:
-              errorMessage = errorData.error;
-              break;
-          }
-        }
-        throw new Error(errorMessage);
+        throw new Error(errorData.error || 'Failed to update corpus item');
       }
 
       return await response.json();

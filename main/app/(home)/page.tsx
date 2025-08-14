@@ -456,7 +456,7 @@ export default function HomePage() {
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                               {result.data}
                             </h3>
-                            {/* <Button
+                            <Button
                               onClick={() => {
                                 setEditingResult(result);
                                 setUpdateDialogOpen(true);
@@ -464,7 +464,7 @@ export default function HomePage() {
                               className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
                             >
                               Update
-                            </Button> */}
+                            </Button>
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">

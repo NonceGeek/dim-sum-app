@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchResult } from "@/lib/api/search";
 import { editApi } from "@/lib/api/edit-corpus";
 import { toast } from "sonner";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 import React, { useState, useEffect } from "react";
 
 interface ZYZDCorpusDialogProps {
@@ -31,6 +32,10 @@ export const ZYZDCorpusDialog = ({
   const [pinyinList, setPinyinList] = useState<string[]>([]);
   const [meanings, setMeanings] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuthStore();
+
+  // Check if user has tagger role
+  const canEdit = user?.role === 'TAGGER_PARTNER' || user?.role === 'TAGGER_OUTSOURCING';
 
   useEffect(() => {
     if (editingResult) {
@@ -132,6 +137,7 @@ export const ZYZDCorpusDialog = ({
                   onChange={(e) => setSimplified(e.target.value)}
                   placeholder={`输入简体`}
                   className="flex-1"
+                  readOnly={!canEdit}
                 />
               </div>
             </div>
@@ -143,21 +149,24 @@ export const ZYZDCorpusDialog = ({
                   onChange={(e) => setTraditional(e.target.value)}
                   placeholder={`输入繁体`}
                   className="flex-1"
+                  readOnly={!canEdit}
                 />
               </div>
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium">粤音：</label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addPinyinRow}
-                  className="h-8"
-                >
-                  添加粤音
-                </Button>
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPinyinRow}
+                    className="h-8"
+                  >
+                    添加粤音
+                  </Button>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {pinyinList.map((pinyin, index) => (
@@ -172,8 +181,9 @@ export const ZYZDCorpusDialog = ({
                       }
                       placeholder={`输入粤音${index + 1}`}
                       className="flex-1"
+                      readOnly={!canEdit}
                     />
-                    {pinyinList.length > 1 && (
+                    {canEdit && pinyinList.length > 1 && (
                       <Button
                         type="button"
                         variant="outline"
@@ -192,15 +202,17 @@ export const ZYZDCorpusDialog = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium">释义：</label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addMeaningRow}
-                  className="h-8"
-                >
-                  添加释义
-                </Button>
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addMeaningRow}
+                    className="h-8"
+                  >
+                    添加释义
+                  </Button>
+                )}
               </div>
               <div className="space-y-2">
                 {meanings.map((meaning, index) => (
@@ -215,8 +227,9 @@ export const ZYZDCorpusDialog = ({
                       }
                       placeholder={`输入释义${index + 1}`}
                       className="flex-1 min-h-[60px]"
+                      readOnly={!canEdit}
                     />
-                    {meanings.length > 1 && (
+                    {canEdit && meanings.length > 1 && (
                       <Button
                         type="button"
                         variant="outline"
@@ -236,16 +249,18 @@ export const ZYZDCorpusDialog = ({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" className="h-12 px-6">
-              Revert
+              {canEdit ? "Revert" : "Close"}
             </Button>
           </DialogClose>
-          <Button
-            onClick={handleSave}
-            disabled={isSubmitting}
-            className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
-          >
-            {isSubmitting ? "Saving..." : "Save"}
-          </Button>
+          {canEdit && (
+            <Button
+              onClick={handleSave}
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
+            >
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
