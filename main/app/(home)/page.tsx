@@ -15,6 +15,7 @@ import ReactPlayer from "react-player";
 import { stringify } from "querystring";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is {
@@ -53,6 +54,10 @@ export default function HomePage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const { user } = useAuthStore();
+
+  // Check if user has tagger role
+  const canEdit = user?.role === 'TAGGER_PARTNER' || user?.role === 'TAGGER_OUTSOURCING';
 
   // 从URL参数读取搜索关键词
   useEffect(() => {
@@ -456,15 +461,17 @@ export default function HomePage() {
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                               {result.data}
                             </h3>
-                            <Button
-                              onClick={() => {
-                                setEditingResult(result);
-                                setUpdateDialogOpen(true);
-                              }}
-                              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
-                            >
-                              Update
-                            </Button>
+                            {canEdit && (
+                              <Button
+                                onClick={() => {
+                                  setEditingResult(result);
+                                  setUpdateDialogOpen(true);
+                                }}
+                                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
+                              >
+                                Update
+                              </Button>
+                            )}
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">
