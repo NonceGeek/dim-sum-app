@@ -264,6 +264,15 @@ router
     context.response.body = { error: "Failed to fetch data" };
   }
 })
+.get("/item/liked", async (context) => {
+  const queryParams = context.request.url.searchParams;
+  const item_id = queryParams.get("item_id");
+  const user_id = queryParams.get("user_id");
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+})
   /* ↓↓↓ dev APIs(need api key) ↓↓↓ */
   /*
   HINT: DO NOT DELETE THE ANNOTATION BELOW.

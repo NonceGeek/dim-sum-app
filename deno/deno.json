@@ -1,7 +1,8 @@
 {
   "tasks": {
     "dev": "deno run --allow-net --allow-env --allow-read --watch main.tsx",
-    "start": "deno run --allow-net --allow-env --allow-read main.tsx"
+    "start": "deno run --allow-net --allow-env --allow-read main.tsx",
+    "compile": "deno compile --target x86_64-unknown-linux-gnu --allow-net --allow-read -o backend-linux main.tsx"
   },
   "compilerOptions": {
     "allowJs": true,
