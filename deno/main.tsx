@@ -217,17 +217,16 @@ router
   );
   console.log("supabase_url", supabase_url);
   try {
-    // TODO: make searchableTables dynamic.
-    const searchableTables = ["cantonese_corpus_all"];
+    // const searchableTables = ["cantonese_corpus_all"];
 
     // Check if the table is allowed to be searched
-    if (!tableName || !searchableTables.includes(tableName)) {
-      context.response.status = 403; // Forbidden status code
-      context.response.body = {
-        error: "The specified table is not searchable.",
-      };
-      return;
-    }
+    // if (!tableName || !searchableTables.includes(tableName)) {
+    //   context.response.status = 403; // Forbidden status code
+    //   context.response.body = {
+    //     error: "The specified table is not searchable.",
+    //   };
+    //   return;
+    // }
     // Search for both traditional and simplified versions
     const [traditionalResults, simplifiedResults] = await Promise.all([
       supabase
@@ -245,6 +244,11 @@ router
     // Apply limit after merging if specified
     if (limit !== undefined && limit > 0) {
       mergedData = mergedData.slice(0, limit);
+    }
+
+    // TODO: handle mergedData, if the tableName == "cantonese_corpus_all", just return the mergedData, else filter the mergedData by tableName with column "category" == tableName
+    if (tableName !== "cantonese_corpus_all") {
+      mergedData = mergedData.filter((item: any) => item.category === tableName);
     }
 
     console.log("data", mergedData);
