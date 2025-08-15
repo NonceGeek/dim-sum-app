@@ -13,11 +13,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, BookOpen } from "lucide-react";
+import { ChevronDown, ChevronRight, BookOpen } from "lucide-react";
 import { useState } from "react";
 import readmeContent from "../../../public/apidoc.md";
 
 export default function DocsPage() {
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
   const handleAnchorClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     targetId: string
@@ -35,11 +49,75 @@ export default function DocsPage() {
   };
 
   const navigationItems = [
-    { id: "public-apis", label: "Public APIs" },
-    { id: "developer-apis-api-key-required", label: "Developer APIs" },
-    { id: "admin-apis-password-required", label: "Admin APIs" },
-    { id: "authentication", label: "Authentication" },
-    { id: "data-structures", label: "Data Structures" },
+    { 
+      id: "get-api-key", 
+      label: "GET API KEY!",
+      children: []
+    },
+    { 
+      id: "public-apis", 
+      label: "Public APIs",
+      children: [
+        { id: "1-health-check", label: "1. Health Check" },
+        { id: "2-get-corpus-apps", label: "2. Get Corpus Apps" },
+        { id: "3-get-corpus-categories", label: "3. Get Corpus Categories" },
+        { id: "4-get-specific-corpus-category", label: "4. Get Specific Corpus Category" },
+        { id: "5-text-search-enhanced", label: "5. Text Search (Enhanced)" },
+        { id: "6-get-corpus-item", label: "6. Get Corpus Item" },
+        { id: "7-get-random-corpus-item", label: "7. Get Random Corpus Item" },
+      ]
+    },
+    { 
+      id: "developer-apis-api-key-required", 
+      label: "Developer APIs",
+      children: [
+        { id: "8-submit-corpus-item-update", label: "8. Submit Corpus Item Update" },
+      ]
+    },
+    { 
+      id: "admin-apis-password-required", 
+      label: "Admin APIs",
+      children: [
+        { id: "9-insert-corpus-item-admin", label: "9. Insert Corpus Item (Admin)" },
+      ]
+    },
+    { 
+      id: "error-responses", 
+      label: "Error Responses",
+      children: [
+        { id: "400-bad-request", label: "400 Bad Request" },
+        { id: "401-unauthorized", label: "401 Unauthorized" },
+        { id: "403-forbidden", label: "403 Forbidden" },
+        { id: "404-not-found", label: "404 Not Found" },
+        { id: "500-internal-server-error", label: "500 Internal Server Error" },
+      ]
+    },
+    { 
+      id: "data-structures", 
+      label: "Data Structures",
+      children: [
+        { id: "corpus-item-structure", label: "Corpus Item Structure" },
+        { id: "zyzd-item-structure-input", label: "ZYZD Item Structure (Input)" },
+      ]
+    },
+    { 
+      id: "authentication", 
+      label: "Authentication",
+      children: [
+        { id: "api-key-authentication", label: "API Key Authentication" },
+        { id: "admin-password-authentication", label: "Admin Password Authentication" },
+      ]
+    },
+    { 
+      id: "rate-limiting", 
+      label: "Rate Limiting",
+      children: []
+    },
+    { 
+      id: "support", 
+      label: "Support",
+      children: []
+    },
   ];
 
   const SidebarContent = () => (
@@ -47,16 +125,82 @@ export default function DocsPage() {
       <h3 className="font-semibold text-sm text-gray-600 uppercase tracking-wider">
         API Documentation
       </h3>
-      <nav className="space-y-2">
+      <nav className="space-y-1">
         {navigationItems.map((item) => (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            className="block text-sm text-gray-600 hover:text-purple-600 transition-colors duration-200 font-medium cursor-pointer"
-            onClick={(e) => handleAnchorClick(e, item.id)}
-          >
-            {item.label}
-          </a>
+          <div key={item.id}>
+            {/* 主菜单项 */}
+            <div className="flex items-center">
+              <a
+                href={`#${item.id}`}
+                className="flex-1 text-sm text-gray-600 hover:text-purple-600 transition-colors duration-200 font-medium cursor-pointer py-1"
+                onClick={(e) => handleAnchorClick(e, item.id)}
+              >
+                {item.label}
+              </a>
+              {/* 展开/折叠按钮 */}
+              {item.children && item.children.length > 0 && (
+                <button
+                  onClick={() => toggleSection(item.id)}
+                  className="p-2 ml-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-200 flex items-center justify-center"
+                  title={expandedSections.has(item.id) ? "收起" : "展开"}
+                >
+                  <ChevronRight 
+                    className={`h-4 w-4 font-semibold transition-transform duration-300 ease-in-out ${
+                      expandedSections.has(item.id) ? 'rotate-90' : 'rotate-0'
+                    }`}
+                    style={{
+                      transformOrigin: 'center'
+                    }}
+                  />
+                </button>
+              )}
+            </div>
+            
+            {/* 子菜单项 */}
+            {item.children && item.children.length > 0 && (
+              <div 
+                className={`ml-4 border-l border-gray-200 pl-3 overflow-hidden transition-all duration-300 ease-out`}
+                style={{
+                  maxHeight: expandedSections.has(item.id) ? `${item.children.length * 40}px` : '0px',
+                  opacity: expandedSections.has(item.id) ? 1 : 0,
+                  marginTop: expandedSections.has(item.id) ? '8px' : '0px',
+                  marginBottom: expandedSections.has(item.id) ? '4px' : '0px',
+                }}
+              >
+                <div className="space-y-1 py-2">
+                  {item.children.map((child, index) => (
+                    <a
+                      key={child.id}
+                      href={`#${child.id}`}
+                      className={`block text-xs text-gray-500 hover:text-purple-500 cursor-pointer py-1 px-2 rounded-sm hover:translate-x-1 hover:bg-purple-50 transition-colors duration-150 ${
+                        expandedSections.has(item.id) 
+                          ? 'translate-x-0 opacity-100' 
+                          : 'translate-x-2 opacity-0'
+                      }`}
+                      style={{
+                        transitionProperty: 'transform, opacity',
+                        transitionDuration: '200ms',
+                        transitionDelay: expandedSections.has(item.id) ? `${index * 50}ms` : '0ms',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transitionDelay = '0ms';
+                        e.currentTarget.style.transitionProperty = 'transform, background-color, color';
+                        e.currentTarget.style.transitionDuration = '150ms';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transitionProperty = 'transform, background-color, color';
+                        e.currentTarget.style.transitionDuration = '150ms';
+                        e.currentTarget.style.transitionDelay = '0ms';
+                      }}
+                      onClick={(e) => handleAnchorClick(e, child.id)}
+                    >
+                      {child.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ))}
       </nav>
     </div>
@@ -93,19 +237,37 @@ export default function DocsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-48 bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)] backdrop-blur-md border border-gray-200 shadow-lg"
+                className="w-64 max-h-96 overflow-y-auto bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)] backdrop-blur-md border border-gray-200 shadow-lg"
               >
                 {navigationItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.id}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleAnchorClick(e as any, item.id);
-                    }}
-                    className="cursor-pointer text-gray-900 hover:text-purple-700 hover:bg-white/40 font-medium"
-                  >
-                    {item.label}
-                  </DropdownMenuItem>
+                  <div key={item.id}>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAnchorClick(e as any, item.id);
+                      }}
+                      className="cursor-pointer text-gray-900 hover:text-purple-700 hover:bg-white/40 font-medium"
+                    >
+                      {item.label}
+                    </DropdownMenuItem>
+                    {/* 子菜单项 */}
+                    {item.children && item.children.length > 0 && (
+                      <div className="ml-4 border-l-2 border-gray-300/50">
+                        {item.children.map((child) => (
+                          <DropdownMenuItem
+                            key={child.id}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleAnchorClick(e as any, child.id);
+                            }}
+                            className="cursor-pointer text-xs text-gray-700 hover:text-purple-600 hover:bg-white/30 pl-3"
+                          >
+                            {child.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -145,11 +307,28 @@ export default function DocsPage() {
                       </h2>
                     );
                   },
-                  h3: ({ children }) => (
-                    <h3 className="text-lg md:text-xl font-medium mt-6 md:mt-8 mb-3 md:mb-4 text-gray-700 break-words">
-                      {children}
-                    </h3>
-                  ),
+                  h3: ({ children, id }) => {
+                    // 生成标准的锚点ID
+                    const generateId = (text: string) => {
+                      return text
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, "")
+                        .replace(/\s+/g, "-")
+                        .replace(/-+/g, "-")
+                        .trim();
+                    };
+
+                    const headingId = id || generateId(children as string);
+
+                    return (
+                      <h3 
+                        id={headingId}
+                        className="text-lg md:text-xl font-medium mt-6 md:mt-8 mb-3 md:mb-4 text-gray-700 scroll-mt-20 md:scroll-mt-20 break-words"
+                      >
+                        {children}
+                      </h3>
+                    );
+                  },
                   h4: ({ children }) => (
                     <h4 className="text-base md:text-lg font-medium mt-4 md:mt-6 mb-2 md:mb-3 text-gray-600 break-words">
                       {children}
