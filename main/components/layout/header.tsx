@@ -62,6 +62,14 @@ export function Header({ showLogo = true, titleClassName = "" }: HeaderProps) {
             />
             <span className={`font-bold ${titleClassName}`}>DimSum AI Labs</span>
           </Link>
+          <Link 
+            href="https://aidimsum.com/" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-600 hover:text-purple-600 transition-colors duration-200 font-medium ml-4"
+          >
+            Learn More
+          </Link>
         </div>
         {/* )} */}
       </div>
