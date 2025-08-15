@@ -52,7 +52,12 @@ export function Header({ showLogo = true, titleClassName = "" }: HeaderProps) {
                 <Input placeholder="Search..." className="pl-8" />
               </div>
             </div> */}
-          <Link className="flex items-center space-x-2" href="/">
+          <Link
+            className="flex items-center space-x-2"
+            href="https://aidimsum.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Image
               src="/logo.png"
               alt="DimSum AI Labs Logo"
@@ -60,15 +65,9 @@ export function Header({ showLogo = true, titleClassName = "" }: HeaderProps) {
               height={24}
               className="w-6 h-6"
             />
-            <span className={`font-bold ${titleClassName}`}>DimSum AI Labs</span>
-          </Link>
-          <Link 
-            href="https://aidimsum.com/" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-gray-600 hover:text-purple-600 transition-colors duration-200 font-medium ml-4"
-          >
-            Learn More
+            <span className={`font-bold ${titleClassName}`}>
+              DimSum AI Labs
+            </span>
           </Link>
         </div>
         {/* )} */}
