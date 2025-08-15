@@ -110,6 +110,7 @@ export const ZYZDCorpusDialog = ({
       const response = await editApi.updateCorpusItem({
         uuid: editingResult?.unique_id.toString(),
         note: noteData,
+        category: editingResult?.category,
       });
 
       toast.success(

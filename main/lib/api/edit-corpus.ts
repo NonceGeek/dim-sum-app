@@ -13,6 +13,7 @@ export interface CorpusItem {
 export interface UpdateCorpusData {
   uuid: string;
   note: CorpusNote;
+  category: string;
 }
 
 export interface UpdateCorpusResponse {
@@ -32,7 +33,8 @@ export const editApi = {
         },
         body: JSON.stringify({
           uuid: data.uuid,
-          note: data.note
+          note: data.note,
+          category: data.category
         }),
       });
 

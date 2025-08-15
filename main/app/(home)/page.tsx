@@ -16,6 +16,7 @@ import { stringify } from "querystring";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useCategoryEditableLevel } from "@/lib/api/category";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is {
@@ -42,6 +43,41 @@ function isImageUrl(url: string): boolean {
   return imageExtensions.some(ext => lowerUrl.endsWith(ext)) || lowerUrl.includes('image');
 }
 
+
+// Check if result can be edited based on user role and category editable level
+function useCanEditResult(result: SearchResult, user: any) {
+  const { data: editableLevel, isLoading } = useCategoryEditableLevel(result.category);
+  
+  // 如果正在加载或没有用户，返回不可编辑
+  if (isLoading || !user || editableLevel === null) return { canEdit: false, isLoading };
+  
+  // editable_level = 0: 不可编辑
+  if (editableLevel === 0) return { canEdit: false, isLoading: false };
+  
+  // editable_level = 1: 只有 TAGGER_PARTNER 和 TAGGER_OUTSOURCING 可以编辑
+  if (editableLevel === 1) {
+    const canEdit = user.role === 'TAGGER_PARTNER' || user.role === 'TAGGER_OUTSOURCING';
+    return { canEdit, isLoading: false };
+  }
+  
+  // editable_level = 2: 所有登录用户都可以编辑
+  return { canEdit: true, isLoading: false };
+}
+
+// Component to get edit permission for a result
+function EditPermissionChecker({ 
+  result, 
+  user, 
+  children 
+}: { 
+  result: SearchResult; 
+  user: any; 
+  children: (canEdit: boolean, isLoading: boolean) => React.ReactNode;
+}) {
+  const { canEdit, isLoading } = useCanEditResult(result, user);
+  return <>{children(canEdit, isLoading)}</>;
+}
+
 export default function HomePage() {
   const [searchPrompt, setSearchPrompt] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
@@ -55,9 +91,6 @@ export default function HomePage() {
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { user } = useAuthStore();
-
-  // Check if user has tagger role
-  const canEdit = user?.role === 'TAGGER_PARTNER' || user?.role === 'TAGGER_OUTSOURCING';
 
   // 从URL参数读取搜索关键词
   useEffect(() => {
@@ -461,17 +494,19 @@ export default function HomePage() {
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                               {result.data}
                             </h3>
-                            {canEdit && (
-                              <Button
-                                onClick={() => {
-                                  setEditingResult(result);
-                                  setUpdateDialogOpen(true);
-                                }}
-                                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
-                              >
-                                Update
-                              </Button>
-                            )}
+                            <EditPermissionChecker result={result} user={user}>
+                              {(canEdit, isLoading) => !isLoading && canEdit && (
+                                <Button
+                                  onClick={() => {
+                                    setEditingResult(result);
+                                    setUpdateDialogOpen(true);
+                                  }}
+                                  className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
+                                >
+                                  Update
+                                </Button>
+                              )}
+                            </EditPermissionChecker>
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">

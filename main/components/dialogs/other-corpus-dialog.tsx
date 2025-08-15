@@ -124,7 +124,8 @@ export const OtherCorpusDialog = ({
 
       const response = await editApi.updateCorpusItem({
         uuid: editingResult?.unique_id.toString(),
-        note: updatedContext
+        note: updatedContext,
+        category: editingResult?.category,
       });
       toast.success(`Corpus data saved successfully. History ID: ${response.history_id}, Status: ${response.status}`);
       onOpenChange(false);

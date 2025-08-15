@@ -31,6 +31,7 @@ export type SearchResult = {
   category: string;
   created_at: string;
   tags: string[];
+  editable_level: number;
 };
 
 type SearchParams = {

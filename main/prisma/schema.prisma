@@ -75,14 +75,20 @@ model api_key {
 }
 
 model cantonese_categories {
-  id          BigInt    @id(map: "categories_pkey") @default(autoincrement())
-  name        String?
-  nickname    String?
-  description String?
-  likes       BigInt?   @default(0)
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamp(6)
-  cover       String?
+  id             BigInt    @id(map: "categories_pkey") @default(autoincrement())
+  name           String?
+  nickname       String?
+  description    String?
+  likes          BigInt?   @default(0)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  cover          String?
+  status         String    @default("RAW")
+  link           String?
+  tags           Json?
+  pinned         Boolean   @default(false)
+  editable_level BigInt    @default(0)
+  linked_apps    Json      @default("[]")
 }
 
 model cantonese_corpus_all {
@@ -93,7 +99,7 @@ model cantonese_corpus_all {
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   tags           Json?
   editable_level Int      @default(1) @db.SmallInt
-  liked          BigInt   @default(0)
+  liked_num      BigInt   @default(0)
   unique_id      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   @@id([id, data])
@@ -102,19 +108,22 @@ model cantonese_corpus_all {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model cantonese_corpus_apps {
-  id           BigInt    @id @default(autoincrement())
-  name         String?
-  description  String?
-  authors      Json?
-  url          String?
-  homepage_url String?
-  github_url   String?
-  intro_video  String?
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime? @default(now()) @db.Timestamp(6)
-  likes        BigInt    @default(0)
-  icon_img     String?
-  type         String    @default("STUDY")
+  id               BigInt    @id @default(autoincrement())
+  name             String?
+  description      String?
+  authors          Json?
+  url              String?
+  homepage_url     String?
+  github_url       String?
+  intro_video      String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+  likes            BigInt    @default(0)
+  icon_img         String?
+  type             String    @default("STUDY")
+  wechat_micro_app String?
+  pinned           Boolean?  @default(false)
+  localed          Boolean?  @default(false)
 }
 
 model cantonese_corpus_dict_yin {
@@ -143,6 +152,28 @@ model cantonese_corpus_update_history {
   user_id          String
   approver_user_id String?
   last_note        Json
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cantonese_library {
+  id          BigInt    @id @default(autoincrement())
+  name        String?
+  nickname    String?
+  description String?
+  likes       BigInt?   @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  cover       String?
+  link        String?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_zyzdv2 {
+  id         BigInt    @id @default(autoincrement())
+  unique_id  String?   @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
 }
 
 enum Role {
