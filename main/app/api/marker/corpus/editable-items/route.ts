@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
         );
       }
 
+      // TODO: check: it is strange because this looks like useless.
       // Make request to backend with server-side API key
       const response = await fetch(process.env.BACKEND_URL + '/dev/editable_items', {
         method: 'POST',
