@@ -47,6 +47,83 @@ router
 .get("/", async (context) => {
   context.response.body = { result: "Hello, Devs for AI Dimsum!" };
 })
+//exp: https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2
+.get("/all_items", async (context) => {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  const queryParams = context.request.url.searchParams;
+  const corpus_name = queryParams.get("corpus_name");
+  const limit = queryParams.get("limit") || "100";
+  const cursor = queryParams.get("cursor");
+
+  // Validate corpus_name parameter
+  if (!corpus_name) {
+    context.response.status = 400;
+    context.response.body = { error: "corpus_name parameter is required" };
+    return;
+  }
+
+  // Convert limit to number and validate
+  const limitNum = parseInt(limit as string, 10);
+  if (isNaN(limitNum) || limitNum <= 0 || limitNum > 1000) {
+    context.response.status = 400;
+    context.response.body = { error: "limit must be a positive number between 1 and 1000" };
+    return;
+  }
+
+  try {
+    // Build the query with pagination
+    let query = supabase
+      .from("cantonese_corpus_all")
+      .select("*")
+      .eq("category", corpus_name)
+      .order("id", { ascending: true })
+      .limit(limitNum);
+
+    // Add cursor-based pagination if cursor is provided
+    if (cursor) {
+      const cursorNum = parseInt(cursor, 10);
+      if (isNaN(cursorNum)) {
+        context.response.status = 400;
+        context.response.body = { error: "cursor must be a valid number" };
+        return;
+      }
+      query = query.gt("id", cursorNum);
+    }
+
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error("Database error:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Database query failed" };
+      return;
+    }
+
+    // Calculate next cursor for pagination
+    let nextCursor = null;
+    if (data && data.length === limitNum && data.length > 0) {
+      // If we got exactly the limit, there might be more data
+      nextCursor = data[data.length - 1].id;
+    }
+
+    context.response.body = {
+      data,
+      pagination: {
+        limit: limitNum,
+        cursor: cursor || null,
+        nextCursor,
+        hasMore: data && data.length === limitNum
+      }
+    };
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    context.response.status = 500;
+    context.response.body = { error: "Internal server error" };
+  }
+})
 // exp: https://backend.aidimsum.com/random_item?corpus_name=zyzdv2
 .get("/random_item", async (context) => {
   const supabase = createClient(
@@ -88,7 +165,7 @@ router
     // Loop until we find a corpus item with valid meaning
     let corpusItem = null;
     let attempts = 0;
-    const maxAttempts = 100; // Prevent infinite loops
+    const maxAttempts = 1; // Prevent infinite loops
 
     while (!corpusItem && attempts < maxAttempts) {
       attempts++;
@@ -110,21 +187,31 @@ router
 
       const unique_id = data.unique_id.toString();
 
+      console.log("unique_id", unique_id);
+
       const { data: fetchedCorpusItem, error: corpusError } = await supabase
         .from("cantonese_corpus_all")
         .select("*")
         .eq("unique_id", unique_id)
         .single();
+
+      console.log("fetchedCorpusItem", fetchedCorpusItem);
       
       if (corpusError || !fetchedCorpusItem) {
         console.error("Error fetching corpus item:", corpusError);
         continue; // Try again
       }
 
-      // Check if the meaning is valid (not null or [null])
-      const meaning = fetchedCorpusItem.note?.context?.meaning;
-      // console.log("meaning", meaning);
-      if (meaning && Array.isArray(meaning) && meaning.length > 0 && meaning[0] !== null) {
+      if (corpus_name=="zyzdv2") {
+
+        // Check if the meaning is valid (not null or [null])
+        const meaning = fetchedCorpusItem.note?.context?.meaning;
+        // console.log("meaning", meaning);
+        if (meaning && Array.isArray(meaning) && meaning.length > 0 && meaning[0] !== null) {
+          corpusItem = fetchedCorpusItem;
+          break;
+        }
+      }else{
         corpusItem = fetchedCorpusItem;
         break;
       }
