@@ -16,7 +16,6 @@ import { stringify } from "querystring";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { useCategoryEditableLevel } from "@/lib/api/category";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is {
@@ -46,10 +45,11 @@ function isImageUrl(url: string): boolean {
 
 // Check if result can be edited based on user role and category editable level
 function useCanEditResult(result: SearchResult, user: any) {
-  const { data: editableLevel, isLoading } = useCategoryEditableLevel(result.category);
+  // 直接使用搜索结果中的 editable_level，无需额外查询
+  const editableLevel = result.editable_level;
   
-  // 如果正在加载或没有用户，返回不可编辑
-  if (isLoading || !user || editableLevel === null) return { canEdit: false, isLoading };
+  // 如果没有用户，返回不可编辑
+  if (!user) return { canEdit: false, isLoading: false };
   
   // editable_level = 0: 不可编辑
   if (editableLevel === 0) return { canEdit: false, isLoading: false };

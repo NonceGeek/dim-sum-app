@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./client";
 
-interface CategoryInfo {
+export interface CategoryInfo {
   id: number;
   name: string;
   nickname?: string;
@@ -31,6 +31,25 @@ export function useCategoryEditableLevel(categoryName: string | null) {
       return data?.length > 0 ? data[0]?.editable_level : null;
     },
     enabled: !!categoryName,
+    staleTime: 5 * 60 * 1000, // 5分钟缓存
+  });
+}
+
+// 获取全量分类信息
+export async function fetchAllCategories(): Promise<CategoryInfo[]> {
+  const response = await fetch(
+    process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_categories"
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch categories");
+  }
+  return response.json();
+}
+
+export function useAllCategories() {
+  return useQuery<CategoryInfo[]>({
+    queryKey: ['allCategories'],
+    queryFn: fetchAllCategories,
     staleTime: 5 * 60 * 1000, // 5分钟缓存
   });
 }

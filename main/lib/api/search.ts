@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { fetchAllCategories, CategoryInfo } from "./category";
 
 export type SearchResult = {
   id: number;
@@ -38,27 +39,6 @@ type SearchParams = {
   keyword: string;
 };
 
-const fetchCategory = async (categoryName: string) => {
-  console.log("fetchCategory", categoryName);
-  try {
-    const response = await fetch(
-      process.env.NEXT_PUBLIC_BACKEND_URL +
-        `/corpus_category?name=${categoryName}`
-    );
-    const data = await response.json();
-    // get the first item of data
-    const firstItem = data[0];
-    if (firstItem && firstItem.nickname) {
-      console.log("firstItem.nickname", firstItem.nickname);
-      return firstItem.nickname;
-    } else {
-      return categoryName; // Fallback to the original category name
-    }
-  } catch (error) {
-    console.error("Error fetching category:", error);
-    return categoryName; // Fallback to the original category name on error
-  }
-};
 
 /**
  * 根据 unique_id 获取单个语料库项目
@@ -91,8 +71,15 @@ export async function getCorpusItemByUniqueId(
 
     const item = Array.isArray(data) ? data[0] : data;
 
-    const realCategory = await fetchCategory(item.category);
-    return { ...item, category: realCategory };
+    // 获取分类信息
+    const allCategories = await fetchAllCategories();
+    const categoryInfo = allCategories.find(cat => cat.name === item.category);
+    
+    return { 
+      ...item, 
+      category: categoryInfo?.nickname || item.category,
+      editable_level: categoryInfo?.editable_level || 0
+    };
   } catch (error) {
     console.error(
       `Error fetching corpus item with unique_id ${uniqueId}:`,
@@ -125,13 +112,24 @@ export function useSearch() {
 
       const data = (await response.json()) as SearchResult[];
 
-      // Fetch the real category for each data item
-      const updatedData = await Promise.all(
-        data.map(async (result) => {
-          const realCategory = await fetchCategory(result.category);
-          return { ...result, category: realCategory };
-        })
-      );
+      // 获取全量分类信息
+      const allCategories = await fetchAllCategories();
+      
+      // 创建分类名称到分类信息的映射
+      const categoryMap = new Map<string, CategoryInfo>();
+      allCategories.forEach(cat => {
+        categoryMap.set(cat.name, cat);
+      });
+
+      // 更新搜索结果，匹配分类信息并添加 editable_level
+      const updatedData = data.map((result) => {
+        const categoryInfo = categoryMap.get(result.category);
+        return {
+          ...result,
+          category: categoryInfo?.nickname || result.category, // 使用 nickname 作为显示名称
+          editable_level: categoryInfo?.editable_level || 0, // 添加 editable_level
+        };
+      });
 
       return updatedData;
     } catch (error) {
