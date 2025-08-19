@@ -165,7 +165,7 @@ router
     // Loop until we find a corpus item with valid meaning
     let corpusItem = null;
     let attempts = 0;
-    const maxAttempts = 1; // Prevent infinite loops
+    const maxAttempts = 100; // Prevent infinite loops
 
     while (!corpusItem && attempts < maxAttempts) {
       attempts++;
@@ -203,7 +203,6 @@ router
       }
 
       if (corpus_name=="zyzdv2") {
-
         // Check if the meaning is valid (not null or [null])
         const meaning = fetchedCorpusItem.note?.context?.meaning;
         // console.log("meaning", meaning);
