@@ -55,7 +55,7 @@
     "embla-carousel-react": "^8.6.0",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.487.0",
+    "lucide-react": "^0.525.0",
     "motion": "^12.6.3",
     "next": "15.2.5",
     "next-auth": "^4.24.11",
@@ -89,5 +89,6 @@
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@9.6.0+sha512.38dc6fba8dba35b39340b9700112c2fe1e12f10b17134715a4aa98ccf7bb035e76fd981cf0bb384dfa98f8d6af5481c2bef2f4266a24bfa20c34eb7147ce0b5e"
 }
