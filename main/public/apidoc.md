@@ -180,7 +180,7 @@ curl -X GET "https://backend.aidimsum.com/corpus_item?data=為"
 Retrieves a random corpus item from a specified corpus.
 
 **Parameters:**
-- `corpus_name` (required): The name of the corpus to get a random item from (e.g., "zyzdv2")
+- `corpus_name` (required): The name of the corpus to get a random item from (e.g., "zyzdv2", "yyjq")
 
 **Response:**
 ```json
@@ -201,9 +201,40 @@ Retrieves a random corpus item from a specified corpus.
 curl -X GET "https://backend.aidimsum.com/random_item?corpus_name=zyzdv2"
 ```
 
+### 8. Get All Corpus Items
+**GET** `/all_items`
+
+Retrieves all corpus items from a specified corpus.
+
+**Parameters:**
+- `corpus_name` (required): The name of the corpus to get a random item from (e.g., "yyjq")
+- `cursor` (optional): Indicating that data after the cursor is retrieved.
+- `limit` (optional): Maximum number of results to return
+
+**Response:**
+```json
+[
+  {
+    "unique_id": "uuid",
+    "data": "character",
+    "note": {
+      "meaning": ["definition1", "definition2"],
+      "pinyin": ["pronunciation1", "pronunciation2"]
+    },
+    "category": "yyjq",
+    "tags": ["lyric"]
+  }
+]
+```
+
+**Curl Example:**
+```bash
+curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2"
+```
+
 ## Developer APIs (API Key Required)
 
-### 8. Submit Corpus Item Update
+### 9. Submit Corpus Item Update
 **POST** `/dev/insert_corpus_item`
 
 Submits an update request for a corpus item. Requires an approved API key.
@@ -270,7 +301,7 @@ curl -X POST "https://backend.aidimsum.com/dev/insert_corpus_item" \
 
 ## Admin APIs (Password Required)
 
-### 9. Insert Corpus Item (Admin)
+### 10. Insert Corpus Item (Admin)
 **POST** `/admin/insert_corpus_item`
 
 Directly inserts a new corpus item. Requires admin password.
@@ -446,4 +477,4 @@ Currently, there are no explicit rate limits implemented, but please use the API
 
 ## Support
 
-For API support or questions, please contact the development team. 
+For API support or questions, please contact the development team.
