@@ -6,6 +6,13 @@ export type SearchResult = {
   unique_id: string;
   note: {
     context: {
+    title?: string;
+    artist?: string;
+    lyric_author?:string;
+    tune_author?:string;
+    album?:string;
+    description?:string;
+    duration?:number;
     page?: number;
     number?: string;
     others?: {
