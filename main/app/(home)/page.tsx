@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,7 @@ function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
   return !Array.isArray(note) && "context" in note;
 }
 
+
 export default function HomePage() {
   const [searchPrompt, setSearchPrompt] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
@@ -36,6 +37,7 @@ export default function HomePage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
 
   // 从URL参数读取搜索关键词
   useEffect(() => {
@@ -275,9 +277,7 @@ export default function HomePage() {
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         News
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                        唔
-                      </p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">唔</p>
                     </div>
                   </Card>
                   <Card
@@ -288,9 +288,7 @@ export default function HomePage() {
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         Single Character
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                        行
-                      </p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">行</p>
                     </div>
                   </Card>
                   <Card
@@ -301,9 +299,7 @@ export default function HomePage() {
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         Chinese Words
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                        故乡
-                      </p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">故乡</p>
                     </div>
                   </Card>
                   <Card
@@ -327,9 +323,7 @@ export default function HomePage() {
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         3D Model
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                        帆船
-                      </p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">帆船</p>
                     </div>
                   </Card>
                 </div>
@@ -343,9 +337,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         文本资料
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-fuchsia-300">
-                        100 万+
-                      </p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-fuchsia-300">100 万+</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         条记录
                       </p>
@@ -354,9 +346,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         音视频资料
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">
-                        100+
-                      </p>
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100+</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         GB
                       </p>
@@ -365,9 +355,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         图片资料
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">
-                        100 +
-                      </p>
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100 +</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         张
                       </p>
@@ -376,9 +364,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         语料集数量
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">
-                        20 +
-                      </p>
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">20 +</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         个
                       </p>
@@ -387,9 +373,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         应用数量
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">
-                        10 +
-                      </p>
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">10 +</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         个
                       </p>
@@ -398,9 +382,7 @@ export default function HomePage() {
                       <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
                         总数据规模
                       </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">
-                        150+
-                      </p>
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">150+</p>
                       <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                         GB
                       </p>
@@ -612,9 +594,7 @@ export default function HomePage() {
                           <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                             Single Character
                           </h3>
-                          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                            行
-                          </p>
+                          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">行</p>
                         </div>
                       </Card>
                       <Card

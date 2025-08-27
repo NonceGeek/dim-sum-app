@@ -141,7 +141,7 @@ export default function AppStorePage() {
   useEffect(() => {
     const fetchApps = async () => {
       try {
-        const response = await fetch("https://dim-sum-prod.deno.dev/corpus_apps");
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_apps");
         const data = await response.json();
         // Sort the data to put pinned items first
         const sortedData = data.sort((a, b) => {

@@ -21,9 +21,9 @@ export const menuItems = [
 
 export const accountSubmenuItems = [
   { icon: UserCircle, label: "My Account", href: "/account/profile" },
-  { icon: Settings, label: "Preferences", href: "/account/preferences" },
-  { icon: CreditCard, label: "Purchases", href: "/account/purchases" },
-  { icon: FileCode2, label: "Data Annotation", href: "/account/data-annotation" },
+  // { icon: Settings, label: "Preferences", href: "/account/preferences" },
+  // { icon: CreditCard, label: "Purchases", href: "/account/purchases" },
+  // { icon: FileCode2, label: "Data Annotation", href: "/account/data-annotation" },
 ];
 
 export const workplaceSubmenuItems = [

@@ -32,6 +32,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
         name: session.user.name || "",
         email: session.user.email || "",
         avatar: session.user.image || "",
+        role: session.user.role || "",
       });
 
       // 使用 URL 参数判断登录成功
