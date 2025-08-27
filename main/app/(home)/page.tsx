@@ -148,30 +148,6 @@ export default function HomePage() {
       currentPage * itemsPerPage
     ) || [];
 
-  currentResults.push({
-    id: 19538,
-    data: "今天我, 寒夜里看雪飘过",
-    note: {
-      context: {
-        title: "海阔天空",
-        artist: "Beyond",
-        lyric_author: "xxx",
-        tune_author: "yyy",
-        album: "乐与怒",
-        description: "Beyond 乐队的代表作，传递自由精神。",
-        duration: 258,
-        audio: "https://...",
-      },
-      contributor: "0x05",
-    },
-    category: "yue-song",
-    created_at: "2025-06-17T09:47:41.464511+00:00",
-    tags: ["lyric"],
-    editable_level: 1,
-    liked: 0,
-    unique_id: "fb1b4a56-55c0-478b-9543-b59aa7f36e38",
-  });
-  console.log("currentResult:", currentResults);
   return (
     <>
       {/* <div className="md:hidden fixed top-0 left-0 right-0 z-50">
@@ -485,7 +461,7 @@ export default function HomePage() {
                         isDictionaryNote={isDictionaryNote}
                       />
                     )}
-                    {result.category === "yue-song" && (
+                    {result.category === "粤语曲库" && (
                       <YueSongCardDetail result={result} />
                     )}
                   </motion.div>
