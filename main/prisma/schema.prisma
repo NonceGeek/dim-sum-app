@@ -101,6 +101,8 @@ model cantonese_corpus_all {
   tags           Json?
   editable_level Int      @default(1) @db.SmallInt
   liked_num      BigInt   @default(0)
+  bookmark_num   BigInt   @default(0)
+  view_num       BigInt   @default(0)
   unique_id      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   userInteractions user_corpus_interactions[]
@@ -179,6 +181,7 @@ model user_corpus_interactions {
   category    String?
   is_liked    Boolean  @default(false)
   is_bookmarked Boolean @default(false)
+  is_viewed   Boolean  @default(false)
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @db.Timestamptz(6)
 
