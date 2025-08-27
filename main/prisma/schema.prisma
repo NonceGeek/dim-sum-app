@@ -45,6 +45,7 @@ model User {
   bio           String?
   accounts      Account[]
   sessions      Session[]
+  corpusInteractions user_corpus_interactions[]
 }
 
 model Session {
@@ -75,14 +76,20 @@ model api_key {
 }
 
 model cantonese_categories {
-  id          BigInt    @id(map: "categories_pkey") @default(autoincrement())
-  name        String?
-  nickname    String?
-  description String?
-  likes       BigInt?   @default(0)
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamp(6)
-  cover       String?
+  id             BigInt    @id(map: "categories_pkey") @default(autoincrement())
+  name           String?
+  nickname       String?
+  description    String?
+  likes          BigInt?   @default(0)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  cover          String?
+  status         String    @default("RAW")
+  link           String?
+  tags           Json?
+  pinned         Boolean   @default(false)
+  editable_level BigInt    @default(0)
+  linked_apps    Json      @default("[]")
 }
 
 model cantonese_corpus_all {
@@ -93,8 +100,12 @@ model cantonese_corpus_all {
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   tags           Json?
   editable_level Int      @default(1) @db.SmallInt
-  liked          BigInt   @default(0)
+  liked_num      BigInt   @default(0)
+  bookmark_num   BigInt   @default(0)
+  view_num       BigInt   @default(0)
   unique_id      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  userInteractions user_corpus_interactions[]
 
   @@id([id, data])
   @@index([data], map: "cantonese_corpus_all_data_pgroonga_idx")
@@ -102,19 +113,22 @@ model cantonese_corpus_all {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model cantonese_corpus_apps {
-  id           BigInt    @id @default(autoincrement())
-  name         String?
-  description  String?
-  authors      Json?
-  url          String?
-  homepage_url String?
-  github_url   String?
-  intro_video  String?
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime? @default(now()) @db.Timestamp(6)
-  likes        BigInt    @default(0)
-  icon_img     String?
-  type         String    @default("STUDY")
+  id               BigInt    @id @default(autoincrement())
+  name             String?
+  description      String?
+  authors          Json?
+  url              String?
+  homepage_url     String?
+  github_url       String?
+  intro_video      String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+  likes            BigInt    @default(0)
+  icon_img         String?
+  type             String    @default("STUDY")
+  wechat_micro_app String?
+  pinned           Boolean?  @default(false)
+  localed          Boolean?  @default(false)
 }
 
 model cantonese_corpus_dict_yin {
@@ -143,6 +157,57 @@ model cantonese_corpus_update_history {
   user_id          String
   approver_user_id String?
   last_note        Json
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cantonese_library {
+  id          BigInt    @id @default(autoincrement())
+  name        String?
+  nickname    String?
+  description String?
+  likes       BigInt?   @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  cover       String?
+  link        String?
+}
+
+/// 用户对语料的互动表
+/// 记录用户对语料的点赞和收藏
+model user_corpus_interactions {
+  id          BigInt   @id @default(autoincrement())
+  user_id     String
+  corpus_unique_id String @db.Uuid
+  category    String?
+  is_liked    Boolean  @default(false)
+  is_bookmarked Boolean @default(false)
+  is_viewed   Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  corpus      cantonese_corpus_all @relation(fields: [corpus_unique_id], references: [unique_id], onDelete: Cascade)
+
+  @@unique([user_id, corpus_unique_id])
+  @@index([corpus_unique_id])
+  @@index([user_id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_zyzdv2 {
+  id         BigInt    @id @default(autoincrement())
+  unique_id  String?   @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_yyjq {
+  id         BigInt    @id @default(autoincrement())
+  unique_id  String?   @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
 }
 
 enum Role {

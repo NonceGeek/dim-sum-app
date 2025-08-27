@@ -201,7 +201,7 @@ export default function LibraryPage() {
     const fetchCorpus = async () => {
       try {
         const response = await fetch(
-          "https://dim-sum-prod.deno.dev/corpus_categories"
+          process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_categories"
         );
         const data = await response.json();
         // Sort the data to put pinned items first
