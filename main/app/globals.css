@@ -152,4 +152,23 @@
     background: linear-gradient(135deg, #b2c7ff 0%, #d7d7fe 100%);
     background-attachment: fixed;
   }
+  .gray_text_sm {
+    @apply text-sm text-gray-600 dark:text-gray-400;
+  }
+
+  @keyframes wave {
+    0%,
+    100% {
+      height: 20%;
+    }
+    50% {
+      height: 100%;
+    }
+  }
+
+  .animate-wave {
+    animation-name: wave;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
 }

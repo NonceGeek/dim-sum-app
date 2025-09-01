@@ -1,6 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import { fetchAllCategories, CategoryInfo } from "./category";
 
+export type LyricsResult = {
+  sec: number;
+  data: string;
+  pron: string;
+};
+
 export type SearchResult = {
   id: number;
   data: string;
@@ -8,6 +14,12 @@ export type SearchResult = {
   note:
     | {
         context: {
+          description?: string;
+          song_name?: string;
+          author?: string;
+          album?: string;
+          audio?: string;
+          lyric?: LyricsResult[];
           page?: number;
           number?: string;
           others?: {
