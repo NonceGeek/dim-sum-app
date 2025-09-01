@@ -231,6 +231,22 @@ router
     context.response.body = { error: "Internal server error" };
   }
 })
+// APIS for apps.
+.get("/app/meme_pic_links", async (context) => {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  const { data, error } = await supabase
+    .from("meme_pic_links")
+    .select("*")
+
+  if (error) {
+    throw error;
+  }
+
+  context.response.body = data;
+})
 // APIs for corpus things.
 .get("/corpus_apps", async (context) => {
   const supabase = createClient(
