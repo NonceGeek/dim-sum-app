@@ -25,7 +25,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SearchResult } from "@/lib/api/search";
 import Lyrics from "./_components/lyrics";
-import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
@@ -220,8 +219,8 @@ function YueSong() {
         ) : null}
       </div>
       <div className="flex flex-row flex-wrap">
-        <div className="lg:flex-[1] justify-items-center -ml-10 flex-[2]">
-          <div className="lg:w-56 lg:h-56 overflow-hidden rounded-lg w-30 h-30">
+        <div className="lg:flex-[1] lg:-ml-10 lg:justify-items-center flex-[2] mx-auto">
+          <div className="lg:w-56 lg:h-56 overflow-hidden rounded-lg w-30 h-30 mx-auto">
             <Image
               src="/album_cover.png"
               alt="cover"
@@ -238,13 +237,13 @@ function YueSong() {
             value={[progress]}
             max={lyrics.duration}
             step={1}
-            className="w-[60%]"
+            className="w-[80%] mx-auto"
             onValueChange={handleSeek}
             onValueCommit={(val) => handleSeekEnd(val[0])}
             onPointerDown={handleSeekStart}
           />
           {loaded ? (
-            <div className="flex gap-4 my-4">
+            <div className="flex gap-4 my-4 justify-center">
               {!isPlaying ? (
                 <Play onClick={togglePlay} />
               ) : (
@@ -330,11 +329,11 @@ function YueSong() {
           <div className="my-4">
             <p>
               词：
-              {/* {data.note.context.lyric_author} */}
+              {data.note.context.lyricist}
             </p>
             <p>
               曲：
-              {/* {data.note.context.tune_author} */}
+              {data.note.context.composer}
             </p>
           </div>
           <Lyrics

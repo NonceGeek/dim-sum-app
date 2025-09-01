@@ -43,6 +43,10 @@ export default function Lyrics({
     }
   };
 
+  const handleSelectLine = (index: number) => {
+    setSelectedIndex(index === selectedIndex ? null : index);
+  };
+
   const handleShare = () => {
     if (selectedIndex === null) return;
     const line = lyric_full[selectedIndex];
@@ -54,10 +58,27 @@ export default function Lyrics({
     //     url: shareUrl,
     //   });
     // } else {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast("Link copied.");
-      window.open(shareUrl);
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        toast("Link copied.");
+        window.open(shareUrl);
+      });
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = shareUrl;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        toast("Link copied.");
+        window.open(shareUrl);
+      } catch (err) {
+        toast("Link copied Failed.");
+      }
+      document.body.removeChild(textarea);
+    }
     // }
 
     setSelectedIndex(null);
@@ -96,7 +117,10 @@ export default function Lyrics({
               <div key={index} className="my-2 p-1">
                 <Tooltip open={selectedIndex === index}>
                   <TooltipTrigger asChild>
-                    <div onMouseUp={() => handleMouseUp(index)}>
+                    <div
+                      onMouseUp={() => handleMouseUp(index)}
+                      onClick={() => handleSelectLine(index)}
+                    >
                       <p
                         onClick={() => handleSeekEnd(x.start)}
                         className="cursor-pointer"
