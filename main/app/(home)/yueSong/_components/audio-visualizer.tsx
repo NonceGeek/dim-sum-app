@@ -2,7 +2,7 @@
 
 export default function AudioVisualizer({ isPlaying }: { isPlaying: boolean }) {
   return (
-    <div className="flex items-center gap-1 h-10 my-10">
+    <div className="flex items-center gap-1 h-10 my-10 justify-center">
       {[...Array(20)].map((_, i) => (
         <div
           key={i}

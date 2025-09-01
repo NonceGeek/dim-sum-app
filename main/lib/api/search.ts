@@ -14,7 +14,9 @@ export type SearchResult = {
   note:
     | {
         context: {
-          description?: string;
+          lyricist?: string;
+          composer?: string;
+          introduction?: string;
           song_name?: string;
           author?: string;
           album?: string;
