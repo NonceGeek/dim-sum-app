@@ -14,11 +14,40 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, ChevronRight, BookOpen } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import readmeContent from "../../../public/apidoc.md";
 
 export default function DocsPage() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+
+  // Handle URL anchor on page load
+  useEffect(() => {
+    const handleInitialAnchor = () => {
+      const hash = window.location.hash.substring(1); // Remove the '#' prefix
+      if (hash) {
+        // Small delay to ensure the page has rendered
+        setTimeout(() => {
+          const targetElement = document.getElementById(hash);
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        }, 100);
+      }
+    };
+
+    // Handle initial load
+    handleInitialAnchor();
+
+    // Handle hash changes (back/forward navigation)
+    window.addEventListener('hashchange', handleInitialAnchor);
+
+    return () => {
+      window.removeEventListener('hashchange', handleInitialAnchor);
+    };
+  }, []);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -37,6 +66,10 @@ export default function DocsPage() {
     targetId: string
   ) => {
     e.preventDefault();
+    
+    // Update URL hash
+    window.history.pushState(null, '', `#${targetId}`);
+    
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
       targetElement.scrollIntoView({
@@ -121,11 +154,12 @@ export default function DocsPage() {
   ];
 
   const SidebarContent = () => (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-sm text-gray-600 uppercase tracking-wider">
+    <div className="space-y-4 h-full flex flex-col">
+      <h3 className="font-semibold text-sm text-gray-600 uppercase tracking-wider flex-shrink-0">
         API Documentation
       </h3>
-      <nav className="space-y-1">
+      <ScrollArea className="flex-1 min-h-0">
+        <nav className="space-y-1 pr-4">
         {navigationItems.map((item) => (
           <div key={item.id}>
             {/* 主菜单项 */}
@@ -202,15 +236,18 @@ export default function DocsPage() {
             )}
           </div>
         ))}
-      </nav>
+        </nav>
+      </ScrollArea>
     </div>
   );
 
   return (
     <>
       {/* 桌面端侧边栏 */}
-      <div className="hidden md:block w-64 border-r border-gray-200 bg-transparent p-6 flex-shrink-0">
-        <SidebarContent />
+      <div className="hidden md:block w-64 border-r border-gray-200 bg-transparent flex-shrink-0 h-screen overflow-hidden">
+        <div className="p-6 h-full">
+          <SidebarContent />
+        </div>
       </div>
 
       {/* 主内容区域 */}
