@@ -229,7 +229,7 @@ function YueSong() {
               className={`rounded-full transition-all duration-700 ${
                 isPlaying ? "animate-spin" : ""
               }`}
-              style={{ animationDuration: "5s" }}
+              style={{ animationDuration: "10s" }}
             />
           </div>
           <AudioVisualizer isPlaying={isPlaying} />
