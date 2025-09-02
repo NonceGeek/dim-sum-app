@@ -33,6 +33,22 @@ export default function Lyrics({
 }: ILyricsProps) {
   const { lyric_full, duration } = lyric;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
+
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  const handleTouchStart = (index: number) => {
+    const timer = setTimeout(() => {
+      handleSelectLine(index); // 触发选中
+    }, 500); // 500ms 长按
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) clearTimeout(longPressTimer); // 取消长按
+  };
 
   const handleMouseUp = (index: number) => {
     const selection = window.getSelection();
@@ -119,7 +135,8 @@ export default function Lyrics({
                   <TooltipTrigger asChild>
                     <div
                       onMouseUp={() => handleMouseUp(index)}
-                      onClick={() => handleSelectLine(index)}
+                      onTouchStart={() => handleTouchStart(index)}
+                      onTouchEnd={handleTouchEnd}
                     >
                       <p
                         onClick={() => handleSeekEnd(x.start)}
@@ -162,7 +179,10 @@ export default function Lyrics({
                     </div>
                   </TooltipTrigger>
 
-                  <TooltipContent className="bg-neutral-200 p-2 rounded shadow">
+                  <TooltipContent
+                    className="bg-neutral-200 p-2 rounded shadow"
+                    side={isMobile ? "bottom" : "top"}
+                  >
                     <Button
                       onClick={handleShare}
                       className="bg-neutral-200 text-black border-0 hover:bg-neutral-200 shadow-none"
