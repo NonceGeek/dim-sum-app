@@ -9,6 +9,14 @@ import {
   CreditCard,
   Key,
 } from "lucide-react";
+import { Role } from "@prisma/client";
+
+interface MenuItemWithRoles {
+  icon: any;
+  label: string;
+  href: string;
+  roles?: Role[];
+}
 
 export const menuItems = [
   { icon: Home, label: "Home", href: "/" },
@@ -19,12 +27,21 @@ export const menuItems = [
   { icon: FileCode2, label: "Docs", href: "/docs" },
 ];
 
-export const accountSubmenuItems = [
+const baseAccountSubmenuItems: MenuItemWithRoles[] = [
   { icon: UserCircle, label: "My Account", href: "/account/profile" },
   // { icon: Settings, label: "Preferences", href: "/account/preferences" },
   // { icon: CreditCard, label: "Purchases", href: "/account/purchases" },
-  // { icon: FileCode2, label: "Data Annotation", href: "/account/data-annotation" },
+  { icon: FileCode2, label: "Data Annotation", href: "/account/data-annotation", roles: [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING] },
 ];
+
+export const getAccountSubmenuItems = (userRole?: Role) => {
+  return baseAccountSubmenuItems.filter(item => 
+    !item.roles || (userRole && item.roles.includes(userRole))
+  );
+};
+
+// For backward compatibility - returns all items without role filtering
+export const accountSubmenuItems = baseAccountSubmenuItems.filter(item => !item.roles);
 
 export const workplaceSubmenuItems = [
   { icon: Key, label: "API", href: "/workplace/api" },

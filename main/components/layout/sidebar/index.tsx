@@ -17,11 +17,12 @@ import { useEffect, useState } from "react";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { signOut } from "next-auth/react";
+import { Role } from "@prisma/client";
 import { SidebarHeader } from "./sidebar-header";
 import { MainMenu } from "./main-menu";
 import { SubMenu } from "./sub-menu";
 import { UserSection } from "./user-section";
-import { menuItems, accountSubmenuItems, workplaceSubmenuItems } from "./menu-config";
+import { menuItems, getAccountSubmenuItems, workplaceSubmenuItems } from "./menu-config";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -35,6 +36,9 @@ export function AppSidebar() {
   } = useSidebarStore();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+
+  // Get filtered menu items based on user role
+  const accountSubmenuItems = getAccountSubmenuItems(user?.role as Role);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -57,7 +61,7 @@ export function AppSidebar() {
     } else {
       setActiveSubmenu(null);
     }
-  }, [pathname]);
+  }, [pathname, accountSubmenuItems]);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
