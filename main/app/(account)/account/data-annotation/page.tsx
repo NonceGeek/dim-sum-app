@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/components/layout/header";
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import {
@@ -11,41 +10,46 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { getCorpusItemByUniqueId, SearchResult } from "@/lib/api/search";
+import { dataAnnotationApi, CorpusItem } from "@/lib/api/data-annotation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 const buttonClass =
   "rounded-full border border-gray-400 px-6 py-2 text-white bg-transparent hover:bg-gray-700 transition-colors duration-150 mr-2";
 
 export default function DataAnnotationPage() {
-  const [corpusData, setCorpusData] = useState<SearchResult[]>([]);
+  const [corpusData, setCorpusData] = useState<CorpusItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const uuids = [
-      "6e29005d-31ed-42d6-be17-baab39b07fa1",
-      "90e91e2b-2950-4faa-bb79-ca9261d45da6",
-      "ce05f31b-8615-424f-9131-18b813c5fd36",
-    ];
+  const itemsPerPage = 10;
 
-    async function fetchAllData() {
-      setIsLoading(true);
-      try {
-        const dataPromises = uuids.map(uuid => getCorpusItemByUniqueId(uuid));
-        const results = await Promise.all(dataPromises);
-        // 过滤掉未找到的项目 (null)
-        setCorpusData(results.filter((item): item is SearchResult => item !== null));
-      } catch (error) {
-        console.error("Failed to fetch corpus data:", error);
-        // 这里可以设置一个错误状态来显示错误信息
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchCorpusData = async (page: number) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await dataAnnotationApi.getCorpusItems(page, itemsPerPage);
+      setCorpusData(response.data);
+      setTotalPages(response.pagination.totalPages);
+      setTotalCount(response.pagination.totalCount);
+      setCurrentPage(page);
+    } catch (error) {
+      console.error("Failed to fetch corpus data:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch corpus data");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    fetchAllData();
+  useEffect(() => {
+    fetchCorpusData(1);
   }, []);
 
   const downloadTemplate = () => {
@@ -58,47 +62,113 @@ export default function DataAnnotationPage() {
   };
 
   const handleView = (uuid: string) => {
-    // 使用动态路由路径
-    router.push(`/account/data-annotation/${uuid}`);
+    // 跳转到详情页，查看模式
+    router.push(`/account/data-annotation/${uuid}?mode=view`);
   };
 
-  const handleEdit = (uuid: string) => {
-    console.log("编辑", uuid);
-    router.push(`/account/data-annotation/${uuid}`);
-  };
-  const handleDelete = (uuid: string) => {
-    console.log("删除", uuid);
-    router.push(`/account/data-annotation/${uuid}`);
-  };
-  const handleReview = (uuid: string) => {
-    console.log("审核", uuid);
-    router.push(`/account/data-annotation/${uuid}`);
+  const handleEdit = (uuid: string, editableLevel: number) => {
+    // 检查是否可编辑
+    if (editableLevel === 0) {
+      toast.error("此条目不可编辑");
+      return;
+    }
+    // 跳转到详情页，编辑模式
+    router.push(`/account/data-annotation/${uuid}?mode=edit`);
   };
 
-  const actionHandlers: Record<string, (uuid: string) => void> = {
-    "查看": handleView,
-    "编辑": handleEdit,
-    "删除": handleDelete,
-    "审核": handleReview,
+  // 暂时注释删除和审核功能
+  // const handleDelete = (uuid: string) => {
+  //   console.log("删除", uuid);
+  //   router.push(`/account/data-annotation/${uuid}`);
+  // };
+  // const handleReview = (uuid: string) => {
+  //   console.log("审核", uuid);
+  //   router.push(`/account/data-annotation/${uuid}`);
+  // };
+
+  // 根据条目的可编辑状态显示不同操作
+  const getAvailableActions = (item: CorpusItem) => {
+    const actions = [
+      {
+        name: "查看",
+        handler: () => handleView(item.unique_id),
+        className: "text-gray-300 hover:text-blue-400"
+      }
+    ];
+
+    // 只有可编辑的条目才显示编辑按钮
+    if (item.editable_level > 0) {
+      actions.push({
+        name: "编辑",
+        handler: () => handleEdit(item.unique_id, item.editable_level),
+        className: "text-gray-300 hover:text-green-400"
+      });
+    }
+
+    // 暂时注释删除和审核操作
+    // actions.push({
+    //   name: "删除",
+    //   handler: () => handleDelete(item.unique_id),
+    //   className: "text-gray-300 hover:text-red-400"
+    // });
+    // actions.push({
+    //   name: "审核",
+    //   handler: () => handleReview(item.unique_id),
+    //   className: "text-gray-300 hover:text-purple-400"
+    // });
+
+    return actions;
   };
 
-  const actionNames = Object.keys(actionHandlers);
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      fetchCorpusData(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      fetchCorpusData(currentPage - 1);
+    }
+  };
 
   return (
     <>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Data Annotation</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Data Annotation</h1>
+            {totalCount > 0 && (
+              <p className="text-sm text-gray-400 mt-1">
+                Total: {totalCount} items | Page {currentPage} of {totalPages}
+              </p>
+            )}
+          </div>
           <div className="flex gap-2">
-            <button className={buttonClass}>Create</button>
+            {/* <button className={buttonClass}>Create</button>
             <button className={buttonClass}>Save</button>
             <button className={buttonClass}>Delete</button>
             <button className={buttonClass}>Batch Upload</button>
             <button className={buttonClass} onClick={downloadTemplate}>
               Download template
-            </button>
+            </button> */}
           </div>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-500 rounded-lg">
+            <p className="text-red-400">Error: {error}</p>
+            <Button 
+              onClick={() => fetchCorpusData(currentPage)} 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
         <div className="grid gap-8">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
@@ -122,8 +192,8 @@ export default function DataAnnotationPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {item.note?.context?.pinyin && item.note.context.pinyin.length > 0 ? (
-                      item.note.context.pinyin.map((pinyin, pinyinIndex) => (
+                    {item.note?.context?.pinyin && Array.isArray(item.note.context.pinyin) && item.note.context.pinyin.length > 0 ? (
+                      item.note.context.pinyin.map((pinyin: any, pinyinIndex: number) => (
                         <TableRow key={`${item.unique_id}-${pinyinIndex}`} className="text-white text-base">
                           {pinyinIndex === 0 ? (
                             <TableCell rowSpan={item.note.context.pinyin.length} className="text-center border-r border-gray-600 align-middle text-2xl">
@@ -134,19 +204,19 @@ export default function DataAnnotationPage() {
                             {pinyin}
                           </TableCell>
                           <TableCell className="border border-gray-600 px-4 py-3 text-center">
-                            {actionNames.map((actionName, actionIndex) => (
-                              <React.Fragment key={actionName}>
+                            {getAvailableActions(item).map((action, actionIndex) => (
+                              <React.Fragment key={action.name}>
                                 <a
                                   href="#"
                                   onClick={(e) => {
                                     e.preventDefault();
-                                    actionHandlers[actionName](item.unique_id);
+                                    action.handler();
                                   }}
-                                  className={`mx-1 transition-colors duration-150 cursor-pointer text-gray-300 hover:text-purple-400`}
+                                  className={`mx-1 transition-colors duration-150 cursor-pointer ${action.className}`}
                                 >
-                                  {actionName}
+                                  {action.name}
                                 </a>
-                                {actionIndex < actionNames.length - 1 && (
+                                {actionIndex < getAvailableActions(item).length - 1 && (
                                   <span className="text-gray-500">|</span>
                                 )}
                               </React.Fragment>
@@ -160,7 +230,23 @@ export default function DataAnnotationPage() {
                         <TableCell className="border border-gray-600 px-4 py-3 text-center text-lg">{item.data}</TableCell>
                         <TableCell className="border border-gray-600 px-4 py-3 italic text-gray-500">No pinyin data</TableCell>
                         <TableCell className="border border-gray-600 px-4 py-3 text-center">
-                          {/* 同样可以显示操作按钮 */}
+                          {getAvailableActions(item).map((action, actionIndex) => (
+                            <React.Fragment key={action.name}>
+                              <a
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  action.handler();
+                                }}
+                                className={`mx-1 transition-colors duration-150 cursor-pointer ${action.className}`}
+                              >
+                                {action.name}
+                              </a>
+                              {actionIndex < getAvailableActions(item).length - 1 && (
+                                <span className="text-gray-500">|</span>
+                              )}
+                            </React.Fragment>
+                          ))}
                         </TableCell>
                       </TableRow>
                     )}
@@ -170,6 +256,35 @@ export default function DataAnnotationPage() {
             ))
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {!isLoading && corpusData.length > 0 && (
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <Button
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+              variant="outline"
+              size="sm"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            
+            <span className="text-sm text-gray-400">
+              Page {currentPage} of {totalPages}
+            </span>
+            
+            <Button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              variant="outline"
+              size="sm"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        )}
       </div>
     </>
   );

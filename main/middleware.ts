@@ -23,6 +23,11 @@ export default withAuth(
           return token.role === Role.TAGGER_PARTNER || token.role === Role.TAGGER_OUTSOURCING;
         }
 
+        // Data annotation page requires tagger role
+        if (path.startsWith('/account/data-annotation')) {
+          return token.role === Role.TAGGER_PARTNER || token.role === Role.TAGGER_OUTSOURCING;
+        }
+
         // 普通用户路由
         return true;
       },
