@@ -232,6 +232,7 @@ export default function WordLyricCardDetail({
                                     }
                                   ).context.video
                                 }
+                                muted={true}
                                 controls
                                 width="100%"
                                 height="100%"
