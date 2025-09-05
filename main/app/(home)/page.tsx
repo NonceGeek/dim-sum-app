@@ -431,8 +431,7 @@ export default function HomePage() {
                     }}
                   >
                     {/* HINT: not delete, to render the result here. */}
-                    {result.category !== "粤语曲库" &&
-                      result.category !== "岭南文化图片数据集" && (
+                    {result.category !== "粤语曲库" && (
                         <WordLyricCardDetail
                           result={result}
                           setEditingResult={setEditingResult}
