@@ -255,14 +255,14 @@ export default function HomePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   <Card
                     className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("淡淡交會過")}
+                    onClick={() => handleExampleSearch("落花流水")}
                   >
                     <div className="text-center space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         Cantonese Lyrics
                       </h3>
                       <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                        淡淡交會過
+                        落花流水
                       </p>
                     </div>
                   </Card>
