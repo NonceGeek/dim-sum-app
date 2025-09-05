@@ -290,13 +290,13 @@ export default function HomePage() {
                   </Card>
                   <Card
                     className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("故乡")}
+                    onClick={() => handleExampleSearch("曹冲称象")}
                   >
                     <div className="text-center space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         Chinese Words
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">故乡</p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">曹冲称象</p>
                     </div>
                   </Card>
                   <Card
@@ -432,7 +432,8 @@ export default function HomePage() {
                   >
                     {/* HINT: not delete, to render the result here. */}
                     {result.category !== "粤语曲库" &&
-                      result.category !== "岭南文化图片数据集" && (
+                      // result.category !== "岭南文化图片数据集" &&
+                      (
                         <WordLyricCardDetail
                           result={result}
                           setEditingResult={setEditingResult}
@@ -494,8 +495,8 @@ export default function HomePage() {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                       {[
-                        { title: "Cantonese Lyrics", prompt: "淡淡交會過" },
-                        { title: "Chinese Words", prompt: "故乡" },
+                        { title: "Cantonese Lyrics", prompt: "落花流水" },
+                        { title: "Chinese Words", prompt: "曹冲称象" },
                         { title: "Single Character", prompt: "行" },
                         { title: "Video Example", prompt: "歡聚一堂" },
                       ].map(
@@ -572,14 +573,14 @@ export default function HomePage() {
                       </Card>
                       <Card
                         className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("故乡")}
+                        onClick={() => handleExampleSearch("曹冲称象")}
                       >
                         <div className="text-center space-y-1 sm:space-y-2">
                           <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                             Chinese Words
                           </h3>
                           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                            故乡
+                            曹冲称象
                           </p>
                         </div>
                       </Card>
