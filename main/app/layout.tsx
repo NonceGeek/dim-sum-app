@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Cantonese AI Data & App Hub | DimSum AI Labs",
-  description: "Your favorite dimsum app",
+  description: "The Best & The most AI-friendly Data Hub for Cantonese✌️",
 };
 
 export default function RootLayout({
