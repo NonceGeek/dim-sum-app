@@ -15,6 +15,14 @@ import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { DictionaryNote } from "@/lib/types";
 import WordLyricCardDetail from "./_components/word-lyric-card-detail";
 import YueSongCardDetail from "./_components/yue-song-card-detail";
+import { useAllCategories } from "@/lib/api/category";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -34,6 +42,11 @@ export default function HomePage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedDataset, setSelectedDataset] = useState<string>("all");
+  
+  // Fetch available categories
+  // get all categories from the backend
+  const { data: categories, isLoading: categoriesLoading } = useAllCategories();
   
 
   // 从URL参数读取搜索关键词
@@ -57,7 +70,7 @@ export default function HomePage() {
       setIsInitialLoad(false);
       // 自动执行搜索
       search(
-        { keyword },
+        { keyword, category: selectedDataset },
         {
           onSuccess: (data: SearchResult[]) => {
             setResults(data);
@@ -71,7 +84,7 @@ export default function HomePage() {
         }
       );
     }
-  }, [searchParams, search, isInitialLoad]);
+  }, [searchParams, search, isInitialLoad, selectedDataset]);
 
   const handleSearch = () => {
     if (!searchPrompt.trim()) return;
@@ -84,7 +97,7 @@ export default function HomePage() {
 
     // 直接执行搜索，不依赖useEffect
     search(
-      { keyword: searchPrompt },
+      { keyword: searchPrompt, category: selectedDataset },
       {
         onSuccess: (data: SearchResult[]) => {
           setResults(data);
@@ -117,7 +130,7 @@ export default function HomePage() {
 
     // 直接执行搜索，不依赖useEffect
     search(
-      { keyword: prompt },
+      { keyword: prompt, category: selectedDataset },
       {
         onSuccess: (data: SearchResult[]) => {
           setResults(data);
@@ -224,6 +237,22 @@ export default function HomePage() {
                   className="pl-10 h-12 text-lg dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
                 />
               </div>
+              {/* Dataset selection dropdown */}
+              <Select value={selectedDataset} onValueChange={setSelectedDataset}>
+                <SelectTrigger className="w-[180px] h-12">
+                  <SelectValue placeholder="Select dataset" />
+                </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全局搜索</SelectItem>
+                    {categories
+                      ?.filter((category) => category.if_in_all_data === true)
+                      ?.map((category) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.nickname || category.name}
+                        </SelectItem>
+                      ))}
+                </SelectContent>
+              </Select>
               <Button
                 onClick={handleSearch}
                 disabled={isPending}
