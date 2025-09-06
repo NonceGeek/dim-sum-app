@@ -16,6 +16,7 @@ export interface CategoryInfo {
   pinned: boolean;
   editable_level: number;
   linked_apps?: any;
+  if_in_all_data?: boolean;
 }
 
 export function useCategoryEditableLevel(categoryName: string | null) {
