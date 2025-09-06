@@ -34,12 +34,8 @@ export default function YueSongCardDetail({
             <div className="text-indigo-500 flex gap-4 items-center">
               <CirclePlay
                 className="cursor-pointer"
-                onClick={async (e) => {
-                  sessionStorage.setItem(
-                    "yueSongDetails",
-                    JSON.stringify(result)
-                  );
-                  await corpusInteractApi.updateView(result.unique_id);
+                onClick={(e) => {
+                  corpusInteractApi.updateView(result.unique_id);
                   router.push(`/yueSong?id=${result.unique_id}`);
                 }}
               />
