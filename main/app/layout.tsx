@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Dimsum App",
-  description: "Your favorite dimsum app",
+  title: "Cantonese AI Data & App Hub | DimSum AI Labs",
+  description: "The Best & The most AI-friendly Data Hub for Cantonese✌️",
 };
 
 export default function RootLayout({
