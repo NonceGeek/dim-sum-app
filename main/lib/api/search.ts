@@ -51,6 +51,7 @@ export type SearchResult = {
 
 type SearchParams = {
   keyword: string;
+  category?: string;
 };
 
 
@@ -104,21 +105,26 @@ export async function getCorpusItemByUniqueId(
 }
 
 export function useSearch() {
-  // console.log("useSearch");
+  console.log("useSearch");
   const search = async (params: SearchParams) => {
     try {
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/text_search_v2?table_name=cantonese_corpus_all&column=data&keyword=${encodeURIComponent(
-            params.keyword
-          )}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Build the URL with optional category parameter and configurable table name
+      const table_name = params.category === 'all' || !params.category ? 'cantonese_corpus_all' : params.category;
+      let url = process.env.NEXT_PUBLIC_BACKEND_URL +
+        `/text_search_v2?table_name=${encodeURIComponent(table_name)}&column=data&keyword=${encodeURIComponent(
+          params.keyword
+        )}`;
+
+      console.log("table_name", table_name);
+
+      console.log("url", url);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Search request failed");
