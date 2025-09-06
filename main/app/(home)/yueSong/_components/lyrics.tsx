@@ -114,8 +114,8 @@ export default function Lyrics({
               0,
               Math.min(1, (progress - beforeTime) / (afterTime - beforeTime))
             );
-            const chars = x.data.split("");
-            const yuepingchars = x.pron.split(" ");
+            const chars = x.data?.split("") || [];
+            const yuepingchars = x.pron?.split(" ") || [];
             const highlightCount = Math.floor(ratio * chars.length);
             const highlightYuePingCount = Math.floor(
               ratio * yuepingchars.length
