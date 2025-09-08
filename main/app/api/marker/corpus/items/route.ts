@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
       const { searchParams } = new URL(req.url);
       const page = parseInt(searchParams.get('page') || '1');
       const limit = parseInt(searchParams.get('limit') || '20');
+      const q = searchParams.get('q');
       const offset = (page - 1) * limit;
 
       // Validate pagination parameters
@@ -20,18 +21,25 @@ export async function GET(req: NextRequest) {
         );
       }
 
+      // Build where clause with optional search
+      const whereClause = {
+        category: 'zyzdv2',
+        ...(q && {
+          data: {
+            contains: q,
+            mode: 'insensitive' as const
+          }
+        })
+      };
+
       // Get total count for pagination info
       const totalCount = await prisma.cantonese_corpus_all.count({
-        where: {
-          category: 'zyzdv2'
-        }
+        where: whereClause
       });
 
       // Get the corpus items with pagination
       const items = await prisma.cantonese_corpus_all.findMany({
-        where: {
-          category: 'zyzdv2'
-        },
+        where: whereClause,
         select: {
           id: true,
           data: true,
