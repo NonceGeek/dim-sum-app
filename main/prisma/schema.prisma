@@ -34,17 +34,18 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  phoneNumber   String?
-  wechatAvatar  String?
-  role          Role      @default(LEARNER)
-  bio           String?
-  accounts      Account[]
-  sessions      Session[]
+  id                 String                     @id @default(cuid())
+  name               String?
+  email              String?                    @unique
+  emailVerified      DateTime?
+  image              String?
+  phoneNumber        String?
+  wechatAvatar       String?
+  role               Role                       @default(LEARNER)
+  bio                String?
+  isSystemAdmin      Boolean                    @default(false)
+  accounts           Account[]
+  sessions           Session[]
   corpusInteractions user_corpus_interactions[]
 }
 
@@ -90,21 +91,21 @@ model cantonese_categories {
   pinned         Boolean   @default(false)
   editable_level BigInt    @default(0)
   linked_apps    Json      @default("[]")
+  if_in_all_data Boolean   @default(false)
 }
 
 model cantonese_corpus_all {
-  id             BigInt   @unique @default(autoincrement())
-  data           String
-  note           Json?
-  category       String?
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
-  tags           Json?
-  editable_level Int      @default(1) @db.SmallInt
-  liked_num      BigInt   @default(0)
-  bookmark_num   BigInt   @default(0)
-  view_num       BigInt   @default(0)
-  unique_id      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-
+  id               BigInt                     @unique @default(autoincrement())
+  data             String
+  note             Json?
+  category         String?
+  created_at       DateTime                   @default(now()) @db.Timestamptz(6)
+  tags             Json?
+  editable_level   Int                        @default(1) @db.SmallInt
+  liked_num        BigInt                     @default(0)
+  unique_id        String                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookmark_num     BigInt                     @default(0)
+  view_num         BigInt                     @default(0)
   userInteractions user_corpus_interactions[]
 
   @@id([id, data])
@@ -175,18 +176,17 @@ model cantonese_library {
 /// 用户对语料的互动表
 /// 记录用户对语料的点赞和收藏
 model user_corpus_interactions {
-  id          BigInt   @id @default(autoincrement())
-  user_id     String
-  corpus_unique_id String @db.Uuid
-  category    String?
-  is_liked    Boolean  @default(false)
-  is_bookmarked Boolean @default(false)
-  is_viewed   Boolean  @default(false)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  corpus      cantonese_corpus_all @relation(fields: [corpus_unique_id], references: [unique_id], onDelete: Cascade)
+  id               BigInt               @id @default(autoincrement())
+  user_id          String
+  corpus_unique_id String               @db.Uuid
+  category         String?
+  is_liked         Boolean              @default(false)
+  is_bookmarked    Boolean              @default(false)
+  created_at       DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime             @default(now()) @db.Timestamptz(6)
+  is_viewed        Boolean              @default(false)
+  corpus           cantonese_corpus_all @relation(fields: [corpus_unique_id], references: [unique_id], onDelete: Cascade)
+  user             User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, corpus_unique_id])
   @@index([corpus_unique_id])
@@ -208,6 +208,15 @@ model corpus_yyjq {
   unique_id  String?   @db.Uuid
   created_at DateTime  @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model meme_pic_links {
+  id         BigInt   @id(map: "meme_links_pkey") @default(autoincrement())
+  arweave_id String?
+  uploader   String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
 }
 
 enum Role {

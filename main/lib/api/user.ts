@@ -10,6 +10,7 @@ export interface UserProfile {
   phoneNumber: string | null;
   bio: string | null;
   role: SessionUserRole;
+  isSystemAdmin: boolean;
 }
 
 export interface UpdateProfileData {

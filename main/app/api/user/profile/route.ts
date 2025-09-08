@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
         phoneNumber: true,
         bio: true,
         role: true,
+        isSystemAdmin: true,
       },
     });
 
@@ -55,6 +56,7 @@ export async function PUT(req: NextRequest) {
         phoneNumber: true,
         bio: true,
         role: true,
+        isSystemAdmin: true,
       },
     });
 
