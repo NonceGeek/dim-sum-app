@@ -28,6 +28,7 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       role?: Role;
+      isSystemAdmin?: boolean;
     }
   }
 }
@@ -39,6 +40,7 @@ declare module "next-auth/jwt" {
     unionId?: string;
     role?: Role;
     image?: string | null;
+    isSystemAdmin?: boolean;
   }
 }
 
@@ -87,7 +89,7 @@ export const authOptions: AuthOptions = {
         token.unionId = wechatProfile.unionid;
         token.image = wechatProfile.headimgurl;
         
-        // 只在需要时查询用户角色
+        // 只在需要时查询用户角色和系统管理员状态
         if (!token.role && !token.id) {
           // console.log('Fetching user role...');
           const dbAccount = await prisma.account.findFirst({
@@ -100,7 +102,8 @@ export const authOptions: AuthOptions = {
                 select: {
                   id: true,
                   role: true,
-                  image: true
+                  image: true,
+                  isSystemAdmin: true
                 }
               }
             }
@@ -110,9 +113,11 @@ export const authOptions: AuthOptions = {
             token.id = dbAccount.user.id;
             token.role = dbAccount.user.role;
             token.image = dbAccount.user.image || wechatProfile.headimgurl;
+            token.isSystemAdmin = dbAccount.user.isSystemAdmin;
           } else {
             // 使用从 URL 中获取的角色，如果没有则默认为 LEARNER
             token.role = (account.role as Role) || Role.LEARNER;
+            token.isSystemAdmin = false;
           }
           // console.log('User role fetched:', token.role);
         }
@@ -121,6 +126,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
+        token.isSystemAdmin = (user as any).isSystemAdmin;
       }
       
       // console.log('JWT Callback end:', { 
@@ -139,6 +145,7 @@ export const authOptions: AuthOptions = {
         session.user.unionId = token.unionId;
         session.user.role = token.role;
         session.user.image = token.image;
+        session.user.isSystemAdmin = token.isSystemAdmin;
       }
       
       // console.log('Session Callback end:', { 
@@ -169,7 +176,8 @@ export const authOptions: AuthOptions = {
                   select: {
                     id: true,
                     role: true,
-                    wechatAvatar: true
+                    wechatAvatar: true,
+                    isSystemAdmin: true
                   }
                 }
               }
@@ -198,7 +206,8 @@ export const authOptions: AuthOptions = {
                 select: {
                   id: true,
                   role: true,
-                  wechatAvatar: true
+                  wechatAvatar: true,
+                  isSystemAdmin: true
                 }
               });
               // console.log('New user and account created');
@@ -250,7 +259,8 @@ export const authOptions: AuthOptions = {
                 user: {
                   select: {
                     id: true,
-                    role: true
+                    role: true,
+                    isSystemAdmin: true
                   }
                 }
               }

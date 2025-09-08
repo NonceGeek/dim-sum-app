@@ -93,6 +93,11 @@ export default function ProfilePage() {
                     <Badge variant="secondary" className="text-sm">
                       {formatRole(profile.role)}
                     </Badge>
+                    {profile.isSystemAdmin && (
+                      <Badge variant="destructive" className="text-sm">
+                        System Admin
+                      </Badge>
+                    )}
                     {profile && (
                       <EditProfileDialog
                         profile={profile}
