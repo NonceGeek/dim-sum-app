@@ -14,7 +14,8 @@ import { dataAnnotationApi, CorpusItem } from "@/lib/api/data-annotation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 const buttonClass =
@@ -27,15 +28,17 @@ export default function DataAnnotationPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const router = useRouter();
 
   const itemsPerPage = 10;
 
-  const fetchCorpusData = async (page: number) => {
+  const fetchCorpusData = async (page: number, query?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await dataAnnotationApi.getCorpusItems(page, itemsPerPage);
+      const response = await dataAnnotationApi.getCorpusItems(page, itemsPerPage, query || searchQuery);
       setCorpusData(response.data);
       setTotalPages(response.pagination.totalPages);
       setTotalCount(response.pagination.totalCount);
@@ -51,6 +54,40 @@ export default function DataAnnotationPage() {
   useEffect(() => {
     fetchCorpusData(1);
   }, []);
+
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
+    setCurrentPage(1);
+    fetchCorpusData(1, searchInput);
+  };
+
+  const handleClearSearch = async () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setCurrentPage(1);
+    
+    // 立即清空搜索结果，重新获取所有数据
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await dataAnnotationApi.getCorpusItems(1, itemsPerPage, "");
+      setCorpusData(response.data);
+      setTotalPages(response.pagination.totalPages);
+      setTotalCount(response.pagination.totalCount);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Failed to fetch corpus data:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch corpus data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const downloadTemplate = () => {
     const link = document.createElement("a");
@@ -122,36 +159,63 @@ export default function DataAnnotationPage() {
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      fetchCorpusData(currentPage + 1);
+      fetchCorpusData(currentPage + 1, searchQuery);
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      fetchCorpusData(currentPage - 1);
+      fetchCorpusData(currentPage - 1, searchQuery);
     }
   };
 
   return (
     <>
       <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end mb-4">
+          <div className="flex items-center gap-2 bg-card border border-gray-600 rounded-lg px-3 py-2">
+            <Search className="w-4 h-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search data..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="border-0 bg-transparent text-white placeholder-gray-400 focus:ring-0 focus:border-0 w-64"
+            />
+            {searchInput && (
+              <Button
+                onClick={handleClearSearch}
+                variant="ghost"
+                size="sm"
+                className="p-1 h-auto text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              onClick={handleSearch}
+              variant="ghost"
+              size="sm"
+              className="p-2 h-auto text-gray-400 hover:text-white hover:bg-gray-700"
+            >
+              Search
+            </Button>
+          </div>
+        </div>
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Data Annotation</h1>
             {totalCount > 0 && (
               <p className="text-sm text-gray-400 mt-1">
                 Total: {totalCount} items | Page {currentPage} of {totalPages}
+                {searchQuery && (
+                  <span className="ml-2">
+                    (searching for: "{searchQuery}")
+                  </span>
+                )}
               </p>
             )}
-          </div>
-          <div className="flex gap-2">
-            {/* <button className={buttonClass}>Create</button>
-            <button className={buttonClass}>Save</button>
-            <button className={buttonClass}>Delete</button>
-            <button className={buttonClass}>Batch Upload</button>
-            <button className={buttonClass} onClick={downloadTemplate}>
-              Download template
-            </button> */}
           </div>
         </div>
 
@@ -177,6 +241,24 @@ export default function DataAnnotationPage() {
                 <Skeleton className="h-24 w-full" />
               </Card>
             ))
+          ) : corpusData.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">
+                {searchQuery 
+                  ? `No results found for "${searchQuery}"` 
+                  : "No data available"
+                }
+              </p>
+              {searchQuery && (
+                <Button 
+                  onClick={handleClearSearch}
+                  variant="outline" 
+                  className="mt-4"
+                >
+                  Clear search and show all data
+                </Button>
+              )}
+            </div>
           ) : (
             corpusData.map((item) => (
               <Card

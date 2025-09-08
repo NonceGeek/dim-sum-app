@@ -41,9 +41,18 @@ export interface EditableItemsResponse {
 }
 
 export const dataAnnotationApi = {
-  getCorpusItems: async (page: number = 1, limit: number = 20): Promise<CorpusItemsResponse> => {
+  getCorpusItems: async (page: number = 1, limit: number = 20, q?: string): Promise<CorpusItemsResponse> => {
     try {
-      const response = await fetch(`/api/marker/corpus/items?page=${page}&limit=${limit}`, {
+      const searchParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      
+      if (q) {
+        searchParams.append('q', q);
+      }
+      
+      const response = await fetch(`/api/marker/corpus/items?${searchParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
