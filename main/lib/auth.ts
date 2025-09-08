@@ -80,7 +80,11 @@ export const authOptions: AuthOptions = {
       return urlObj.toString();
     },
     async jwt({ token, user, account, profile }) {
-      // console.log('JWT Callback start:', { token, user, account, profile });
+      // console.log('=== JWT Callback start ===');
+      // console.log('token:', token);
+      // console.log('user:', user);
+      // console.log('account:', account);
+      // console.log('profile:', profile);
       // const startTime = Date.now();
       
       if (account?.provider === 'wechat' && profile) {
@@ -122,7 +126,7 @@ export const authOptions: AuthOptions = {
           // console.log('User role fetched:', token.role);
         }
       }
-      
+      // console.log('User in jwt callback:', user);
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
@@ -155,7 +159,10 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async signIn({ account, profile, user }) {
-      // console.log('SignIn Callback start:', { user, account, profile });
+      // console.log('=== SignIn Callback start ===');
+      // console.log('user:', user);
+      // console.log('account:', account);
+      // console.log('profile:', profile);
       const startTime = Date.now();
       
       if (account?.provider === 'wechat' && profile) {

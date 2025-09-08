@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { MainLayout } from "@/components/layout/main-layout";
+import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -24,7 +24,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <Providers>
-          <MainLayout>{children}</MainLayout>
+          <ConditionalLayout>{children}</ConditionalLayout>
           <Toaster />
         </Providers>
       </body>
