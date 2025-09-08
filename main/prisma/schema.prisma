@@ -44,9 +44,11 @@ model User {
   role               Role                       @default(LEARNER)
   bio                String?
   isSystemAdmin      Boolean                    @default(false)
+  ethAddress         String?                    @unique
   accounts           Account[]
   sessions           Session[]
   corpusInteractions user_corpus_interactions[]
+  walletNonces       WalletNonce[]
 }
 
 model Session {
@@ -231,6 +233,24 @@ enum APIStatus {
   PENDING
   APPROVED
   BANNED
+}
+
+/// 钱包绑定 Nonce 表
+/// 用于存储钱包绑定时的临时验证 nonce
+model WalletNonce {
+  id        String   @id @default(cuid())
+  userId    String
+  nonce     String   @unique
+  message   String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([nonce])
+  @@index([expiresAt])
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

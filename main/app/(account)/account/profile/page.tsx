@@ -1,36 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Header } from "@/components/layout/header";
-import { userApi, UserProfile } from "@/lib/api/user";
+import { useUserProfile, UserProfile } from "@/lib/api/user";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Phone, Mail, Wallet, Unlink, Copy, Link } from "lucide-react";
 import Image from "next/image";
 import { formatRole } from "@/lib/utils";
 import { EditProfileDialog } from "@/components/dialogs/edit-profile-dialog";
+import { BindWalletDialog } from "@/components/wallet/bind-wallet-dialog";
+import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useUnbindWallet } from "@/lib/api/wallet";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [bindWalletOpen, setBindWalletOpen] = useState(false);
+  
+  // React Query hooks
+  const { data: profile, isLoading: loading, error } = useUserProfile();
+  const unbindWalletMutation = useUnbindWallet();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await userApi.getProfile();
-        setProfile(data);
-      } catch (err) {
-        setError("Failed to load profile");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const copyWalletAddress = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      toast.success("Wallet address copied to clipboard");
+    } catch (error) {
+      toast.error("Failed to copy wallet address");
+    }
+  };
 
-    fetchProfile();
-  }, []);
+  const handleWalletBound = () => {
+    // React Query will automatically refetch profile data due to cache invalidation
+    // No manual refetch needed
+  };
+
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    // Update the profile data in React Query cache
+    queryClient.setQueryData(["user", "profile"], updatedProfile);
+  };
+
+  const handleUnbindWallet = async () => {
+    if (!profile?.ethAddress) return;
+
+    try {
+      await unbindWalletMutation.mutateAsync();
+      toast.success("Wallet unbound successfully!");
+    } catch (error) {
+      console.error("Failed to unbind wallet:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to unbind wallet"
+      );
+    }
+  };
 
   return (
     <>
@@ -60,7 +91,7 @@ export default function ProfilePage() {
         {error && (
           <Card className="p-6 bg-destructive/10 border-destructive/20">
             <div className="text-destructive text-center">
-              <p className="font-medium">{error}</p>
+              <p className="font-medium">Failed to load profile</p>
               <p className="text-sm mt-1">Please try again later</p>
             </div>
           </Card>
@@ -101,7 +132,7 @@ export default function ProfilePage() {
                     {profile && (
                       <EditProfileDialog
                         profile={profile}
-                        onProfileUpdate={setProfile}
+                        onProfileUpdate={handleProfileUpdate}
                       />
                     )}
                   </div>
@@ -114,6 +145,67 @@ export default function ProfilePage() {
                     <div className="flex items-center text-muted-foreground">
                       <Phone className="w-4 h-4 mr-2" />
                       <span>{profile.phoneNumber || "Not set"}</span>
+                    </div>
+                    <div className="flex items-center justify-start text-muted-foreground">
+                      <div className="flex items-center">
+                        <Wallet className="w-4 h-4 mr-2" />
+                        {profile.ethAddress ? (
+                          <TooltipProvider>
+                            <div className="flex items-center space-x-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-pointer hover:text-white">
+                                    {`${profile.ethAddress.slice(
+                                      0,
+                                      6
+                                    )}...${profile.ethAddress.slice(-4)}`}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="font-mono">
+                                    {profile.ethAddress}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  copyWalletAddress(profile.ethAddress!)
+                                }
+                                className="h-4 w-4 p-0 hover:bg-muted"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TooltipProvider>
+                        ) : (
+                          <span>No wallet bound</span>
+                        )}
+                      </div>
+                      {profile.ethAddress ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleUnbindWallet}
+                          disabled={unbindWalletMutation.isPending}
+                          className="h-6 px-2 text-xs text-destructive hover:text-destructive ml-2"
+                        >
+                          <Unlink className="w-3 h-3 mr-1" />
+                          {unbindWalletMutation.isPending ? "Unbinding..." : "Unbind"}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setBindWalletOpen(true)}
+                          className="h-6 px-2 text-xs ml-2"
+                        >
+                          {" "}
+                          <Link className="w-3 h-3 mr-1" />
+                          Bind Wallet
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -141,6 +233,12 @@ export default function ProfilePage() {
             </Card>
           </div>
         )}
+
+        <BindWalletDialog
+          open={bindWalletOpen}
+          onOpenChange={setBindWalletOpen}
+          onSuccess={handleWalletBound}
+        />
       </div>
     </>
   );
