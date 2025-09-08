@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
         bio: true,
         role: true,
         isSystemAdmin: true,
+        ethAddress: true,
       },
     });
 
@@ -57,6 +58,7 @@ export async function PUT(req: NextRequest) {
         bio: true,
         role: true,
         isSystemAdmin: true,
+        ethAddress: true,
       },
     });
 
