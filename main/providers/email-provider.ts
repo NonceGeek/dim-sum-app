@@ -73,6 +73,7 @@ export function EmailProvider() {
           name: user.name,
           image: user.image,
           role: user.role,
+          isSystemAdmin: user.isSystemAdmin,
         };
       } catch (error) {
         console.error('Email provider error:', error);

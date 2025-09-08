@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface HeaderProps {
   showLogo?: boolean;
@@ -17,6 +18,7 @@ export function Header({ showLogo = true, titleClassName = "" }: HeaderProps) {
   const setOpen = useSidebarStore((state) => state.setOpen);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
+  const { data: session } = useSession();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-transparent backdrop-blur-md supports-[backdrop-filter]:bg-transparent">
@@ -52,6 +54,24 @@ export function Header({ showLogo = true, titleClassName = "" }: HeaderProps) {
                 <Input placeholder="Search..." className="pl-8" />
               </div>
             </div> */}
+          {session?.user?.isSystemAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="text-sm"
+            >
+              <Link
+                href="/admin"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-1"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Admin Panel</span>
+              </Link>
+            </Button>
+          )}
           <Link
             className="flex items-center space-x-2"
             href="https://aidimsum.com/"

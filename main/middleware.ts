@@ -28,6 +28,11 @@ export default withAuth(
           return token.role === Role.TAGGER_PARTNER || token.role === Role.TAGGER_OUTSOURCING;
         }
 
+        // Admin routes require system admin permission
+        if (path.startsWith('/admin')) {
+          return !!token.isSystemAdmin;
+        }
+
         // 普通用户路由
         return true;
       },
@@ -50,5 +55,7 @@ export const config = {
     // 标记员专用路由
     "/marker/:path*",
     "/api/marker/:path*",
+    // 管理员专用路由
+    "/admin/:path*",
   ],
 }; 
