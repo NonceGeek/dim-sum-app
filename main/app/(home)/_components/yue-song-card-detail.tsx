@@ -26,7 +26,7 @@ export default function YueSongCardDetail({
                   {result.note.context.author}/{result.note.context.album}
                 </span>
               </div>
-              <div className="gray_text_sm flex items-center">
+              <div className="gray_text_sm flex items-center whitespace-pre-line">
                 <div>{result.note.context.introduction}</div>
               </div>
             </div>
