@@ -27,6 +27,7 @@ interface App {
   icon_img: string;
   type: string;
   wechat_micro_app: string;
+  example_img: string;
   pinned: boolean;
   localed: boolean;
 }
@@ -34,6 +35,7 @@ interface App {
 // Create a client component for the app card
 function AppCard({ app }: { app: App }) {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [exampleDialogOpen, setExampleDialogOpen] = useState(false);
   
   const getTypeDisplay = (type: string): string => {
     switch (type.toUpperCase()) {
@@ -78,7 +80,38 @@ function AppCard({ app }: { app: App }) {
         </>
       );
     }
+
     
+    if (app.example_img) {
+      return (
+        <>
+          <button 
+            onClick={() => setExampleDialogOpen(true)} 
+            className="text-green-600 hover:underline ml-2"
+          >
+            👉 启动应用
+          </button>
+          <Dialog open={exampleDialogOpen} onOpenChange={setExampleDialogOpen}>
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>应用页面</DialogTitle>
+              </DialogHeader>
+              <div className="flex items-center justify-center p-4">
+                <Image
+                  src={app.example_img}
+                  alt="App Example"
+                  width={600}
+                  height={400}
+                  className="rounded-lg max-w-full h-auto"
+                  unoptimized
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    }
+
     return (
       <a 
         href={app.url} 
@@ -89,6 +122,11 @@ function AppCard({ app }: { app: App }) {
         👉 {app.localed ? "启动应用" : "启动应用（国际版）"}
       </a>
     );
+  };
+
+  const getExampleButton = () => {
+    
+    return null;
   };
 
   return (
@@ -116,7 +154,9 @@ function AppCard({ app }: { app: App }) {
           <h3 className="text-xl font-semibold">{app.name}</h3>
         </a>
         <p className="text-gray-600 mb-2">By {app.authors.join(", ")}</p>
-        <p className="text-gray-700 text-sm mb-4 line-clamp-2 h-10 overflow-hidden">{app.description}</p>
+        <p className="text-gray-600 mb-2 h-16 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
+          {app.description}
+        </p>
         {app.type && (
           <div className="mb-4">
             <span className="px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white rounded-full text-xs border border-gray-400 dark:border-gray-500">
@@ -126,7 +166,10 @@ function AppCard({ app }: { app: App }) {
         )}
         <div className="flex justify-between text-sm text-gray-500">
           {/* <span>❤️ {app.likes}</span> */}
-          {getLaunchButton()}
+          <div className="flex">
+            {getLaunchButton()}
+            {getExampleButton()}
+          </div>
         </div>
       </div>
     </div>
