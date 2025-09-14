@@ -4,44 +4,44 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 
 // Mock data for the library
-const mockBooks = [
-  {
-    id: 1,
-    title: "粤语正字字典",
-    author: "Mocker",
-    description: "一本粤语正字字典",
-    coverImage: "/yuedian.png",
-    likes: 342,
-    comments: 56,
-  },
-  {
-    id: 2,
-    title: "粤语正音字典",
-    author: "Mocker",
-    description: "一本粤语正音字典",
-    coverImage: "/yuedian.png",
-    likes: 512,
-    comments: 78,
-  },
-  {
-    id: 3,
-    title: "粤语地图",
-    author: "Mocker",
-    description: "基于 LBS 的粤语地图",
-    coverImage: "/yuedian.png",
-    likes: 423,
-    comments: 92,
-  },
-  {
-    id: 4,
-    title: "粤语极速入门⚡",
-    author: "Mocker",
-    description: "又快又有趣，让你极速入门粤语",
-    coverImage: "/yuedian.png",
-    likes: 387,
-    comments: 64,
-  },
-];
+// const mockBooks = [
+//   {
+//     id: 1,
+//     title: "粤语正字字典",
+//     author: "Mocker",
+//     description: "一本粤语正字字典",
+//     coverImage: "/yuedian.png",
+//     likes: 342,
+//     comments: 56,
+//   },
+//   {
+//     id: 2,
+//     title: "粤语正音字典",
+//     author: "Mocker",
+//     description: "一本粤语正音字典",
+//     coverImage: "/yuedian.png",
+//     likes: 512,
+//     comments: 78,
+//   },
+//   {
+//     id: 3,
+//     title: "粤语地图",
+//     author: "Mocker",
+//     description: "基于 LBS 的粤语地图",
+//     coverImage: "/yuedian.png",
+//     likes: 423,
+//     comments: 92,
+//   },
+//   {
+//     id: 4,
+//     title: "粤语极速入门⚡",
+//     author: "Mocker",
+//     description: "又快又有趣，让你极速入门粤语",
+//     coverImage: "/yuedian.png",
+//     likes: 387,
+//     comments: 64,
+//   },
+// ];
 
 // Define a Book interface for type safety
 type Book = {
