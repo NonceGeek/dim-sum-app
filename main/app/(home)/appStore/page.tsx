@@ -97,14 +97,27 @@ function AppCard({ app }: { app: App }) {
                 <DialogTitle>应用页面</DialogTitle>
               </DialogHeader>
               <div className="flex items-center justify-center p-4">
-                <Image
-                  src={app.example_img}
-                  alt="App Example"
-                  width={600}
-                  height={400}
-                  className="rounded-lg max-w-full h-auto"
-                  unoptimized
-                />
+                {app.example_img.endsWith('.mp4') ? (
+                  <video
+                    src={app.example_img}
+                    width={600}
+                    height={400}
+                    className="rounded-lg max-w-full h-auto"
+                    controls
+                    preload="metadata"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <Image
+                    src={app.example_img}
+                    alt="App Example"
+                    width={600}
+                    height={400}
+                    className="rounded-lg max-w-full h-auto"
+                    unoptimized
+                  />
+                )}
               </div>
             </DialogContent>
           </Dialog>
