@@ -60,6 +60,10 @@ function EditPermissionChecker({
   return <>{children(canEdit, isLoading)}</>;
 }
 
+function isAudioByExt(url) {
+  return /\.(mp3|wav|ogg|aac|flac|m4a|opus)(\?.*)?$/i.test(url);
+}
+
 export default function WordLyricCardDetail({
   result,
   setEditingResult,
@@ -232,9 +236,8 @@ export default function WordLyricCardDetail({
                                     }
                                   ).context.video
                                 }
-                                playing
+                                playing={false}
                                 controls
-                                muted
                                 width="100%"
                                 height="100%"
                                 className="absolute top-0 left-0"
@@ -277,7 +280,10 @@ export default function WordLyricCardDetail({
                               )
                               .map(
                                 ([key, value]) =>
-                                  value && (
+                                  value &&
+                                  (Array.isArray(value) ||
+                                  (typeof value === "string" &&
+                                    !isAudioByExt(value)) ? (
                                     <p className="leading-relaxed" key={key}>
                                       <b className="text-fuchsia-300">
                                         {key.charAt(0).toUpperCase() +
@@ -307,18 +313,42 @@ export default function WordLyricCardDetail({
                                           }}
                                         />
                                       ) : typeof value === "string" &&
-                                        value.startsWith("http") ? (
+                                        value.startsWith("http") &&
+                                        !isAudioByExt(value) ? (
                                         <iframe
                                           src={value}
                                           title={key}
                                           className="w-full h-64 rounded border mt-2"
                                           allowFullScreen
                                         />
-                                      ) : (
+                                      ) : !isAudioByExt(value) ? (
                                         String(value)
-                                      )}
+                                      ) : null}
                                     </p>
-                                  )
+                                  ) : (
+                                    <div className="flex flex-col space-y-4">
+                                      <b className="text-fuchsia-300">
+                                        {key.charAt(0).toUpperCase() +
+                                          key.slice(1)}
+                                        :
+                                      </b>{" "}
+                                      <ReactPlayer
+                                        url={value as string}
+                                        playing={false}
+                                        controls
+                                        height="100px"
+                                        className="self-center"
+                                        config={{
+                                          file: {
+                                            attributes: {
+                                              controlsList: "nodownload",
+                                              disablePictureInPicture: true,
+                                            },
+                                          },
+                                        }}
+                                      />
+                                    </div>
+                                  ))
                               )}
                           </div>
                         )}
