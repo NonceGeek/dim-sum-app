@@ -30,6 +30,7 @@ interface App {
   example_img: string;
   pinned: boolean;
   localed: boolean;
+  sorting: number;
 }
 
 // Create a client component for the app card
@@ -205,7 +206,11 @@ export default function AppStorePage() {
           if (!a.pinned && b.pinned) return 1;
           return 0;
         });
-        setApps(sortedData);
+        const sorting_0 = sortedData.filter((app: App) => app.sorting === 0);
+        const sorting_others = sortedData
+          .filter((app: App) => app.sorting !== 0)
+          .sort((a, b) => a.sorting - b.sorting);
+        setApps([...sorting_others, ...sorting_0]);
       } catch (error) {
         console.error("Error fetching apps:", error);
       } finally {
