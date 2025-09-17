@@ -181,7 +181,7 @@ function YueSong() {
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [isSeeking]);
+  }, [isSeeking, audioRef.current]);
 
   function debounce(fn: Function, delay = 500) {
     let timer: NodeJS.Timeout;
