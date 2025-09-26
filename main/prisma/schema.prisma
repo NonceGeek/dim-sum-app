@@ -47,8 +47,8 @@ model User {
   ethAddress         String?                    @unique
   accounts           Account[]
   sessions           Session[]
-  corpusInteractions user_corpus_interactions[]
   walletNonces       WalletNonce[]
+  corpusInteractions user_corpus_interactions[]
 }
 
 model Session {
@@ -132,6 +132,8 @@ model cantonese_corpus_apps {
   wechat_micro_app String?
   pinned           Boolean?  @default(false)
   localed          Boolean?  @default(false)
+  example_img      String?
+  sorting          BigInt    @default(0)
 }
 
 model cantonese_corpus_dict_yin {
@@ -151,15 +153,16 @@ model cantonese_corpus_dict_yin {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cantonese_corpus_update_history {
-  id               BigInt    @id @default(autoincrement())
-  unique_id        String    @db.Uuid
+  id               BigInt         @id @default(autoincrement())
+  unique_id        String         @db.Uuid
   note             Json
-  status           Status    @default(PENDING)
-  updated_at       DateTime? @default(now()) @db.Timestamp(6)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  status           Status         @default(PENDING)
+  updated_at       DateTime?      @default(now()) @db.Timestamp(6)
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
   user_id          String
   approver_user_id String?
   last_note        Json
+  operation_type   OperationType  @default(UPDATE)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -221,6 +224,23 @@ model meme_pic_links {
   created_at DateTime @default(now()) @db.Timestamptz(6)
 }
 
+/// 钱包绑定 Nonce 表
+/// 用于存储钱包绑定时的临时验证 nonce
+model WalletNonce {
+  id        String   @id @default(cuid())
+  userId    String
+  nonce     String   @unique
+  message   String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([nonce])
+  @@index([expiresAt])
+}
+
 enum Role {
   LEARNER
   TAGGER_PARTNER
@@ -235,27 +255,16 @@ enum APIStatus {
   BANNED
 }
 
-/// 钱包绑定 Nonce 表
-/// 用于存储钱包绑定时的临时验证 nonce
-model WalletNonce {
-  id        String   @id @default(cuid())
-  userId    String
-  nonce     String   @unique
-  message   String
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([nonce])
-  @@index([expiresAt])
-}
-
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 enum Status {
   PENDING
   APPROVED
   BANNED
+}
+
+/// 操作类型枚举
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
 }
