@@ -15,8 +15,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Plus, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+import { CreateDialog } from "@/components/data-annotation/CreateDialog";
+import { BatchUploadDialog } from "@/components/data-annotation/BatchUploadDialog";
 
 const buttonClass =
   "rounded-full border border-gray-400 px-6 py-2 text-white bg-transparent hover:bg-gray-700 transition-colors duration-150 mr-2";
@@ -30,6 +32,8 @@ export default function DataAnnotationPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showBatchUploadDialog, setShowBatchUploadDialog] = useState(false);
   const router = useRouter();
 
   const itemsPerPage = 10;
@@ -217,6 +221,29 @@ export default function DataAnnotationPage() {
               </p>
             )}
           </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className={buttonClass}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create
+            </Button>
+            <Button
+              onClick={() => setShowBatchUploadDialog(true)}
+              className={buttonClass}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Batch Upload
+            </Button>
+            <Button
+              onClick={downloadTemplate}
+              className={buttonClass}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Template
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -368,6 +395,19 @@ export default function DataAnnotationPage() {
           </div>
         )}
       </div>
+
+      {/* 弹窗组件 */}
+      <CreateDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={() => fetchCorpusData(currentPage)}
+      />
+
+      <BatchUploadDialog
+        open={showBatchUploadDialog}
+        onOpenChange={setShowBatchUploadDialog}
+        onSuccess={() => fetchCorpusData(currentPage)}
+      />
     </>
   );
 }
