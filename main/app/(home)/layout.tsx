@@ -1,3 +1,4 @@
+import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/header";
 
 export default function MainMenuLayout({
@@ -8,9 +9,8 @@ export default function MainMenuLayout({
   return (
     <>
       <Header />
-      <div className="h-[calc(100vh-56px)] flex overflow-hidden">
-        {children}
-      </div>
+      <div className="flex-1 overflow-auto">{children}</div>
+      <Footer />
     </>
   );
 }

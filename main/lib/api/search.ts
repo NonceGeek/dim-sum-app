@@ -44,6 +44,7 @@ export type SearchResult = {
         contributor: string;
       };
   category: string;
+  category_name?: string; // 原始分类名称
   created_at: string;
   tags: string[];
   editable_level: number;
@@ -148,6 +149,7 @@ export function useSearch() {
           ...result,
           category: categoryInfo?.nickname || result.category, // 使用 nickname 作为显示名称
           editable_level: categoryInfo?.editable_level || 0, // 添加 editable_level
+          category_name: result.category, // 保留原始分类名称
         };
       });
 

@@ -4,6 +4,13 @@ import { type SearchResult } from "@/lib/api/search";
 import ReactPlayer from "react-player";
 import { DictionaryNote } from "@/lib/types";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Helper function to check if a string is an image URL
 function isImageUrl(url: string): boolean {
@@ -64,6 +71,43 @@ function isAudioByExt(url) {
   return /\.(mp3|wav|ogg|aac|flac|m4a|opus)(\?.*)?$/i.test(url);
 }
 
+function DisplayRelatedAppsorLinks({
+  title,
+  desc,
+  related,
+  data,
+}: {
+  title: string;
+  desc: string;
+  related: { name: string; url: string }[];
+  data: SearchResult;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span>{title}:&nbsp;&nbsp;&nbsp;</span>
+      {related.map((link) => (
+        <TooltipProvider key={link.name}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={link.url.replace("{item.unique_id}", data.unique_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1 bg-primary/10 rounded-full text-xs font-medium border border-primary/20"
+              >
+                {link.name}
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{desc}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ))}
+    </div>
+  );
+}
+
 export default function WordLyricCardDetail({
   result,
   setEditingResult,
@@ -77,8 +121,20 @@ export default function WordLyricCardDetail({
 }) {
   const { user } = useAuthStore();
 
+  const { data, isLoading } = useQuery({
+    queryKey: ["corpusCatrgory", result.category_name],
+    queryFn: () =>
+      fetch(
+        process.env.NEXT_PUBLIC_BACKEND_URL +
+          `/corpus_category?name=${result.category_name}`
+      ).then((res) => res.json()),
+    staleTime: 60 * 1000,
+  });
+
+  const related = data?.length ? data[0].related : null;
+
   return (
-    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200">
+    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200 mb-4">
       <div className="space-y-6">
         <div className="prose dark:prose-invert max-w-none relative">
           <div className="flex justify-between items-start">
@@ -373,32 +429,27 @@ export default function WordLyricCardDetail({
             ))}
           </div>
           <br></br>
-          {(result.category === "广州话正音字典" ||
-            result.category === "广州话正音字典（例）") && (
-            <div>
-              <p>
-                关联应用:&nbsp;&nbsp;&nbsp;
-                <a
-                  href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
-                  target="_blank"
-                  className="px-3 py-1 bg-primary/10 bg-fuchsia-300 rounded-full text-xs font-medium border border-primary/20"
-                >
-                  🎴 卡片生成
-                </a>
-                {/* TODO: Be implemented in the future. */}
-                {/* <br></br>
-                                <br></br>
-                                推荐应用:&nbsp;&nbsp;&nbsp;
-                                <a
-                                  href={`https://baidu.com?uuid=${result.unique_id}`}
-                                  target="_blank"
-                                  className="px-3 py-1 bg-primary/10 bg-fuchsia-300 rounded-full text-xs font-medium border border-primary/20"
-                                >
-                                  🤖 语言学 Agent
-                                </a> */}
-              </p>
-            </div>
-          )}
+          {!isLoading && related && Object.values(related).flat().length > 0 ? (
+            <>
+              {related?.apps?.length > 0 && (
+                <DisplayRelatedAppsorLinks
+                  title="关联应用"
+                  desc={data[0]?.description || ""}
+                  related={related?.apps}
+                  data={result}
+                />
+              )}
+
+              {related?.links?.length > 0 && (
+                <DisplayRelatedAppsorLinks
+                  title="关联链接"
+                  desc={data[0]?.description || ""}
+                  related={related?.links}
+                  data={result}
+                />
+              )}
+            </>
+          ) : null}
         </div>
       </div>
     </Card>
