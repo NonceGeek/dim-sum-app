@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface SidebarHeaderProps {
   activeSubmenu: string | null;
@@ -12,6 +13,7 @@ interface SidebarHeaderProps {
 
 export function SidebarHeader({ activeSubmenu, open, setOpen, setActiveSubmenu }: SidebarHeaderProps) {
   const showTitle = !activeSubmenu;
+  const router = useRouter();
 
   return (
     <div className="flex h-14 items-center border-b px-4">
@@ -22,7 +24,10 @@ export function SidebarHeader({ activeSubmenu, open, setOpen, setActiveSubmenu }
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setActiveSubmenu(null)}
+                onClick={() => {
+                  setActiveSubmenu(null)
+                  router.push("/");
+                }}
                 className="h-8 w-8"
               >
                 <ArrowLeft className="h-4 w-4" />

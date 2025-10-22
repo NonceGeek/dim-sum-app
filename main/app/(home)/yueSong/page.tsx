@@ -244,151 +244,153 @@ function YueSong() {
 
   // console.log("current:", audio?.currentTime, progress, lyrics.duration);
   return (
-    <Card className="container mx-10 p-6 space-y-8 flex my-8 overflow-y-scroll shadow-md ">
-      <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-2">
-        <div className="flex cursor-pointer" onClick={() => router.push("/")}>
-          <ChevronLeft />
-          <span className="pl-2">Go Back</span>
-        </div>
-        {!isLoading ? (
-          <div className="text-sm">
-            {Number(corpusStats?.stats.views).toLocaleString()} listens
+    <div className="container mx-auto px-4 py-8">
+      <Card className="p-6 space-y-8 flex my-8 overflow-y-scroll shadow-md min-h-[80vh]">
+        <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-2">
+          <div className="flex cursor-pointer" onClick={() => router.push("/")}>
+            <ChevronLeft />
+            <span className="pl-2">Go Back</span>
           </div>
-        ) : null}
-      </div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="flex flex-row flex-wrap">
-          <div className="lg:flex-[1] lg:-ml-10 lg:justify-items-center flex-[2] mx-auto">
-            <div className="lg:w-56 lg:h-56 overflow-hidden rounded-lg w-30 h-30 mx-auto">
-              <Image
-                src="/album_cover.png"
-                alt="cover"
-                width={500}
-                height={500}
-                className={`rounded-full transition-all duration-700 ${
-                  isPlaying ? "animate-spin" : ""
-                }`}
-                style={{ animationDuration: "10s" }}
+          {!isLoading ? (
+            <div className="text-sm">
+              {Number(corpusStats?.stats.views).toLocaleString()} listens
+            </div>
+          ) : null}
+        </div>
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <div className="flex flex-row flex-wrap">
+            <div className="lg:flex-[1] lg:-ml-10 lg:justify-items-center flex-[2] mx-auto">
+              <div className="lg:w-56 lg:h-56 overflow-hidden rounded-lg w-30 h-30 mx-auto">
+                <Image
+                  src="/album_cover.png"
+                  alt="cover"
+                  width={500}
+                  height={500}
+                  className={`rounded-full transition-all duration-700 ${
+                    isPlaying ? "animate-spin" : ""
+                  }`}
+                  style={{ animationDuration: "10s" }}
+                />
+              </div>
+              <AudioVisualizer isPlaying={isPlaying} />
+              <Slider
+                value={[progress]}
+                max={lyrics.duration}
+                step={1}
+                className="w-[80%] mx-auto"
+                onValueChange={handleSeek}
+                onValueCommit={(val) => handleSeekEnd(val[0])}
+                onPointerDown={handleSeekStart}
+              />
+              {loaded ? (
+                <div className="flex gap-4 my-4 justify-center">
+                  {!isPlaying ? (
+                    <Play onClick={togglePlay} />
+                  ) : (
+                    <Pause onClick={togglePlay} />
+                  )}
+                  <FastForward onClick={speedUp} />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      {volume === 0 ? <VolumeX /> : <Volume2 />}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-40">
+                      <div className="flex flex-col items-center space-y-2">
+                        <span className="text-sm">Volume: {volume}%</span>
+                        <Slider
+                          value={[volume]}
+                          min={0}
+                          max={100}
+                          step={1}
+                          onValueChange={(val) => handleVolumeChange(val[0])}
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              ) : (
+                <div className="my-4">Loading...</div>
+              )}
+              <audio
+                ref={audioRef}
+                controls
+                src={data?.note.context.audio}
+                hidden
+                preload="auto"
+                onLoadedMetadata={() => {
+                  console.log("监听 loadedmetadata");
+                  setLoaded(true);
+                }}
               />
             </div>
-            <AudioVisualizer isPlaying={isPlaying} />
-            <Slider
-              value={[progress]}
-              max={lyrics.duration}
-              step={1}
-              className="w-[80%] mx-auto"
-              onValueChange={handleSeek}
-              onValueCommit={(val) => handleSeekEnd(val[0])}
-              onPointerDown={handleSeekStart}
-            />
-            {loaded ? (
-              <div className="flex gap-4 my-4 justify-center">
-                {!isPlaying ? (
-                  <Play onClick={togglePlay} />
-                ) : (
-                  <Pause onClick={togglePlay} />
-                )}
-                <FastForward onClick={speedUp} />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    {volume === 0 ? <VolumeX /> : <Volume2 />}
-                  </PopoverTrigger>
-                  <PopoverContent className="w-40">
-                    <div className="flex flex-col items-center space-y-2">
-                      <span className="text-sm">Volume: {volume}%</span>
-                      <Slider
-                        value={[volume]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onValueChange={(val) => handleVolumeChange(val[0])}
-                      />
-                    </div>
-                  </PopoverContent>
-                </Popover>
+            <div className="lg:flex-[2] text-white">
+              <div className="flex justify-between">
+                <div className="text-2xl font-bold">
+                  {data?.note.context.song_name}
+                </div>
+                <div className="flex gap-4">
+                  {isAuthenticated &&
+                  (liked || corpusStats?.user_status?.is_liked) ? (
+                    <Heart
+                      className="cursor-pointer text-red-400 fill-red-400"
+                      onClick={() => handleClick("dislike")}
+                    />
+                  ) : (
+                    <Heart
+                      className="cursor-pointer"
+                      onClick={() => handleClick("like")}
+                    />
+                  )}
+                  {isAuthenticated &&
+                  (corpusStats?.user_status?.is_bookmarked || bookmarked) ? (
+                    <Star
+                      className="cursor-pointer text-yellow-400 fill-yellow-400"
+                      onClick={() => handleClick("disbookmark")}
+                    />
+                  ) : (
+                    <Star
+                      className="cursor-pointer"
+                      onClick={() => handleClick("bookmark")}
+                    />
+                  )}
+                  <a
+                    href={`https://card.app.aidimsum.com//?uuid=${uuid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e: any) => {
+                      const url = e.currentTarget.href;
+                      navigator.clipboard.writeText(url).then(() => {
+                        toast("Link copied.");
+                      });
+                    }}
+                  >
+                    <CircleArrowOutUpRight className="cursor-pointer" />
+                  </a>
+                </div>
               </div>
-            ) : (
-              <div className="my-4">Loading...</div>
-            )}
-            <audio
-              ref={audioRef}
-              controls
-              src={data?.note.context.audio}
-              hidden
-              preload="auto"
-              onLoadedMetadata={() => {
-                console.log("监听 loadedmetadata");
-                setLoaded(true);
-              }}
-            />
-          </div>
-          <div className="lg:flex-[2] text-white">
-            <div className="flex justify-between">
-              <div className="text-2xl font-bold">
-                {data?.note.context.song_name}
+              <div className="my-4">
+                <p>
+                  词：
+                  {data?.note.context.lyricist}
+                </p>
+                <p>
+                  曲：
+                  {data?.note.context.composer}
+                </p>
               </div>
-              <div className="flex gap-4">
-                {isAuthenticated &&
-                (liked || corpusStats?.user_status?.is_liked) ? (
-                  <Heart
-                    className="cursor-pointer text-red-400 fill-red-400"
-                    onClick={() => handleClick("dislike")}
-                  />
-                ) : (
-                  <Heart
-                    className="cursor-pointer"
-                    onClick={() => handleClick("like")}
-                  />
-                )}
-                {isAuthenticated &&
-                (corpusStats?.user_status?.is_bookmarked || bookmarked) ? (
-                  <Star
-                    className="cursor-pointer text-yellow-400 fill-yellow-400"
-                    onClick={() => handleClick("disbookmark")}
-                  />
-                ) : (
-                  <Star
-                    className="cursor-pointer"
-                    onClick={() => handleClick("bookmark")}
-                  />
-                )}
-                <a
-                  href={`https://card.app.aidimsum.com//?uuid=${uuid}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e: any) => {
-                    const url = e.currentTarget.href;
-                    navigator.clipboard.writeText(url).then(() => {
-                      toast("Link copied.");
-                    });
-                  }}
-                >
-                  <CircleArrowOutUpRight className="cursor-pointer" />
-                </a>
-              </div>
+              <Lyrics
+                data={data}
+                lyric={lyrics}
+                progress={progress}
+                handleSeekEnd={handleSeekEnd}
+              />
             </div>
-            <div className="my-4">
-              <p>
-                词：
-                {data?.note.context.lyricist}
-              </p>
-              <p>
-                曲：
-                {data?.note.context.composer}
-              </p>
-            </div>
-            <Lyrics
-              data={data}
-              lyric={lyrics}
-              progress={progress}
-              handleSeekEnd={handleSeekEnd}
-            />
           </div>
-        </div>
-      )}
-    </Card>
+        )}
+      </Card>
+    </div>
   );
 }
 
