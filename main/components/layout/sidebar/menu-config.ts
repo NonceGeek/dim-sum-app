@@ -8,6 +8,7 @@ import {
   Settings,
   CreditCard,
   Key,
+  History
 } from "lucide-react";
 import { Role } from "@prisma/client";
 
@@ -29,6 +30,7 @@ export const menuItems = [
 
 const baseAccountSubmenuItems: MenuItemWithRoles[] = [
   { icon: UserCircle, label: "My Account", href: "/account/profile" },
+  { icon: History, label: "My Record", href: "/account/my-record" },
   // { icon: Settings, label: "Preferences", href: "/account/preferences" },
   // { icon: CreditCard, label: "Purchases", href: "/account/purchases" },
   { icon: FileCode2, label: "Data Annotation", href: "/account/data-annotation", roles: [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING] },

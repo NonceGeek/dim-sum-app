@@ -112,7 +112,10 @@ export function AppSidebar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setActiveSubmenu(null)}
+                    onClick={() => {
+                      setActiveSubmenu(null);
+                      router.push("/");
+                    }}
                     className="h-8 w-8"
                   >
                     <ArrowLeft className="h-4 w-4" />

@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        interaction: result
+        interaction: { ...result, corpus_unique_id },
       });
     } catch (error) {
       console.error('Error updating corpus interaction:', error);
@@ -145,10 +145,11 @@ export async function GET(req: NextRequest) {
   return requireAuth(req, async (req, userId) => {
     try {
       const { searchParams } = new URL(req.url);
-      const corpus_unique_id = searchParams.get('corpus_unique_id');
-      const type = searchParams.get('type'); // 'bookmarked', 'liked', or specific corpus
-      const page = parseInt(searchParams.get('page') || '1');
-      const limit = parseInt(searchParams.get('limit') || '20');
+      const corpus_unique_id = searchParams.get("corpus_unique_id");
+      const type = searchParams.get("type"); // 'bookmarked', 'liked', or specific corpus
+      const page = parseInt(searchParams.get("page") || "1");
+      const limit = parseInt(searchParams.get("limit") || "20");
+      const search = searchParams.get("search") || "";
 
       // 查询特定语料的用户互动状态
       if (corpus_unique_id) {
@@ -181,17 +182,37 @@ export async function GET(req: NextRequest) {
       }
 
       // 查询用户的收藏或点赞列表
-      if (type === 'bookmarked' || type === 'liked') {
+      if (type === "bookmarked" || type === "liked") {
         const whereCondition = {
           user_id: userId,
-          ...(type === 'bookmarked' ? { is_bookmarked: true } : { is_liked: true })
+          ...(type === "bookmarked"
+            ? { is_bookmarked: true }
+            : { is_liked: true }),
         };
+
+        const whereConditionWithSearch = {
+          ...whereCondition,
+          ...(search
+            ? {
+                corpus: {
+                  is: {
+                    data: {
+                      contains: search,
+                      mode: "insensitive", // 可选，不区分大小写
+                    },
+                  },
+                },
+              }
+            : {}),
+        };
+
+        const finalWhere = search ? whereConditionWithSearch : whereCondition;
 
         const offset = (page - 1) * limit;
 
         const [interactions, total] = await Promise.all([
           prisma.user_corpus_interactions.findMany({
-            where: whereCondition,
+            where: finalWhere,
             include: {
               corpus: {
                 select: {
@@ -204,29 +225,34 @@ export async function GET(req: NextRequest) {
                   editable_level: true,
                   liked_num: true,
                   bookmark_num: true,
-                  view_num: true
-                }
-              }
+                  view_num: true,
+                },
+              },
             },
             orderBy: {
-              updated_at: 'desc'
+              updated_at: "desc",
             },
             skip: offset,
-            take: limit
+            take: limit,
           }),
           prisma.user_corpus_interactions.count({
-            where: whereCondition
-          })
+            where: finalWhere,
+          }),
         ]);
 
-        const results = interactions.map(interaction => ({
-          interaction_id: interaction.id,
+        const results = interactions.map((interaction) => ({
+          interaction_id: interaction.id.toString(),
           is_liked: interaction.is_liked,
           is_bookmarked: interaction.is_bookmarked,
           is_viewed: interaction.is_viewed,
           interaction_created_at: interaction.created_at,
           interaction_updated_at: interaction.updated_at,
-          corpus: interaction.corpus
+          corpus: {
+            ...interaction.corpus,
+            liked_num: interaction.corpus.liked_num.toString(),
+            bookmark_num: interaction.corpus.bookmark_num.toString(),
+            view_num: interaction.corpus.view_num.toString(),
+          },
         }));
 
         return NextResponse.json({
