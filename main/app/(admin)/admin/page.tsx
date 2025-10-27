@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Users, Database, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 
 interface DashboardStats {
   totalUsers: number;
@@ -19,50 +19,32 @@ interface DashboardStats {
 }
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    activeUsers: 0,
-    totalCorpusEntries: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading: loading } = useQuery<DashboardStats>({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/stats");
 
-  useEffect(() => {
-    // TODO: Fetch real dashboard statistics from API
-    const fetchDashboardStats = async () => {
-      try {
-        // Simulated data - replace with actual API call
-        setTimeout(() => {
-          setStats({
-            totalUsers: 1247,
-            activeUsers: 89,
-            totalCorpusEntries: 125000,
-          });
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error("Failed to fetch statistics");
       }
-    };
 
-    fetchDashboardStats();
-  }, []);
+      return response.json();
+    },
+  });
 
   const statCards = [
     {
       title: "Total Users",
-      value: stats.totalUsers.toLocaleString(),
+      value: stats?.totalUsers?.toLocaleString() || "0",
       icon: Users,
       description: "Registered users",
-      trend: "+12% from last month",
       href: "/admin/users",
     },
     {
       title: "Corpus Entries",
-      value: stats.totalCorpusEntries.toLocaleString(),
+      value: stats?.totalCorpusEntries?.toLocaleString() || "0",
       icon: Database,
       description: "Total corpus data entries",
-      trend: "+8% from last month",
       href: "/admin/corpus",
     },
   ];
@@ -142,7 +124,6 @@ export default function AdminDashboardPage() {
                     {card.value}
                   </div>
                   <p className="text-xs text-gray-400">{card.description}</p>
-                  <p className="text-xs text-green-400 mt-1">{card.trend}</p>
                 </CardContent>
               </Link>
             </Card>

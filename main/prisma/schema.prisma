@@ -45,6 +45,8 @@ model User {
   bio                String?
   isSystemAdmin      Boolean                    @default(false)
   ethAddress         String?                    @unique
+  createdAt          DateTime                   @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime                   @default(now()) @updatedAt @db.Timestamptz(6)
   accounts           Account[]
   sessions           Session[]
   walletNonces       WalletNonce[]
@@ -94,6 +96,7 @@ model cantonese_categories {
   editable_level BigInt    @default(0)
   linked_apps    Json      @default("[]")
   if_in_all_data Boolean   @default(false)
+  related        Json      @default("{\"apps\": [], \"links\": []}")
 }
 
 model cantonese_corpus_all {
@@ -153,16 +156,16 @@ model cantonese_corpus_dict_yin {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cantonese_corpus_update_history {
-  id               BigInt         @id @default(autoincrement())
-  unique_id        String         @db.Uuid
+  id               BigInt        @id @default(autoincrement())
+  unique_id        String        @db.Uuid
   note             Json
-  status           Status         @default(PENDING)
-  updated_at       DateTime?      @default(now()) @db.Timestamp(6)
-  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  status           Status        @default(PENDING)
+  updated_at       DateTime?     @default(now()) @db.Timestamp(6)
+  created_at       DateTime      @default(now()) @db.Timestamptz(6)
   user_id          String
   approver_user_id String?
   last_note        Json
-  operation_type   OperationType  @default(UPDATE)
+  operation_type   OperationType @default(UPDATE)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

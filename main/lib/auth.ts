@@ -360,6 +360,30 @@ export async function requireMarker(
   return handler(req, session.user.id);
 }
 
+// 管理员权限检查
+export async function requireAdmin(
+  req: NextRequest,
+  handler: (req: NextRequest, userId: string) => Promise<NextResponse>
+) {
+  const session = await getAuthSession();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  if (!session.user.isSystemAdmin) {
+    return NextResponse.json(
+      { error: "Permission denied. Admin access required." },
+      { status: 403 }
+    );
+  }
+
+  return handler(req, session.user.id);
+}
+
 // 公共 API 处理
 export async function publicApi(
   req: NextRequest,
