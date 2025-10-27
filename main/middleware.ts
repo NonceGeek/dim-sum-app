@@ -46,8 +46,8 @@ export default withAuth(
 // 配置需要保护的路由
 export const config = {
   matcher: [
-    // 保护所有 API 路由，但排除公共接口和认证相关接口
-    "/api/((?!public|auth).*)",
+    // 保护所有 API 路由，但排除公共接口、认证相关接口和小程序接口
+    "/api/((?!public|auth|miniprogram).*)",
     // 保护需要认证的页面
     "/dashboard/:path*",
     "/profile/:path*",

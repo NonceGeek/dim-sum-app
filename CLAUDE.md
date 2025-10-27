@@ -36,7 +36,8 @@ This is a Next.js 15 application for a Cantonese language learning platform with
 - **Query Management**: TanStack Query
 
 ### Authentication System
-- Supports WeChat OAuth and email-based authentication
+- **Web**: NextAuth.js with WeChat OAuth and email-based authentication
+- **Miniprogram**: JWT-based authentication using WeChat openId/unionId
 - Role-based access control with 4 user roles: `LEARNER`, `TAGGER_PARTNER`, `TAGGER_OUTSOURCING`, `RESEARCHER`
 - Middleware protects routes based on user roles
 - Marker-specific routes require `TAGGER_PARTNER` or `TAGGER_OUTSOURCING` roles
@@ -56,13 +57,19 @@ This is a Next.js 15 application for a Cantonese language learning platform with
 - `providers/` - Authentication and query providers
 
 ### API Structure
-- `/api/auth/` - NextAuth.js authentication endpoints
+- `/api/auth/` - NextAuth.js authentication endpoints (Web)
+- `/api/miniprogram/` - WeChat miniprogram API endpoints (JWT-protected)
+  - `/api/miniprogram/auth/login` - Miniprogram login with WeChat code
+  - `/api/miniprogram/auth/refresh` - Refresh access token
+  - `/api/miniprogram/user/*` - User-related operations
 - `/api/marker/` - Marker-specific operations (role-protected)
 - `/api/public/` - Public API endpoints
 - `/api/user/` - User management operations
 
 ### Important Files
-- `lib/auth.ts` - NextAuth configuration with WeChat/email providers
+- `lib/auth.ts` - NextAuth configuration with WeChat/email providers (Web)
+- `lib/miniprogram-jwt.ts` - JWT token generation and verification for miniprogram
+- `lib/miniprogram-auth.ts` - Miniprogram authentication middleware
 - `middleware.ts` - Route protection and role-based access control
 - `prisma/schema.prisma` - Database schema with multilingual corpus data
 - `lib/store/` - Zustand state management stores
@@ -70,3 +77,108 @@ This is a Next.js 15 application for a Cantonese language learning platform with
 ## Environment Setup
 
 This project requires PostgreSQL database connection and WeChat OAuth credentials for full functionality.
+
+### Required Environment Variables
+
+```bash
+# Database
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+
+# NextAuth (Web)
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key"  # Used for both web and miniprogram JWT
+
+# WeChat Web OAuth
+NEXT_PUBLIC_WECHAT_CLIENT_ID="your-wechat-web-appid"
+WECHAT_CLIENT_SECRET="your-wechat-web-secret"
+
+# WeChat Miniprogram
+WECHAT_MINIPROGRAM_APPID="your-miniprogram-appid"
+WECHAT_MINIPROGRAM_SECRET="your-miniprogram-secret"
+```
+
+## Miniprogram Authentication Flow
+
+### 1. Miniprogram Login
+
+The miniprogram uses WeChat's `wx.login()` to get a code, then exchanges it for access tokens.
+
+**Endpoint**: `POST /api/miniprogram/auth/login`
+
+**Request**:
+```json
+{
+  "code": "wx_login_code_from_wx.login()"
+}
+```
+
+**Response**:
+```json
+{
+  "accessToken": "jwt_access_token",
+  "refreshToken": "jwt_refresh_token",
+  "user": {
+    "id": "user_id",
+    "name": "User Name",
+    "avatar": "avatar_url",
+    "role": "LEARNER",
+    "isSystemAdmin": false
+  }
+}
+```
+
+**Note**: Users must register via web first. The miniprogram login will fail if the user doesn't exist in the database.
+
+### 2. Token Refresh
+
+Access tokens expire after 7 days. Use the refresh token to get a new access token.
+
+**Endpoint**: `POST /api/miniprogram/auth/refresh`
+
+**Request**:
+```json
+{
+  "refreshToken": "jwt_refresh_token"
+}
+```
+
+**Response**:
+```json
+{
+  "accessToken": "new_jwt_access_token",
+  "refreshToken": "new_jwt_refresh_token"
+}
+```
+
+### 3. Making Authenticated Requests
+
+Include the access token in the Authorization header:
+
+```
+Authorization: Bearer <accessToken>
+```
+
+**Example**: `GET /api/miniprogram/user/profile`
+
+### 4. Creating Protected Miniprogram APIs
+
+Use the authentication middleware from `lib/miniprogram-auth.ts`:
+
+```typescript
+import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
+
+export async function GET(req: NextRequest) {
+  return requireMiniprogramAuth(req, async (req, user) => {
+    // user contains: userId, openId, unionId, role, isSystemAdmin
+    // Your logic here
+    return NextResponse.json({ data: "your data" });
+  });
+}
+```
+
+**Available middleware**:
+- `requireMiniprogramAuth` - Basic authentication
+- `requireMiniprogramRole` - Require specific roles
+- `requireMiniprogramMarker` - Require TAGGER_PARTNER or TAGGER_OUTSOURCING
+- `requireMiniprogramAdmin` - Require system admin
