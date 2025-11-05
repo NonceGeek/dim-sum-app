@@ -41,6 +41,24 @@ async function insertCorpusItem(
   return result;
 }
 
+async function updateCorpusItem(
+  unique_id: string,
+  note: Record<string, unknown>,
+  category: string,
+  tags: string[]
+) {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  const result = await supabase
+    .from("cantonese_corpus_all")
+    .update({ note, category, tags })
+    .eq("unique_id", unique_id);
+
+  return result;
+}
+
 const router = new Router();
 
 router
@@ -478,6 +496,21 @@ router
   }
 })
 /* ↓↓↓ admin APIs ↓↓↓ */
+/*
+curl example:
+curl -X POST http://localhost:8000/admin/insert_corpus_item \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "example corpus text data",
+    "note": {
+      "field1": "value1",
+      "field2": "value2"
+    },
+    "category": "example_category",
+    "tags": ["tag1", "tag2", "tag3"],
+    "password": "your_admin_password_here"
+  }'
+*/
 .post("/admin/insert_corpus_item", async (context) => {
   let body = await context.request.body();
   const content = await body.value;
@@ -486,7 +519,7 @@ router
 
   // Verify admin password
   if (!(await verifyAdminPassword(context, password))) {
-    return;
+    return { error: "Unauthorized: Invalid password" };
   }
 
   try {
@@ -497,6 +530,43 @@ router
     context.response.body = { error: "Failed to insert data" };
     console.error("Error inserting data:", error);
   }
+})
+
+// HINT: status 204 is normal, the meaning is updated success.
+/*
+curl example:
+curl -X POST http://localhost:8000/admin/insert_corpus_item \
+  -H "Content-Type: application/json" \
+  -d '{
+    "unique_id": "example_unique_id",
+    "data": "example corpus text data",
+    "note": {
+      "field1": "value1",
+      "field2": "value2"
+    },
+    "category": "example_category",
+    "tags": ["tag1", "tag2", "tag3"],
+    "password": "your_admin_password_here"
+  }'
+*/
+.post("/admin/update_corpus_item", async (context) => {
+  let body = await context.request.body();
+  const content = await body.value;
+  console.log("body", content);
+  const { unique_id, note, category, tags, password } = content;
+    // Verify admin password
+    if (!(await verifyAdminPassword(context, password))) {
+      return { error: "Unauthorized: Invalid password" };
+    }
+  
+    try {
+      const result = await updateCorpusItem(unique_id, note, category, tags);
+      context.response.body = result;
+    } catch (error) {
+      context.response.status = 500;
+      context.response.body = { error: "Failed to insert data" };
+      console.error("Error inserting data:", error);
+    }
 })
 .get("/corpus_item", async (context) => {
   const queryParams = context.request.url.searchParams;
