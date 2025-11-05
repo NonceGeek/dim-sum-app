@@ -331,10 +331,10 @@ export default function CorpusItemDetailsPage() {
         </div>
       </div>
 
-      <div className="grid gap-8">
+      <div className="space-y-8">
         {/* Main Info Table */}
         <Card className="p-6 bg-card">
-          <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20">
+          <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20 table-fixed">
             <TableHeader>
               <TableRow className="bg-[#23242a]">
                 <TableHead className="w-24 text-center border-r border-gray-600 text-white text-base">
@@ -386,8 +386,8 @@ export default function CorpusItemDetailsPage() {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="border-r border-gray-600">
-                      <Input
+                    <TableCell className="border-r border-gray-600 whitespace-normal">
+                      <Textarea
                         value={editMeanings[index] || ""}
                         onChange={(e) => {
                           const newMeanings = [...editMeanings];
@@ -397,8 +397,8 @@ export default function CorpusItemDetailsPage() {
                         placeholder="组词"
                       />
                     </TableCell>
-                    <TableCell>
-                      <Input
+                    <TableCell className="whitespace-normal">
+                      <Textarea
                         value={editSentences[index] || ""}
                         onChange={(e) => {
                           const newSentences = [...editSentences];
@@ -428,10 +428,10 @@ export default function CorpusItemDetailsPage() {
                         <span>音节: {row.pinyin}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="border-r border-gray-600">
+                    <TableCell className="border-r border-gray-600 whitespace-normal">
                       {row.words}
                     </TableCell>
-                    <TableCell>{row.sentence}</TableCell>
+                    <TableCell className="whitespace-normal">{row.sentence}</TableCell>
                   </TableRow>
                 ))
               )}

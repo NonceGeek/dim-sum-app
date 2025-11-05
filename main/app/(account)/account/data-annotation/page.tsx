@@ -60,9 +60,13 @@ export default function DataAnnotationPage() {
   }, []);
 
   const handleSearch = () => {
-    setSearchQuery(searchInput);
-    setCurrentPage(1);
-    fetchCorpusData(1, searchInput);
+    if (searchInput) {
+      setSearchQuery(searchInput);
+      setCurrentPage(1);
+      fetchCorpusData(1, searchInput);
+    } else {
+      handleClearSearch();
+    }
   };
 
   const handleClearSearch = async () => {
