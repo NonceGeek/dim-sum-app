@@ -177,6 +177,12 @@ export default function DataAnnotationPage() {
     }
   };
 
+  const handleFirstPage = () => {
+    if (currentPage !== 1) {
+      fetchCorpusData(1, searchQuery);
+    }
+  }
+
   return (
     <>
       <div className="container mx-auto px-4 py-8">
@@ -382,10 +388,32 @@ export default function DataAnnotationPage() {
               <ChevronLeft className="w-4 h-4 mr-1" />
               Previous
             </Button>
+
+            <Button
+              onClick={handleFirstPage}
+              disabled={currentPage === 1}
+              variant="outline"
+              size="sm"
+            >
+              1
+            </Button>
             
             <span className="text-sm text-gray-400">
               Page {currentPage} of {totalPages}
             </span>
+
+            <Input placeholder="Go to Page" type="number" min={1} max={totalPages} className="w-28 text-center bg-card border border-gray-600 text-white"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const page = Number((e.target as HTMLInputElement).value);
+                  if (page >= 1 && page <= totalPages) {
+                    fetchCorpusData(page, searchQuery);
+                  } else {
+                    toast.error(`Please enter a valid page number between 1 and ${totalPages}`);
+                  }
+                }
+              }}
+            />
             
             <Button
               onClick={handleNextPage}
