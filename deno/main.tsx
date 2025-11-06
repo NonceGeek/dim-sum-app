@@ -249,22 +249,6 @@ router
     context.response.body = { error: "Internal server error" };
   }
 })
-// APIS for apps.
-.get("/app/meme_pic_links", async (context) => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  const { data, error } = await supabase
-    .from("meme_pic_links")
-    .select("*")
-
-  if (error) {
-    throw error;
-  }
-
-  context.response.body = data;
-})
 // APIs for corpus things.
 .get("/corpus_apps", async (context) => {
   const supabase = createClient(
@@ -316,6 +300,37 @@ router
   }
 
   context.response.body = data;
+})
+.get("/corpus_item", async (context) => {
+  const queryParams = context.request.url.searchParams;
+  const unique_id = queryParams.get("unique_id");
+  const data = queryParams.get("data");
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
+  let query = supabase
+    .from("cantonese_corpus_all")
+    .select("*");
+
+  if (unique_id) {
+    query = query.eq("unique_id", unique_id);
+  } else if (data) {
+    query = query.eq("data", data);
+  } else {
+    context.response.status = 400;
+    context.response.body = { error: "Either unique_id or data parameter is required" };
+    return;
+  }
+
+  const { data: resp, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  context.response.body = resp;
 })
 .get("/text_search_v2", async (context) => { 
   const queryParams = context.request.url.searchParams;
@@ -392,6 +407,7 @@ router
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
+  // TODO.
 })
   /* ↓↓↓ dev APIs(need api key) ↓↓↓ */
   /*
@@ -514,7 +530,6 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
 .post("/admin/insert_corpus_item", async (context) => {
   let body = await context.request.body();
   const content = await body.value;
-  console.log("body", content);
   const { data, note, category, tags, password } = content;
 
   // Verify admin password
@@ -552,7 +567,6 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
 .post("/admin/update_corpus_item", async (context) => {
   let body = await context.request.body();
   const content = await body.value;
-  console.log("body", content);
   const { unique_id, note, category, tags, password } = content;
     // Verify admin password
     if (!(await verifyAdminPassword(context, password))) {
@@ -568,141 +582,181 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
       console.error("Error inserting data:", error);
     }
 })
-.get("/corpus_item", async (context) => {
-  const queryParams = context.request.url.searchParams;
-  const unique_id = queryParams.get("unique_id");
-  const data = queryParams.get("data");
+/*
+Curl example:
+curl -X POST http://localhost:8000/admin/set_user_wechat_openid \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "example_id",
+    "email": "example_email",
+    "openid": "example_openid",
+    "password": "your_admin_password_here"
+  }'
+*/
+.post("/admin/set_user_wechat_openid", async (context) => {
+  let body = await context.request.body();
+  const content = await body.value;
+  const { id, email, openid, password } = content;
+  console.log("id", id);
+  console.log("email", email);
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
-
-  let query = supabase
-    .from("cantonese_corpus_all")
-    .select("*");
-
-  if (unique_id) {
-    query = query.eq("unique_id", unique_id);
-  } else if (data) {
-    query = query.eq("data", data);
-  } else {
-    context.response.status = 400;
-    context.response.body = { error: "Either unique_id or data parameter is required" };
-    return;
+  // Verify admin password
+  if (!(await verifyAdminPassword(context, password))) {
+    return { error: "Unauthorized: Invalid password" };
   }
-
-  const { data: resp, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  context.response.body = resp;
-})
-/* ↓↓↓ sepc APIs ↓↓↓ */
-.get("/spec/insert_zyzd", async (context) => {
-  /*
-    read zyzd corpus from ../corpus/zyzd.json
+  /* HINT PROMPT:
+    if id != undefined, select user from Table User by the id then set the wechatOpenid field to the openid.
+    if id == undefined, select user from Table User by the email then set the wechatOpenid field to the openid.
+    if both id and email are undefined, return error.
+    if user not found, return error.
+    if user found, update the user's wechatOpenid field to the openid.
+    if update failed, return error.
+    if update success, return success.
   */
-  interface ZyzdReading {
-    粵拼讀音: string;
-    讀音標記: string | null;
-    變調: string | null;
-  }
 
-  interface ZyzdEntry {
-    釋義: string;
-    讀音: ZyzdReading[];
-  }
-
-  interface ZyzdItem {
-    編號: string;
-    頁: number;
-    字頭: string[];
-    義項: ZyzdEntry[];
-    _校訂補充: {
-      異體: string[];
-      校訂註: string | null;
-    };
-  }
-
-  interface ProcessingResult {
-    success: boolean;
-    character: string;
-    error?: string;
-  }
-
-  const zyzdCorpus = await Deno.readTextFile("../corpus/zyzd.json");
-  const zyzdCorpusArray = JSON.parse(zyzdCorpus) as ZyzdItem[];
-  const results: ProcessingResult[] = [];
-
-  for (const item of zyzdCorpusArray) {
-    console.log("Processing item:", item.編號);
-    console.log("item", item);
-
-    // For each character in 字頭, create a separate entry
-    for (const char of item.字頭) {
-      // Format the note object
-      const note = {
-        "context": {
-          meaning: item.義項.map((entry: ZyzdEntry) => entry.釋義),
-          pinyin: item.義項.flatMap((entry: ZyzdEntry) => 
-            entry.讀音.map((sound: ZyzdReading) => sound.粵拼讀音)
-          ),
-          page: item.頁,
-          number: item.編號,
-          others: item._校訂補充
-        },
-        contributor: "0x05",
-      };
-      console.log("note", note);
-
-      try {
-        // Insert the item into the database
-        const result = await insertCorpusItem(
-          char,  // data (the character)
-          note,  // note (stringified object)
-          "zyzdv2",  // category
-          ["word"]  // tags
-        );
-        console.log("result", result);
-        results.push({ success: true, character: char });
-      } catch (error) {
-        console.error(`Error inserting character ${char}:`, error);
-        results.push({ success: false, character: char, error: error instanceof Error ? error.message : String(error) });
-      }
+  try {
+    // Check if both id and email are undefined
+    if (!id && !email) {
+      context.response.status = 400;
+      context.response.body = { error: "Either id or email is required" };
+      return;
     }
+
+    // Select user based on id or email
+    let query = supabase
+      .from("User")
+      .select("*");
+
+    if (id) {
+      query = query.eq("id", id);
+    } else {
+      query = query.eq("email", email);
+    }
+
+    const { data: userData, error: selectError } = await query.single();
+
+    if (selectError || !userData) {
+      console.error("Error selecting user:", selectError);
+      context.response.status = 404;
+      context.response.body = { error: "User not found" };
+      return;
+    }
+
+    // Update the user's wechatOpenid field
+    let updateQuery = supabase
+      .from("User")
+      .update({ wechatOpenid: openid });
+
+    if (id) {
+      updateQuery = updateQuery.eq("id", id);
+    } else {
+      updateQuery = updateQuery.eq("email", email);
+    }
+
+    const { error: updateError } = await updateQuery;
+
+    if (updateError) {
+      console.error("Error updating wechatOpenid:", updateError);
+      context.response.status = 500;
+      context.response.body = { error: "Failed to update wechatOpenid" };
+      return;
+    }
+
+    // Return success
+    context.response.status = 200;
+    context.response.body = { 
+      success: true, 
+      message: "WeChat OpenID updated successfully",
+      userId: userData.id
+    };
+
+  } catch (error) {
+    console.error("Error in set_user_wechat_openid:", error);
+    context.response.status = 500;
+    context.response.body = { error: "Internal server error" };
   }
-  
-  context.response.body = {
-    message: "ZYZD corpus processing completed",
-    results
-  };
 })
-  /* ↓↓↓ dev APIs(need api key) ↓↓↓ */
-  /*
-  HINT: DO NOT DELETE THE ANNOTATION BELOW.
-  TODO: 
-  1/ get user_id and status by api key in table api_key
-  2/ if status != "APPROVED", return error
-  3/ if status == "APPROVED", get the item from table cantonese_corpus_all by uuid
-  
-  4/ insert an item into cantonese_corpus_update_history:
- create table public.cantonese_corpus_update_history (
-  id bigint generated by default as identity not null,
-  unique_id uuid not null,
-  note jsonb not null,
-  status public.Status not null default 'PENDING'::"Status",
-  updated_at timestamp without time zone null default now(),
-  created_at timestamp with time zone not null default now(),
-  user_id text not null,
-  approver_user_id text null,
-  last_note jsonb not null,
-  constraint cantonese_corpus_update_history_pkey primary key (id)
+/*
+Curl example:
+curl -X POST http://localhost:8000/admin/get_user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "example_id",
+    "email": "example_email",
+    "password": "your_admin_password_here"
+  }'
+*/
+.post("/admin/get_user", async (context) => {
+  let body = await context.request.body();
+  const content = await body.value;
+  const { id, email, password } = content;
+  console.log("id", id);
+  console.log("email", email);
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  // Verify admin password
+  if (!(await verifyAdminPassword(context, password))) {
+    return { error: "Unauthorized: Invalid password" };
+  }
+  try {
+    // Select user based on id or email
+    let query = supabase
+      .from("User")
+      .select("*");
+
+    if (id) {
+      query = query.eq("id", id);
+    } else {
+      query = query.eq("email", email);
+    }
+
+    const { data: userData, error: selectError } = await query.single();
+
+    if (selectError || !userData) {
+      console.error("Error selecting user:", selectError);
+      context.response.status = 404;
+      context.response.body = { error: "User not found" };
+      return;
+    }
+
+    // Return user data
+    context.response.status = 200;
+    context.response.body = userData;
+  } catch (error) {
+    console.error("Error in get_user:", error);
+    context.response.status = 500;
+    context.response.body = { error: "Internal server error" };
+  }
+})
+/* ↓↓↓ dev APIs(need api key) ↓↓↓ */
+/*
+HINT: DO NOT DELETE THE ANNOTATION BELOW.
+TODO: 
+1/ get user_id and status by api key in table api_key
+2/ if status != "APPROVED", return error
+3/ if status == "APPROVED", get the item from table cantonese_corpus_all by uuid
+
+4/ insert an item into cantonese_corpus_update_history:
+create table public.cantonese_corpus_update_history (
+id bigint generated by default as identity not null,
+unique_id uuid not null,
+note jsonb not null,
+status public.Status not null default 'PENDING'::"Status",
+updated_at timestamp without time zone null default now(),
+created_at timestamp with time zone not null default now(),
+user_id text not null,
+approver_user_id text null,
+last_note jsonb not null,
+constraint cantonese_corpus_update_history_pkey primary key (id)
 ) TABLESPACE pg_default;
-  
-  last_note = item.note
-  */
+
+last_note = item.note
+*/
 .post("/dev/insert_corpus_item", async (context) => {
   let body = await context.request.body();
   const content = await body.value;
@@ -781,71 +835,49 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
     context.response.body = { error: "Internal server error" };
   }
 })
-/* ↓↓↓ admin APIs ↓↓↓ */
-.post("/admin/insert_corpus_item", async (context) => {
-  let body = await context.request.body();
-  const content = await body.value;
-  console.log("body", content);
-  const { data, note, category, tags, password } = content;
-
-  // Verify admin password
-  if (!(await verifyAdminPassword(context, password))) {
-    return;
-  }
-
-  try {
-    const result = await insertCorpusItem(data, note, category, tags);
-    context.response.body = result;
-  } catch (error) {
-    context.response.status = 500;
-    context.response.body = { error: "Failed to insert data" };
-    console.error("Error inserting data:", error);
-  }
-})
-.get("/corpus_item", async (context) => {
-  const queryParams = context.request.url.searchParams;
-  const unique_id = queryParams.get("unique_id");
-  const data = queryParams.get("data");
+/* ↓↓↓ APIs for apps ↓↓↓ */
+.get("/app/meme_pic_links", async (context) => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
-
-  let query = supabase
-    .from("cantonese_corpus_all")
-    .select("*");
-
-  if (unique_id) {
-    query = query.eq("unique_id", unique_id);
-  } else if (data) {
-    query = query.eq("data", data);
-  } else {
-    context.response.status = 400;
-    context.response.body = { error: "Either unique_id or data parameter is required" };
-    return;
-  }
-
-  const { data: resp, error } = await query;
+  const { data, error } = await supabase
+    .from("meme_pic_links")
+    .select("*")
 
   if (error) {
     throw error;
   }
 
-  context.response.body = resp;
+  context.response.body = data;
 })
 /* ↓↓↓ sepc APIs ↓↓↓ */
-.get("/spec/insert_zyzd", async (context) => {
-  /*
-    read zyzd corpus from ../corpus/zyzd.json
-  */
-  const zyzdCorpus = await Deno.readTextFile("../corpus/zyzd.json");
-  const zyzdCorpusArray = JSON.parse(zyzdCorpus);
-  const results = [];
+// .get("/spec/insert_zyzd", async (context) => {
+//   /*
+//     read zyzd corpus from ../corpus/zyzd.json
+//   */
+//   interface ZyzdReading {
+//     粵拼讀音: string;
+//     讀音標記: string | null;
+//     變調: string | null;
+//   }
 
-  for (const item of zyzdCorpusArray) {
-    console.log("Processing item:", item.編號);
-    console.log("item", item);
-    /*
+//   interface ZyzdEntry {
+//     釋義: string;
+//     讀音: ZyzdReading[];
+//   }
+
+//   interface ZyzdItem {
+//     編號: string;
+//     頁: number;
+//     字頭: string[];
+//     義項: ZyzdEntry[];
+//     _校訂補充: {
+//       異體: string[];
+//       校訂註: string | null;
+//     };
+//   }
+   /*
     HINT: DO NOT DELETE THE EXAMPLE BELOW.
     here is the item example: 
     - if 字頭 has multiple items, make multiple corpus items, 字頭 = data
@@ -887,44 +919,60 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
         }
     },
     */
-    // For each character in 字頭, create a separate entry
-    for (const char of item.字頭) {
-      // Format the note object
-      const note = {
-        "context": {
-        meaning: item.義項.map(entry => entry.釋義),
-        pinyin: item.義項.flatMap(entry => 
-          entry.讀音.map(sound => sound.粵拼讀音)
-        ),
-        page: item.頁,
-        number: item.編號,
-        others: item._校訂補充
-      },
-        contributor: "0x05",
 
-      };
-      console.log("note", note);
+//   interface ProcessingResult {
+//     success: boolean;
+//     character: string;
+//     error?: string;
+//   }
 
-      try {
-        // Insert the item into the database
-        const result = await insertCorpusItem(
-          char,  // data (the character)
-          note,  // note (stringified object)
-          "zyzdv2",  // category
-          ["word"]  // tags
-        );
-        console.log("result", result);
-      } catch (error) {
-        console.error(`Error inserting character ${char}:`, error);
-      }
-    }
-  }
+//   const zyzdCorpus = await Deno.readTextFile("../corpus/zyzd.json");
+//   const zyzdCorpusArray = JSON.parse(zyzdCorpus) as ZyzdItem[];
+//   const results: ProcessingResult[] = [];
+
+//   for (const item of zyzdCorpusArray) {
+//     console.log("Processing item:", item.編號);
+//     console.log("item", item);
+
+//     // For each character in 字頭, create a separate entry
+//     for (const char of item.字頭) {
+//       // Format the note object
+//       const note = {
+//         "context": {
+//           meaning: item.義項.map((entry: ZyzdEntry) => entry.釋義),
+//           pinyin: item.義項.flatMap((entry: ZyzdEntry) => 
+//             entry.讀音.map((sound: ZyzdReading) => sound.粵拼讀音)
+//           ),
+//           page: item.頁,
+//           number: item.編號,
+//           others: item._校訂補充
+//         },
+//         contributor: "0x05",
+//       };
+//       console.log("note", note);
+
+//       try {
+//         // Insert the item into the database
+//         const result = await insertCorpusItem(
+//           char,  // data (the character)
+//           note,  // note (stringified object)
+//           "zyzdv2",  // category
+//           ["word"]  // tags
+//         );
+//         console.log("result", result);
+//         results.push({ success: true, character: char });
+//       } catch (error) {
+//         console.error(`Error inserting character ${char}:`, error);
+//         results.push({ success: false, character: char, error: error instanceof Error ? error.message : String(error) });
+//       }
+//     }
+//   }
   
-  context.response.body = {
-    message: "ZYZD corpus processing completed",
-    results
-  };
-})
+//   context.response.body = {
+//     message: "ZYZD corpus processing completed",
+//     results
+//   };
+// })
 
 const app = new Application();
 
