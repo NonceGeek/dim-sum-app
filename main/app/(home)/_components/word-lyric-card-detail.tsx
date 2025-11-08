@@ -73,13 +73,11 @@ function isAudioByExt(url) {
 
 function DisplayRelatedAppsorLinks({
   title,
-  desc,
   related,
   data,
 }: {
   title: string;
-  desc: string;
-  related: { name: string; url: string }[];
+  related: { name: string; url: string, description?: string }[];
   data: SearchResult;
 }) {
   return (
@@ -99,7 +97,7 @@ function DisplayRelatedAppsorLinks({
               </a>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{desc}</p>
+              <p>{link.description}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -434,7 +432,6 @@ export default function WordLyricCardDetail({
               {related?.apps?.length > 0 && (
                 <DisplayRelatedAppsorLinks
                   title="关联应用"
-                  desc={data[0]?.description || ""}
                   related={related?.apps}
                   data={result}
                 />
@@ -443,7 +440,6 @@ export default function WordLyricCardDetail({
               {related?.links?.length > 0 && (
                 <DisplayRelatedAppsorLinks
                   title="关联链接"
-                  desc={data[0]?.description || ""}
                   related={related?.links}
                   data={result}
                 />
