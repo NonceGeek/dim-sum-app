@@ -641,10 +641,14 @@ curl -X POST http://localhost:8000/dev/insert_corpus_item \
   }'
 */
 .post("/dev/insert_corpus_item", async (context) => {
+  // TODO.
   let body = await context.request.body();
   const content = await body.value;
   const { data, note, category, tags, api_key } = content;
-
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
   // Verify API key
   const apiKeyData = await verifyAPIKey(context, api_key);
   if (!apiKeyData) {
@@ -657,6 +661,9 @@ curl -X POST http://localhost:8000/dev/insert_corpus_item \
     const { data: historyData, error: historyError } = await supabase
       .from("cantonese_corpus_update_history")
       .insert({
+        tags: tags,
+        category: category,
+        data: data,
         note: note,
         status: "PENDING",
         user_id: apiKeyData.user_id,
