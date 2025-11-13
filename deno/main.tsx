@@ -997,7 +997,8 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
   curl -X POST http://localhost:8000/dev/get_user_by_corpus_name \
     -H "Content-Type: application/json" \
     -d '{
-      "name": "corpus-name-here"
+      "name": "corpus-name-here",
+      "api_key": "api-key-here"
     }' | jq
   */
   .post("/dev/get_users_by_corpus_name", async (context) => {
