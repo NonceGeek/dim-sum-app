@@ -64,13 +64,18 @@ export async function POST(req: NextRequest) {
 
     const { openid, unionid } = wechatData;
 
-    // Find user by openId or unionId
+    // unionid is required for login
+    if (!unionid) {
+      return NextResponse.json(
+        { error: "unionid is required. Please ensure your WeChat account is bound to the open platform." },
+        { status: 400 }
+      );
+    }
+
+    // Find user by unionId
     const account = await prisma.account.findFirst({
       where: {
-        OR: [
-          { openId: openid },
-          ...(unionid ? [{ unionId: unionid }] : []),
-        ],
+        unionId: unionid,
         provider: "wechat",
       },
       include: {
