@@ -7,12 +7,15 @@ the api for ai dimsum devs.
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { tify, sify } from '@aqzhyi/chinese-conv'
+import { tify, sify } from "@aqzhyi/chinese-conv";
 
 console.log("Hello from AI Dimsum Devs API!");
 
 // Admin password verification function
-async function verifyAdminPassword(context: any, password: string): Promise<boolean> {
+async function verifyAdminPassword(
+  context: any,
+  password: string
+): Promise<boolean> {
   const adminPwd = Deno.env.get("ADMIN_PWD");
   if (!password || password !== adminPwd) {
     context.response.status = 401;
@@ -55,7 +58,7 @@ async function verifyAPIKey(context: any, api_key: string): Promise<any> {
     return null;
   }
 
-  // todo: the called_times field in table api_key should be incremented by 1.
+  // the called_times field in table api_key should be incremented by 1.
   const { data: updateData, error: updateError } = await supabase
     .from("api_key")
     .update({ called_times: apiKeyData.called_times + 1 })
@@ -68,11 +71,58 @@ async function verifyAPIKey(context: any, api_key: string): Promise<any> {
   return apiKeyData;
 }
 
+// Get user by id or email function
+async function getUserByIdOrEmail(id?: string, email?: string): Promise<any> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
+  // Build query based on id or email
+  let query = supabase.from("User").select("*");
+
+  if (id) {
+    query = query.eq("id", id);
+  } else if (email) {
+    query = query.eq("email", email);
+  } else {
+    return null; // Neither id nor email provided
+  }
+
+  const { data: userData, error: selectError } = await query.single();
+
+  if (selectError || !userData) {
+    console.error("Error selecting user:", selectError);
+    return null;
+  }
+
+  // Get Account items by userId and append to userData
+  const { data: accountData, error: accountError } = await supabase
+    .from("Account")
+    .select("*")
+    .eq("userId", userData.id);
+
+  if (accountError) {
+    console.error("Error fetching accounts:", accountError);
+    // Return user without accounts if account fetch fails
+    return {
+      ...userData,
+      accounts: []
+    };
+  }
+
+  // Return user data with accounts appended
+  return {
+    ...userData,
+    accounts: accountData || []
+  };
+}
+
 // Supabase insert function
 async function insertCorpusItem(
-  data: string, 
-  note: Record<string, unknown>, 
-  category: string, 
+  data: string,
+  note: Record<string, unknown>,
+  category: string,
   tags: string[]
 ) {
   const supabase = createClient(
@@ -108,356 +158,377 @@ async function updateCorpusItem(
 const router = new Router();
 
 router
-.get("/", async (context) => {
-  context.response.body = { result: "Hello, Devs for AI Dimsum!" };
-})
-//exp: https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2
-.get("/all_items", async (context) => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  const queryParams = context.request.url.searchParams;
-  const corpus_name = queryParams.get("corpus_name");
-  const limit = queryParams.get("limit") || "100";
-  const cursor = queryParams.get("cursor");
+  .get("/", async (context) => {
+    context.response.body = { result: "Hello, Devs for AI Dimsum!" };
+  })
+  //exp: https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2
+  .get("/all_items", async (context) => {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const queryParams = context.request.url.searchParams;
+    const corpus_name = queryParams.get("corpus_name");
+    const limit = queryParams.get("limit") || "100";
+    const cursor = queryParams.get("cursor");
 
-  // Validate corpus_name parameter
-  if (!corpus_name) {
-    context.response.status = 400;
-    context.response.body = { error: "corpus_name parameter is required" };
-    return;
-  }
-
-  // Convert limit to number and validate
-  const limitNum = parseInt(limit as string, 10);
-  if (isNaN(limitNum) || limitNum <= 0 || limitNum > 1000) {
-    context.response.status = 400;
-    context.response.body = { error: "limit must be a positive number between 1 and 1000" };
-    return;
-  }
-
-  try {
-    // Build the query with pagination
-    let query = supabase
-      .from("cantonese_corpus_all")
-      .select("*")
-      .eq("category", corpus_name)
-      .order("id", { ascending: true })
-      .limit(limitNum);
-
-    // Add cursor-based pagination if cursor is provided
-    if (cursor) {
-      const cursorNum = parseInt(cursor, 10);
-      if (isNaN(cursorNum)) {
-        context.response.status = 400;
-        context.response.body = { error: "cursor must be a valid number" };
-        return;
-      }
-      query = query.gt("id", cursorNum);
-    }
-
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error("Database error:", error);
-      context.response.status = 500;
-      context.response.body = { error: "Database query failed" };
+    // Validate corpus_name parameter
+    if (!corpus_name) {
+      context.response.status = 400;
+      context.response.body = { error: "corpus_name parameter is required" };
       return;
     }
 
-    // Calculate next cursor for pagination
-    let nextCursor = null;
-    if (data && data.length === limitNum && data.length > 0) {
-      // If we got exactly the limit, there might be more data
-      nextCursor = data[data.length - 1].id;
-    }
-
-    context.response.body = {
-      data,
-      pagination: {
-        limit: limitNum,
-        cursor: cursor || null,
-        nextCursor,
-        hasMore: data && data.length === limitNum
-      }
-    };
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    context.response.status = 500;
-    context.response.body = { error: "Internal server error" };
-  }
-})
-// exp: https://backend.aidimsum.com/random_item?corpus_name=zyzdv2
-.get("/random_item", async (context) => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  const queryParams = context.request.url.searchParams;
-  const corpus_name = queryParams.get("corpus_name");
-  
-  // Validate corpus_name parameter
-  if (!corpus_name) {
-    context.response.status = 400;
-    context.response.body = { error: "corpus_name parameter is required" };
-    return;
-  }
-
-  // Construct the table name corpus_<corpus_name>
-  const tableName = `corpus_${corpus_name}`;
-  
-  try {
-    // First, get the total count of items in the table
-    const { count, error: countError } = await supabase
-      .from(tableName)
-      .select("*", { count: "exact", head: true });
-
-    if (countError) {
-      console.error("Error getting count:", countError);
-      context.response.status = 500;
-      context.response.body = { error: `Failed to access table ${tableName}` };
+    // Convert limit to number and validate
+    const limitNum = parseInt(limit as string, 10);
+    if (isNaN(limitNum) || limitNum <= 0 || limitNum > 1000) {
+      context.response.status = 400;
+      context.response.body = {
+        error: "limit must be a positive number between 1 and 1000",
+      };
       return;
     }
 
-    if (!count || count === 0) {
-      context.response.status = 404;
-      context.response.body = { error: `No items found in table ${tableName}` };
-      return;
-    }
-
-    // Loop until we find a corpus item with valid meaning
-    let corpusItem = null;
-    let attempts = 0;
-    const maxAttempts = 100; // Prevent infinite loops
-
-    while (!corpusItem && attempts < maxAttempts) {
-      attempts++;
-      
-      // Generate a random offset
-      const randomOffset = Math.floor(Math.random() * count);
-
-      // Get a random item using the random offset
-      const { data, error } = await supabase
-        .from(tableName)
-        .select("*")
-        .range(randomOffset, randomOffset)
-        .single();
-
-      if (error || !data) {
-        console.error("Error fetching random item:", error);
-        continue; // Try again
-      }
-
-      const unique_id = data.unique_id.toString();
-
-      console.log("unique_id", unique_id);
-
-      const { data: fetchedCorpusItem, error: corpusError } = await supabase
+    try {
+      // Build the query with pagination
+      let query = supabase
         .from("cantonese_corpus_all")
         .select("*")
-        .eq("unique_id", unique_id)
-        .single();
+        .eq("category", corpus_name)
+        .order("id", { ascending: true })
+        .limit(limitNum);
 
-      console.log("fetchedCorpusItem", fetchedCorpusItem);
-      
-      if (corpusError || !fetchedCorpusItem) {
-        console.error("Error fetching corpus item:", corpusError);
-        continue; // Try again
+      // Add cursor-based pagination if cursor is provided
+      if (cursor) {
+        const cursorNum = parseInt(cursor, 10);
+        if (isNaN(cursorNum)) {
+          context.response.status = 400;
+          context.response.body = { error: "cursor must be a valid number" };
+          return;
+        }
+        query = query.gt("id", cursorNum);
       }
 
-      if (corpus_name=="zyzdv2") {
-        // Check if the meaning is valid (not null or [null])
-        const meaning = fetchedCorpusItem.note?.context?.meaning;
-        // console.log("meaning", meaning);
-        if (meaning && Array.isArray(meaning) && meaning.length > 0 && meaning[0] !== null) {
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Database error:", error);
+        context.response.status = 500;
+        context.response.body = { error: "Database query failed" };
+        return;
+      }
+
+      // Calculate next cursor for pagination
+      let nextCursor = null;
+      if (data && data.length === limitNum && data.length > 0) {
+        // If we got exactly the limit, there might be more data
+        nextCursor = data[data.length - 1].id;
+      }
+
+      context.response.body = {
+        data,
+        pagination: {
+          limit: limitNum,
+          cursor: cursor || null,
+          nextCursor,
+          hasMore: data && data.length === limitNum,
+        },
+      };
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  // exp: https://backend.aidimsum.com/random_item?corpus_name=zyzdv2
+  .get("/random_item", async (context) => {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const queryParams = context.request.url.searchParams;
+    const corpus_name = queryParams.get("corpus_name");
+
+    // Validate corpus_name parameter
+    if (!corpus_name) {
+      context.response.status = 400;
+      context.response.body = { error: "corpus_name parameter is required" };
+      return;
+    }
+
+    // Construct the table name corpus_<corpus_name>
+    const tableName = `corpus_${corpus_name}`;
+
+    try {
+      // First, get the total count of items in the table
+      const { count, error: countError } = await supabase
+        .from(tableName)
+        .select("*", { count: "exact", head: true });
+
+      if (countError) {
+        console.error("Error getting count:", countError);
+        context.response.status = 500;
+        context.response.body = {
+          error: `Failed to access table ${tableName}`,
+        };
+        return;
+      }
+
+      if (!count || count === 0) {
+        context.response.status = 404;
+        context.response.body = {
+          error: `No items found in table ${tableName}`,
+        };
+        return;
+      }
+
+      // Loop until we find a corpus item with valid meaning
+      let corpusItem = null;
+      let attempts = 0;
+      const maxAttempts = 100; // Prevent infinite loops
+
+      while (!corpusItem && attempts < maxAttempts) {
+        attempts++;
+
+        // Generate a random offset
+        const randomOffset = Math.floor(Math.random() * count);
+
+        // Get a random item using the random offset
+        const { data, error } = await supabase
+          .from(tableName)
+          .select("*")
+          .range(randomOffset, randomOffset)
+          .single();
+
+        if (error || !data) {
+          console.error("Error fetching random item:", error);
+          continue; // Try again
+        }
+
+        const unique_id = data.unique_id.toString();
+
+        console.log("unique_id", unique_id);
+
+        const { data: fetchedCorpusItem, error: corpusError } = await supabase
+          .from("cantonese_corpus_all")
+          .select("*")
+          .eq("unique_id", unique_id)
+          .single();
+
+        console.log("fetchedCorpusItem", fetchedCorpusItem);
+
+        if (corpusError || !fetchedCorpusItem) {
+          console.error("Error fetching corpus item:", corpusError);
+          continue; // Try again
+        }
+
+        if (corpus_name == "zyzdv2") {
+          // Check if the meaning is valid (not null or [null])
+          const meaning = fetchedCorpusItem.note?.context?.meaning;
+          // console.log("meaning", meaning);
+          if (
+            meaning &&
+            Array.isArray(meaning) &&
+            meaning.length > 0 &&
+            meaning[0] !== null
+          ) {
+            corpusItem = fetchedCorpusItem;
+            break;
+          }
+        } else {
           corpusItem = fetchedCorpusItem;
           break;
         }
-      }else{
-        corpusItem = fetchedCorpusItem;
-        break;
       }
+
+      if (!corpusItem) {
+        context.response.status = 404;
+        context.response.body = {
+          error: `No valid corpus items found in ${tableName} after ${maxAttempts} attempts`,
+        };
+        return;
+      }
+
+      // Respond with the item
+      context.response.status = 200;
+      context.response.body = corpusItem;
+    } catch (error) {
+      console.error("Error in random_item endpoint:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  // APIs for corpus things.
+  .get("/corpus_apps", async (context) => {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data, error } = await supabase
+      .from("cantonese_corpus_apps")
+      .select("*");
+
+    if (error) {
+      throw error;
     }
 
-    if (!corpusItem) {
-      context.response.status = 404;
-      context.response.body = { error: `No valid corpus items found in ${tableName} after ${maxAttempts} attempts` };
+    context.response.body = data;
+  })
+  .get("/corpus_categories", async (context) => {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data, error } = await supabase
+      .from("cantonese_categories")
+      .select("*");
+
+    if (error) {
+      throw error;
+    }
+
+    context.response.body = data;
+  })
+  .get("/corpus_category", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const name = queryParams.get("name");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data, error } = await supabase
+      .from("cantonese_categories")
+      .select("*")
+      .eq("name", name);
+
+    if (error) {
+      throw error;
+    }
+
+    context.response.body = data;
+  })
+  .get("/corpus_item", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const unique_id = queryParams.get("unique_id");
+    const data = queryParams.get("data");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    let query = supabase.from("cantonese_corpus_all").select("*");
+
+    if (unique_id) {
+      query = query.eq("unique_id", unique_id);
+    } else if (data) {
+      query = query.eq("data", data);
+    } else {
+      context.response.status = 400;
+      context.response.body = {
+        error: "Either unique_id or data parameter is required",
+      };
       return;
     }
 
-    // Respond with the item
-    context.response.status = 200;
-    context.response.body = corpusItem;
-  } catch (error) {
-    console.error("Error in random_item endpoint:", error);
-    context.response.status = 500;
-    context.response.body = { error: "Internal server error" };
-  }
-})
-// APIs for corpus things.
-.get("/corpus_apps", async (context) => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
+    const { data: resp, error } = await query;
 
-  const { data, error } = await supabase
-    .from("cantonese_corpus_apps")
-    .select("*")
-
-  if (error) {
-    throw error;
-  }
-
-  context.response.body = data;
-})
-.get("/corpus_categories", async (context) => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
-  const { data, error } = await supabase
-    .from("cantonese_categories")
-    .select("*")
-
-  if (error) {
-    throw error;
-  }
-
-  context.response.body = data;
-})
-.get("/corpus_category", async (context) => {
-  const queryParams = context.request.url.searchParams;
-  const name = queryParams.get("name");
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
-  const { data, error } = await supabase
-    .from("cantonese_categories")
-    .select("*")
-    .eq("name", name);
-
-  if (error) {
-    throw error;
-  }
-
-  context.response.body = data;
-})
-.get("/corpus_item", async (context) => {
-  const queryParams = context.request.url.searchParams;
-  const unique_id = queryParams.get("unique_id");
-  const data = queryParams.get("data");
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
-  let query = supabase
-    .from("cantonese_corpus_all")
-    .select("*");
-
-  if (unique_id) {
-    query = query.eq("unique_id", unique_id);
-  } else if (data) {
-    query = query.eq("data", data);
-  } else {
-    context.response.status = 400;
-    context.response.body = { error: "Either unique_id or data parameter is required" };
-    return;
-  }
-
-  const { data: resp, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  context.response.body = resp;
-})
-.get("/text_search_v2", async (context) => { 
-  const queryParams = context.request.url.searchParams;
-  const key = queryParams.get("keyword");
-  // Convert the key to both traditional and simplified Chinese
-  const traditionalKey = tify(key ?? "");
-  const simplifiedKey = sify(key ?? "");
-  console.log("traditionalKey", traditionalKey);
-  console.log("simplifiedKey", simplifiedKey);
-  const tableName = queryParams.get("table_name") ?? "";
-  // const column = queryParams.get("column");
-  const limitStr = queryParams.get("limit");
-  const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-  const supabase_url = queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
-  // TODO: make SUPABASE_SERVICE_ROLE_KEY for a spec table as a param.
-  const supabase = createClient(
-    supabase_url,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  console.log("supabase_url", supabase_url);
-  try {
-    // const searchableTables = ["cantonese_corpus_all"];
-
-    // Check if the table is allowed to be searched
-    // if (!tableName || !searchableTables.includes(tableName)) {
-    //   context.response.status = 403; // Forbidden status code
-    //   context.response.body = {
-    //     error: "The specified table is not searchable.",
-    //   };
-    //   return;
-    // }
-    // Search for both traditional and simplified versions
-    const [traditionalResults, simplifiedResults] = await Promise.all([
-      supabase
-        .rpc('search_cantonese_corpus', { search_term: traditionalKey })
-        .order("id", { ascending: false }),
-      supabase
-        .rpc('search_cantonese_corpus', { search_term: simplifiedKey })
-        .order("id", { ascending: false })
-    ]);
-
-    // Merge and deduplicate results based on unique_id
-    let mergedData = [...(traditionalResults.data || []), ...(simplifiedResults.data || [])];
-    mergedData = Array.from(new Map(mergedData.map(item => [item.unique_id, item])).values());
-
-    // Apply limit after merging if specified
-    if (limit !== undefined && limit > 0) {
-      mergedData = mergedData.slice(0, limit);
+    if (error) {
+      throw error;
     }
 
-    // TODO: handle mergedData, if the tableName == "cantonese_corpus_all", just return the mergedData, else filter the mergedData by tableName with column "category" == tableName
-    if (tableName !== "cantonese_corpus_all") {
-      mergedData = mergedData.filter((item: any) => item.category === tableName);
-    }
+    context.response.body = resp;
+  })
+  .get("/text_search_v2", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const key = queryParams.get("keyword");
+    // Convert the key to both traditional and simplified Chinese
+    const traditionalKey = tify(key ?? "");
+    const simplifiedKey = sify(key ?? "");
+    console.log("traditionalKey", traditionalKey);
+    console.log("simplifiedKey", simplifiedKey);
+    const tableName = queryParams.get("table_name") ?? "";
+    // const column = queryParams.get("column");
+    const limitStr = queryParams.get("limit");
+    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+    const supabase_url =
+      queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
+    // TODO: make SUPABASE_SERVICE_ROLE_KEY for a spec table as a param.
+    const supabase = createClient(
+      supabase_url,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    console.log("supabase_url", supabase_url);
+    try {
+      // const searchableTables = ["cantonese_corpus_all"];
 
-    console.log("data", mergedData);
-    context.response.status = 200;
-    context.response.body = mergedData;
-    
-    if (traditionalResults.error || simplifiedResults.error) {
-      throw traditionalResults.error || simplifiedResults.error;
-    }
-  } catch (error) { 
-    console.error("Error fetching data:", error);
-    context.response.status = 500;
-    context.response.body = { error: "Failed to fetch data" };
-  }
-})
-.get("/item/liked", async (context) => {
-  const queryParams = context.request.url.searchParams;
-  const item_id = queryParams.get("item_id");
-  const user_id = queryParams.get("user_id");
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  // TODO.
-})
+      // Check if the table is allowed to be searched
+      // if (!tableName || !searchableTables.includes(tableName)) {
+      //   context.response.status = 403; // Forbidden status code
+      //   context.response.body = {
+      //     error: "The specified table is not searchable.",
+      //   };
+      //   return;
+      // }
+      // Search for both traditional and simplified versions
+      const [traditionalResults, simplifiedResults] = await Promise.all([
+        supabase
+          .rpc("search_cantonese_corpus", { search_term: traditionalKey })
+          .order("id", { ascending: false }),
+        supabase
+          .rpc("search_cantonese_corpus", { search_term: simplifiedKey })
+          .order("id", { ascending: false }),
+      ]);
 
-/* ↓↓↓ admin APIs ↓↓↓ */
-/*
+      // Merge and deduplicate results based on unique_id
+      let mergedData = [
+        ...(traditionalResults.data || []),
+        ...(simplifiedResults.data || []),
+      ];
+      mergedData = Array.from(
+        new Map(mergedData.map((item) => [item.unique_id, item])).values()
+      );
+
+      // Apply limit after merging if specified
+      if (limit !== undefined && limit > 0) {
+        mergedData = mergedData.slice(0, limit);
+      }
+
+      // TODO: handle mergedData, if the tableName == "cantonese_corpus_all", just return the mergedData, else filter the mergedData by tableName with column "category" == tableName
+      if (tableName !== "cantonese_corpus_all") {
+        mergedData = mergedData.filter(
+          (item: any) => item.category === tableName
+        );
+      }
+
+      console.log("data", mergedData);
+      context.response.status = 200;
+      context.response.body = mergedData;
+
+      if (traditionalResults.error || simplifiedResults.error) {
+        throw traditionalResults.error || simplifiedResults.error;
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Failed to fetch data" };
+    }
+  })
+  .get("/item/liked", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const item_id = queryParams.get("item_id");
+    const user_id = queryParams.get("user_id");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    // TODO.
+  })
+
+  /* ↓↓↓ admin APIs ↓↓↓ */
+  /*
 curl example:
 curl -X POST http://localhost:8000/admin/insert_corpus_item \
   -H "Content-Type: application/json" \
@@ -472,28 +543,28 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
     "password": "your_admin_password_here"
   }'
 */
-.post("/admin/insert_corpus_item", async (context) => {
-  let body = await context.request.body();
-  const content = await body.value;
-  const { data, note, category, tags, password } = content;
+  .post("/admin/insert_corpus_item", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { data, note, category, tags, password } = content;
 
-  // Verify admin password
-  if (!(await verifyAdminPassword(context, password))) {
-    return { error: "Unauthorized: Invalid password" };
-  }
+    // Verify admin password
+    if (!(await verifyAdminPassword(context, password))) {
+      return { error: "Unauthorized: Invalid password" };
+    }
 
-  try {
-    const result = await insertCorpusItem(data, note, category, tags);
-    context.response.body = result;
-  } catch (error) {
-    context.response.status = 500;
-    context.response.body = { error: "Failed to insert data" };
-    console.error("Error inserting data:", error);
-  }
-})
+    try {
+      const result = await insertCorpusItem(data, note, category, tags);
+      context.response.body = result;
+    } catch (error) {
+      context.response.status = 500;
+      context.response.body = { error: "Failed to insert data" };
+      console.error("Error inserting data:", error);
+    }
+  })
 
-// HINT: status 204 is normal, the meaning is updated success.
-/*
+  // HINT: status 204 is normal, the meaning is updated success.
+  /*
 curl example:
 curl -X POST http://localhost:8000/admin/insert_corpus_item \
   -H "Content-Type: application/json" \
@@ -509,15 +580,15 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
     "password": "your_admin_password_here"
   }'
 */
-.post("/admin/update_corpus_item", async (context) => {
-  let body = await context.request.body();
-  const content = await body.value;
-  const { unique_id, note, category, tags, password } = content;
+  .post("/admin/update_corpus_item", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { unique_id, note, category, tags, password } = content;
     // Verify admin password
     if (!(await verifyAdminPassword(context, password))) {
       return { error: "Unauthorized: Invalid password" };
     }
-  
+
     try {
       const result = await updateCorpusItem(unique_id, note, category, tags);
       context.response.body = result;
@@ -526,8 +597,8 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
       context.response.body = { error: "Failed to insert data" };
       console.error("Error inserting data:", error);
     }
-})
-/*
+  })
+  /*
 Curl example:
 curl -X POST http://localhost:8000/admin/get_user \
   -H "Content-Type: application/json" \
@@ -537,72 +608,37 @@ curl -X POST http://localhost:8000/admin/get_user \
     "password": "your_admin_password_here"
   }'
 */
-.post("/admin/get_user", async (context) => {
-  let body = await context.request.body();
-  const content = await body.value;
-  const { id, email, password } = content;
-  console.log("id", id);
-  console.log("email", email);
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  // Verify admin password
-  if (!(await verifyAdminPassword(context, password))) {
-    return { error: "Unauthorized: Invalid password" };
-  }
-  try {
-    // Select user based on id or email
-    let query = supabase
-      .from("User")
-      .select("*");
-
-    if (id) {
-      query = query.eq("id", id);
-    } else {
-      query = query.eq("email", email);
-    }
-
-    const { data: userData, error: selectError } = await query.single();
-
-    if (selectError || !userData) {
-      console.error("Error selecting user:", selectError);
-      context.response.status = 404;
-      context.response.body = { error: "User not found" };
+  .post("/admin/get_user", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { id, email, password } = content;
+    
+    // Verify admin password
+    if (!(await verifyAdminPassword(context, password))) {
       return;
     }
 
-    // Get Account items by userId and append to userData
-    const { data: accountData, error: accountError } = await supabase
-      .from("Account")
-      .select("*")
-      .eq("userId", userData.id);
+    try {
+      // Get user by id or email
+      const userData = await getUserByIdOrEmail(id, email);
 
-    if (accountError) {
-      console.error("Error fetching accounts:", accountError);
-      // Don't fail the request, just log the error and return user without accounts
+      if (!userData) {
+        context.response.status = 404;
+        context.response.body = { error: "User not found" };
+        return;
+      }
+
+      // Return user data with accounts
       context.response.status = 200;
-      context.response.body = {
-        ...userData,
-        accounts: []
-      };
-      return;
+      context.response.body = userData;
+    } catch (error) {
+      console.error("Error in get_user:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
     }
-
-    // Return user data with accounts appended
-    context.response.status = 200;
-    context.response.body = {
-      ...userData,
-      accounts: accountData || []
-    };
-  } catch (error) {
-    console.error("Error in get_user:", error);
-    context.response.status = 500;
-    context.response.body = { error: "Internal server error" };
-  }
-})
-/* ↓↓↓ dev APIs(need api key) ↓↓↓ */
-/*
+  })
+  /* ↓↓↓ dev APIs(need api key) ↓↓↓ */
+  /*
 HINT: DO NOT DELETE THE ANNOTATION BELOW.
 TODO: 
 1/ get user_id and status by api key in table api_key
@@ -625,7 +661,7 @@ constraint cantonese_corpus_update_history_pkey primary key (id)
 
 last_note = item.note
 */
-/*
+  /*
 Curl example:
 curl -X POST http://localhost:8000/dev/insert_corpus_item \
   -H "Content-Type: application/json" \
@@ -640,60 +676,59 @@ curl -X POST http://localhost:8000/dev/insert_corpus_item \
     "api_key": "api-key-here"
   }'
 */
-.post("/dev/insert_corpus_item", async (context) => {
-  // TODO.
-  let body = await context.request.body();
-  const content = await body.value;
-  const { data, note, category, tags, api_key } = content;
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  // Verify API key
-  const apiKeyData = await verifyAPIKey(context, api_key);
-  if (!apiKeyData) {
-    return;
-  }
-
-  try {
-
-    // 4. Insert an item into cantonese_corpus_update_history
-    const { data: historyData, error: historyError } = await supabase
-      .from("cantonese_corpus_update_history")
-      .insert({
-        tags: tags,
-        category: category,
-        data: data,
-        note: note,
-        status: "PENDING",
-        user_id: apiKeyData.user_id,
-        operation_type: "CREATE",
-      })
-      .select()
-      .single();
-
-    if (historyError) {
-      context.response.status = 500;
-      context.response.body = { error: "Failed to create update history record" };
-      console.error("Error creating update history:", historyError);
+  .post("/dev/insert_corpus_item", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { data, note, category, tags, api_key } = content;
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    // Verify API key
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    if (!apiKeyData) {
       return;
     }
 
-    context.response.status = 200;
-    context.response.body = {
-      message: "Update request submitted successfully",
-      history_id: historyData.id,
-      status: "PENDING",
-      operation_type: "CREATE"
-    };
+    try {
+      // 4. Insert an item into cantonese_corpus_update_history
+      const { data: historyData, error: historyError } = await supabase
+        .from("cantonese_corpus_update_history")
+        .insert({
+          tags: tags,
+          category: category,
+          data: data,
+          note: note,
+          status: "PENDING",
+          user_id: apiKeyData.user_id,
+          operation_type: "CREATE",
+        })
+        .select()
+        .single();
 
-  } catch (error) {
-    console.error("Error in dev/insert_corpus_item:", error);
-    context.response.status = 500;
-    context.response.body = { error: "Internal server error" };
-  }
-})
-/*
+      if (historyError) {
+        context.response.status = 500;
+        context.response.body = {
+          error: "Failed to create update history record",
+        };
+        console.error("Error creating update history:", historyError);
+        return;
+      }
+
+      context.response.status = 200;
+      context.response.body = {
+        message: "Update request submitted successfully",
+        history_id: historyData.id,
+        status: "PENDING",
+        operation_type: "CREATE",
+      };
+    } catch (error) {
+      console.error("Error in dev/insert_corpus_item:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  /*
 Curl example:
 curl -X POST http://localhost:8000/dev/update_corpus_item \
   -H "Content-Type: application/json" \
@@ -706,86 +741,243 @@ curl -X POST http://localhost:8000/dev/update_corpus_item \
     "api_key": "api-key-here"
   }'
 */
-.post("/dev/update_corpus_item", async (context) => {
-  let body = await context.request.body();
-  const content = await body.value;
-  const { uuid, note, api_key } = content;
-  
-  // Verify API key
-  const apiKeyData = await verifyAPIKey(context, api_key);
-  if (!apiKeyData) {
-    return;
-  }
-  
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
+  .post("/dev/update_corpus_item", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { uuid, note, api_key } = content;
 
-  try {
-    // Get the item from table cantonese_corpus_all by uuid
-    const { data: corpusItem, error: corpusError } = await supabase
-      .from("cantonese_corpus_all")
-      .select("*")
-      .eq("unique_id", uuid)
-      .single();
-
-    if (corpusError || !corpusItem) {
-      context.response.status = 404;
-      context.response.body = { error: "Corpus item not found" };
+    // Verify API key
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    if (!apiKeyData) {
       return;
     }
 
-    // 4. Insert an item into cantonese_corpus_update_history
-    const { data: historyData, error: historyError } = await supabase
-      .from("cantonese_corpus_update_history")
-      .insert({
-        unique_id: uuid,
-        note: note,
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    try {
+      // Get the item from table cantonese_corpus_all by uuid
+      const { data: corpusItem, error: corpusError } = await supabase
+        .from("cantonese_corpus_all")
+        .select("*")
+        .eq("unique_id", uuid)
+        .single();
+
+      if (corpusError || !corpusItem) {
+        context.response.status = 404;
+        context.response.body = { error: "Corpus item not found" };
+        return;
+      }
+
+      // 4. Insert an item into cantonese_corpus_update_history
+      const { data: historyData, error: historyError } = await supabase
+        .from("cantonese_corpus_update_history")
+        .insert({
+          unique_id: uuid,
+          note: note,
+          status: "PENDING",
+          user_id: apiKeyData.user_id,
+          last_note: corpusItem.note,
+        })
+        .select()
+        .single();
+
+      if (historyError) {
+        context.response.status = 500;
+        context.response.body = {
+          error: "Failed to create update history record",
+        };
+        console.error("Error creating update history:", historyError);
+        return;
+      }
+
+      context.response.status = 200;
+      context.response.body = {
+        message: "Update request submitted successfully",
+        unique_id: historyData.unique_id,
         status: "PENDING",
-        user_id: apiKeyData.user_id,
-        last_note: corpusItem.note
-      })
-      .select()
-      .single();
-
-    if (historyError) {
+      };
+    } catch (error) {
+      console.error("Error in dev/update_corpus_item:", error);
       context.response.status = 500;
-      context.response.body = { error: "Failed to create update history record" };
-      console.error("Error creating update history:", historyError);
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  /*
+Curl Example
+curl -X POST http://localhost:8000/dev/get_update_history \
+  -H "Content-Type: application/json" \
+  -d '{
+    "unique_id": "example-unique-id-here",
+    "api_key": "api-key-here"
+  }'
+*/
+  .post("/dev/get_update_history", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { unique_id, api_key } = content;
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    // TODO: get the update history by unique_id from cantonese_corpus_update_history.
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data: updateHistory, error: updateHistoryError } = await supabase
+      .from("cantonese_corpus_update_history")
+      .select("*")
+      .eq("unique_id", unique_id);
+    context.response.body = updateHistory;
+    if (updateHistoryError) {
+      context.response.status = 500;
+      context.response.body = { error: "Failed to get update history" };
+      console.error("Error getting update history:", updateHistoryError);
+      return;
+    }
+  })
+  /*
+  Curl Example:
+  curl -X POST http://localhost:8000/dev/approve_corpus_item \
+    -H "Content-Type: application/json" \
+    -d '{
+      "unique_id": "example-unique-id-here",
+      "api_key": "api-key-here"
+    }' | jq
+  */
+  .post("/dev/approve_corpus_item", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { unique_id, api_key } = content;
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    if (!apiKeyData) {
+      return;
+    }
+    // TODO. get the update history by unique_id from cantonese_corpus_update_history.
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data: updateHistory, error: updateHistoryError } = await supabase
+      .from("cantonese_corpus_update_history")
+      .select("*")
+      .eq("unique_id", unique_id)
+      .single();
+    if (updateHistoryError) {
+      context.response.status = 500;
+      context.response.body = { error: "Failed to get update history" };
+      console.error("Error getting update history:", updateHistoryError);
       return;
     }
 
-    context.response.status = 200;
-    context.response.body = {
-      message: "Update request submitted successfully",
-      history_id: historyData.id,
-      status: "PENDING"
-    };
+    try {
+      // Check if status is PENDING
+      if (updateHistory.status !== "PENDING") {
+        context.response.status = 400;
+        context.response.body = { 
+          error: "Update history status is not PENDING", 
+          current_status: updateHistory.status 
+        };
+        return;
+      }
 
-  } catch (error) {
-    console.error("Error in dev/update_corpus_item:", error);
-    context.response.status = 500;
-    context.response.body = { error: "Internal server error" };
-  }
-})
-/* ↓↓↓ APIs for apps ↓↓↓ */
-.get("/app/meme_pic_links", async (context) => {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  const { data, error } = await supabase
-    .from("meme_pic_links")
-    .select("*")
+      // Handle based on operation_type
+      if (updateHistory.operation_type === "CREATE") {
+        // Insert new item into cantonese_corpus_all
+        const { data: insertData, error: insertError } = await supabase
+          .from("cantonese_corpus_all")
+          .insert({
+            data: updateHistory.data,
+            note: updateHistory.note,
+            category: updateHistory.category,
+            tags: updateHistory.tags
+          })
+          .select()
+          .single();
 
-  if (error) {
-    throw error;
-  }
+        if (insertError) {
+          context.response.status = 500;
+          context.response.body = { error: "Failed to insert corpus item" };
+          console.error("Error inserting corpus item:", insertError);
+          return;
+        }
 
-  context.response.body = data;
-})
-/*
+        // Update history status to APPROVED
+        const { error: approveError } = await supabase
+          .from("cantonese_corpus_update_history")
+          .update({ 
+            status: "APPROVED",
+            approver_user_id: apiKeyData.user_id
+          })
+          .eq("id", updateHistory.id);
+
+        if (approveError) {
+          console.error("Error updating history status:", approveError);
+        }
+
+        context.response.status = 200;
+        context.response.body = {
+          message: "Corpus item created successfully",
+          operation_type: "CREATE",
+          corpus_item: insertData
+        };
+
+      } else if (updateHistory.operation_type === "UPDATE") {
+        // Update existing item in cantonese_corpus_all
+        const { data: updateData, error: updateError } = await supabase
+          .from("cantonese_corpus_all")
+          .update({
+            note: updateHistory.note,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("unique_id", updateHistory.unique_id)
+          .select()
+          .single();
+
+        if (updateError) {
+          context.response.status = 500;
+          context.response.body = { error: "Failed to update corpus item" };
+          console.error("Error updating corpus item:", updateError);
+          return;
+        }
+
+        // Update history status to APPROVED
+        const { error: approveError } = await supabase
+          .from("cantonese_corpus_update_history")
+          .update({ 
+            status: "APPROVED",
+            updated_at: new Date().toISOString(),
+            approver_user_id: apiKeyData.user_id
+          })
+          .eq("id", updateHistory.id);
+
+        if (approveError) {
+          console.error("Error updating history status:", approveError);
+        }
+
+        context.response.status = 200;
+        context.response.body = {
+          message: "Corpus item updated successfully",
+          operation_type: "UPDATE",
+          corpus_item: updateData
+        };
+
+      } else {
+        context.response.status = 400;
+        context.response.body = { 
+          error: "Invalid operation_type", 
+          operation_type: updateHistory.operation_type 
+        };
+        return;
+      }
+
+    } catch (error) {
+      console.error("Error in approve_corpus_item:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  /*
 curl example:
 url -X POST http://localhost:8000/dev/get_api_key_status \
   -H "Content-Type: application/json" \
@@ -793,13 +985,90 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
     "api_key": "api-key-here"
   }'
 */
-.post("/dev/get_api_key_status", async (context) => {
-  let body = await context.request.body();
-  const content = await body.value;
-  const { api_key } = content;
-  const apiKeyData = await verifyAPIKey(context, api_key);
-  context.response.body = apiKeyData;
-})
+  .post("/dev/get_api_key_status", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { api_key } = content;
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    context.response.body = apiKeyData;
+  })
+  /*
+  Curl example:
+  curl -X POST http://localhost:8000/dev/get_user_by_corpus_name \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "corpus-name-here"
+    }' | jq
+  */
+  .post("/dev/get_users_by_corpus_name", async (context) => {
+    let body = await context.request.body();
+    const content = await body.value;
+    const { name , api_key } = content;
+    const apiKeyData = await verifyAPIKey(context, api_key);
+      if (!apiKeyData) {
+        return;
+    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    try {
+      // Get corpus info by corpus_name from cantonese_categories
+      const { data: categoryData, error: categoryError } = await supabase
+        .from("cantonese_categories")
+        .select("*")
+        .eq("name", name)
+        .single();
+      console.log(categoryData);
+
+      if (categoryError || !categoryData) {
+        context.response.status = 404;
+        context.response.body = { error: "Corpus category not found" };
+        console.error("Error fetching category:", categoryError);
+        return;
+      }
+
+      // Get taggers array from category data
+      const taggers = categoryData.taggers || [];
+      console.log("taggers", taggers);
+      // Query user info for each user_id in taggers array
+      const taggersInfo: any[] = [];
+      for (const tagger of taggers) {
+        console.log("tagger", tagger);
+        const userInfo = await getUserByIdOrEmail(tagger.user_id);
+        if (userInfo) {
+          taggersInfo.push(userInfo);
+        }
+      }
+
+      // Return corpus info with tagger user info
+      context.response.status = 200;
+      context.response.body = {
+        ...categoryData,
+        taggers: taggersInfo
+      };
+
+    } catch (error) {
+      console.error("Error in get_user_by_corpus_name:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  /* ↓↓↓ APIs for apps ↓↓↓ */
+  .get("/app/meme_pic_links", async (context) => {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data, error } = await supabase.from("meme_pic_links").select("*");
+
+    if (error) {
+      throw error;
+    }
+
+    context.response.body = data;
+  });
 /* ↓↓↓ sepc APIs ↓↓↓ */
 // .get("/spec/insert_zyzd", async (context) => {
 //   /*
@@ -826,7 +1095,7 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
 //       校訂註: string | null;
 //     };
 //   }
-   /*
+/*
     HINT: DO NOT DELETE THE EXAMPLE BELOW.
     here is the item example: 
     - if 字頭 has multiple items, make multiple corpus items, 字頭 = data
@@ -889,7 +1158,7 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
 //       const note = {
 //         "context": {
 //           meaning: item.義項.map((entry: ZyzdEntry) => entry.釋義),
-//           pinyin: item.義項.flatMap((entry: ZyzdEntry) => 
+//           pinyin: item.義項.flatMap((entry: ZyzdEntry) =>
 //             entry.讀音.map((sound: ZyzdReading) => sound.粵拼讀音)
 //           ),
 //           page: item.頁,
@@ -916,7 +1185,7 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
 //       }
 //     }
 //   }
-  
+
 //   context.response.body = {
 //     message: "ZYZD corpus processing completed",
 //     results
