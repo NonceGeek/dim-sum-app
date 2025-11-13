@@ -994,14 +994,14 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
   })
   /*
   Curl example:
-  curl -X POST http://localhost:8000/dev/get_user_by_corpus_name \
+  curl -X POST http://localhost:8000/dev/get_taggers_by_corpus_name \
     -H "Content-Type: application/json" \
     -d '{
       "name": "corpus-name-here",
       "api_key": "api-key-here"
     }' | jq
   */
-  .post("/dev/get_users_by_corpus_name", async (context) => {
+  .post("/dev/get_taggers_by_corpus_name", async (context) => {
     let body = await context.request.body();
     const content = await body.value;
     const { name , api_key } = content;
