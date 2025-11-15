@@ -779,7 +779,7 @@ All endpoints may return the following error responses:
 }
 ```
 
-### ZYZD Item Structure (Input)
+### ZYZD Item Structure
 ```json
 {
   "編號": "0005",

@@ -8,6 +8,7 @@ import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { tify, sify } from "@aqzhyi/chinese-conv";
+import { CSS, render } from "@deno/gfm";
 
 console.log("Hello from AI Dimsum Devs API!");
 
@@ -160,6 +161,81 @@ const router = new Router();
 router
   .get("/", async (context) => {
     context.response.body = { result: "Hello, Devs for AI Dimsum!" };
+  })
+  .get("/docs", async (context) =>{
+    try {
+      const readmeText = await Deno.readTextFile("./apidoc.md");
+      context.response.body = readmeText;
+    } catch (err) {
+      console.error("Error reading README:", err);
+      context.response.status = 500;
+      context.response.body = { error: "Could not load documentation" };
+    }
+  })
+  .get("/docs/html", async (context) => {
+      try {
+        // Read README.md file
+        const readmeText = await Deno.readTextFile("./apidoc.md");
+        
+        // Render markdown to HTML with GFM styles
+        const body = render(readmeText);
+        
+        // Create complete HTML document with GFM CSS
+        const html = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>BeWater API Documentation</title>
+      <style>
+        ${CSS}
+        body {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+      </style>
+    </head>
+    <body>
+    ${body}
+    </body>
+    </html>`;
+        
+        // Set response headers for HTML
+        context.response.headers.set("Content-Type", "text/html; charset=utf-8");
+        context.response.body = html;
+      } catch (err) {
+        console.error("Error reading README:", err);
+        context.response.status = 500;
+        context.response.body = { error: "Could not load documentation" };
+      }
+  })
+  // http://localhost:8000/main_data
+  .get("/main_data", async (context) => {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    try {
+      const { data, error } = await supabase
+        .from("cantonese_corpus_main_data")
+        .select("*");
+
+      if (error) {
+        console.error("Database error:", error);
+        context.response.status = 500;
+        context.response.body = { error: "Failed to fetch main data" };
+        return;
+      }
+
+      context.response.status = 200;
+      context.response.body = data;
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
   })
   //exp: https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2
   .get("/all_items", async (context) => {
@@ -853,7 +929,12 @@ curl -X POST http://localhost:8000/dev/get_update_history \
     if (!apiKeyData) {
       return;
     }
-    // TODO. get the update history by unique_id from cantonese_corpus_update_history.
+    if (apiKeyData.type !== "ADMIN") {
+      context.response.status = 403;
+      context.response.body = { error: "the type of api key is not admin." };
+      return;
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""

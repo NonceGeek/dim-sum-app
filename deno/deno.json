@@ -21,7 +21,8 @@
     "graphql_tag": "https://deno.land/x/graphql_tag@0.0.1/mod.ts",
     "graphql_deno": "https://deno.land/x/graphql_deno@v15.0.0/mod.ts",
     "ethers": "https://cdn.skypack.dev/ethers@5.6.8",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "@deno/gfm": "jsr:@deno/gfm@^0.11.0"
   },
   "deploy": {
     "project": "a055f504-8e69-49bf-a92e-9f2c51a9ce84",
