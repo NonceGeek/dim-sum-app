@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, Pause, Play, Search, Star, Volume2 } from "lucide-react";
+import { Heart, Loader, Pause, Play, Search, Star } from "lucide-react";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   corpusInteractApi,
   IUpdateInteractProps,
@@ -55,16 +55,17 @@ export default function MyRecordPage() {
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const audio = audioRef.current;
+  // const audio = audioRef.current;
   const [loaded, setLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
   const [liked, setLiked] = useState(true);
   const [bookmarked, setBookmarked] = useState(true);
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  console.log("search:", search);
+  const [input, setInput] = useState("");
+  // console.log("audio:", audioRef);
+
   const mutation = useMutation({
     mutationFn: async ({
       corpus_unique_id,
@@ -104,13 +105,18 @@ export default function MyRecordPage() {
   );
 
   const togglePlay = () => {
+    const audio = audioRef.current;
     if (!audio) return;
-    if (audio.paused) {
-      audio.play();
-      setIsPlaying(true);
-    } else {
-      audio.pause();
-      setIsPlaying(false);
+    try {
+      if (audio.paused) {
+        audio.play();
+        setIsPlaying(true);
+      } else {
+        audio.pause();
+        setIsPlaying(false);
+      }
+    } catch (e) {
+      console.log("播放失败:", e);
     }
   };
   const handleSeek = (val) => {
@@ -121,6 +127,7 @@ export default function MyRecordPage() {
   };
 
   const handleSeekEnd = (val) => {
+    const audio = audioRef.current;
     const value = Number(val);
     audio.currentTime = value;
     setProgress(value);
@@ -191,7 +198,7 @@ export default function MyRecordPage() {
 
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      getList.refetch();
+      setSearch(input);
     }
   };
 
@@ -236,10 +243,10 @@ export default function MyRecordPage() {
                 <Search className="w-4 text-gray-400 ml-4" />
                 <Input
                   type="search"
-                  value={search}
+                  value={input}
                   placeholder="Search"
                   className="bg-gray-800 border-none text-white w-full focus-visible::border-none focus-visible:ring-0"
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => handleSearch(e)}
                 />
               </div>
@@ -335,13 +342,17 @@ export default function MyRecordPage() {
                         {item?.corpus?.note?.context?.audio && (
                           <div className="mt-3 flex items-center gap-2">
                             {!isPlaying ? (
-                              <Play
-                                className="h-4 w-4 text-gray-300"
-                                onClick={togglePlay}
-                              />
+                              loaded ? (
+                                <Play
+                                  className="h-4 w-4 text-gray-300 cursor-pointer"
+                                  onClick={togglePlay}
+                                />
+                              ) : (
+                                <Loader className="h-4 w-4 text-gray-300" />
+                              )
                             ) : (
                               <Pause
-                                className="h-4 w-4 text-gray-300"
+                                className="h-4 w-4 text-gray-300 cursor-pointer"
                                 onClick={togglePlay}
                               />
                             )}
@@ -358,12 +369,19 @@ export default function MyRecordPage() {
                               ref={audioRef}
                               controls
                               src={item?.corpus?.note?.context?.audio}
-                              hidden
+                              className="hidden"
                               preload="auto"
-                              onLoadedMetadata={() => {
-                                console.log("监听 loadedmetadata");
+                              onCanPlay={() => {
+                                console.log("监听 canplay");
                                 setLoaded(true);
                               }}
+                              onLoadedMetadata={() =>
+                                console.log(
+                                  "loadedmetadata",
+                                  audioRef.current.duration
+                                )
+                              }
+                              onError={(e) => console.log("audio error", e)}
                               onEnded={() => {
                                 setIsPlaying(false);
                                 setProgress(0);
@@ -389,8 +407,8 @@ export default function MyRecordPage() {
                               className={cn(
                                 "cursor-pointer",
                                 bookmarked
-                                  ? "text-yellow-400 fill-yellow-400"
-                                  : ""
+                                  ? "text-yellow-400 fill-yellow-400 cursor-pointer"
+                                  : "cursor-pointer"
                               )}
                               onClick={() =>
                                 handleClick(
@@ -403,7 +421,9 @@ export default function MyRecordPage() {
                             <Heart
                               className={cn(
                                 "h-5 w-5 cursor-pointer",
-                                liked ? "text-red-400 fill-red-400" : ""
+                                liked
+                                  ? "text-red-400 fill-red-400 cursor-pointer"
+                                  : "cursor-pointer"
                               )}
                               onClick={() =>
                                 handleClick(
