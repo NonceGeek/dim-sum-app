@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { AppRouteContext } from "@/lib/app-route-context";
+import { getStringRouteParam } from "@/lib/app-route-context";
 import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
 import { completeAgentTask } from "@/lib/services/agent";
 import { handleAgentApiError } from "@/lib/services/agent-error";
@@ -10,9 +12,18 @@ type SubmitPayload = {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: AppRouteContext
 ) {
   return requireMiniprogramMarker(req, async (_req, user) => {
+    const taskId = await getStringRouteParam(context, "id");
+
+    if (!taskId) {
+      return NextResponse.json(
+        { error: "Missing task id" },
+        { status: 400 }
+      );
+    }
+
     let payload: SubmitPayload = {};
     try {
       payload = (await req.json()) as SubmitPayload;
@@ -41,9 +52,9 @@ export async function POST(
     }
 
     try {
-      await completeAgentTask(params.id, {
+      await completeAgentTask(taskId, {
         actorRef: user.userId,
-          selected: selections,
+        selected: selections,
       });
 
       return NextResponse.json({

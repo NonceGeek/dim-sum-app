@@ -104,15 +104,25 @@ async function fetchAgents() {
   return (await response.json()) as AgentDescriptor[];
 }
 
+type FiltersState = {
+  status: string;
+  ruleId: string;
+  corpusName: string;
+  page: number;
+  pageSize: number;
+};
+
+const initialFilters: FiltersState = {
+  status: "",
+  ruleId: "",
+  corpusName: "",
+  page: 1,
+  pageSize: 10,
+};
+
 export default function AdminRulesPage() {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState({
-    status: "",
-    ruleId: "",
-    corpusName: "",
-    page: 1,
-    pageSize: 10,
-  });
+  const [filters, setFilters] = useState<FiltersState>(initialFilters);
   const [compileText, setCompileText] = useState("");
   const [compileResult, setCompileResult] = useState<{ pass: boolean; failureReason?: string } | null>(null);
   const [runForm, setRunForm] = useState<RuleRunFormState>({
@@ -222,11 +232,11 @@ export default function AdminRulesPage() {
     ? Math.ceil(pagedRuns.pagination.total / pagedRuns.pagination.pageSize)
     : 1;
 
-  const updateFilter = (key: keyof typeof filters, value: string | number) => {
+  const updateFilters = (patch: Partial<FiltersState>) => {
     setFilters((prev) => ({
       ...prev,
-      [key]: value,
-      page: key === "page" ? value : 1,
+      ...patch,
+      page: patch.page !== undefined ? patch.page : 1,
     }));
   };
 
@@ -397,7 +407,7 @@ export default function AdminRulesPage() {
               <Input
                 id="filter-rule-id"
                 value={filters.ruleId}
-                onChange={(event) => updateFilter("ruleId", event.target.value)}
+                onChange={(event) => updateFilters({ ruleId: event.target.value })}
                 placeholder="按规则 ID 筛选"
                 className="bg-gray-950 border-gray-800"
               />
@@ -407,7 +417,7 @@ export default function AdminRulesPage() {
               <Input
                 id="filter-corpus-name"
                 value={filters.corpusName}
-                onChange={(event) => updateFilter("corpusName", event.target.value)}
+                onChange={(event) => updateFilters({ corpusName: event.target.value })}
                 placeholder="按语料库筛选"
                 className="bg-gray-950 border-gray-800"
               />
@@ -416,7 +426,7 @@ export default function AdminRulesPage() {
               <Label>状态</Label>
               <Select
                 value={filters.status}
-                onValueChange={(value) => updateFilter("status", value)}
+                onValueChange={(value) => updateFilters({ status: value })}
               >
                 <SelectTrigger className="bg-gray-950 border-gray-800">
                   <SelectValue placeholder="全部状态" />
@@ -437,7 +447,9 @@ export default function AdminRulesPage() {
                 type="number"
                 min={1}
                 value={filters.pageSize}
-                onChange={(event) => updateFilter("pageSize", Number(event.target.value))}
+                onChange={(event) =>
+                  updateFilters({ pageSize: Number(event.target.value) || 1 })
+                }
                 className="bg-gray-950 border-gray-800"
               />
             </div>
@@ -506,7 +518,7 @@ export default function AdminRulesPage() {
                 variant="outline"
                 size="sm"
                 disabled={filters.page <= 1}
-                onClick={() => updateFilter("page", Math.max(1, filters.page - 1))}
+                onClick={() => updateFilters({ page: Math.max(1, filters.page - 1) })}
               >
                 上一页
               </Button>
@@ -514,7 +526,9 @@ export default function AdminRulesPage() {
                 variant="outline"
                 size="sm"
                 disabled={filters.page >= totalPages}
-                onClick={() => updateFilter("page", Math.min(totalPages, filters.page + 1))}
+                onClick={() =>
+                  updateFilters({ page: Math.min(totalPages, filters.page + 1) })
+                }
               >
                 下一页
               </Button>
