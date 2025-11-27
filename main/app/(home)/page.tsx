@@ -269,7 +269,100 @@ export default function HomePage() {
               </Button> */}
             </motion.div>
 
-            {/* Cleaned up homepage content - Search bar only */}
+            {/* Hint: Cleaned up homepage content - Search bar only */}
+
+            {results === null && (
+              <motion.div
+                className="w-full max-w-2xl space-y-4 mb-20"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.3,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <Card
+                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
+                    onClick={() => handleExampleSearch("落花流水")}
+                  >
+                    <div className="text-center space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        Cantonese Lyrics
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                        落花流水
+                      </p>
+                    </div>
+                  </Card>
+                  <Card
+                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
+                    onClick={() => handleExampleSearch("唔")}
+                  >
+                    <div className="text-center space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        News
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">唔</p>
+                    </div>
+                  </Card>
+                  <Card
+                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
+                    onClick={() => handleExampleSearch("行")}
+                  >
+                    <div className="text-center space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        Single Character
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">行</p>
+                    </div>
+                  </Card>
+                  <Card
+                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
+                    onClick={() => handleExampleSearch("姐姐")}
+                  >
+                    <div className="text-center space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        Chinese Words
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">姐姐</p>
+                    </div>
+                  </Card>
+                  <Card
+                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
+                    onClick={() => handleExampleSearch("歡聚一堂")}
+                  >
+                    <div className="text-center space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        Video Example
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                        歡聚一堂
+                      </p>
+                    </div>
+                  </Card>
+                  <Card
+                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
+                    onClick={() => handleExampleSearch("帆船")}
+                  >
+                    <div className="text-center space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        3D Model
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">帆船</p>
+                    </div>
+                  </Card>
+                </div>
+
+                <p className="text-base text-center text-gray-500 underline">
+                  <a href="https://www.aidimsum.com/zh#stats" target="_blank" rel="noopener noreferrer">
+                  👉 查看数据情况 👈
+                  </a>
+                </p>
+              </motion.div>
+            )}
           </motion.div>
 
           <AnimatePresence mode="wait">
@@ -377,7 +470,7 @@ export default function HomePage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                       {[
                         { title: "Cantonese Lyrics", prompt: "落花流水" },
-                        { title: "Chinese Words", prompt: "曹冲称象" },
+                        { title: "Chinese Words", prompt: "姐姐" },
                         { title: "Single Character", prompt: "行" },
                         { title: "Video Example", prompt: "歡聚一堂" },
                       ].map(
@@ -454,14 +547,14 @@ export default function HomePage() {
                       </Card>
                       <Card
                         className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("曹冲称象")}
+                        onClick={() => handleExampleSearch("姐姐")}
                       >
                         <div className="text-center space-y-1 sm:space-y-2">
                           <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                             Chinese Words
                           </h3>
                           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                            曹冲称象
+                            姐姐
                           </p>
                         </div>
                       </Card>
