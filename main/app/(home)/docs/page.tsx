@@ -242,7 +242,7 @@ export default function DocsPage() {
   );
 
   return (
-    <>
+    <div className="flex min-h-screen w-full">
       {/* 桌面端侧边栏 */}
       <div className="hidden md:block w-64 border-r border-gray-200 bg-transparent flex-shrink-0 h-screen overflow-hidden">
         <div className="p-6 h-full">
@@ -311,7 +311,7 @@ export default function DocsPage() {
           </div>
         </div>
 
-        <ScrollArea className="h-full">
+        <ScrollArea className="h-screen pt-6">
           <div className="p-4 md:p-8 max-w-4xl mx-auto pt-18 md:pt-0">
             <div className="prose prose-gray max-w-none prose-sm md:prose-base prose-p:break-words prose-pre:break-words">
               <ReactMarkdown
@@ -487,6 +487,6 @@ export default function DocsPage() {
           </div>
         </ScrollArea>
       </div>
-    </>
+    </div>
   );
 }

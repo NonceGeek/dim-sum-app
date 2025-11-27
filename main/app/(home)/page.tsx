@@ -166,18 +166,18 @@ export default function HomePage() {
         <Header showLogo />
       </div> */}
       <motion.div
-        className="container mx-auto p-6 space-y-8 flex flex-col md:pt-6 pt-20 overflow-y-scroll"
+        className="container mx-auto p-6 flex flex-col h-[calc(100vh-140px)]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.div
-          className="flex flex-col items-center space-y-6 flex-grow pt-14 md:pt-0"
+          className="flex flex-col items-center space-y-6 w-full h-full"
           initial={{ justifyContent: "center", opacity: 0, y: 20 }}
           animate={{
             justifyContent:
               results && results.length > 0 ? "flex-start" : "center",
-            paddingTop: results && results.length > 0 ? "2rem" : "0",
+            paddingTop: results && results.length > 0 ? "1rem" : "0",
             opacity: 1,
             y: 0,
           }}
@@ -269,6 +269,8 @@ export default function HomePage() {
               </Button> */}
             </motion.div>
 
+            {/* Hint: Cleaned up homepage content - Search bar only */}
+
             {results === null && (
               <motion.div
                 className="w-full max-w-2xl space-y-4 mb-20"
@@ -319,13 +321,13 @@ export default function HomePage() {
                   </Card>
                   <Card
                     className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("曹冲称象")}
+                    onClick={() => handleExampleSearch("姐姐")}
                   >
                     <div className="text-center space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         Chinese Words
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">曹冲称象</p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">姐姐</p>
                     </div>
                   </Card>
                   <Card
@@ -353,68 +355,12 @@ export default function HomePage() {
                     </div>
                   </Card>
                 </div>
-                <hr></hr>
-                <h2 className="text-2xl font-semibold text-center text-gray-900 dark:text-black-100">
-                  数据情况
-                </h2>
-                <div className="w-full md:w-[150%] md:-ml-[25%]">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 md:gap-4 mt-6 mb-6">
-                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
-                        文本资料
-                      </h3>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-fuchsia-300">100 万+</p>
-                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        条记录
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
-                        音视频资料
-                      </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">100+</p>
-                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        GB
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
-                        图片资料
-                      </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">1000 +</p>
-                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        张
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
-                        语料集数量
-                      </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">20 +</p>
-                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        个
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
-                        应用数量
-                      </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">10 +</p>
-                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        个
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 md:mb-2">
-                        总数据规模
-                      </h3>
-                      <p className="text-lg sm:text-xl md:text-3xl font-bold text-fuchsia-300">150+</p>
-                      <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        GB
-                      </p>
-                    </div>
-                  </div>
-                </div>
+
+                <p className="text-base text-center text-gray-500 underline">
+                  <a href="https://www.aidimsum.com/zh#stats" target="_blank" rel="noopener noreferrer">
+                  👉 查看数据情况 👈
+                  </a>
+                </p>
               </motion.div>
             )}
           </motion.div>
@@ -443,6 +389,7 @@ export default function HomePage() {
             ) : results && results.length > 0 ? (
               <motion.div
                 key="results"
+                className="w-full max-w-4xl flex-1 overflow-y-auto px-2 pb-10 min-h-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -523,7 +470,7 @@ export default function HomePage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                       {[
                         { title: "Cantonese Lyrics", prompt: "落花流水" },
-                        { title: "Chinese Words", prompt: "曹冲称象" },
+                        { title: "Chinese Words", prompt: "姐姐" },
                         { title: "Single Character", prompt: "行" },
                         { title: "Video Example", prompt: "歡聚一堂" },
                       ].map(
@@ -600,14 +547,14 @@ export default function HomePage() {
                       </Card>
                       <Card
                         className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("曹冲称象")}
+                        onClick={() => handleExampleSearch("姐姐")}
                       >
                         <div className="text-center space-y-1 sm:space-y-2">
                           <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                             Chinese Words
                           </h3>
                           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                            曹冲称象
+                            姐姐
                           </p>
                         </div>
                       </Card>
