@@ -34,23 +34,25 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
-  id                 String                     @id @default(cuid())
-  name               String?
-  email              String?                    @unique
-  emailVerified      DateTime?
-  image              String?
-  phoneNumber        String?
-  wechatAvatar       String?
-  role               Role                       @default(LEARNER)
-  bio                String?
-  isSystemAdmin      Boolean                    @default(false)
-  ethAddress         String?                    @unique
-  createdAt          DateTime                   @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime                   @default(now()) @updatedAt @db.Timestamptz(6)
-  accounts           Account[]
-  sessions           Session[]
-  walletNonces       WalletNonce[]
-  corpusInteractions user_corpus_interactions[]
+  id                              String                            @id @default(cuid())
+  name                            String?
+  email                           String?                           @unique
+  emailVerified                   DateTime?
+  image                           String?
+  phoneNumber                     String?
+  wechatAvatar                    String?
+  role                            Role                              @default(LEARNER)
+  bio                             String?
+  isSystemAdmin                   Boolean                           @default(false)
+  ethAddress                      String?                           @unique
+  createdAt                       DateTime                          @default(now()) @db.Timestamptz(6)
+  updatedAt                       DateTime                          @default(now()) @updatedAt @db.Timestamptz(6)
+  accounts                        Account[]
+  sessions                        Session[]
+  walletNonces                    WalletNonce[]
+  api_key                         api_key[]
+  cantonese_corpus_update_history cantonese_corpus_update_history[]
+  corpusInteractions              user_corpus_interactions[]
 }
 
 model Session {
@@ -72,46 +74,56 @@ model VerificationToken {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model api_key {
-  id         BigInt    @id @default(autoincrement())
-  user_id    String?
-  key        String
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamp(6)
-  status     APIStatus @default(PENDING)
+  id           BigInt    @id @default(autoincrement())
+  user_id      String
+  key          Bytes
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  status       APIStatus @default(PENDING)
+  called_times BigInt    @default(0)
+  type         APILevel  @default(NORMAL)
+  User         User      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model cantonese_categories {
-  id             BigInt    @id(map: "categories_pkey") @default(autoincrement())
-  name           String?
-  nickname       String?
-  description    String?
-  likes          BigInt?   @default(0)
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime? @default(now()) @db.Timestamp(6)
-  cover          String?
-  status         String    @default("RAW")
-  link           String?
-  tags           Json?
-  pinned         Boolean   @default(false)
-  editable_level BigInt    @default(0)
-  linked_apps    Json      @default("[]")
-  if_in_all_data Boolean   @default(false)
-  related        Json      @default("{\"apps\": [], \"links\": []}")
+  id                   BigInt                 @default(autoincrement())
+  name                 String                 @unique
+  nickname             String?
+  description          String?
+  likes                BigInt?                @default(0)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  cover                String?
+  status               String                 @default("RAW")
+  link                 String?
+  tags                 Json?
+  pinned               Boolean                @default(false)
+  editable_level       BigInt                 @default(0)
+  linked_apps          Json                   @default("[]")
+  if_in_all_data       Boolean                @default(false)
+  related              Json                   @default("{\"apps\": [], \"links\": []}")
+  size                 BigInt?
+  taggers              Json                   @default("[]")
+  cantonese_corpus_all cantonese_corpus_all[]
+
+  @@id([id, name])
 }
 
 model cantonese_corpus_all {
-  id               BigInt                     @unique @default(autoincrement())
-  data             String
-  note             Json?
-  category         String?
-  created_at       DateTime                   @default(now()) @db.Timestamptz(6)
-  tags             Json?
-  editable_level   Int                        @default(1) @db.SmallInt
-  liked_num        BigInt                     @default(0)
-  unique_id        String                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bookmark_num     BigInt                     @default(0)
-  view_num         BigInt                     @default(0)
-  userInteractions user_corpus_interactions[]
+  id                   BigInt                     @unique @default(autoincrement())
+  data                 String
+  note                 Json?                      @default("{}")
+  category             String
+  created_at           DateTime                   @default(now()) @db.Timestamptz(6)
+  tags                 Json?
+  editable_level       Int                        @default(1) @db.SmallInt
+  liked_num            BigInt                     @default(0)
+  unique_id            String                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookmark_num         BigInt                     @default(0)
+  view_num             BigInt                     @default(0)
+  updated_at           DateTime                   @default(now()) @db.Timestamptz(6)
+  cantonese_categories cantonese_categories       @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  userInteractions     user_corpus_interactions[]
 
   @@id([id, data])
   @@index([data], map: "cantonese_corpus_all_data_pgroonga_idx")
@@ -137,6 +149,7 @@ model cantonese_corpus_apps {
   localed          Boolean?  @default(false)
   example_img      String?
   sorting          BigInt    @default(0)
+  version          String    @default("1.0")
 }
 
 model cantonese_corpus_dict_yin {
@@ -156,16 +169,22 @@ model cantonese_corpus_dict_yin {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cantonese_corpus_update_history {
-  id               BigInt        @id @default(autoincrement())
-  unique_id        String        @db.Uuid
+  id               BigInt        @default(autoincrement())
+  unique_id        String        @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   note             Json
   status           Status        @default(PENDING)
   updated_at       DateTime?     @default(now()) @db.Timestamp(6)
   created_at       DateTime      @default(now()) @db.Timestamptz(6)
   user_id          String
   approver_user_id String?
-  last_note        Json
+  last_note        Json          @default("{}")
   operation_type   OperationType @default(UPDATE)
+  data             String?
+  tags             Json?         @default("[]")
+  category         String?
+  User             User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, unique_id])
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -244,6 +263,36 @@ model WalletNonce {
   @@index([expiresAt])
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cantonese_corpus_main_data {
+  id          BigInt    @id @default(autoincrement())
+  system_name String?
+  data        Json?     @default("{}")
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model micro_ai_saas {
+  id               BigInt    @id @default(autoincrement())
+  user             String?
+  prompt           String?
+  task_type        String?   @default("llm")
+  solution         String?
+  solver           String?
+  fee              BigInt?   @default(0)
+  fee_unit         String?   @default("ldg")
+  tx               String?   @default("")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  solved_at        DateTime? @db.Timestamp(6)
+  signature        String?
+  unique_id        String?   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  solver_type      Json?     @default("[]")
+  optimized_prompt String?
+}
+
 enum Role {
   LEARNER
   TAGGER_PARTNER
@@ -270,4 +319,10 @@ enum OperationType {
   CREATE
   UPDATE
   DELETE
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APILevel {
+  ADMIN
+  NORMAL
 }
