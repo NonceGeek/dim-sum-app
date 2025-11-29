@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Database, CheckCircle } from "lucide-react";
+import { Users, Database, CheckCircle, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
@@ -61,6 +61,12 @@ export default function AdminDashboardPage() {
       description: "Manage language corpus entries",
       href: "/admin/corpus",
       icon: Database,
+    },
+    {
+      title: "Rule Ops",
+      description: "Compile rules and trigger Agent runs",
+      href: "/admin/rules",
+      icon: ListChecks,
     },
     {
       title: "System Settings",

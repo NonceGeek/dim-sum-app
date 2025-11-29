@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from "next/server";
+import type { AppRouteContext } from "@/lib/app-route-context";
+import { getStringRouteParam } from "@/lib/app-route-context";
+import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
+import { handleAgentApiError } from "@/lib/services/agent-error";
+import { skipAgentTask } from "@/lib/services/agent";
+
+export async function POST(
+  req: NextRequest,
+  context: AppRouteContext
+) {
+  return requireMiniprogramMarker(req, async (_req, user) => {
+    const taskId = await getStringRouteParam(context, "id");
+
+    if (!taskId) {
+      return NextResponse.json(
+        { error: "Missing task id" },
+        { status: 400 }
+      );
+    }
+
+    if (!user.userId) {
+      return NextResponse.json(
+        { error: "Missing user identifier" },
+        { status: 400 }
+      );
+    }
+
+    try {
+      await skipAgentTask(taskId, { actorRef: user.userId });
+
+      return NextResponse.json({
+        status: "success",
+        message: "Task has been rejected and re-queued.",
+      });
+    } catch (error) {
+      return handleAgentApiError(error, "Failed to cancel task");
+    }
+  });
+}
+
