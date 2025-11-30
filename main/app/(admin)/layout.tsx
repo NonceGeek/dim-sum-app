@@ -11,7 +11,8 @@ import {
   Database,
   LogOut,
   Menu,
-  X
+  X,
+  Code
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +34,11 @@ const adminNavItems = [
     title: "Corpus Data", 
     href: "/admin/corpus",
     icon: Database,
+  },
+  {
+    title: "Rule Ops",
+    href: "/admin/rules",
+    icon: Code,
   },
   {
     title: "Settings",

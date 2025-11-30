@@ -77,6 +77,18 @@ export async function requireMiniprogramMarker(
   req: NextRequest,
   handler: (req: NextRequest, user: MiniprogramTokenPayload) => Promise<NextResponse>
 ): Promise<NextResponse> {
+  if (process.env.SKIP_MINIPROGRAM_AUTH === "true") {
+    const debugUser: MiniprogramTokenPayload = {
+      userId: process.env.MINIPROGRAM_DEBUG_USER_ID ?? "local-debug-user",
+      openId: process.env.MINIPROGRAM_DEBUG_OPEN_ID ?? "local-debug-openId",
+      unionId: process.env.MINIPROGRAM_DEBUG_UNION_ID,
+      role: (process.env.MINIPROGRAM_DEBUG_ROLE as Role) ?? Role.TAGGER_PARTNER,
+      isSystemAdmin: process.env.MINIPROGRAM_DEBUG_IS_ADMIN === "true",
+    };
+
+    return handler(req, debugUser);
+  }
+
   return requireMiniprogramRole(
     req,
     [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING],

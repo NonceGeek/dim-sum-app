@@ -121,7 +121,9 @@ const getAgentAuthHeader = () => {
   if (!token) {
     return {};
   }
-  return { Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}` };
+  return {
+    Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+  };
 };
 
 type AgentFetchOptions = {
@@ -131,7 +133,10 @@ type AgentFetchOptions = {
   query?: Record<string, string | number | undefined | null>;
 };
 
-async function agentFetch<T>(path: string, options: AgentFetchOptions = {}): Promise<T> {
+async function agentFetch<T>(
+  path: string,
+  options: AgentFetchOptions = {}
+): Promise<T> {
   const baseUrl = getAgentBaseUrl();
   const url = new URL(`${baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
 
@@ -159,9 +164,10 @@ async function agentFetch<T>(path: string, options: AgentFetchOptions = {}): Pro
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(options.body);
   }
-
+  console.log("agentFetch url", url.toString());
+  console.log("agentFetch init", init);
   const response = await fetch(url, init);
-
+  console.log("agentFetch response", response);
   const parsePayload = async () => {
     const text = await response.text();
     try {
@@ -181,6 +187,7 @@ async function agentFetch<T>(path: string, options: AgentFetchOptions = {}): Pro
 }
 
 export async function fetchAgentTasks(query: AgentTaskQuery) {
+  console.log("query fetchAgentTasks", query);
   return agentFetch<AgentTaskListResponse>("/tasks", {
     query: {
       actorRef: query.actorRef,
@@ -194,10 +201,15 @@ export async function fetchAgentTasks(query: AgentTaskQuery) {
 }
 
 export async function fetchAgentTask(taskId: string) {
+  console.log("taskId fetchAgentTask", taskId);
   return agentFetch<AgentTask>(`/tasks/${taskId}`);
 }
 
-export async function completeAgentTask(taskId: string, payload: { actorRef: string; selected: unknown[] }) {
+export async function completeAgentTask(
+  taskId: string,
+  payload: { actorRef: string; selected: unknown[] }
+) {
+  console.log("payload completeAgentTask", payload);
   return agentFetch(`/tasks/${taskId}/complete`, {
     method: "POST",
     body: {
@@ -207,7 +219,10 @@ export async function completeAgentTask(taskId: string, payload: { actorRef: str
   });
 }
 
-export async function skipAgentTask(taskId: string, payload: { actorRef: string }) {
+export async function skipAgentTask(
+  taskId: string,
+  payload: { actorRef: string }
+) {
   return agentFetch(`/tasks/${taskId}/skip-and-reassign`, {
     method: "POST",
     body: {
@@ -216,7 +231,13 @@ export async function skipAgentTask(taskId: string, payload: { actorRef: string 
   });
 }
 
-export async function fetchAgentRuns(query: Partial<Omit<RuleRunPayload, "ruleText">> & { page?: number; pageSize?: number; status?: string }) {
+export async function fetchAgentRuns(
+  query: Partial<Omit<RuleRunPayload, "ruleText">> & {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+  }
+) {
   return agentFetch<AgentRunListResponse>("/runs", {
     query: {
       page: query.page,
@@ -245,5 +266,3 @@ export async function compileAgentRule(ruleText: string) {
 export async function fetchAgentDescriptors() {
   return agentFetch<AgentDescriptor[]>("/agents");
 }
-
-
