@@ -52,15 +52,12 @@ export async function POST(
     }
 
     try {
-      await completeAgentTask(taskId, {
+      const result = await completeAgentTask(taskId, {
         actorRef: user.userId,
         selected: selections,
       });
 
-      return NextResponse.json({
-        status: "success",
-        message: "Task has been updated successfully.",
-      });
+      return NextResponse.json(result);
     } catch (error) {
       return handleAgentApiError(error, "Failed to submit task");
     }

@@ -27,12 +27,9 @@ export async function POST(
     }
 
     try {
-      await skipAgentTask(taskId, { actorRef: user.userId });
+      const result = await skipAgentTask(taskId, { actorRef: user.userId });
 
-      return NextResponse.json({
-        status: "success",
-        message: "Task has been rejected and re-queued.",
-      });
+      return NextResponse.json(result);
     } catch (error) {
       return handleAgentApiError(error, "Failed to cancel task");
     }

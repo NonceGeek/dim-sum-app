@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
 import { fetchAgentTasks } from "@/lib/services/agent";
-import { mapTasksToList } from "@/lib/miniprogram-task-mapper";
 import { handleAgentApiError } from "@/lib/services/agent-error";
 
 const DEFAULT_STATUS = "completed";
@@ -34,11 +33,7 @@ export async function GET(req: NextRequest) {
         pageSize,
       });
 
-      const response = NextResponse.json(mapTasksToList(data.items));
-      response.headers.set("x-pagination-page", String(data.pagination.page));
-      response.headers.set("x-pagination-page-size", String(data.pagination.pageSize));
-      response.headers.set("x-pagination-total", String(data.pagination.total));
-      return response;
+      return NextResponse.json(data);
     } catch (error) {
       return handleAgentApiError(error, "Failed to load completed tasks");
     }
