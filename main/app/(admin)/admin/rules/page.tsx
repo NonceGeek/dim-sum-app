@@ -65,7 +65,7 @@ type RuleRunFormState = {
 };
 
 const STATUS_OPTIONS = [
-  { label: "全部状态", value: "" },
+  { label: "全部状态", value: "all" },
   { label: "Pending", value: "pending" },
   { label: "Running", value: "running" },
   { label: "Completed", value: "completed" },
@@ -425,8 +425,8 @@ export default function AdminRulesPage() {
             <div className="space-y-2">
               <Label>状态</Label>
               <Select
-                value={filters.status}
-                onValueChange={(value) => updateFilters({ status: value })}
+                value={filters.status || "all"}
+                onValueChange={(value) => updateFilters({ status: value === "all" ? "" : value })}
               >
                 <SelectTrigger className="bg-gray-950 border-gray-800">
                   <SelectValue placeholder="全部状态" />

@@ -164,10 +164,10 @@ async function agentFetch<T>(
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(options.body);
   }
-  console.log("agentFetch url", url.toString());
-  console.log("agentFetch init", init);
+  // console.log("agentFetch url", url.toString());
+  // console.log("agentFetch init", init);
   const response = await fetch(url, init);
-  console.log("agentFetch response", response);
+  // console.log("agentFetch response", response);
   const parsePayload = async () => {
     const text = await response.text();
     try {
