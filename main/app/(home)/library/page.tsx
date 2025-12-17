@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Header } from "@/components/layout/header";
+// import { Header } from "@/components/layout/header";
+import ReactMarkdown from "react-markdown";
 
 // Mock data for the library
 // const mockBooks = [
@@ -67,6 +68,8 @@ interface Corpus {
   link: string;
   pinned: boolean;
   status: "INPROGRESS" | "RAW";
+  size?: number | null;
+  sorting?: number | null;
 }
 
 // Create a client component for the book card
@@ -158,21 +161,41 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
       </div>
       <div className="p-4">
         <h3 className="text-xl font-semibold">{corpus.nickname}</h3>
-        <p className="text-gray-600 mb-2 max-h-18 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
-          {corpus.description}
-        </p>
-        {corpus.tags && corpus.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {corpus.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white rounded-full text-xs border border-gray-400 dark:border-gray-500"
-              >
-                {getTagDisplay(tag)}
-              </span>
-            ))}
+        <div className="text-gray-600 mb-2 max-h-18 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
+          <ReactMarkdown
+            components={{
+              p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
+              strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
+              em: ({ node, ...props }) => <em className="italic" {...props} />,
+              code: ({ node, ...props }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm" {...props} />,
+              ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-1" {...props} />,
+              ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
+              li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
+              br: () => <br />,
+            }}
+          >
+            {corpus.description.replace(/\n/g, '  \n')}
+          </ReactMarkdown>
+        </div>
+        {(corpus.tags && corpus.tags.length > 0) || (corpus.size !== null && corpus.size !== undefined) ? (
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex flex-wrap gap-2">
+              {corpus.tags && corpus.tags.length > 0 && corpus.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white rounded-full text-xs border border-gray-400 dark:border-gray-500"
+                >
+                  {getTagDisplay(tag)}
+                </span>
+              ))}
+            </div>
+            {corpus.size !== null && corpus.size !== undefined && (
+              <p className="text-red-500 text-sm">
+                大小: {corpus.size.toFixed(2)} GB
+              </p>
+            )}
           </div>
-        )}
+        ) : null}
         {corpus.link && (
           <a
             href={corpus.link}
@@ -204,11 +227,16 @@ export default function LibraryPage() {
           process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_categories"
         );
         const data = await response.json();
-        // Sort the data to put pinned items first
+        // Sort the data: first by pinned (true first), then by sorting (larger numbers first)
         const sortedData = data.sort((a, b) => {
+          // First sort by pinned: true comes before false
           if (a.pinned && !b.pinned) return -1;
           if (!a.pinned && b.pinned) return 1;
-          return 0;
+          
+          // Then sort by sorting: smaller numbers first (ascending)
+          const aSorting = a.sorting ?? 0;
+          const bSorting = b.sorting ?? 0;
+          return aSorting - bSorting;
         });
         setCorpus(sortedData);
       } catch (error) {
