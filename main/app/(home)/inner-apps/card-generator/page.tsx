@@ -230,12 +230,12 @@ function CardGeneratorContent() {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/corpus_item?unique_id=${uniqueId}`);
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/v2/corpus_item?unique_id=${uniqueId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
         const data = await response.json();
-        setItem(data[0]);
+        setItem(data);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to fetch data");
