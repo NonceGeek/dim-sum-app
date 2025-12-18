@@ -612,7 +612,7 @@ router
       throw error;
     }
 
-    context.response.body = data && data.length > 0 ? data[0] : {};
+    context.response.body = resp && resp.length > 0 ? resp[0] : {};
   })
   .get("/corpus_item", async (context) => {
     const queryParams = context.request.url.searchParams;

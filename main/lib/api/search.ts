@@ -66,7 +66,7 @@ export async function getCorpusItemByUniqueId(
 ): Promise<SearchResult | null> {
   try {
     const response = await fetch(
-      process.env.NEXT_PUBLIC_BACKEND_URL + `/corpus_item?unique_id=${uniqueId}`
+      process.env.NEXT_PUBLIC_BACKEND_URL + `/v2/corpus_item?unique_id=${uniqueId}`
     );
 
     if (!response.ok) {
@@ -112,7 +112,7 @@ export function useSearch() {
       // Build the URL with optional category parameter and configurable table name
       const table_name = params.category === 'all' || !params.category ? 'cantonese_corpus_all' : params.category;
       let url = process.env.NEXT_PUBLIC_BACKEND_URL +
-        `/text_search_v2?table_name=${encodeURIComponent(table_name)}&column=data&keyword=${encodeURIComponent(
+        `/v2/text_search?table_name=${encodeURIComponent(table_name)}&column=data&keyword=${encodeURIComponent(
           params.keyword
         )}`;
 

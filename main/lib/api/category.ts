@@ -26,10 +26,10 @@ export function useCategoryEditableLevel(categoryName: string | null) {
       if (!categoryName) return null;
       const response = await fetch(
         process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/corpus_category?name=${categoryName}`
+          `/v2/corpus_category?name=${categoryName}`
       );
       const data = await response.json();
-      return data?.length > 0 ? data[0]?.editable_level : null;
+      return data?.editable_level || null;
     },
     enabled: !!categoryName,
     staleTime: 5 * 60 * 1000, // 5分钟缓存
