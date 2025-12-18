@@ -9,6 +9,7 @@ import { oakCors } from "cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { tify, sify } from "@aqzhyi/chinese-conv";
 import { CSS, render } from "@deno/gfm";
+import { agentMarketRouter } from "./agent-market.tsx";
 
 console.log("Hello from AI Dimsum Devs API!");
 
@@ -154,6 +155,83 @@ async function updateCorpusItem(
     .eq("unique_id", unique_id);
 
   return result;
+}
+
+// Text search handler function
+async function textSearchV2Handler(context: any) {
+  const queryParams = context.request.url.searchParams;
+  const key = queryParams.get("keyword");
+  // Convert the key to both traditional and simplified Chinese
+  const traditionalKey = tify(key ?? "");
+  const simplifiedKey = sify(key ?? "");
+  console.log("traditionalKey", traditionalKey);
+  console.log("simplifiedKey", simplifiedKey);
+  const tableName = queryParams.get("table_name") ?? "";
+  // const column = queryParams.get("column");
+  const limitStr = queryParams.get("limit");
+  const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+  const supabase_url =
+    queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
+  // TODO: make SUPABASE_SERVICE_ROLE_KEY for a spec table as a param.
+  const supabase = createClient(
+    supabase_url,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+  console.log("supabase_url", supabase_url);
+  try {
+    // const searchableTables = ["cantonese_corpus_all"];
+
+    // Check if the table is allowed to be searched
+    // if (!tableName || !searchableTables.includes(tableName)) {
+    //   context.response.status = 403; // Forbidden status code
+    //   context.response.body = {
+    //     error: "The specified table is not searchable.",
+    //   };
+    //   return;
+    // }
+    // Search for both traditional and simplified versions
+    const [traditionalResults, simplifiedResults] = await Promise.all([
+      supabase
+        .rpc("search_cantonese_corpus", { search_term: traditionalKey })
+        .order("id", { ascending: false }),
+      supabase
+        .rpc("search_cantonese_corpus", { search_term: simplifiedKey })
+        .order("id", { ascending: false }),
+    ]);
+
+    // Merge and deduplicate results based on unique_id
+    let mergedData = [
+      ...(traditionalResults.data || []),
+      ...(simplifiedResults.data || []),
+    ];
+    mergedData = Array.from(
+      new Map(mergedData.map((item) => [item.unique_id, item])).values()
+    );
+
+    // Apply limit after merging if specified
+    if (limit !== undefined && limit > 0) {
+      mergedData = mergedData.slice(0, limit);
+    }
+
+    // TODO: handle mergedData, if the tableName == "cantonese_corpus_all", just return the mergedData, else filter the mergedData by tableName with column "category" == tableName
+    if (tableName !== "cantonese_corpus_all") {
+      mergedData = mergedData.filter(
+        (item: any) => item.category === tableName
+      );
+    }
+
+    console.log("data", mergedData);
+    context.response.status = 200;
+    context.response.body = mergedData;
+
+    if (traditionalResults.error || simplifiedResults.error) {
+      throw traditionalResults.error || simplifiedResults.error;
+    }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    context.response.status = 500;
+    context.response.body = { error: "Failed to fetch data" };
+  }
 }
 
 const router = new Router();
@@ -467,6 +545,25 @@ router
 
     context.response.body = data;
   })
+  .get("/v2/corpus_category", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const name = queryParams.get("name");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data, error } = await supabase
+      .from("cantonese_categories")
+      .select("*")
+      .eq("name", name);
+
+    if (error) {
+      throw error;
+    }
+
+    context.response.body = data && data.length > 0 ? data[0] : {};
+  })
   .get("/corpus_category", async (context) => {
     const queryParams = context.request.url.searchParams;
     const name = queryParams.get("name");
@@ -485,6 +582,37 @@ router
     }
 
     context.response.body = data;
+  })
+  .get("/v2/corpus_item", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const unique_id = queryParams.get("unique_id");
+    const data = queryParams.get("data");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    let query = supabase.from("cantonese_corpus_all").select("*");
+
+    if (unique_id) {
+      query = query.eq("unique_id", unique_id);
+    } else if (data) {
+      query = query.eq("data", data);
+    } else {
+      context.response.status = 400;
+      context.response.body = {
+        error: "Either unique_id or data parameter is required",
+      };
+      return;
+    }
+
+    const { data: resp, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    context.response.body = data && data.length > 0 ? data[0] : {};
   })
   .get("/corpus_item", async (context) => {
     const queryParams = context.request.url.searchParams;
@@ -517,81 +645,9 @@ router
 
     context.response.body = resp;
   })
-  .get("/text_search_v2", async (context) => {
-    const queryParams = context.request.url.searchParams;
-    const key = queryParams.get("keyword");
-    // Convert the key to both traditional and simplified Chinese
-    const traditionalKey = tify(key ?? "");
-    const simplifiedKey = sify(key ?? "");
-    console.log("traditionalKey", traditionalKey);
-    console.log("simplifiedKey", simplifiedKey);
-    const tableName = queryParams.get("table_name") ?? "";
-    // const column = queryParams.get("column");
-    const limitStr = queryParams.get("limit");
-    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-    const supabase_url =
-      queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
-    // TODO: make SUPABASE_SERVICE_ROLE_KEY for a spec table as a param.
-    const supabase = createClient(
-      supabase_url,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-    console.log("supabase_url", supabase_url);
-    try {
-      // const searchableTables = ["cantonese_corpus_all"];
-
-      // Check if the table is allowed to be searched
-      // if (!tableName || !searchableTables.includes(tableName)) {
-      //   context.response.status = 403; // Forbidden status code
-      //   context.response.body = {
-      //     error: "The specified table is not searchable.",
-      //   };
-      //   return;
-      // }
-      // Search for both traditional and simplified versions
-      const [traditionalResults, simplifiedResults] = await Promise.all([
-        supabase
-          .rpc("search_cantonese_corpus", { search_term: traditionalKey })
-          .order("id", { ascending: false }),
-        supabase
-          .rpc("search_cantonese_corpus", { search_term: simplifiedKey })
-          .order("id", { ascending: false }),
-      ]);
-
-      // Merge and deduplicate results based on unique_id
-      let mergedData = [
-        ...(traditionalResults.data || []),
-        ...(simplifiedResults.data || []),
-      ];
-      mergedData = Array.from(
-        new Map(mergedData.map((item) => [item.unique_id, item])).values()
-      );
-
-      // Apply limit after merging if specified
-      if (limit !== undefined && limit > 0) {
-        mergedData = mergedData.slice(0, limit);
-      }
-
-      // TODO: handle mergedData, if the tableName == "cantonese_corpus_all", just return the mergedData, else filter the mergedData by tableName with column "category" == tableName
-      if (tableName !== "cantonese_corpus_all") {
-        mergedData = mergedData.filter(
-          (item: any) => item.category === tableName
-        );
-      }
-
-      console.log("data", mergedData);
-      context.response.status = 200;
-      context.response.body = mergedData;
-
-      if (traditionalResults.error || simplifiedResults.error) {
-        throw traditionalResults.error || simplifiedResults.error;
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      context.response.status = 500;
-      context.response.body = { error: "Failed to fetch data" };
-    }
-  })
+  // Register the text search handler for both paths
+  .get("/v2/text_search", textSearchV2Handler)
+  .get("/text_search_v2", textSearchV2Handler)
   .get("/item/liked", async (context) => {
     const queryParams = context.request.url.searchParams;
     const item_id = queryParams.get("item_id");
@@ -1278,6 +1334,7 @@ const app = new Application();
 
 app.use(oakCors()); // Enable CORS for All Routes
 app.use(router.routes());
+app.use(agentMarketRouter.routes());
 
 console.info("CORS-enabled web server listening on port 8000");
 await app.listen({ port: 8000 });
