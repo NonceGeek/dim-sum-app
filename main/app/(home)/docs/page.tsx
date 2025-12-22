@@ -92,26 +92,41 @@ export default function DocsPage() {
       label: "Public APIs",
       children: [
         { id: "1-health-check", label: "1. Health Check" },
-        { id: "2-get-corpus-apps", label: "2. Get Corpus Apps" },
-        { id: "3-get-corpus-categories", label: "3. Get Corpus Categories" },
-        { id: "4-get-specific-corpus-category", label: "4. Get Specific Corpus Category" },
-        { id: "5-text-search-enhanced", label: "5. Text Search (Enhanced)" },
-        { id: "6-get-corpus-item", label: "6. Get Corpus Item" },
-        { id: "7-get-random-corpus-item", label: "7. Get Random Corpus Item" },
+        { id: "2-get-api-documentation-markdown", label: "2. Get API Documentation (Markdown)" },
+        { id: "3-get-api-documentation-html", label: "3. Get API Documentation (HTML)" },
+        { id: "4-get-main-data", label: "4. Get Main Data" },
+        { id: "5-get-corpus-apps", label: "5. Get Corpus Apps" },
+        { id: "6-get-corpus-categories", label: "6. Get Corpus Categories" },
+        { id: "7-get-specific-corpus-category", label: "7. Get Specific Corpus Category" },
+        { id: "71-get-specific-corpus-category-v2", label: "7.1. Get Specific Corpus Category (V2)" },
+        { id: "8-text-search-enhanced", label: "8. Text Search (Enhanced)" },
+        { id: "81-text-search-v2", label: "8.1. Text Search (V2)" },
+        { id: "9-get-corpus-item", label: "9. Get Corpus Item" },
+        { id: "91-get-corpus-item-v2", label: "9.1. Get Corpus Item (V2)" },
+        { id: "10-get-random-corpus-item", label: "10. Get Random Corpus Item" },
+        { id: "11-get-all-corpus-items", label: "11. Get All Corpus Items" },
       ]
     },
     { 
       id: "developer-apis-api-key-required", 
       label: "Developer APIs",
       children: [
-        { id: "8-submit-corpus-item-update", label: "8. Submit Corpus Item Update" },
+        { id: "12-create-corpus-item-developer", label: "12. Create Corpus Item" },
+        { id: "13-update-corpus-item-developer", label: "13. Update Corpus Item" },
+        { id: "13-update-corpus-item-developer", label: "13. Update Corpus Item" },
+        { id: "14-get-update-history", label: "14. Get Update History" },
+        { id: "15-approve-corpus-item-admin-api-key-required", label: "15. Approve Corpus Item" },
+        { id: "16-get-api-key-status", label: "16. Get API Key Status" },
+        { id: "17-get-taggers-by-corpus-name", label: "17. Get Taggers by Corpus Name" },
       ]
     },
     { 
       id: "admin-apis-password-required", 
       label: "Admin APIs",
       children: [
-        { id: "9-insert-corpus-item-admin", label: "9. Insert Corpus Item (Admin)" },
+        { id: "18-insert-corpus-item-admin", label: "18. Insert Corpus Item" },
+        { id: "19-update-corpus-item-admin", label: "19. Update Corpus Item" },
+        { id: "20-get-user-admin", label: "20. Get User" },
       ]
     },
     { 

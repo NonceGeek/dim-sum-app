@@ -124,12 +124,12 @@ export default function WordLyricCardDetail({
     queryFn: () =>
       fetch(
         process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/corpus_category?name=${result.category_name}`
+          `/v2/corpus_category?name=${result.category_name}`
       ).then((res) => res.json()),
     staleTime: 60 * 1000,
   });
 
-  const related = data?.length ? data[0].related : null;
+  const related = data?.length ? data.related : null;
 
   return (
     <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200 mb-4">
