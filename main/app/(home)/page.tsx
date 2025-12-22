@@ -17,12 +17,17 @@ import WordLyricCardDetail from "./_components/word-lyric-card-detail";
 import YueSongCardDetail from "./_components/yue-song-card-detail";
 import { useAllCategories } from "@/lib/api/category";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -42,8 +47,8 @@ export default function HomePage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [selectedDataset, setSelectedDataset] = useState<string>("all");
-  
+  const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
+  const [inputValue, setInputValue] = useState<string>("");
   // Fetch available categories
   // get all categories from the backend
   const { data: categories, isLoading: categoriesLoading } = useAllCategories();
@@ -70,7 +75,7 @@ export default function HomePage() {
       setIsInitialLoad(false);
       // 自动执行搜索
       search(
-        { keyword, category: selectedDataset },
+        { keyword, category: JSON.stringify(selectedDataset) },
         {
           onSuccess: (data: SearchResult[]) => {
             setResults(data);
@@ -97,7 +102,7 @@ export default function HomePage() {
 
     // 直接执行搜索，不依赖useEffect
     search(
-      { keyword: searchPrompt, category: selectedDataset },
+      { keyword: searchPrompt, category: JSON.stringify(selectedDataset) },
       {
         onSuccess: (data: SearchResult[]) => {
           setResults(data);
@@ -130,7 +135,7 @@ export default function HomePage() {
 
     // 直接执行搜索，不依赖useEffect
     search(
-      { keyword: prompt, category: selectedDataset },
+      { keyword: prompt, category: JSON.stringify(selectedDataset) },
       {
         onSuccess: (data: SearchResult[]) => {
           setResults(data);
@@ -238,21 +243,78 @@ export default function HomePage() {
                 />
               </div>
               {/* Dataset selection dropdown */}
-              <Select value={selectedDataset} onValueChange={setSelectedDataset}>
-                <SelectTrigger className="w-[180px] h-12">
-                  <SelectValue placeholder="Select dataset" />
-                </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全局搜索</SelectItem>
-                    {categories
-                      ?.filter((category) => category.if_in_all_data === true)
-                      ?.map((category) => (
-                        <SelectItem key={category.id} value={category.name}>
-                          {category.nickname || category.name}
-                        </SelectItem>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[180px] justify-between truncate h-12 hover:!bg-background dark:bg-background dark:text-accent-foreground"
+                  >
+                    {[
+                      { id: "all", name: "all", nickname: "全局搜索" },
+                      ...(categories || []),
+                    ]
+                      ?.map((cat) => {
+                        if (selectedDataset.includes(cat.name)) {
+                          return cat.nickname || cat.name;
+                        }
+                        return null;
+                      })
+                      .filter((item) => item !== null)
+                      .join(", ") || "请选择"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command className="!bg-background">
+                    <CommandInput
+                      placeholder={"搜索或选择..."}
+                      value={inputValue}
+                      onValueChange={setInputValue}
+                    />
+                    <CommandList>
+                      {[
+                        { id: "all", name: "all", nickname: "全局搜索" },
+                        ...(categories || []),
+                      ]?.map((cat) => (
+                        <CommandItem
+                          key={cat.id}
+                          value={cat.nickname || cat.name}
+                          onSelect={() => {
+                            if (cat.name === "all") {
+                              setSelectedDataset(["all"]);
+                              return;
+                            }
+                            setSelectedDataset((prev) =>
+                              (prev.includes(cat.name)
+                                ? prev.filter((item) => item !== cat.name)
+                                : [...prev, cat.name]
+                              ).filter((item) => item !== "all")
+                            );
+                          }}
+                        >
+                          <Checkbox
+                            className="mr-2 dark:bg-accent-background"
+                            checked={selectedDataset.includes(cat.name)}
+                            onChange={() => {
+                              if (cat.name === "all") {
+                                setSelectedDataset(["all"]);
+                                return;
+                              }
+                              setSelectedDataset((prev) =>
+                                (prev.includes(cat.name)
+                                  ? prev.filter((item) => item !== cat.name)
+                                  : [...prev, cat.name]
+                                ).filter((item) => item !== "all")
+                              );
+                            }}
+                            id={cat.id + ""}
+                          />
+                          {cat.nickname || cat.name}
+                        </CommandItem>
                       ))}
-                </SelectContent>
-              </Select>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Button
                 onClick={handleSearch}
                 disabled={isPending}

@@ -166,7 +166,7 @@ async function textSearchV2Handler(context: any) {
   const simplifiedKey = sify(key ?? "");
   console.log("traditionalKey", traditionalKey);
   console.log("simplifiedKey", simplifiedKey);
-  const tableName = queryParams.get("table_name") ?? "";
+  const tableName = JSON.parse(queryParams.get("table_name") ?? "");
   // const column = queryParams.get("column");
   const limitStr = queryParams.get("limit");
   const limit = limitStr ? parseInt(limitStr, 10) : undefined;
@@ -216,7 +216,7 @@ async function textSearchV2Handler(context: any) {
     // TODO: handle mergedData, if the tableName == "cantonese_corpus_all", just return the mergedData, else filter the mergedData by tableName with column "category" == tableName
     if (tableName !== "cantonese_corpus_all") {
       mergedData = mergedData.filter(
-        (item: any) => item.category === tableName
+        (item: any) => tableName.includes(item.category)
       );
     }
 
