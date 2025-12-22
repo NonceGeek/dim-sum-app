@@ -129,7 +129,7 @@ export default function WordLyricCardDetail({
     staleTime: 60 * 1000,
   });
 
-  const related = data?.length ? data.related : null;
+  const related = data?.related || null;
 
   return (
     <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200 mb-4">
