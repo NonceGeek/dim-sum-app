@@ -46,75 +46,78 @@ export default function HomePage() {
   const searchParams = useSearchParams();
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
   const [inputValue, setInputValue] = useState<string>("");
   // Fetch available categories
   // get all categories from the backend
   const { data: categories, isLoading: categoriesLoading } = useAllCategories();
-  
+  const fiter_not_in = [
+    { id: "all", name: "all", nickname: "全局搜索" },
+    ...(categories || [])?.filter((cat) => cat.if_in_all_data),
+  ];
 
   // 从URL参数读取搜索关键词
   useEffect(() => {
-    const keyword = searchParams.get("q");
+    const keyword = searchParams.get("q") || "";
+    const datasetParam = searchParams.get("dataset") || "";
 
-    // 当URL变为根路径时，重置页面状态
-    if (!keyword) {
-      if (searchPrompt || results) {
-        setSearchPrompt("");
-        setResults(null);
-        setCurrentPage(1);
-      }
-      setIsInitialLoad(false);
+    // URL 是空的 → 回到首页
+    if (!keyword && !datasetParam) {
+      setSearchPrompt("");
+      setSelectedDataset(["all"]);
+      setResults(null);
+      setCurrentPage(1);
       return;
     }
 
-    // 只有在初始加载或有新的搜索关键词时才执行搜索
-    if (isInitialLoad || keyword !== searchPrompt) {
-      setSearchPrompt(keyword);
-      setIsInitialLoad(false);
-      // 自动执行搜索
-      search(
-        { keyword, category: JSON.stringify(selectedDataset) },
-        {
-          onSuccess: (data: SearchResult[]) => {
-            setResults(data);
-          },
-          onError: (error: Error) => {
-            console.error("Search failed:", error);
-            toast.error("Search failed", {
-              description: error.message,
-            });
-          },
-        }
-      );
-    }
-  }, [searchParams, search, isInitialLoad, selectedDataset]);
+    const datasetName = fiter_not_in
+      .map((cat) =>
+        datasetParam.split(",").includes(cat.nickname ?? cat.name)
+          ? cat.name
+          : null
+      )
+      .filter(Boolean) as string[];
+
+    // 同步 UI 状态
+    setSearchPrompt(keyword);
+    setSelectedDataset(datasetName.length ? datasetName : ["all"]);
+    setCurrentPage(1);
+
+    // 用 URL 里的值直接搜索（不要用 state）
+    search(
+      {
+        keyword,
+        category: JSON.stringify(datasetName.length ? datasetName : ["all"]),
+      },
+      {
+        onSuccess: setResults,
+        onError: (error: Error) => {
+          toast.error("Search failed", { description: error.message });
+        },
+      }
+    );
+  }, [searchParams, JSON.stringify(fiter_not_in)]);
 
   const handleSearch = () => {
     if (!searchPrompt.trim()) return;
     setCurrentPage(1);
 
+    const dataset = fiter_not_in
+      .map((cat) => {
+        if (selectedDataset.includes(cat.name)) {
+          return cat.nickname ?? cat.name;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
     // 更新URL参数
     const params = new URLSearchParams();
     params.set("q", searchPrompt.trim());
+    params.set("dataset", dataset.join(","));
     router.push(`/?${params.toString()}`, { scroll: false });
 
-    // 直接执行搜索，不依赖useEffect
-    search(
-      { keyword: searchPrompt, category: JSON.stringify(selectedDataset) },
-      {
-        onSuccess: (data: SearchResult[]) => {
-          setResults(data);
-        },
-        onError: (error: Error) => {
-          console.error("Search failed:", error);
-          toast.error("Search failed", {
-            description: error.message,
-          });
-        },
-      }
-    );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -131,31 +134,14 @@ export default function HomePage() {
     // 更新URL参数
     const params = new URLSearchParams();
     params.set("q", prompt);
+    params.set("dataset", "全局搜索");
     router.push(`/?${params.toString()}`, { scroll: false });
 
-    // 直接执行搜索，不依赖useEffect
-    search(
-      { keyword: prompt, category: JSON.stringify(selectedDataset) },
-      {
-        onSuccess: (data: SearchResult[]) => {
-          setResults(data);
-        },
-        onError: (error: Error) => {
-          console.error("Search failed:", error);
-          toast.error("Search failed", {
-            description: error.message,
-          });
-        },
-      }
-    );
   };
 
   // 返回首页函数
   const handleBackToHome = () => {
     router.push("/", { scroll: false });
-    setSearchPrompt("");
-    setResults(null);
-    setCurrentPage(1);
   };
 
   const totalPages = Math.ceil((results?.length || 0) / itemsPerPage);
@@ -247,34 +233,28 @@ export default function HomePage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[180px] justify-between truncate h-12 hover:!bg-background dark:bg-background dark:text-accent-foreground"
+                    className="w-[180px] justify-between truncate h-12 hover:bg-background! dark:bg-background dark:text-accent-foreground"
                   >
-                    {[
-                      { id: "all", name: "all", nickname: "全局搜索" },
-                      ...(categories || []),
-                    ]
+                    {(fiter_not_in || [])
                       ?.map((cat) => {
                         if (selectedDataset.includes(cat.name)) {
                           return cat.nickname || cat.name;
                         }
                         return null;
                       })
-                      .filter((item) => item !== null)
+                      .filter(Boolean)
                       .join(", ") || "请选择"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
-                  <Command className="!bg-background">
+                  <Command className="bg-background!">
                     <CommandInput
-                      placeholder={"搜索或选择..."}
+                      placeholder={"搜索数据集"}
                       value={inputValue}
                       onValueChange={setInputValue}
                     />
                     <CommandList>
-                      {[
-                        { id: "all", name: "all", nickname: "全局搜索" },
-                        ...(categories || []),
-                      ]?.map((cat) => (
+                      {(fiter_not_in || [])?.map((cat) => (
                         <CommandItem
                           key={cat.id}
                           value={cat.nickname || cat.name}
@@ -308,7 +288,7 @@ export default function HomePage() {
                             }}
                             id={cat.id + ""}
                           />
-                          {cat.nickname || cat.name}
+                          {cat.nickname ?? cat.name}
                         </CommandItem>
                       ))}
                     </CommandList>
