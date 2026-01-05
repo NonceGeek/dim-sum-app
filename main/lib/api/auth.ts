@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "./client";
 
 // Types
-export type UserRole = 'learner' | 'tagger' | 'researcher';
+export type UserRole = "learner" | "tagger" | "researcher";
 
 interface QrCodeResponse {
   ticket: string;
@@ -31,12 +31,21 @@ const fetchQrCode = async (): Promise<QrCodeResponse> => {
   return api.get<QrCodeResponse>("/api/auth/wechat/qrcode");
 };
 
-const checkQrCodeStatus = async (ticket: string): Promise<QrCodeStatusResponse> => {
-  return api.get<QrCodeStatusResponse>(`/api/auth/wechat/qrcode/check?ticket=${ticket}`);
+const checkQrCodeStatus = async (
+  ticket: string
+): Promise<QrCodeStatusResponse> => {
+  return api.get<QrCodeStatusResponse>(
+    `/api/auth/wechat/qrcode/check?ticket=${ticket}`
+  );
 };
 
-const sendVerificationCode = async (data: SendVerificationRequest): Promise<SendVerificationResponse> => {
-  return api.post<SendVerificationResponse>("/api/auth/send-verification", data);
+const sendVerificationCode = async (
+  data: SendVerificationRequest
+): Promise<SendVerificationResponse> => {
+  return api.post<SendVerificationResponse>(
+    "/api/auth/send-verification",
+    data
+  );
 };
 
 // React Query hooks
@@ -64,7 +73,39 @@ export const useSendVerificationCode = () => {
   return useMutation({
     mutationFn: sendVerificationCode,
     onError: (error) => {
-      console.error('Send verification code error:', error);
+      console.error("Send verification code error:", error);
     },
   });
-}; 
+};
+
+// SMS Verification Types
+interface SendSmsVerificationRequest {
+  phoneNumber: string;
+  role: UserRole;
+}
+
+interface SendSmsVerificationResponse {
+  success: boolean;
+  message: string;
+  phoneNumber: string;
+}
+
+// SMS API function
+const sendSmsVerificationCode = async (
+  data: SendSmsVerificationRequest
+): Promise<SendSmsVerificationResponse> => {
+  return api.post<SendSmsVerificationResponse>(
+    "/api/auth/send-sms-verification",
+    data
+  );
+};
+
+// SMS verification hook
+export const useSendSmsVerificationCode = () => {
+  return useMutation({
+    mutationFn: sendSmsVerificationCode,
+    onError: (error) => {
+      console.error("Send SMS verification code error:", error);
+    },
+  });
+};
