@@ -149,7 +149,8 @@ export default function ProfilePage() {
                     <div className="flex items-center text-muted-foreground">
                       <Phone className="w-4 h-4 mr-2" />
                       <span>{profile.phoneNumber || "Not set"}</span>
-                      {profile.phoneNumber ? (
+                      {/* 手机绑定按钮 - 暂时注释，需要时取消注释 */}
+                      {/* {profile.phoneNumber ? (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -169,7 +170,7 @@ export default function ProfilePage() {
                           <Link className="w-3 h-3 mr-1" />
                           绑定
                         </Button>
-                      )}
+                      )} */}
                     </div>
                     <div className="flex items-center justify-start text-muted-foreground">
                       <div className="flex items-center">
@@ -288,11 +289,12 @@ export default function ProfilePage() {
           onSuccess={handleWalletBound}
         />
 
-        <BindPhoneDialog
+        {/* BindPhoneDialog - 暂时注释，需要时取消注释 */}
+        {/* <BindPhoneDialog
           open={bindPhoneOpen}
           onOpenChange={setBindPhoneOpen}
           currentPhone={profile?.phoneNumber}
-        />
+        /> */}
 
         {/* DeleteAccountDialog - 暂时注释，需要时取消注释 */}
         {/* <DeleteAccountDialog
