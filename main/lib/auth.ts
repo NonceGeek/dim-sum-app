@@ -5,6 +5,7 @@ import { AuthOptions } from "next-auth";
 // import { User } from "next-auth";
 import WechatProvider from "@/providers/wechat";
 import { EmailProvider } from "@/providers/email-provider";
+import { SmsProvider } from "@/providers/sms-provider";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient, Role } from "@prisma/client";
 
@@ -29,7 +30,7 @@ declare module "next-auth" {
       image?: string | null;
       role?: Role;
       isSystemAdmin?: boolean;
-    }
+    };
   }
 }
 
@@ -53,6 +54,7 @@ export const authOptions: AuthOptions = {
       redirectUri: `${process.env.NEXTAUTH_URL}/api/auth/callback/wechat`,
     }),
     EmailProvider(),
+    SmsProvider(),
   ],
   pages: {
     signIn: "",
@@ -64,18 +66,18 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async redirect({ url, baseUrl }) {
       // console.log('Redirect callback start:', { url, baseUrl });
-      
+
       // 添加 login 参数到 URL
-      const targetUrl = url.startsWith("/") 
-        ? `${baseUrl}${url}` 
-        : new URL(url).origin === baseUrl 
-          ? url 
-          : baseUrl;
-      
+      const targetUrl = url.startsWith("/")
+        ? `${baseUrl}${url}`
+        : new URL(url).origin === baseUrl
+        ? url
+        : baseUrl;
+
       // 添加 login 参数
       const urlObj = new URL(targetUrl);
-      urlObj.searchParams.set('login', 'success');
-      
+      urlObj.searchParams.set("login", "success");
+
       // console.log('Redirect callback end:', { result: urlObj.toString() });
       return urlObj.toString();
     },
@@ -86,20 +88,20 @@ export const authOptions: AuthOptions = {
       // console.log('account:', account);
       // console.log('profile:', profile);
       // const startTime = Date.now();
-      
-      if (account?.provider === 'wechat' && profile) {
+
+      if (account?.provider === "wechat" && profile) {
         const wechatProfile = profile as WeChatProfile;
         token.openId = wechatProfile.openid;
         token.unionId = wechatProfile.unionid;
         token.image = wechatProfile.headimgurl;
-        
+
         // 只在需要时查询用户角色和系统管理员状态
         if (!token.role && !token.id) {
           // console.log('Fetching user role...');
           const dbAccount = await prisma.account.findFirst({
-            where: { 
-              provider: 'wechat',
-              providerAccountId: wechatProfile.openid 
+            where: {
+              provider: "wechat",
+              providerAccountId: wechatProfile.openid,
             },
             select: {
               user: {
@@ -107,12 +109,12 @@ export const authOptions: AuthOptions = {
                   id: true,
                   role: true,
                   image: true,
-                  isSystemAdmin: true
-                }
-              }
-            }
+                  isSystemAdmin: true,
+                },
+              },
+            },
           });
-          
+
           if (dbAccount?.user) {
             token.id = dbAccount.user.id;
             token.role = dbAccount.user.role;
@@ -132,17 +134,17 @@ export const authOptions: AuthOptions = {
         token.role = (user as any).role;
         token.isSystemAdmin = (user as any).isSystemAdmin;
       }
-      
-      // console.log('JWT Callback end:', { 
+
+      // console.log('JWT Callback end:', {
       //   executionTime: Date.now() - startTime,
-      //   token 
+      //   token
       // });
       return token;
     },
     async session({ session, token }) {
       // console.log('Session Callback start:', { session, token });
       // const startTime = Date.now();
-      
+
       if (session.user) {
         session.user.id = token.id;
         session.user.openId = token.openId;
@@ -151,10 +153,10 @@ export const authOptions: AuthOptions = {
         session.user.image = token.image;
         session.user.isSystemAdmin = token.isSystemAdmin;
       }
-      
-      // console.log('Session Callback end:', { 
+
+      // console.log('Session Callback end:', {
       //   executionTime: Date.now() - startTime,
-      //   session 
+      //   session
       // });
       return session;
     },
@@ -164,18 +166,18 @@ export const authOptions: AuthOptions = {
       // console.log('account:', account);
       // console.log('profile:', profile);
       const startTime = Date.now();
-      
-      if (account?.provider === 'wechat' && profile) {
+
+      if (account?.provider === "wechat" && profile) {
         try {
           const wechatProfile = profile as WeChatProfile;
           // console.log('Checking existing account...');
-          
+
           // 使用事务来确保数据一致性
           await prisma.$transaction(async (tx) => {
             const existingAccount = await tx.account.findFirst({
-              where: { 
-                provider: 'wechat',
-                providerAccountId: wechatProfile.openid 
+              where: {
+                provider: "wechat",
+                providerAccountId: wechatProfile.openid,
               },
               select: {
                 id: true,
@@ -184,22 +186,24 @@ export const authOptions: AuthOptions = {
                     id: true,
                     role: true,
                     wechatAvatar: true,
-                    isSystemAdmin: true
-                  }
-                }
-              }
+                    isSystemAdmin: true,
+                  },
+                },
+              },
             });
 
             if (!existingAccount) {
               // console.log('Creating new user and account...');
               const newUser = await tx.user.create({
                 data: {
-                  name: wechatProfile.nickname || `User_${Math.random().toString(36).substring(7)}`,
-                  wechatAvatar: wechatProfile.headimgurl,  // 保存微信头像
+                  name:
+                    wechatProfile.nickname ||
+                    `User_${Math.random().toString(36).substring(7)}`,
+                  wechatAvatar: wechatProfile.headimgurl, // 保存微信头像
                   accounts: {
                     create: {
-                      type: 'oauth',
-                      provider: 'wechat',
+                      type: "oauth",
+                      provider: "wechat",
                       providerAccountId: wechatProfile.openid,
                       openId: wechatProfile.openid,
                       unionId: wechatProfile.unionid,
@@ -207,59 +211,59 @@ export const authOptions: AuthOptions = {
                       refresh_token: account.refresh_token,
                       expires_at: account.expires_at,
                       scope: account.scope,
-                    }
-                  }
+                    },
+                  },
                 },
                 select: {
                   id: true,
                   role: true,
                   wechatAvatar: true,
-                  isSystemAdmin: true
-                }
+                  isSystemAdmin: true,
+                },
               });
               // console.log('New user and account created');
               return newUser;
             }
-            
+
             // 如果用户存在但微信头像为空，更新微信头像
             if (!existingAccount.user.wechatAvatar) {
               await tx.user.update({
                 where: { id: existingAccount.user.id },
-                data: { wechatAvatar: wechatProfile.headimgurl }
+                data: { wechatAvatar: wechatProfile.headimgurl },
               });
             }
-            
+
             // console.log('Existing account found');
             return existingAccount.user;
           });
-          
-          // console.log('SignIn Callback end:', { 
+
+          // console.log('SignIn Callback end:', {
           //   executionTime: Date.now() - startTime,
           //   success: true,
           //   userId: result.id
           // });
           return true;
         } catch (error) {
-          console.error('Error in signIn callback:', error);
-          console.log('SignIn Callback end with error:', { 
+          console.error("Error in signIn callback:", error);
+          console.log("SignIn Callback end with error:", {
             executionTime: Date.now() - startTime,
-            error 
+            error,
           });
           return false;
         }
       }
-      
-      if (account?.provider === 'email' && user && user.email) {
+
+      if (account?.provider === "email" && user && user.email) {
         try {
           // console.log('Processing email login...');
-          
+
           // 使用事务来确保数据一致性
           await prisma.$transaction(async (tx) => {
             // 检查是否已存在邮箱账号记录
             const existingAccount = await tx.account.findFirst({
-              where: { 
-                provider: 'email',
-                providerAccountId: user.email
+              where: {
+                provider: "email",
+                providerAccountId: user.email,
               },
               select: {
                 id: true,
@@ -267,10 +271,10 @@ export const authOptions: AuthOptions = {
                   select: {
                     id: true,
                     role: true,
-                    isSystemAdmin: true
-                  }
-                }
-              }
+                    isSystemAdmin: true,
+                  },
+                },
+              },
             });
 
             if (!existingAccount) {
@@ -278,37 +282,80 @@ export const authOptions: AuthOptions = {
               // 为邮箱用户创建 Account 记录
               await tx.account.create({
                 data: {
-                  type: 'credentials',
-                  provider: 'email',
-                  providerAccountId: user.email || '',
+                  type: "credentials",
+                  provider: "email",
+                  providerAccountId: user.email || "",
                   userId: user.id,
-                }
+                },
               });
               // console.log('Email account record created');
             }
-            
+
             return existingAccount?.user || user;
           });
-          
-          // console.log('SignIn Callback end:', { 
+
+          // console.log('SignIn Callback end:', {
           //   executionTime: Date.now() - startTime,
           //   success: true,
           //   userId: user.id
           // });
           return true;
         } catch (error) {
-          console.error('Error in email signIn callback:', error);
-          console.log('SignIn Callback end with error:', { 
+          console.error("Error in email signIn callback:", error);
+          console.log("SignIn Callback end with error:", {
             executionTime: Date.now() - startTime,
-            error 
+            error,
           });
           return false;
         }
       }
-      
-      // console.log('SignIn Callback end:', { 
+
+      // SMS provider handling
+      if (account?.provider === "sms" && user) {
+        try {
+          const userWithPhone = user as { phoneNumber?: string };
+          if (!userWithPhone.phoneNumber) {
+            return true;
+          }
+
+          // 使用事务来确保数据一致性
+          await prisma.$transaction(async (tx) => {
+            // 检查是否已存在短信账号记录
+            const existingAccount = await tx.account.findFirst({
+              where: {
+                provider: "sms",
+                providerAccountId: userWithPhone.phoneNumber,
+              },
+              select: {
+                id: true,
+              },
+            });
+
+            if (!existingAccount) {
+              // 为短信用户创建 Account 记录
+              await tx.account.create({
+                data: {
+                  type: "credentials",
+                  provider: "sms",
+                  providerAccountId: userWithPhone.phoneNumber || "",
+                  userId: user.id,
+                },
+              });
+            }
+
+            return user;
+          });
+
+          return true;
+        } catch (error) {
+          console.error("Error in SMS signIn callback:", error);
+          return false;
+        }
+      }
+
+      // console.log('SignIn Callback end:', {
       //   executionTime: Date.now() - startTime,
-      //   success: true 
+      //   success: true
       // });
       return true;
     },
@@ -350,7 +397,10 @@ export async function requireMarker(
     );
   }
 
-  if (session.user.role !== Role.TAGGER_PARTNER && session.user.role !== Role.TAGGER_OUTSOURCING) {
+  if (
+    session.user.role !== Role.TAGGER_PARTNER &&
+    session.user.role !== Role.TAGGER_OUTSOURCING
+  ) {
     return NextResponse.json(
       { error: "Permission denied. Marker role required." },
       { status: 403 }

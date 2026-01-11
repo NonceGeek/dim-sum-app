@@ -12,6 +12,8 @@ import Image from "next/image";
 import { formatRole } from "@/lib/utils";
 import { EditProfileDialog } from "@/components/dialogs/edit-profile-dialog";
 import { BindWalletDialog } from "@/components/wallet/bind-wallet-dialog";
+import { BindPhoneDialog } from "@/components/dialogs/bind-phone-dialog";
+import { DeleteAccountDialog } from "@/components/dialogs/delete-account-dialog";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -24,7 +26,9 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfilePage() {
   const [bindWalletOpen, setBindWalletOpen] = useState(false);
-  
+  const [bindPhoneOpen, setBindPhoneOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+
   // React Query hooks
   const { data: profile, isLoading: loading, error } = useUserProfile();
   const unbindWalletMutation = useUnbindWallet();
@@ -145,6 +149,27 @@ export default function ProfilePage() {
                     <div className="flex items-center text-muted-foreground">
                       <Phone className="w-4 h-4 mr-2" />
                       <span>{profile.phoneNumber || "Not set"}</span>
+                      {profile.phoneNumber ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setBindPhoneOpen(true)}
+                          className="h-6 px-2 text-xs ml-2"
+                        >
+                          <Link className="w-3 h-3 mr-1" />
+                          Change
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setBindPhoneOpen(true)}
+                          className="h-6 px-2 text-xs ml-2"
+                        >
+                          <Link className="w-3 h-3 mr-1" />
+                          Bind
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center justify-start text-muted-foreground">
                       <div className="flex items-center">
@@ -192,7 +217,9 @@ export default function ProfilePage() {
                           className="h-6 px-2 text-xs text-destructive hover:text-destructive ml-2"
                         >
                           <Unlink className="w-3 h-3 mr-1" />
-                          {unbindWalletMutation.isPending ? "Unbinding..." : "Unbind"}
+                          {unbindWalletMutation.isPending
+                            ? "Unbinding..."
+                            : "Unbind"}
                         </Button>
                       ) : (
                         <Button
@@ -231,6 +258,27 @@ export default function ProfilePage() {
                 </div>
               )}
             </Card>
+
+            {/* Danger Zone - 暂时注释，需要时取消注释 */}
+            {/* <Card className="p-6 bg-card border-destructive/20">
+              <h3 className="text-lg font-semibold text-destructive mb-4">
+                危险操作
+              </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">注销账号</p>
+                  <p className="text-sm text-muted-foreground">
+                    永久删除您的账号和所有数据
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => setDeleteAccountOpen(true)}
+                >
+                  注销账号
+                </Button>
+              </div>
+            </Card> */}
           </div>
         )}
 
@@ -238,6 +286,19 @@ export default function ProfilePage() {
           open={bindWalletOpen}
           onOpenChange={setBindWalletOpen}
           onSuccess={handleWalletBound}
+        />
+
+       
+        <BindPhoneDialog
+          open={bindPhoneOpen}
+          onOpenChange={setBindPhoneOpen}
+          currentPhone={profile?.phoneNumber}
+        />
+
+        
+        <DeleteAccountDialog
+          open={deleteAccountOpen}
+          onOpenChange={setDeleteAccountOpen}
         />
       </div>
     </>

@@ -25,6 +25,7 @@ model Account {
   session_state     String?
   openId            String?
   unionId           String?
+  openIdWxService   String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -47,6 +48,8 @@ model User {
   ethAddress                      String?                           @unique
   createdAt                       DateTime                          @default(now()) @db.Timestamptz(6)
   updatedAt                       DateTime                          @default(now()) @updatedAt @db.Timestamptz(6)
+  deletionRequestedAt             DateTime?                         @db.Timestamptz(6)
+  status                          UserStatus                        @default(ACTIVE)
   accounts                        Account[]
   sessions                        Session[]
   walletNonces                    WalletNonce[]
@@ -99,11 +102,11 @@ model cantonese_categories {
   tags                 Json?
   pinned               Boolean                @default(false)
   editable_level       BigInt                 @default(0)
-  linked_apps          Json                   @default("[]")
   if_in_all_data       Boolean                @default(false)
   related              Json                   @default("{\"apps\": [], \"links\": []}")
-  size                 BigInt?
+  size                 Float?                 @db.Real
   taggers              Json                   @default("[]")
+  sorting              BigInt                 @default(0)
   cantonese_corpus_all cantonese_corpus_all[]
 
   @@id([id, name])
@@ -115,7 +118,7 @@ model cantonese_corpus_all {
   note                 Json?                      @default("{}")
   category             String
   created_at           DateTime                   @default(now()) @db.Timestamptz(6)
-  tags                 Json?
+  tags                 Json?                      @default("[]")
   editable_level       Int                        @default(1) @db.SmallInt
   liked_num            BigInt                     @default(0)
   unique_id            String                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -123,6 +126,7 @@ model cantonese_corpus_all {
   view_num             BigInt                     @default(0)
   updated_at           DateTime                   @default(now()) @db.Timestamptz(6)
   cantonese_categories cantonese_categories       @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  corpus_zyzdv2        corpus_zyzdv2[]
   userInteractions     user_corpus_interactions[]
 
   @@id([id, data])
@@ -134,7 +138,7 @@ model cantonese_corpus_apps {
   id               BigInt    @id @default(autoincrement())
   name             String?
   description      String?
-  authors          Json?
+  authors          Json      @default("[]")
   url              String?
   homepage_url     String?
   github_url       String?
@@ -223,10 +227,11 @@ model user_corpus_interactions {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model corpus_zyzdv2 {
-  id         BigInt    @id @default(autoincrement())
-  unique_id  String?   @db.Uuid
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  id                   BigInt                @id @default(autoincrement())
+  unique_id            String?               @db.Uuid
+  created_at           DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?             @default(now()) @db.Timestamp(6)
+  cantonese_corpus_all cantonese_corpus_all? @relation(fields: [unique_id], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -276,21 +281,102 @@ model cantonese_corpus_main_data {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model micro_ai_saas {
-  id               BigInt    @id @default(autoincrement())
-  user             String?
-  prompt           String?
-  task_type        String?   @default("llm")
-  solution         String?
-  solver           String?
-  fee              BigInt?   @default(0)
-  fee_unit         String?   @default("ldg")
-  tx               String?   @default("")
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  solved_at        DateTime? @db.Timestamp(6)
-  signature        String?
-  unique_id        String?   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  solver_type      Json?     @default("[]")
-  optimized_prompt String?
+  id                    BigInt                 @id @default(autoincrement())
+  user                  String?
+  prompt                String?
+  task_type             String?                @default("llm")
+  solution              String?
+  solver                String?                @db.Uuid
+  fee                   BigInt?
+  fee_unit              String?                @default("ldg")
+  tx                    String?                @default("")
+  created_at            DateTime               @default(now()) @db.Timestamptz(6)
+  solved_at             DateTime?              @db.Timestamp(6)
+  review                String?
+  unique_id             String?                @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  solver_type           Json?                  @default("[]")
+  optimized_prompt      String?
+  coupon                String?
+  signature             String?
+  micro_ai_saas_coupons micro_ai_saas_coupons? @relation(fields: [coupon], references: [addr], onDelete: NoAction, onUpdate: NoAction)
+  asset_units           asset_units?           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
+  micro_ai_saas_agents  micro_ai_saas_agents?  @relation(fields: [solver], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model micro_ai_saas_agents {
+  id                                                                       BigInt                  @id @default(autoincrement())
+  created_at                                                               DateTime                @default(now()) @db.Timestamptz(6)
+  addr                                                                     String
+  owner_addr                                                               String?
+  type                                                                     String?
+  homepage                                                                 String?
+  source_url                                                               String?                 @default("https://github.com/NonceGeek/tai_shang_micro_ai_saas/tree/main/agents")
+  solved_times                                                             BigInt?                 @default(0)
+  unique_id                                                                String                  @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description                                                              String?
+  task_request_api                                                         String?
+  crons                                                                    Json                    @default("[]")
+  addrs                                                                    Json                    @default("{}")
+  up_votes                                                                 BigInt                  @default(0)
+  down_votes                                                               BigInt                  @default(0)
+  name                                                                     String?
+  addr_type                                                                String                  @default("eth")
+  owner_addr_type                                                          String                  @default("eth")
+  logo                                                                     String?
+  actived                                                                  Boolean                 @default(false)
+  micro_ai_saas                                                            micro_ai_saas[]
+  micro_ai_saas_coupons_micro_ai_saas_coupons_issuerTomicro_ai_saas_agents micro_ai_saas_coupons[] @relation("micro_ai_saas_coupons_issuerTomicro_ai_saas_agents")
+  micro_ai_saas_coupons_micro_ai_saas_coupons_ownerTomicro_ai_saas_agents  micro_ai_saas_coupons[] @relation("micro_ai_saas_coupons_ownerTomicro_ai_saas_agents")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model micro_ai_saas_coupons {
+  id                                                                      BigInt                @id @default(autoincrement())
+  priv                                                                    String                @unique
+  addr                                                                    String                @unique
+  created_at                                                              DateTime              @default(now()) @db.Timestamptz(6)
+  if_used                                                                 Boolean               @default(false)
+  if_voted                                                                Boolean               @default(false)
+  owner                                                                   String?               @db.Uuid
+  if_reviewed                                                             Boolean               @default(false)
+  issuer                                                                  String?               @db.Uuid
+  fee                                                                     BigInt
+  fee_unit                                                                String                @default("RMB")
+  is_issued                                                               Boolean               @default(true)
+  micro_ai_saas                                                           micro_ai_saas[]
+  asset_units                                                             asset_units           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
+  micro_ai_saas_agents_micro_ai_saas_coupons_issuerTomicro_ai_saas_agents micro_ai_saas_agents? @relation("micro_ai_saas_coupons_issuerTomicro_ai_saas_agents", fields: [issuer], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
+  micro_ai_saas_agents_micro_ai_saas_coupons_ownerTomicro_ai_saas_agents  micro_ai_saas_agents? @relation("micro_ai_saas_coupons_ownerTomicro_ai_saas_agents", fields: [owner], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model asset_units {
+  id                    BigInt                  @default(autoincrement())
+  unit                  String                  @unique @default("")
+  decimals              Int?                    @default(0) @db.SmallInt
+  description           String?
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  micro_ai_saas         micro_ai_saas[]
+  micro_ai_saas_coupons micro_ai_saas_coupons[]
+
+  @@id([id, unit])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model vocabulary_difficulty_levels {
+  id               BigInt   @id @default(autoincrement())
+  difficulty_level Int?     @db.SmallInt
+  word             String
+  level_1          String?
+  level_2          String?
+  level_3          String?
+  level_4          String?
+  updated_at       DateTime @db.Timestamptz(6)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
 }
 
 enum Role {
@@ -298,6 +384,13 @@ enum Role {
   TAGGER_PARTNER
   TAGGER_OUTSOURCING
   RESEARCHER
+}
+
+/// 用户账号状态
+enum UserStatus {
+  ACTIVE
+  PENDING_DELETE
+  DELETED
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

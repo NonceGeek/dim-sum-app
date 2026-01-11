@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:miniprogram": "tsx scripts/test-miniprogram.ts",
+    "process-deletions": "tsx scripts/process-deletions.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
@@ -15,6 +16,9 @@
     "db:pull": "prisma db pull"
   },
   "dependencies": {
+    "@alicloud/dysmsapi20170525": "^4.3.1",
+    "@alicloud/openapi-client": "^0.4.15",
+    "@alicloud/tea-util": "^1.4.11",
     "@auth/prisma-adapter": "^2.9.1",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "^6.8.2",
@@ -49,6 +53,7 @@
     "@tanstack/react-query": "^5.72.1",
     "@tanstack/react-query-devtools": "^5.72.1",
     "@types/ali-oss": "^6.16.11",
+    "@vercel/analytics": "^1.6.1",
     "ali-oss": "^6.23.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -99,7 +104,7 @@
     "prisma": "^6.8.2",
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5",
-    "tsx": "^4.19.1"
+    "tsx": "^4.19.1",
+    "typescript": "^5"
   }
 }

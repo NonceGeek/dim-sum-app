@@ -4,6 +4,7 @@ import "./globals.css";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           <ConditionalLayout>{children}</ConditionalLayout>
           <Toaster />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
