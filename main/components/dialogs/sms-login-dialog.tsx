@@ -61,12 +61,12 @@ export function SmsLoginDialog({
 
   const handleSendCode = async () => {
     if (!phoneNumber) {
-      toast.error("请输入手机号");
+      toast.error("Please enter phone number");
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
-      toast.error("请输入正确的手机号格式");
+      toast.error("Please enter a valid phone number format");
       return;
     }
 
@@ -74,21 +74,21 @@ export function SmsLoginDialog({
       const result = await sendSmsMutation.mutateAsync({ phoneNumber, role });
 
       if (result.success) {
-        toast.success("验证码已发送到您的手机");
+        toast.success("Verification code sent to your phone");
         setIsCodeSent(true);
         setCountdown(60); // 开始60秒倒计时
       } else {
-        toast.error(result.message || "发送验证码失败");
+        toast.error(result.message || "Failed to send verification code");
       }
     } catch (error) {
       console.error("Send code error:", error);
-      toast.error("发送验证码失败");
+      toast.error("Failed to send verification code");
     }
   };
 
   const handleVerifyCode = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
-      toast.error("请输入6位验证码");
+      toast.error("Please enter 6-digit verification code");
       return;
     }
 
@@ -104,18 +104,18 @@ export function SmsLoginDialog({
       });
 
       if (result?.error) {
-        toast.error("登录失败：" + result.error);
+        toast.error("Login failed: " + result.error);
       } else if (result?.ok) {
-        toast.success("登录成功！");
+        toast.success("Login successful!");
         // 登录成功，关闭对话框并重定向
         handleClose();
         window.location.href = callbackUrl;
       } else {
-        toast.error("登录失败");
+        toast.error("Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("登录失败");
+      toast.error("Login failed");
     } finally {
       setIsVerifying(false);
     }
@@ -141,15 +141,15 @@ export function SmsLoginDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
-            {isCodeSent ? "输入验证码" : "手机号登录"}
+            {isCodeSent ? "Enter Verification Code" : "Phone Login"}
           </DialogTitle>
           <DialogDescription className="text-center">
             {isCodeSent
-              ? `验证码已发送至 ${phoneNumber.slice(
+              ? `Verification code sent to ${phoneNumber.slice(
                   0,
                   3
                 )}****${phoneNumber.slice(-4)}`
-              : "输入手机号快速登录或注册"}
+              : "Enter phone number to continue"}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,12 +158,12 @@ export function SmsLoginDialog({
             <>
               <div className="space-y-2">
                 <label htmlFor="phoneNumber" className="text-sm font-medium">
-                  手机号
+                  Phone Number
                 </label>
                 <Input
                   id="phoneNumber"
                   type="tel"
-                  placeholder="请输入手机号"
+                  placeholder="Enter phone number"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   disabled={sendSmsMutation.isPending}
@@ -179,12 +179,12 @@ export function SmsLoginDialog({
                 {sendSmsMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    发送中...
+                    Sending...
                   </>
                 ) : (
                   <>
                     <Phone className="w-4 h-4 mr-2" />
-                    获取验证码
+                    Get Code
                   </>
                 )}
               </Button>
@@ -193,7 +193,7 @@ export function SmsLoginDialog({
             <>
               <div className="space-y-2 flex flex-col">
                 <label className="text-sm font-medium text-center w-full">
-                  验证码
+                  Verification Code
                 </label>
                 <InputOTP
                   value={verificationCode}
@@ -220,7 +220,7 @@ export function SmsLoginDialog({
                   className="flex-1"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  返回
+                  Back
                 </Button>
                 <Button
                   onClick={handleVerifyCode}
@@ -230,10 +230,10 @@ export function SmsLoginDialog({
                   {isVerifying ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      验证中...
+                      Verifying...
                     </>
                   ) : (
-                    "立即登录"
+                    "Login Now"
                   )}
                 </Button>
               </div>
@@ -246,10 +246,10 @@ export function SmsLoginDialog({
                   className="text-sm"
                 >
                   {sendSmsMutation.isPending
-                    ? "发送中..."
+                    ? "Sending..."
                     : countdown > 0
-                    ? `重新发送 (${countdown}s)`
-                    : "重新发送验证码"}
+                    ? `Resend (${countdown}s)`
+                    : "Resend Code"}
                 </Button>
               </div>
             </>
@@ -257,15 +257,15 @@ export function SmsLoginDialog({
         </div>
 
         <div className="mt-4 text-center text-xs text-muted-foreground">
-          登录即表示您同意我们的{" "}
+          By logging in, you agree to our{" "}
           <Link href="/terms" className="underline hover:text-primary">
-            服务条款
+            Terms of Service
           </Link>{" "}
-          和{" "}
+          and{" "}
           <Link href="/privacy" className="underline hover:text-primary">
-            隐私政策
+            Privacy Policy
           </Link>
-          。
+          .
         </div>
       </DialogContent>
     </Dialog>

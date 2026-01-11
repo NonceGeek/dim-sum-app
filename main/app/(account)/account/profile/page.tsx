@@ -149,8 +149,7 @@ export default function ProfilePage() {
                     <div className="flex items-center text-muted-foreground">
                       <Phone className="w-4 h-4 mr-2" />
                       <span>{profile.phoneNumber || "Not set"}</span>
-                      {/* 手机绑定按钮 - 暂时注释，需要时取消注释 */}
-                      {/* {profile.phoneNumber ? (
+                      {profile.phoneNumber ? (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -158,7 +157,7 @@ export default function ProfilePage() {
                           className="h-6 px-2 text-xs ml-2"
                         >
                           <Link className="w-3 h-3 mr-1" />
-                          换绑
+                          Change
                         </Button>
                       ) : (
                         <Button
@@ -168,9 +167,9 @@ export default function ProfilePage() {
                           className="h-6 px-2 text-xs ml-2"
                         >
                           <Link className="w-3 h-3 mr-1" />
-                          绑定
+                          Bind
                         </Button>
-                      )} */}
+                      )}
                     </div>
                     <div className="flex items-center justify-start text-muted-foreground">
                       <div className="flex items-center">
@@ -289,18 +288,18 @@ export default function ProfilePage() {
           onSuccess={handleWalletBound}
         />
 
-        {/* BindPhoneDialog - 暂时注释，需要时取消注释 */}
-        {/* <BindPhoneDialog
+       
+        <BindPhoneDialog
           open={bindPhoneOpen}
           onOpenChange={setBindPhoneOpen}
           currentPhone={profile?.phoneNumber}
-        /> */}
+        />
 
-        {/* DeleteAccountDialog - 暂时注释，需要时取消注释 */}
-        {/* <DeleteAccountDialog
+        
+        <DeleteAccountDialog
           open={deleteAccountOpen}
           onOpenChange={setDeleteAccountOpen}
-        /> */}
+        />
       </div>
     </>
   );

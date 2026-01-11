@@ -75,12 +75,12 @@ export function BindPhoneDialog({
 
   const handleSendCode = async () => {
     if (!phoneNumber) {
-      toast.error("请输入手机号");
+      toast.error("Please enter phone number");
       return;
     }
 
     if (!isValidPhoneNumber(phoneNumber)) {
-      toast.error("请输入正确的手机号格式");
+      toast.error("Please enter a valid phone number format");
       return;
     }
 
@@ -88,7 +88,7 @@ export function BindPhoneDialog({
       const result = await sendBindCodeMutation.mutateAsync(phoneNumber);
 
       if (result.success) {
-        toast.success("验证码已发送");
+        toast.success("Verification code sent");
         setStep("verify");
         setCountdown(60);
       }
@@ -103,13 +103,13 @@ export function BindPhoneDialog({
         return;
       }
       console.error("Send code error:", error);
-      toast.error(error?.message || "发送验证码失败");
+      toast.error(error?.message || "Failed to send verification code");
     }
   };
 
   const handleVerifyCode = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
-      toast.error("请输入6位验证码");
+      toast.error("Please enter 6-digit verification code");
       return;
     }
 
@@ -120,7 +120,7 @@ export function BindPhoneDialog({
       });
 
       if (result.success) {
-        toast.success("手机号绑定成功！");
+        toast.success("Phone number bound successfully!");
         onOpenChange(false);
         onSuccess?.();
       }
@@ -135,7 +135,7 @@ export function BindPhoneDialog({
         return;
       }
       console.error("Bind phone error:", error);
-      toast.error(error?.message || "绑定失败");
+      toast.error(error?.message || "Bind failed");
     }
   };
 
@@ -159,16 +159,16 @@ export function BindPhoneDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            {step === "input" && (currentPhone ? "换绑手机号" : "绑定手机号")}
-            {step === "verify" && "输入验证码"}
-            {step === "conflict" && "手机号已被使用"}
+            {step === "input" && (currentPhone ? "Change Phone Number" : "Bind Phone Number")}
+            {step === "verify" && "Enter Verification Code"}
+            {step === "conflict" && "Phone Number Already in Use"}
           </DialogTitle>
           <DialogDescription className="text-center">
             {step === "input" &&
               (currentPhone
-                ? `当前手机号：${maskPhone(currentPhone)}，输入新手机号进行换绑`
-                : "绑定手机号后可使用手机号登录")}
-            {step === "verify" && `验证码已发送至 ${maskPhone(phoneNumber)}`}
+                ? `Current phone: ${maskPhone(currentPhone)}, enter new phone number to change`
+                : "Bind phone number to enable phone login")}
+            {step === "verify" && `Verification code sent to ${maskPhone(phoneNumber)}`}
             {step === "conflict" && ""}
           </DialogDescription>
         </DialogHeader>
@@ -178,12 +178,12 @@ export function BindPhoneDialog({
             <>
               <div className="space-y-2">
                 <label htmlFor="phoneNumber" className="text-sm font-medium">
-                  手机号
+                  Phone Number
                 </label>
                 <Input
                   id="phoneNumber"
                   type="tel"
-                  placeholder="请输入手机号"
+                  placeholder="Enter phone number"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   disabled={sendBindCodeMutation.isPending}
@@ -197,7 +197,7 @@ export function BindPhoneDialog({
             <>
               <div className="space-y-2 flex flex-col items-center">
                 <label className="text-sm font-medium text-center w-full">
-                  验证码
+                  Verification Code
                 </label>
                 <InputOTP
                   value={verificationCode}
@@ -224,10 +224,10 @@ export function BindPhoneDialog({
                   className="text-sm"
                 >
                   {sendBindCodeMutation.isPending
-                    ? "发送中..."
+                    ? "Sending..."
                     : countdown > 0
-                    ? `重新发送 (${countdown}s)`
-                    : "重新发送验证码"}
+                    ? `Resend (${countdown}s)`
+                    : "Resend Code"}
                 </Button>
               </div>
             </>
@@ -237,9 +237,9 @@ export function BindPhoneDialog({
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                手机号 {maskPhone(conflictPhone)} 已关联其他账号。
+                Phone number {maskPhone(conflictPhone)} is already linked to another account.
                 <br />
-                如需使用该手机号，请先退出登录，然后使用该手机号登录对应账号。
+                To use this number, please log out and log in with this phone number.
               </AlertDescription>
             </Alert>
           )}
@@ -253,7 +253,7 @@ export function BindPhoneDialog({
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
               >
-                取消
+                Cancel
               </Button>
               <Button
                 onClick={handleSendCode}
@@ -263,12 +263,12 @@ export function BindPhoneDialog({
                 {sendBindCodeMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    发送中...
+                    Sending...
                   </>
                 ) : (
                   <>
                     <Phone className="w-4 h-4 mr-2" />
-                    获取验证码
+                    Get Code
                   </>
                 )}
               </Button>
@@ -284,7 +284,7 @@ export function BindPhoneDialog({
                 className="flex-1"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                返回
+                Back
               </Button>
               <Button
                 onClick={handleVerifyCode}
@@ -296,10 +296,10 @@ export function BindPhoneDialog({
                 {bindPhoneMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    绑定中...
+                    Binding...
                   </>
                 ) : (
-                  "确认绑定"
+                  "Confirm Bind"
                 )}
               </Button>
             </>
@@ -309,14 +309,14 @@ export function BindPhoneDialog({
             <>
               <Button variant="outline" onClick={handleBack} className="flex-1">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                使用其他手机号
+                Use Another Number
               </Button>
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
               >
-                取消
+                Cancel
               </Button>
             </>
           )}
