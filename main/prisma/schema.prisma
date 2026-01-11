@@ -46,10 +46,10 @@ model User {
   bio                             String?
   isSystemAdmin                   Boolean                           @default(false)
   ethAddress                      String?                           @unique
-  status                          UserStatus                        @default(ACTIVE)
-  deletionRequestedAt             DateTime?                         @db.Timestamptz(6)
   createdAt                       DateTime                          @default(now()) @db.Timestamptz(6)
   updatedAt                       DateTime                          @default(now()) @updatedAt @db.Timestamptz(6)
+  deletionRequestedAt             DateTime?                         @db.Timestamptz(6)
+  status                          UserStatus                        @default(ACTIVE)
   accounts                        Account[]
   sessions                        Session[]
   walletNonces                    WalletNonce[]
@@ -287,7 +287,7 @@ model micro_ai_saas {
   task_type             String?                @default("llm")
   solution              String?
   solver                String?                @db.Uuid
-  fee                   BigInt?                @default(0)
+  fee                   BigInt?
   fee_unit              String?                @default("ldg")
   tx                    String?                @default("")
   created_at            DateTime               @default(now()) @db.Timestamptz(6)
@@ -299,6 +299,7 @@ model micro_ai_saas {
   coupon                String?
   signature             String?
   micro_ai_saas_coupons micro_ai_saas_coupons? @relation(fields: [coupon], references: [addr], onDelete: NoAction, onUpdate: NoAction)
+  asset_units           asset_units?           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
   micro_ai_saas_agents  micro_ai_saas_agents?  @relation(fields: [solver], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -323,6 +324,8 @@ model micro_ai_saas_agents {
   name                                                                     String?
   addr_type                                                                String                  @default("eth")
   owner_addr_type                                                          String                  @default("eth")
+  logo                                                                     String?
+  actived                                                                  Boolean                 @default(false)
   micro_ai_saas                                                            micro_ai_saas[]
   micro_ai_saas_coupons_micro_ai_saas_coupons_issuerTomicro_ai_saas_agents micro_ai_saas_coupons[] @relation("micro_ai_saas_coupons_issuerTomicro_ai_saas_agents")
   micro_ai_saas_coupons_micro_ai_saas_coupons_ownerTomicro_ai_saas_agents  micro_ai_saas_coupons[] @relation("micro_ai_saas_coupons_ownerTomicro_ai_saas_agents")
@@ -340,11 +343,40 @@ model micro_ai_saas_coupons {
   owner                                                                   String?               @db.Uuid
   if_reviewed                                                             Boolean               @default(false)
   issuer                                                                  String?               @db.Uuid
-  price                                                                   Decimal               @default(0) @db.Decimal
-  price_unit                                                              String                @default("RMB")
+  fee                                                                     BigInt
+  fee_unit                                                                String                @default("RMB")
+  is_issued                                                               Boolean               @default(true)
   micro_ai_saas                                                           micro_ai_saas[]
+  asset_units                                                             asset_units           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
   micro_ai_saas_agents_micro_ai_saas_coupons_issuerTomicro_ai_saas_agents micro_ai_saas_agents? @relation("micro_ai_saas_coupons_issuerTomicro_ai_saas_agents", fields: [issuer], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
   micro_ai_saas_agents_micro_ai_saas_coupons_ownerTomicro_ai_saas_agents  micro_ai_saas_agents? @relation("micro_ai_saas_coupons_ownerTomicro_ai_saas_agents", fields: [owner], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model asset_units {
+  id                    BigInt                  @default(autoincrement())
+  unit                  String                  @unique @default("")
+  decimals              Int?                    @default(0) @db.SmallInt
+  description           String?
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  micro_ai_saas         micro_ai_saas[]
+  micro_ai_saas_coupons micro_ai_saas_coupons[]
+
+  @@id([id, unit])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model vocabulary_difficulty_levels {
+  id               BigInt   @id @default(autoincrement())
+  difficulty_level Int?     @db.SmallInt
+  word             String
+  level_1          String?
+  level_2          String?
+  level_3          String?
+  level_4          String?
+  updated_at       DateTime @db.Timestamptz(6)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
 }
 
 enum Role {
@@ -356,9 +388,9 @@ enum Role {
 
 /// 用户账号状态
 enum UserStatus {
-  ACTIVE           // 正常
-  PENDING_DELETE   // 待注销（冷静期）
-  DELETED          // 已注销
+  ACTIVE
+  PENDING_DELETE
+  DELETED
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
