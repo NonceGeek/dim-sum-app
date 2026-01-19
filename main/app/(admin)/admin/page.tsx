@@ -8,7 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Database, CheckCircle, ListChecks } from "lucide-react";
+import {
+  Users,
+  Database,
+  CheckCircle,
+  ListChecks,
+  FolderOpen,
+  Shield,
+  FileText,
+} from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
@@ -57,10 +65,28 @@ export default function AdminDashboardPage() {
       icon: Users,
     },
     {
+      title: "Categories",
+      description: "Manage corpus categories and visibility",
+      href: "/admin/categories",
+      icon: FolderOpen,
+    },
+    {
+      title: "Permissions",
+      description: "Manage user-corpus access bindings",
+      href: "/admin/permissions",
+      icon: Shield,
+    },
+    {
       title: "Corpus Data",
       description: "Manage language corpus entries",
       href: "/admin/corpus",
       icon: Database,
+    },
+    {
+      title: "Audit Logs",
+      description: "View permission change history",
+      href: "/admin/audit-logs",
+      icon: FileText,
     },
     {
       title: "Rule Ops",

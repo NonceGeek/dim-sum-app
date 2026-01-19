@@ -4,15 +4,18 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  Settings,
   Database,
   LogOut,
   Menu,
   X,
-  Code
+  Code,
+  FolderOpen,
+  Shield,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -31,9 +34,24 @@ const adminNavItems = [
     icon: Users,
   },
   {
-    title: "Corpus Data", 
+    title: "Categories",
+    href: "/admin/categories",
+    icon: FolderOpen,
+  },
+  {
+    title: "Permissions",
+    href: "/admin/permissions",
+    icon: Shield,
+  },
+  {
+    title: "Corpus Data",
     href: "/admin/corpus",
     icon: Database,
+  },
+  {
+    title: "Audit Logs",
+    href: "/admin/audit-logs",
+    icon: FileText,
   },
   {
     title: "Rule Ops",
@@ -59,7 +77,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (status === "loading") return;
-    
+
     if (!session?.user?.isSystemAdmin) {
       router.push("/");
       return;
@@ -81,14 +99,18 @@ export default function AdminLayout({
   return (
     <div className="flex h-screen bg-gray-900">
       {/* Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 border-r border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 border-r border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
           <div className="flex items-center space-x-2">
             <Settings className="w-6 h-6 text-purple-400" />
-            <span className="font-semibold text-lg text-white">Admin Panel</span>
+            <span className="font-semibold text-lg text-white">
+              Admin Panel
+            </span>
           </div>
           <Button
             variant="ghost"
@@ -111,7 +133,7 @@ export default function AdminLayout({
                   "flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                   isActive
                     ? "bg-gray-700 text-white"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white",
                 )}
                 onClick={() => setSidebarOpen(false)}
               >
@@ -138,9 +160,9 @@ export default function AdminLayout({
               </p>
             </div>
           </div>
-          
+
           <Separator className="my-3 bg-gray-700" />
-          
+
           <Button
             variant="ghost"
             className="w-full justify-start text-left text-gray-300 hover:text-white hover:bg-gray-700"
@@ -178,7 +200,7 @@ export default function AdminLayout({
                 Admin Dashboard
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-400">
                 Welcome back, {session.user.name}

@@ -56,6 +56,9 @@ model User {
   api_key                         api_key[]
   cantonese_corpus_update_history cantonese_corpus_update_history[]
   corpusInteractions              user_corpus_interactions[]
+  corpusPermissions               user_corpus_permissions[]
+  auditLogsAsOperator             permission_audit_logs[]           @relation("AuditOperator")
+  auditLogsAsTarget               permission_audit_logs[]           @relation("AuditTarget")
 }
 
 model Session {
@@ -89,25 +92,27 @@ model api_key {
 }
 
 model cantonese_categories {
-  id                   BigInt                 @default(autoincrement())
-  name                 String                 @unique
+  id                   BigInt                    @default(autoincrement())
+  name                 String                    @unique
   nickname             String?
   description          String?
-  likes                BigInt?                @default(0)
-  created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  likes                BigInt?                   @default(0)
+  created_at           DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?                 @default(now()) @db.Timestamp(6)
   cover                String?
-  status               String                 @default("RAW")
   link                 String?
   tags                 Json?
-  pinned               Boolean                @default(false)
-  editable_level       BigInt                 @default(0)
-  if_in_all_data       Boolean                @default(false)
-  related              Json                   @default("{\"apps\": [], \"links\": []}")
-  size                 Float?                 @db.Real
-  taggers              Json                   @default("[]")
-  sorting              BigInt                 @default(0)
+  pinned               Boolean                   @default(false)
+  editable_level       BigInt                    @default(0) // @deprecated - use user_corpus_permissions
+  if_in_all_data       Boolean                   @default(false)
+  related              Json                      @default("{\"apps\": [], \"links\": []}")
+  size                 Float?                    @db.Real
+  taggers              Json                      @default("[]") // @deprecated - use user_corpus_permissions
+  sorting              BigInt                    @default(0)
+  status               CategoryStatus?           @default(RAW)
+  is_public            Boolean                   @default(true)
   cantonese_corpus_all cantonese_corpus_all[]
+  userPermissions      user_corpus_permissions[]
 
   @@id([id, name])
 }
@@ -291,13 +296,14 @@ model micro_ai_saas {
   fee_unit              String?                @default("ldg")
   tx                    String?                @default("")
   created_at            DateTime               @default(now()) @db.Timestamptz(6)
-  solved_at             DateTime?              @db.Timestamp(6)
+  solved_at             DateTime?              @db.Timestamptz(6)
   review                String?
   unique_id             String?                @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   solver_type           Json?                  @default("[]")
   optimized_prompt      String?
   coupon                String?
   signature             String?
+  stared                Boolean                @default(false)
   micro_ai_saas_coupons micro_ai_saas_coupons? @relation(fields: [coupon], references: [addr], onDelete: NoAction, onUpdate: NoAction)
   asset_units           asset_units?           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
   micro_ai_saas_agents  micro_ai_saas_agents?  @relation(fields: [solver], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
@@ -308,8 +314,8 @@ model micro_ai_saas {
 model micro_ai_saas_agents {
   id                                                                       BigInt                  @id @default(autoincrement())
   created_at                                                               DateTime                @default(now()) @db.Timestamptz(6)
-  addr                                                                     String
-  owner_addr                                                               String?
+  addr                                                                     String                  @default("0x0")
+  owner_addr                                                               String                  @default("0x0")
   type                                                                     String?
   homepage                                                                 String?
   source_url                                                               String?                 @default("https://github.com/NonceGeek/tai_shang_micro_ai_saas/tree/main/agents")
@@ -324,7 +330,7 @@ model micro_ai_saas_agents {
   name                                                                     String?
   addr_type                                                                String                  @default("eth")
   owner_addr_type                                                          String                  @default("eth")
-  logo                                                                     String?
+  logo_url                                                                 String?
   actived                                                                  Boolean                 @default(false)
   micro_ai_saas                                                            micro_ai_saas[]
   micro_ai_saas_coupons_micro_ai_saas_coupons_issuerTomicro_ai_saas_agents micro_ai_saas_coupons[] @relation("micro_ai_saas_coupons_issuerTomicro_ai_saas_agents")
@@ -345,7 +351,6 @@ model micro_ai_saas_coupons {
   issuer                                                                  String?               @db.Uuid
   fee                                                                     BigInt
   fee_unit                                                                String                @default("RMB")
-  is_issued                                                               Boolean               @default(true)
   micro_ai_saas                                                           micro_ai_saas[]
   asset_units                                                             asset_units           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
   micro_ai_saas_agents_micro_ai_saas_coupons_issuerTomicro_ai_saas_agents micro_ai_saas_agents? @relation("micro_ai_saas_coupons_issuerTomicro_ai_saas_agents", fields: [issuer], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
@@ -375,8 +380,13 @@ model vocabulary_difficulty_levels {
   level_2          String?
   level_3          String?
   level_4          String?
-  updated_at       DateTime @db.Timestamptz(6)
   created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([level_1], map: "vocabulary_difficulty_levels_level_1_pgroonga_idx")
+  @@index([level_2], map: "vocabulary_difficulty_levels_level_2_pgroonga_idx")
+  @@index([level_3], map: "vocabulary_difficulty_levels_level_3_pgroonga_idx")
+  @@index([level_4], map: "vocabulary_difficulty_levels_level_4_pgroonga_idx")
 }
 
 enum Role {
@@ -418,4 +428,63 @@ enum OperationType {
 enum APILevel {
   ADMIN
   NORMAL
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum CategoryStatus {
+  RAW
+  INPROGRASS
+}
+
+/// 语料库访问权限级别
+enum CorpusPermission {
+  READ // 仅查看
+  WRITE // 可修改词条
+  CREATE // 可新增词条+修改
+  FULL // 全部操作
+}
+
+/// 权限变更操作类型
+enum PermissionAction {
+  GRANT // 授予权限
+  REVOKE // 撤销权限
+  MODIFY // 修改权限级别
+  ROLE_CHANGE // 角色变更
+}
+
+/// 用户-语料库权限绑定表
+model user_corpus_permissions {
+  id            BigInt           @id @default(autoincrement())
+  user_id       String
+  category_name String
+  permission    CorpusPermission @default(READ)
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by    String?
+
+  user     User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category cantonese_categories @relation(fields: [category_name], references: [name], onDelete: Cascade)
+
+  @@unique([user_id, category_name])
+  @@index([user_id])
+  @@index([category_name])
+}
+
+/// 权限变更审计日志
+model permission_audit_logs {
+  id             BigInt           @id @default(autoincrement())
+  operator_id    String
+  target_user_id String
+  category_name  String?
+  action         PermissionAction
+  old_value      Json?
+  new_value      Json?
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+
+  operator    User @relation("AuditOperator", fields: [operator_id], references: [id])
+  target_user User @relation("AuditTarget", fields: [target_user_id], references: [id])
+
+  @@index([operator_id])
+  @@index([target_user_id])
+  @@index([created_at])
 }
