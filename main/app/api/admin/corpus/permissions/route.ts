@@ -125,6 +125,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 禁止给 LEARNER 分配权限
+    if (user.role === "LEARNER") {
+      return NextResponse.json(
+        { error: "Cannot assign permissions to LEARNER users" },
+        { status: 400 },
+      );
+    }
+
+    // 根据角色自动确定权限级别
+    let effectivePermission: CorpusPermission;
+    if (user.role === "RESEARCHER") {
+      effectivePermission = CorpusPermission.CREATE;
+    } else if (
+      user.role === "TAGGER_PARTNER" ||
+      user.role === "TAGGER_OUTSOURCING"
+    ) {
+      effectivePermission = CorpusPermission.WRITE;
+    } else {
+      // 超级管理员或其他角色使用请求的权限或默认 READ
+      effectivePermission = permission || CorpusPermission.READ;
+    }
+
     // 检查是否已存在权限
     const existingPermission = await prisma.user_corpus_permissions.findUnique({
       where: {
@@ -144,7 +166,7 @@ export async function POST(req: NextRequest) {
           user_id_category_name: { user_id, category_name },
         },
         data: {
-          permission: permission || CorpusPermission.READ,
+          permission: effectivePermission,
         },
       });
       action = PermissionAction.MODIFY;
@@ -154,7 +176,7 @@ export async function POST(req: NextRequest) {
         data: {
           user_id,
           category_name,
-          permission: permission || CorpusPermission.READ,
+          permission: effectivePermission,
           created_by: session.user.id,
         },
       });

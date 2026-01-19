@@ -36,7 +36,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Trash2, User as UserIcon, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Search,
+  Plus,
+  Trash2,
+  User as UserIcon,
+  X,
+  Loader2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -84,6 +101,12 @@ export default function AdminPermissionsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{
+    user_id: string;
+    category_name: string;
+    userName: string;
+    categoryName: string;
+  } | null>(null);
   const [newPermission, setNewPermission] = useState({
     user_id: "",
     category_name: "",
@@ -124,12 +147,14 @@ export default function AdminPermissionsPage() {
     },
   });
 
-  // 过滤用户列表用于搜索
+  // 过滤用户列表用于搜索（排除 LEARNER）
   const filteredUsers = useMemo(() => {
     if (!usersData?.users) return [];
-    if (!userSearchQuery) return usersData.users.slice(0, 20);
+    // 排除 LEARNER 用户
+    const eligibleUsers = usersData.users.filter((u) => u.role !== "LEARNER");
+    if (!userSearchQuery) return eligibleUsers.slice(0, 20);
     const query = userSearchQuery.toLowerCase();
-    return usersData.users
+    return eligibleUsers
       .filter(
         (user) =>
           user.name?.toLowerCase().includes(query) ||
@@ -138,6 +163,19 @@ export default function AdminPermissionsPage() {
       )
       .slice(0, 20);
   }, [usersData?.users, userSearchQuery]);
+
+  // 根据角色获取固定权限级别
+  const getRolePermissionLevel = (role: string) => {
+    switch (role) {
+      case "RESEARCHER":
+        return "CREATE";
+      case "TAGGER_PARTNER":
+      case "TAGGER_OUTSOURCING":
+        return "WRITE";
+      default:
+        return "READ";
+    }
+  };
 
   // 添加权限
   const addPermissionMutation = useMutation({
@@ -184,6 +222,7 @@ export default function AdminPermissionsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-permissions"] });
+      setDeleteTarget(null);
       toast.success("Permission revoked");
     },
     onError: () => {
@@ -433,36 +472,38 @@ export default function AdminPermissionsPage() {
                     </Select>
                   </div>
 
-                  {/* 权限级别选择 */}
+                  {/* 权限级别（根据角色自动确定） */}
                   <div className="space-y-2">
                     <label className="text-sm text-gray-300">
                       Permission Level
                     </label>
-                    <Select
-                      value={newPermission.permission}
-                      onValueChange={(value) =>
-                        setNewPermission({
-                          ...newPermission,
-                          permission: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="READ">READ - View only</SelectItem>
-                        <SelectItem value="WRITE">
-                          WRITE - Can update entries
-                        </SelectItem>
-                        <SelectItem value="CREATE">
-                          CREATE - Can add and update entries
-                        </SelectItem>
-                        <SelectItem value="FULL">
-                          FULL - All operations
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {newPermission.user_id ? (
+                      <div className="p-3 bg-gray-700 rounded border border-gray-600">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-medium">
+                            {getRolePermissionLevel(
+                              usersData?.users.find(
+                                (u) => u.id === newPermission.user_id,
+                              )?.role || "",
+                            )}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            Auto-set based on role
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {usersData?.users.find(
+                            (u) => u.id === newPermission.user_id,
+                          )?.role === "RESEARCHER"
+                            ? "RESEARCHER → CREATE (Includes: View, Edit, Add entries)"
+                            : "TAGGER → WRITE (Includes: View, Edit entries)"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-gray-700 rounded border border-gray-600 text-gray-400 text-sm">
+                        Select a user to see the permission level
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DialogFooter>
@@ -479,11 +520,20 @@ export default function AdminPermissionsPage() {
                   <Button
                     onClick={() => addPermissionMutation.mutate(newPermission)}
                     disabled={
-                      !newPermission.user_id || !newPermission.category_name
+                      !newPermission.user_id ||
+                      !newPermission.category_name ||
+                      addPermissionMutation.isPending
                     }
                     className="bg-purple-600 hover:bg-purple-700"
                   >
-                    Add Permission
+                    {addPermissionMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      "Add Permission"
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -601,9 +651,13 @@ export default function AdminPermissionsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          deletePermissionMutation.mutate({
+                          setDeleteTarget({
                             user_id: perm.user_id,
                             category_name: perm.category_name,
+                            userName:
+                              perm.user.name || perm.user.email || perm.user_id,
+                            categoryName:
+                              perm.category.nickname || perm.category_name,
                           })
                         }
                         className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
@@ -618,6 +672,60 @@ export default function AdminPermissionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 删除确认弹窗 */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent className="bg-gray-800 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Confirm Delete
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Are you sure you want to revoke permission for{" "}
+              <strong className="text-white">{deleteTarget?.userName}</strong>{" "}
+              on{" "}
+              <strong className="text-white">
+                {deleteTarget?.categoryName}
+              </strong>
+              ?
+              <br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deletePermissionMutation.isPending}
+              className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletePermissionMutation.isPending}
+              onClick={() => {
+                if (deleteTarget) {
+                  deletePermissionMutation.mutate({
+                    user_id: deleteTarget.user_id,
+                    category_name: deleteTarget.category_name,
+                  });
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deletePermissionMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
