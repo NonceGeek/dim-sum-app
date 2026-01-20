@@ -448,6 +448,10 @@ Submits a request to update an existing corpus item. Requires an approved API ke
     "field1": "value1",
     "field2": "value2"
   },
+  "structured_note": {
+    "field1": "value1",
+    "field2": "value2"
+  },
   "api_key": "your-approved-api-key"
 }
 ```
@@ -468,6 +472,10 @@ curl -X POST "https://backend.aidimsum.com/dev/update_corpus_item" \
   -d '{
     "uuid": "example-uuid-here",
     "note": {
+      "field1": "value1",
+      "field2": "value2"
+    },
+    "structured_note": {
       "field1": "value1",
       "field2": "value2"
     },
