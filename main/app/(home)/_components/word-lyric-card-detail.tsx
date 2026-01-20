@@ -367,7 +367,17 @@ export default function WordLyricCardDetail({
                                           }}
                                         />
                                       ) : typeof value === "string" &&
-                                        value.startsWith("http") &&
+                                        (key === "link" || key === "链接") ? (
+                                        <a
+                                          href={value}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="underline hover:text-primary active:text-primary active:scale-95   
+  transition-all duration-200"
+                                        >
+                                          {value}
+                                        </a>
+                                      ) : value.startsWith("http") &&
                                         !isAudioByExt(value) ? (
                                         <iframe
                                           src={value}
@@ -391,6 +401,7 @@ export default function WordLyricCardDetail({
                                         playing={false}
                                         controls
                                         height="100px"
+                                        width="100%"
                                         className="self-center"
                                         config={{
                                           file: {
@@ -402,7 +413,7 @@ export default function WordLyricCardDetail({
                                         }}
                                       />
                                     </div>
-                                  ))
+                                  )),
                               )}
                           </div>
                         )}
