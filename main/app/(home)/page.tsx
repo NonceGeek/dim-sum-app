@@ -151,6 +151,48 @@ export default function HomePage() {
       currentPage * itemsPerPage
     ) || [];
 
+  // Helper function to generate page numbers with ellipsis
+  const getPageNumbers = (): (number | string)[] => {
+    const pages: (number | string)[] = [];
+    const showPages = 5; // Number of page buttons to show (excluding ellipsis)
+
+    if (totalPages <= showPages) {
+      // If total pages is small, show all
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Always show first page
+    pages.push(1);
+
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    // Adjust to ensure we always show enough pages
+    if (currentPage <= 3) {
+      endPage = 4;
+    } else if (currentPage >= totalPages - 2) {
+      startPage = totalPages - 3;
+    }
+
+    // Add ellipsis and middle pages
+    if (startPage > 2) {
+      pages.push('...');
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    if (endPage < totalPages - 1) {
+      pages.push('...');
+    }
+
+    // Always show last page
+    pages.push(totalPages);
+
+    return pages;
+  };
+
   return (
     <>
       {/* <div className="md:hidden fixed top-0 left-0 right-0 z-50">
@@ -474,18 +516,46 @@ export default function HomePage() {
                       ease: [0.16, 1, 0.3, 1],
                     }}
                   >
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
+                    {/* Previous button */}
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="w-10 h-10"
+                    >
+                      &lt;
+                    </Button>
+
+                    {/* Page numbers */}
+                    {getPageNumbers().map((page, idx) =>
+                      page === '...' ? (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="w-10 h-10 flex items-center justify-center text-gray-500"
+                        >
+                          ...
+                        </span>
+                      ) : (
                         <Button
                           key={page}
                           variant={currentPage === page ? "default" : "outline"}
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => setCurrentPage(page as number)}
                           className="w-10 h-10"
                         >
                           {page}
                         </Button>
                       )
                     )}
+
+                    {/* Next button */}
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="w-10 h-10"
+                    >
+                      &gt;
+                    </Button>
                   </motion.div>
                 )}
 

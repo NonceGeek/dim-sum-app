@@ -862,7 +862,7 @@ curl -X POST http://localhost:8000/dev/insert_corpus_item \
   })
   /*
 Curl example:
-curl -X POST http://localhost:8000/dev/update_corpus_item \
+ curl -X POST http://localhost:8000/dev/update_corpus_item \
   -H "Content-Type: application/json" \
   -d '{
     "uuid": "example-uuid-here",
@@ -870,13 +870,17 @@ curl -X POST http://localhost:8000/dev/update_corpus_item \
       "field1": "value1",
       "field2": "value2"
     },
+    "structured_note": {
+      "field1": "value1",
+      "field2": "value2"
+    },
     "api_key": "api-key-here"
   }'
-*/
+ */
   .post("/dev/update_corpus_item", async (context) => {
     let body = await context.request.body();
     const content = await body.value;
-    const { uuid, note, api_key } = content;
+    const { uuid, note, structured_note, api_key } = content;
 
     // Verify API key
     const apiKeyData = await verifyAPIKey(context, api_key);
@@ -903,15 +907,34 @@ curl -X POST http://localhost:8000/dev/update_corpus_item \
         return;
       }
 
+      const hasNote = note !== undefined && note !== null;
+      const hasStructuredNote =
+        structured_note !== undefined && structured_note !== null;
+
+      if (!hasNote && !hasStructuredNote) {
+        context.response.status = 400;
+        context.response.body = {
+          error: "Either note or structured_note is required",
+        };
+        return;
+      }
+
+      const resolvedNote = hasNote ? note : corpusItem.note;
+      const resolvedStructuredNote = hasStructuredNote
+        ? structured_note
+        : corpusItem.structured_note ?? null;
+
       // 4. Insert an item into cantonese_corpus_update_history
       const { data: historyData, error: historyError } = await supabase
         .from("cantonese_corpus_update_history")
         .insert({
           unique_id: uuid,
-          note: note,
+          note: resolvedNote,
+          structured_note: resolvedStructuredNote,
           status: "PENDING",
           user_id: apiKeyData.user_id,
           last_note: corpusItem.note,
+          last_structured_note: corpusItem.structured_note ?? null,
         })
         .select()
         .single();
@@ -1065,6 +1088,7 @@ curl -X POST http://localhost:8000/dev/get_update_history \
           .from("cantonese_corpus_all")
           .update({
             note: updateHistory.note,
+            structured_note: updateHistory.structured_note ?? null,
             updated_at: new Date().toISOString(),
           })
           .eq("unique_id", updateHistory.unique_id)
