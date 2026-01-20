@@ -907,13 +907,30 @@ Curl example:
         return;
       }
 
+      const hasNote = note !== undefined && note !== null;
+      const hasStructuredNote =
+        structured_note !== undefined && structured_note !== null;
+
+      if (!hasNote && !hasStructuredNote) {
+        context.response.status = 400;
+        context.response.body = {
+          error: "Either note or structured_note is required",
+        };
+        return;
+      }
+
+      const resolvedNote = hasNote ? note : corpusItem.note;
+      const resolvedStructuredNote = hasStructuredNote
+        ? structured_note
+        : corpusItem.structured_note ?? null;
+
       // 4. Insert an item into cantonese_corpus_update_history
       const { data: historyData, error: historyError } = await supabase
         .from("cantonese_corpus_update_history")
         .insert({
           unique_id: uuid,
-          note: note,
-          structured_note: structured_note ?? null,
+          note: resolvedNote,
+          structured_note: resolvedStructuredNote,
           status: "PENDING",
           user_id: apiKeyData.user_id,
           last_note: corpusItem.note,
