@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { generateMiniprogramToken, generateRefreshToken } from "@/lib/miniprogram-jwt";
+import {
+  generateMiniprogramToken,
+  generateRefreshToken,
+} from "@/lib/miniprogram-jwt";
+import { getUserCorpusList } from "@/lib/permission";
 
 const prisma = new PrismaClient();
 
@@ -31,7 +35,7 @@ export async function POST(req: NextRequest) {
     if (!code) {
       return NextResponse.json(
         { error: "Missing code parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,13 +47,13 @@ export async function POST(req: NextRequest) {
       console.error("Missing WeChat miniprogram configuration");
       return NextResponse.json(
         { error: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Call WeChat API to get openid
     const wechatResponse = await fetch(
-      `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${appSecret}&js_code=${code}&grant_type=authorization_code`
+      `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${appSecret}&js_code=${code}&grant_type=authorization_code`,
     );
 
     const wechatData: WeChatAuthResponse = await wechatResponse.json();
@@ -57,8 +61,11 @@ export async function POST(req: NextRequest) {
     if (wechatData.errcode) {
       console.error("WeChat API error:", wechatData);
       return NextResponse.json(
-        { error: "Failed to authenticate with WeChat", details: wechatData.errmsg },
-        { status: 400 }
+        {
+          error: "Failed to authenticate with WeChat",
+          details: wechatData.errmsg,
+        },
+        { status: 400 },
       );
     }
 
@@ -67,8 +74,11 @@ export async function POST(req: NextRequest) {
     // unionid is required for login
     if (!unionid) {
       return NextResponse.json(
-        { error: "unionid is required. Please ensure your WeChat account is bound to the open platform." },
-        { status: 400 }
+        {
+          error:
+            "unionid is required. Please ensure your WeChat account is bound to the open platform.",
+        },
+        { status: 400 },
       );
     }
 
@@ -97,9 +107,9 @@ export async function POST(req: NextRequest) {
         {
           error: "User not found. Please register via web first.",
           openid,
-          unionid
+          unionid,
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -117,6 +127,9 @@ export async function POST(req: NextRequest) {
     const accessToken = await generateMiniprogramToken(tokenPayload);
     const refreshToken = await generateRefreshToken(tokenPayload);
 
+    // Get user corpus permissions
+    const allowedCorpora = await getUserCorpusList(user.id);
+
     return NextResponse.json({
       accessToken,
       refreshToken,
@@ -127,12 +140,13 @@ export async function POST(req: NextRequest) {
         role: user.role,
         isSystemAdmin: user.isSystemAdmin,
       },
+      allowedCorpora: allowedCorpora,
     });
   } catch (error) {
     console.error("Miniprogram login error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
