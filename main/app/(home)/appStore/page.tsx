@@ -1,8 +1,7 @@
 // Add the "use client" directive to make this a client component
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
-import { Header } from '@/components/layout/header';
 import Image from 'next/image';
 import {
   Dialog,
@@ -10,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ArrowBigRight, Link, Video } from "lucide-react";
 
 // Define App interface for type safety
 interface App {
@@ -55,11 +55,13 @@ function AppCard({ app }: { app: App }) {
     if (app.wechat_micro_app) {
       return (
         <>
-          <button 
-            onClick={() => setQrDialogOpen(true)} 
-            className="text-blue-600 hover:underline"
+          <button
+            onClick={() => setQrDialogOpen(true)}
+            className="inline-flex items-center text-blue-600 hover:text-blue-700        
+  border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
           >
-            👉 启动应用（小程序）
+            <ArrowBigRight className="w-4 h-4 shrink-0" />
+            启动应用（小程序）
           </button>
           <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
             <DialogContent className="sm:max-w-md">
@@ -86,11 +88,13 @@ function AppCard({ app }: { app: App }) {
     if (app.example_img) {
       return (
         <>
-          <button 
-            onClick={() => setExampleDialogOpen(true)} 
-            className="text-green-600 hover:underline ml-2"
+          <button
+            onClick={() => setExampleDialogOpen(true)}
+            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700        
+  border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
           >
-            👉 启动应用
+            <Video className="w-4 h-4 shrink-0" />
+            <span>演示视频</span>
           </button>
           <Dialog open={exampleDialogOpen} onOpenChange={setExampleDialogOpen}>
             <DialogContent className="sm:max-w-2xl">
@@ -98,7 +102,7 @@ function AppCard({ app }: { app: App }) {
                 <DialogTitle>应用页面</DialogTitle>
               </DialogHeader>
               <div className="flex items-center justify-center p-4">
-                {app.example_img.endsWith('.mp4') ? (
+                {app.example_img.endsWith(".mp4") ? (
                   <video
                     src={app.example_img}
                     width={600}
@@ -109,16 +113,7 @@ function AppCard({ app }: { app: App }) {
                   >
                     Your browser does not support the video tag.
                   </video>
-                ) : (
-                  <Image
-                    src={app.example_img}
-                    alt="App Example"
-                    width={600}
-                    height={400}
-                    className="rounded-lg max-w-full h-auto"
-                    unoptimized
-                  />
-                )}
+                ) : null}
               </div>
             </DialogContent>
           </Dialog>
@@ -127,20 +122,21 @@ function AppCard({ app }: { app: App }) {
     }
 
     return (
-      <a 
-        href={app.url} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="text-blue-600 hover:underline"
-      >
-        👉 {app.localed ? "启动应用" : "启动应用（国际版）"}
-      </a>
+      <>
+        {app.url ? (
+          <a
+            href={app.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-green-600 hover:text-green-700        
+  border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
+          >
+            <ArrowBigRight className="w-4 h-4 shrink-0" />
+            {app.localed ? "启动应用" : "启动应用（国际版）"}
+          </a>
+        ) : null}
+      </>
     );
-  };
-
-  const getExampleButton = () => {
-    
-    return null;
   };
 
   return (
@@ -164,8 +160,18 @@ function AppCard({ app }: { app: App }) {
         />
       </div>
       <div className="p-4">
-        <a href={app.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+        <a
+          href={app.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group text-xl font-semibold text-gray-900 relative pb-1          
+  inline-block cursor-pointer"
+        >
           <h3 className="text-xl font-semibold">{app.name}</h3>
+          <span
+            className="absolute bottom-0 left-0 w-full h-0.5 bg-current scale-x-0 
+  group-hover:scale-x-100 transition-transform duration-300 origin-center"
+          />
         </a>
         <p className="text-gray-600 mb-2">By {app.authors.join(", ")}</p>
         <p className="text-gray-600 mb-2 h-16 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
@@ -180,9 +186,20 @@ function AppCard({ app }: { app: App }) {
         )}
         <div className="flex justify-between text-sm text-gray-500">
           {/* <span>❤️ {app.likes}</span> */}
-          <div className="flex">
+          <div className="flex flex-row gap-4 flex-wrap">
+            {app.homepage_url ? (
+              <a
+                href={app.homepage_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700        
+  border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
+              >
+                <Link className="w-4 h-4 shrink-0" />
+                应用主页
+              </a>
+            ) : null}
             {getLaunchButton()}
-            {getExampleButton()}
           </div>
         </div>
       </div>
