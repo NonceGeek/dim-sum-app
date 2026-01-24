@@ -165,7 +165,7 @@ function AppCard({ app }: { app: App }) {
           target="_blank"
           rel="noopener noreferrer"
           className="group text-xl font-semibold text-gray-900 relative pb-1          
-  inline-block cursor-pointer"
+  inline-block"
         >
           <h3 className="text-xl font-semibold">{app.name}</h3>
           <span
