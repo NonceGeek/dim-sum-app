@@ -219,11 +219,24 @@ export async function completeAgentTask(
   });
 }
 
+
 export async function skipAgentTask(
   taskId: string,
   payload: { actorRef: string }
 ) {
   return agentFetch(`/tasks/${taskId}/skip-and-reassign`, {
+    method: "POST",
+    body: {
+      actorRef: payload.actorRef,
+    },
+  });
+}
+
+export async function viewAgentTask(
+  taskId: string,
+  payload: { actorRef: string }
+) {
+  return agentFetch(`/tasks/${taskId}/view`, {
     method: "POST",
     body: {
       actorRef: payload.actorRef,

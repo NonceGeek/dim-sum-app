@@ -91,7 +91,7 @@ export async function requireMiniprogramMarker(
 
   return requireMiniprogramRole(
     req,
-    [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING],
+    [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING, Role.RESEARCHER],
     handler
   );
 }
