@@ -364,6 +364,13 @@ Retrieves all corpus items from a specified corpus.
 - `corpus_name` (required): The name of the corpus to get a random item from (e.g., "yyjq")
 - `cursor` (optional): Indicating that data after the cursor is retrieved.
 - `limit` (optional): Maximum number of results to return
+- `lifecycle_stage` (optional): Filter by lifecycle stage. Supports multiple values via repeated parameters or comma-separated lists.
+
+**lifecycle_stage available values:**
+- `draft`: Not yet entered any processing flow
+- `normalized`: Automated normalization completed
+- `cleaned`: Manual cleaning completed
+- `active`: Entered routine rule checks
 
 **Response:**
 ```json
@@ -384,6 +391,11 @@ Retrieves all corpus items from a specified corpus.
 **Curl Example:**
 ```bash
 curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2"
+```
+
+**Curl Example (Filter):**
+```bash
+curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&lifecycle_stage=normalized&lifecycle_stage=draft"
 ```
 
 ## Developer APIs (API Key Required)
