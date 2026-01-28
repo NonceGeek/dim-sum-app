@@ -9,7 +9,7 @@ import { oakCors } from "cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { tify, sify } from "@aqzhyi/chinese-conv";
 import { CSS, render } from "@deno/gfm";
-import { agentMarketRouter } from "./agent-market.tsx";
+import { aliOSSRouter } from "./ali-oss.tsx";
 
 console.log("Hello from AI Dimsum Devs API!");
 
@@ -1367,7 +1367,7 @@ const app = new Application();
 
 app.use(oakCors()); // Enable CORS for All Routes
 app.use(router.routes());
-app.use(agentMarketRouter.routes());
+app.use(aliOSSRouter.routes());
 
 console.info("CORS-enabled web server listening on port 8000");
 await app.listen({ port: 8000 });
