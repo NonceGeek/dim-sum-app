@@ -193,7 +193,9 @@ aliOSSRouter.post("/admin/oss/upload-policy", async (context) => {
 aliOSSRouter.post("/admin/oss/upload", async (context) => {
   try {
     const body = context.request.body({ type: "form-data" });
-    const formData = await body.value.read();
+    // Use maxSize to keep file in memory instead of writing to temp file
+    // This is required for serverless environments (Deno Deploy, Supabase Edge Functions)
+    const formData = await body.value.read({ maxSize: 100 * 1024 * 1024 }); // 100MB max
     const password = formData.fields["password"] as string;
     const bucket = formData.fields["bucket"] as string;
     const dir = formData.fields["dir"] as string;
@@ -220,8 +222,8 @@ aliOSSRouter.post("/admin/oss/upload", async (context) => {
     const date = new Date().toUTCString();
     const contentType = uploadedFile.contentType || "application/octet-stream";
     
-    // Read file content from temp file
-    const fileContent = await Deno.readFile(uploadedFile.filename!);
+    // File content is now in memory as Uint8Array (due to maxSize option)
+    const fileContent = uploadedFile.content!;
     
     // Generate signature for PUT request
     const stringToSign = `PUT\n\n${contentType}\n${date}\n/${bucket}/${objectKey}`;
