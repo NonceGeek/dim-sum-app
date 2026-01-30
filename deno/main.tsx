@@ -9,7 +9,7 @@ import { oakCors } from "cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { tify, sify } from "@aqzhyi/chinese-conv";
 import { CSS, render } from "@deno/gfm";
-import { agentMarketRouter } from "./agent-market.tsx";
+import { aliOSSRouter } from "./ali-oss.tsx";
 
 console.log("Hello from AI Dimsum Devs API!");
 
@@ -325,6 +325,11 @@ router
     const corpus_name = queryParams.get("corpus_name");
     const limit = queryParams.get("limit") || "100";
     const cursor = queryParams.get("cursor");
+    const lifecycleStageParams = queryParams.getAll("lifecycle_stage");
+    const lifecycleStageList = lifecycleStageParams
+      .flatMap((value) => value.split(","))
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
 
     // Validate corpus_name parameter
     if (!corpus_name) {
@@ -351,6 +356,10 @@ router
         .eq("category", corpus_name)
         .order("id", { ascending: true })
         .limit(limitNum);
+
+      if (lifecycleStageList.length > 0) {
+        query = query.in("lifecycle_stage", lifecycleStageList);
+      }
 
       // Add cursor-based pagination if cursor is provided
       if (cursor) {
@@ -1358,7 +1367,7 @@ const app = new Application();
 
 app.use(oakCors()); // Enable CORS for All Routes
 app.use(router.routes());
-app.use(agentMarketRouter.routes());
+app.use(aliOSSRouter.routes());
 
 console.info("CORS-enabled web server listening on port 8000");
 await app.listen({ port: 8000 });

@@ -7,6 +7,7 @@ Base URL: `https://backend.aidimsum.com`
   - [V2 APIs](#v2-apis)
 - [Developer APIs (API Key Required)](#developer-apis-api-key-required)
 - [Admin APIs (Password Required)](#admin-apis-password-required)
+  - [OSS Upload APIs](#21-get-oss-upload-policy-admin)
 
 ## GET API KEY!
 
@@ -364,6 +365,13 @@ Retrieves all corpus items from a specified corpus.
 - `corpus_name` (required): The name of the corpus to get a random item from (e.g., "yyjq")
 - `cursor` (optional): Indicating that data after the cursor is retrieved.
 - `limit` (optional): Maximum number of results to return
+- `lifecycle_stage` (optional): Filter by lifecycle stage. Supports multiple values via repeated parameters or comma-separated lists.
+
+**lifecycle_stage available values:**
+- `draft`: Not yet entered any processing flow
+- `normalized`: Automated normalization completed
+- `cleaned`: Manual cleaning completed
+- `active`: Entered routine rule checks
 
 **Response:**
 ```json
@@ -384,6 +392,11 @@ Retrieves all corpus items from a specified corpus.
 **Curl Example:**
 ```bash
 curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2"
+```
+
+**Curl Example (Filter):**
+```bash
+curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&lifecycle_stage=normalized&lifecycle_stage=draft"
 ```
 
 ## Developer APIs (API Key Required)
@@ -821,6 +834,95 @@ curl -X POST "https://backend.aidimsum.com/admin/get_user" \
     "password": "your-admin-password"
   }'
 ```
+
+### 21. Get OSS Upload Policy (Admin)
+**POST** `/admin/oss/upload-policy`
+
+Generates a presigned upload policy for direct client-side upload to Aliyun OSS. Requires admin password.
+
+**Request Body:**
+```json
+{
+  "password": "your-admin-password",
+  "bucket": "your-bucket-name",
+  "dir": "upload/path/",
+  "expireSeconds": 3600
+}
+```
+
+**Parameters:**
+- `password` (required): Admin password
+- `bucket` (required): OSS bucket name
+- `dir` (required): Directory path in the bucket (should end with `/`)
+- `expireSeconds` (optional): Policy expiration time in seconds (default: 3600)
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "data": {
+    "accessId": "your-access-key-id",
+    "policy": "base64-encoded-policy",
+    "signature": "calculated-signature",
+    "dir": "upload/path/",
+    "host": "https://your-bucket.oss-cn-guangzhou.aliyuncs.com",
+    "expire": 1704067200
+  }
+}
+```
+
+**Curl Example:**
+```bash
+curl -X POST "https://backend.aidimsum.com/admin/oss/upload-policy" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "your-admin-password",
+    "bucket": "dimsum-audio",
+    "dir": "xiaozhupeiqi/xcpq/",
+    "expireSeconds": 3600
+  }'
+```
+
+---
+
+### 22. Upload File to OSS (Admin)
+**POST** `/admin/oss/upload`
+
+Directly uploads a file to Aliyun OSS through the server. Requires admin password. Uses multipart/form-data.
+
+**Request Body (FormData):**
+- `password` (required): Admin password
+- `bucket` (required): OSS bucket name
+- `dir` (required): Directory path in the bucket (should end with `/`)
+- `file` (required): File to upload
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "url": "https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/test/example.wav",
+  "key": "test/example.wav"
+}
+```
+
+**Response (Error):**
+```json
+{
+  "error": "Failed to upload to OSS",
+  "details": "error message from OSS"
+}
+```
+
+**Curl Example:**
+```bash
+curl -X POST "https://backend.aidimsum.com/admin/oss/upload" \
+  -F "password=your-admin-password" \
+  -F "bucket=dimsum-audio" \
+  -F "dir=xiaozhupeiqi/xcpq/" \
+  -F "file=@./test.wav"
+```
+
+---
 
 ## Error Responses
 

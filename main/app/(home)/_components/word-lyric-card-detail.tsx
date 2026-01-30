@@ -386,7 +386,7 @@ export default function WordLyricCardDetail({
                                           allowFullScreen
                                         />
                                       ) : !isAudioByExt(value) ? (
-                                        String(value)
+                                        <span className="whitespace-pre-line">{String(value)}</span>
                                       ) : null}
                                     </p>
                                   ) : (
