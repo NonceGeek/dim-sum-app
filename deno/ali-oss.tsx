@@ -156,8 +156,9 @@ aliOSSRouter.get("/ali-oss", async (context) => {
 // Body: { password: string, bucket: string, dir: string, expireSeconds?: number }
 aliOSSRouter.post("/admin/oss/upload-policy", async (context) => {
   try {
-    const body = await context.request.body.json();
-    const { password, bucket, dir, expireSeconds } = body;
+    const body = await context.request.body({ type: "json" });
+    const content = await body.value;
+    const { password, bucket, dir, expireSeconds } = content;
     
     // Verify admin password
     if (!(await verifyAdminPassword(context, password))) {

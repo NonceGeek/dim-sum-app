@@ -260,6 +260,91 @@ console.log('用户信息:', user);
 
 ---
 
+### 2.2 上传资源
+
+标注员上传音频等资源文件到 OSS。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/upload`
+- **方法**: `POST`
+- **认证**: 需要 Bearer Token
+- **权限**: 仅限标注员 (`TAGGER_PARTNER`, `TAGGER_OUTSOURCING`) 和研究员 (`RESEARCHER`)
+
+#### 请求头
+
+```
+Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data
+```
+
+#### 请求参数
+
+| 参数名 | 类型 | 必填 | 说明 |
+|-------|------|-----|-----|
+| `file` | File | 是 | 要上传的文件 (如音频文件) |
+
+#### 请求示例
+
+```javascript
+const accessToken = wx.getStorageSync('accessToken');
+
+wx.uploadFile({
+  url: 'https://search.aidimsum.com/api/miniprogram/upload',
+  filePath: tempFilePath, // 临时文件路径
+  name: 'file',
+  header: {
+    'Authorization': `Bearer ${accessToken}`
+  },
+  success(res) {
+    const data = JSON.parse(res.data);
+    console.log('上传结果:', data);
+  },
+  fail(err) {
+    console.error('上传失败:', err);
+  }
+});
+```
+
+#### 成功响应 (200)
+
+```json
+{
+  "success": true,
+  "url": "https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/tagger/filename.mp3",
+  "key": "tagger/filename.mp3"
+}
+```
+
+#### 响应字段说明
+
+| 字段 | 类型 | 说明 |
+|-----|------|-----|
+| `success` | boolean | 上传是否成功 |
+| `url` | string | 文件访问 URL |
+| `key` | string | OSS 存储键值 |
+
+#### 错误响应
+
+**403 Forbidden** - 权限不足
+
+```json
+{
+  "error": "Insufficient permissions"
+}
+```
+
+**500 Internal Server Error** - 上传失败
+
+```json
+{
+  "error": "Upstream upload failed",
+  "details": "具体错误信息"
+}
+```
+
+---
+
 ## 三、数据类型定义
 
 ### 用户角色

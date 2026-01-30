@@ -685,7 +685,7 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
   }'
 */
   .post("/admin/insert_corpus_item", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { data, note, category, tags, password } = content;
 
@@ -722,7 +722,7 @@ curl -X POST http://localhost:8000/admin/insert_corpus_item \
   }'
 */
   .post("/admin/update_corpus_item", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { unique_id, note, category, tags, password } = content;
     // Verify admin password
@@ -750,7 +750,7 @@ curl -X POST http://localhost:8000/admin/get_user \
   }'
 */
   .post("/admin/get_user", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { id, email, password } = content;
     
@@ -818,7 +818,7 @@ curl -X POST http://localhost:8000/dev/insert_corpus_item \
   }'
 */
   .post("/dev/insert_corpus_item", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { data, note, category, tags, api_key } = content;
     const supabase = createClient(
@@ -887,7 +887,7 @@ Curl example:
   }'
  */
   .post("/dev/update_corpus_item", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { uuid, note, structured_note, api_key } = content;
 
@@ -979,7 +979,7 @@ curl -X POST http://localhost:8000/dev/get_update_history \
   }'
 */
   .post("/dev/get_update_history", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { unique_id, api_key } = content;
     const apiKeyData = await verifyAPIKey(context, api_key);
@@ -1010,7 +1010,7 @@ curl -X POST http://localhost:8000/dev/get_update_history \
     }' | jq
   */
   .post("/dev/approve_corpus_item", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { unique_id, api_key } = content;
     const apiKeyData = await verifyAPIKey(context, api_key);
@@ -1156,7 +1156,7 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
   }'
 */
   .post("/dev/get_api_key_status", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { api_key } = content;
     const apiKeyData = await verifyAPIKey(context, api_key);
@@ -1172,7 +1172,7 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
     }' | jq
   */
   .post("/dev/get_taggers_by_corpus_name", async (context) => {
-    let body = await context.request.body();
+    let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { name , api_key } = content;
     const apiKeyData = await verifyAPIKey(context, api_key);
