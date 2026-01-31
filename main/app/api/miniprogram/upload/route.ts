@@ -6,10 +6,11 @@ export async function POST(req: NextRequest) {
     try {
       const formData = await req.formData();
       const file = formData.get("file");
+      const fileName = formData.get("fileName") as string | null;
 
-      if (!file) {
+      if (!file || !(file instanceof Blob)) {
         return NextResponse.json(
-          { error: "No file provided" },
+          { error: "No file provided or invalid file format" },
           { status: 400 }
         );
       }
@@ -18,11 +19,17 @@ export async function POST(req: NextRequest) {
       const upstreamFormData = new FormData();
       upstreamFormData.append(
         "password",
-        process.env.ADMIN_PASSWORD
+        process.env.ADMIN_PASSWORD || ""
       );
       upstreamFormData.append("bucket", "dimsum-audio");
       upstreamFormData.append("dir", "tagger/");
-      upstreamFormData.append("file", file);
+      
+      // Use custom fileName if provided, otherwise preserve original
+      if (fileName) {
+        upstreamFormData.append("file", file, fileName);
+      } else {
+        upstreamFormData.append("file", file);
+      }
 
       // Call upstream API
       const response = await fetch("https://dim-sum-prod.deno.dev/admin/oss/upload", {

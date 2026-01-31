@@ -283,6 +283,7 @@ Content-Type: multipart/form-data
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|-----|-----|
 | `file` | File | 是 | 要上传的文件 (如音频文件) |
+| `fileName` | string | 否 | 自定义文件名 (包含扩展名), 若不传则使用原文件名 |
 
 #### 请求示例
 
@@ -293,6 +294,9 @@ wx.uploadFile({
   url: 'https://search.aidimsum.com/api/miniprogram/upload',
   filePath: tempFilePath, // 临时文件路径
   name: 'file',
+  formData: {
+    'fileName': 'custom_name.mp3' // 可选: 自定义文件名
+  },
   header: {
     'Authorization': `Bearer ${accessToken}`
   },
