@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search by name or email..."
+                placeholder="Search by name, email or phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -200,6 +200,7 @@ export default function AdminUsersPage() {
                   <TableRow className="border-gray-700">
                     <TableHead className="text-gray-300">User</TableHead>
                     <TableHead className="text-gray-300">Email</TableHead>
+                    <TableHead className="text-gray-300">Phone</TableHead>
                     <TableHead className="text-gray-300">Role</TableHead>
                     <TableHead className="text-gray-300">Admin</TableHead>
                     <TableHead className="text-gray-300">
@@ -230,6 +231,9 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {user.email || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        {user.phoneNumber || "-"}
                       </TableCell>
                       <TableCell>
                         <Badge
