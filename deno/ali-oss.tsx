@@ -79,7 +79,7 @@ function generateOSSSignature(
   const encoder = new TextEncoder();
   const keyData = encoder.encode(accessKeySecret);
   const message = encoder.encode(policyBase64);
-  
+
   // Use Web Crypto API for HMAC-SHA1
   return ""; // Will be computed async
 }
@@ -100,11 +100,11 @@ async function generateOSSUploadPolicy(
   const accessKeyId = Deno.env.get("ALI_OSS_ACCESS_KEY_ID") ?? "";
   const accessKeySecret = Deno.env.get("ALI_OSS_ACCESS_KEY_SECRET") ?? "";
   const region = Deno.env.get("ALI_OSS_REGION") ?? "cn-guangzhou";
-  
+
   const host = `https://${bucket}.oss-${region}.aliyuncs.com`;
   const expireTime = Math.floor(Date.now() / 1000) + expireSeconds;
   const expiration = new Date(expireTime * 1000).toISOString();
-  
+
   // Create policy
   const policy = {
     expiration: expiration,
@@ -113,9 +113,9 @@ async function generateOSSUploadPolicy(
       ["starts-with", "$key", dir],
     ],
   };
-  
+
   const policyBase64 = btoa(JSON.stringify(policy));
-  
+
   // Generate signature using HMAC-SHA1
   const encoder = new TextEncoder();
   const keyData = encoder.encode(accessKeySecret);
@@ -126,15 +126,15 @@ async function generateOSSUploadPolicy(
     false,
     ["sign"]
   );
-  
+
   const signatureBuffer = await crypto.subtle.sign(
     "HMAC",
     key,
     encoder.encode(policyBase64)
   );
-  
+
   const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)));
-  
+
   return {
     accessId: accessKeyId,
     policy: policyBase64,
@@ -159,24 +159,24 @@ aliOSSRouter.post("/admin/oss/upload-policy", async (context) => {
     const body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { password, bucket, dir, expireSeconds } = content;
-    
+
     // Verify admin password
     if (!(await verifyAdminPassword(context, password))) {
       return;
     }
-    
+
     if (!bucket || !dir) {
       context.response.status = 400;
       context.response.body = { error: "Missing required fields: bucket, dir" };
       return;
     }
-    
+
     const uploadPolicy = await generateOSSUploadPolicy(
       bucket,
       dir,
       expireSeconds || 3600
     );
-    
+
     context.response.body = {
       success: true,
       data: uploadPolicy,
@@ -200,32 +200,34 @@ aliOSSRouter.post("/admin/oss/upload", async (context) => {
     const password = formData.fields["password"] as string;
     const bucket = formData.fields["bucket"] as string;
     const dir = formData.fields["dir"] as string;
+    const customFileName = formData.fields["fileName"] as string;
     const uploadedFile = formData.files?.[0];
-    
+
     // Verify admin password
     if (!(await verifyAdminPassword(context, password))) {
       return;
     }
-    
+
     if (!bucket || !dir || !uploadedFile) {
       context.response.status = 400;
       context.response.body = { error: "Missing required fields: bucket, dir, file" };
       return;
     }
-    
+
     const accessKeyId = Deno.env.get("ALI_OSS_ACCESS_KEY_ID") ?? "";
     const accessKeySecret = Deno.env.get("ALI_OSS_ACCESS_KEY_SECRET") ?? "";
     const region = Deno.env.get("ALI_OSS_REGION") ?? "cn-guangzhou";
-    
+
     const host = `https://${bucket}.oss-${region}.aliyuncs.com`;
-    const fileName = uploadedFile.originalName || uploadedFile.filename || "upload";
+    // Use customFileName if provided, otherwise fallback to original metadata
+    const fileName = customFileName || uploadedFile.originalName || uploadedFile.filename || "upload";
     const objectKey = `${dir}${fileName}`;
     const date = new Date().toUTCString();
     const contentType = uploadedFile.contentType || "application/octet-stream";
-    
+
     // File content is now in memory as Uint8Array (due to maxSize option)
     const fileContent = uploadedFile.content!;
-    
+
     // Generate signature for PUT request
     const stringToSign = `PUT\n\n${contentType}\n${date}\n/${bucket}/${objectKey}`;
     const encoder = new TextEncoder();
@@ -242,7 +244,7 @@ aliOSSRouter.post("/admin/oss/upload", async (context) => {
       encoder.encode(stringToSign)
     );
     const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)));
-    
+
     // Upload to OSS
     const uploadResponse = await fetch(`${host}/${objectKey}`, {
       method: "PUT",
@@ -253,7 +255,7 @@ aliOSSRouter.post("/admin/oss/upload", async (context) => {
       },
       body: fileContent,
     });
-    
+
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
       console.error("OSS upload error:", errorText);
@@ -261,7 +263,7 @@ aliOSSRouter.post("/admin/oss/upload", async (context) => {
       context.response.body = { error: "Failed to upload to OSS", details: errorText };
       return;
     }
-    
+
     context.response.body = {
       success: true,
       url: `${host}/${objectKey}`,
