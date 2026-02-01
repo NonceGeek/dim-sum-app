@@ -53,9 +53,26 @@ import {
   User as UserIcon,
   X,
   Loader2,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface Permission {
   id: number;
@@ -68,6 +85,7 @@ interface Permission {
     name: string | null;
     email: string | null;
     role: string;
+    phoneNumber?: string | null;
   };
   category: {
     name: string;
@@ -90,6 +108,7 @@ interface User {
   name: string | null;
   email: string | null;
   role: string;
+  phoneNumber?: string | null;
 }
 
 interface UsersResponse {
@@ -107,12 +126,20 @@ export default function AdminPermissionsPage() {
     userName: string;
     categoryName: string;
   } | null>(null);
-  const [newPermission, setNewPermission] = useState({
+  const [newPermission, setNewPermission] = useState<{
+    user_id: string;
+    category_names: string[];
+    permission: string;
+  }>({
     user_id: "",
-    category_name: "",
+    category_names: [],
     permission: "READ",
   });
+  const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
+
   const queryClient = useQueryClient();
+
+  // ... existing queries ...
 
   // 获取权限列表
   const { data, isLoading } = useQuery<PermissionsResponse>({
@@ -159,10 +186,13 @@ export default function AdminPermissionsPage() {
         (user) =>
           user.name?.toLowerCase().includes(query) ||
           user.email?.toLowerCase().includes(query) ||
-          user.id.toLowerCase().includes(query),
+          user.id.toLowerCase().includes(query) ||
+          user.phoneNumber?.includes(query),
       )
       .slice(0, 20);
   }, [usersData?.users, userSearchQuery]);
+
+  // ... existing helper functions ...
 
   // 根据角色获取固定权限级别
   const getRolePermissionLevel = (role: string) => {
@@ -181,7 +211,7 @@ export default function AdminPermissionsPage() {
   const addPermissionMutation = useMutation({
     mutationFn: async (data: {
       user_id: string;
-      category_name: string;
+      category_names: string[];
       permission: string;
     }) => {
       const response = await fetch("/api/admin/corpus/permissions", {
@@ -192,17 +222,19 @@ export default function AdminPermissionsPage() {
       if (!response.ok) throw new Error("Failed to add permission");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-permissions"] });
       setIsAddDialogOpen(false);
-      setNewPermission({ user_id: "", category_name: "", permission: "READ" });
+      setNewPermission({ user_id: "", category_names: [], permission: "READ" });
       setUserSearchQuery("");
-      toast.success("Permission added successfully");
+      toast.success(`Successfully added ${data.count || 1} permissions`);
     },
     onError: () => {
       toast.error("Failed to add permission");
     },
   });
+
+  // ... existing delete and update mutations ...
 
   // 删除权限
   const deletePermissionMutation = useMutation({
@@ -278,7 +310,7 @@ export default function AdminPermissionsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* ... existing header ... */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-white">
           Permissions
@@ -370,13 +402,13 @@ export default function AdminPermissionsPage() {
                   Add Permission
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-gray-800 border-gray-700">
+              <DialogContent className="bg-gray-800 border-gray-700 overflow-visible">
                 <DialogHeader>
                   <DialogTitle className="text-white">
                     Add New Permission
                   </DialogTitle>
                   <DialogDescription className="text-gray-400">
-                    Grant a user access to a corpus category.
+                    Grant a user access to corpus categories.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -385,7 +417,7 @@ export default function AdminPermissionsPage() {
                     <label className="text-sm text-gray-300">User</label>
                     <div className="space-y-2">
                       <Input
-                        placeholder="Search user by name or email..."
+                        placeholder="Search user by name, email or phone..."
                         value={userSearchQuery}
                         onChange={(e) => setUserSearchQuery(e.target.value)}
                         className="bg-gray-700 border-gray-600 text-white"
@@ -436,7 +468,7 @@ export default function AdminPermissionsPage() {
                                     {user.name || "N/A"}
                                   </div>
                                   <div className="text-xs text-gray-400">
-                                    {user.email} · {user.role}
+                                    {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
                                   </div>
                                 </div>
                               </button>
@@ -447,29 +479,96 @@ export default function AdminPermissionsPage() {
                     </div>
                   </div>
 
-                  {/* 分类选择 */}
+                  {/* 分类多选 */}
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-300">Category</label>
-                    <Select
-                      value={newPermission.category_name}
-                      onValueChange={(value) =>
-                        setNewPermission({
-                          ...newPermission,
-                          category_name: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categoriesData?.categories.map((cat) => (
-                          <SelectItem key={cat.name} value={cat.name}>
-                            {cat.nickname || cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <label className="text-sm text-gray-300">Categories</label>
+                    <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={categoryPopoverOpen}
+                          className="w-full justify-between bg-gray-700 border-gray-600 text-white hover:bg-gray-600 hover:text-white"
+                        >
+                          {newPermission.category_names.length > 0
+                            ? `${newPermission.category_names.length} selected`
+                            : "Select categories..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700">
+                        <Command className="bg-gray-800 border-gray-700">
+                          <CommandInput placeholder="Search category..." className="text-white" />
+                          <CommandList>
+                            <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No category found.</CommandEmpty>
+                            <CommandGroup className="max-h-60 overflow-y-auto">
+                              {categoriesData?.categories.map((cat) => (
+                                <CommandItem
+                                  key={cat.name}
+                                  value={cat.name}
+                                  onSelect={(currentValue) => {
+                                    setNewPermission((prev) => {
+                                      const isSelected = prev.category_names.includes(cat.name);
+                                      if (isSelected) {
+                                        return {
+                                          ...prev,
+                                          category_names: prev.category_names.filter((n) => n !== cat.name),
+                                        };
+                                      } else {
+                                        return {
+                                          ...prev,
+                                          category_names: [...prev.category_names, cat.name],
+                                        };
+                                      }
+                                    });
+                                  }}
+                                  className="text-white hover:bg-gray-700 cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div
+                                      className={cn(
+                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                        newPermission.category_names.includes(cat.name)
+                                          ? "bg-primary text-primary-foreground"
+                                          : "opacity-50 [&_svg]:invisible"
+                                      )}
+                                    >
+                                      <Check className={cn("h-4 w-4")} />
+                                    </div>
+                                    <span>{cat.nickname || cat.name}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Selected Categories Badges */}
+                    {newPermission.category_names.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {newPermission.category_names.map((catName) => {
+                          const cat = categoriesData?.categories.find(c => c.name === catName);
+                          return (
+                            <Badge key={catName} variant="secondary" className="bg-gray-700 text-gray-200 hover:bg-gray-600">
+                              {cat?.nickname || catName}
+                              <button
+                                className="ml-1 hover:text-white"
+                                onClick={() => {
+                                  setNewPermission(prev => ({
+                                    ...prev,
+                                    category_names: prev.category_names.filter(n => n !== catName)
+                                  }));
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* 权限级别（根据角色自动确定） */}
@@ -512,6 +611,7 @@ export default function AdminPermissionsPage() {
                     onClick={() => {
                       setIsAddDialogOpen(false);
                       setUserSearchQuery("");
+                      setNewPermission({ user_id: "", category_names: [], permission: "READ" });
                     }}
                     className="bg-gray-700 border-gray-600 text-white"
                   >
@@ -521,7 +621,7 @@ export default function AdminPermissionsPage() {
                     onClick={() => addPermissionMutation.mutate(newPermission)}
                     disabled={
                       !newPermission.user_id ||
-                      !newPermission.category_name ||
+                      newPermission.category_names.length === 0 ||
                       addPermissionMutation.isPending
                     }
                     className="bg-purple-600 hover:bg-purple-700"

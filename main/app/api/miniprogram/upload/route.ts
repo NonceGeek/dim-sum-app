@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       upstreamFormData.append("bucket", "dimsum-audio");
       upstreamFormData.append("dir", "tagger/");
       
-      // console.log(`[Upload] File received. Original name: ${file instanceof File ? file.name : 'unknown'}, Size: ${file.size}`);
+      console.log(`[Upload] File received. Original name: ${file instanceof File ? file.name : 'unknown'}, Size: ${file.size}`);
       if (fileName) {
         console.log(`[Upload] Using custom filename: ${fileName}`);
         // Pass fileName explicitly as a field for reliable renaming
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         // Also keep the renaming in the file appendage for good measure, though the explicit field takes precedence now
         upstreamFormData.append("file", file, fileName);
       } else {
-        // console.log(`[Upload] Using original filename`);
+        console.log(`[Upload] Using original filename`);
         upstreamFormData.append("file", file);
       }
 

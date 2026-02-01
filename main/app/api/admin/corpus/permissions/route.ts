@@ -81,6 +81,9 @@ export async function GET(req: NextRequest) {
 /**
  * POST - 分配权限
  */
+/**
+ * POST - 分配权限
+ */
 export async function POST(req: NextRequest) {
   try {
     const session = await getAuthSession();
@@ -92,11 +95,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { user_id, category_name, permission } = body;
+    const { user_id, category_name, category_names, permission } = body;
 
-    if (!user_id || !category_name) {
+    // Support both single category (legacy) and multiple categories
+    const targetCategories: string[] = category_names || (category_name ? [category_name] : []);
+
+    if (!user_id || targetCategories.length === 0) {
       return NextResponse.json(
-        { error: "user_id and category_name are required" },
+        { error: "user_id and at least one category are required" },
         { status: 400 },
       );
     }
@@ -109,20 +115,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 检查用户和分类是否存在
-    const [user, category] = await Promise.all([
-      prisma.user.findUnique({ where: { id: user_id } }),
-      prisma.cantonese_categories.findFirst({ where: { name: category_name } }),
-    ]);
-
+    // Check user existence
+    const user = await prisma.user.findUnique({ where: { id: user_id } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-    if (!category) {
-      return NextResponse.json(
-        { error: "Category not found" },
-        { status: 404 },
-      );
     }
 
     // 禁止给 LEARNER 分配权限
@@ -130,6 +126,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Cannot assign permissions to LEARNER users" },
         { status: 400 },
+      );
+    }
+
+    // Check all categories existence
+    const categories = await prisma.cantonese_categories.findMany({
+      where: { name: { in: targetCategories } }
+    });
+    
+    if (categories.length !== targetCategories.length) {
+       return NextResponse.json(
+        { error: "One or more categories not found" },
+        { status: 404 },
       );
     }
 
@@ -147,60 +155,71 @@ export async function POST(req: NextRequest) {
       effectivePermission = permission || CorpusPermission.READ;
     }
 
-    // 检查是否已存在权限
-    const existingPermission = await prisma.user_corpus_permissions.findUnique({
-      where: {
-        user_id_category_name: { user_id, category_name },
-      },
-    });
+    // Use transaction to ensure atomicity
+    const results = await prisma.$transaction(async (tx) => {
+      const operationResults = [];
 
-    let result;
-    let action: PermissionAction;
-    let oldValue = null;
+      for (const categoryName of targetCategories) {
+        // 检查是否已存在权限
+        const existingPermission = await tx.user_corpus_permissions.findUnique({
+          where: {
+            user_id_category_name: { user_id, category_name: categoryName },
+          },
+        });
 
-    if (existingPermission) {
-      // 更新权限
-      oldValue = { permission: existingPermission.permission };
-      result = await prisma.user_corpus_permissions.update({
-        where: {
-          user_id_category_name: { user_id, category_name },
-        },
-        data: {
-          permission: effectivePermission,
-        },
-      });
-      action = PermissionAction.MODIFY;
-    } else {
-      // 创建权限
-      result = await prisma.user_corpus_permissions.create({
-        data: {
-          user_id,
-          category_name,
-          permission: effectivePermission,
-          created_by: session.user.id,
-        },
-      });
-      action = PermissionAction.GRANT;
-    }
+        let result;
+        let action: PermissionAction;
+        let oldValue = null;
 
-    // 记录审计日志
-    await logPermissionChange({
-      operatorId: session.user.id!,
-      targetUserId: user_id,
-      action,
-      categoryName: category_name,
-      oldValue: oldValue ?? undefined,
-      newValue: { permission: result.permission },
+        if (existingPermission) {
+          // 更新权限
+          oldValue = { permission: existingPermission.permission };
+          result = await tx.user_corpus_permissions.update({
+            where: {
+              user_id_category_name: { user_id, category_name: categoryName },
+            },
+            data: {
+              permission: effectivePermission,
+            },
+          });
+          action = PermissionAction.MODIFY;
+        } else {
+          // 创建权限
+          result = await tx.user_corpus_permissions.create({
+            data: {
+              user_id,
+              category_name: categoryName,
+              permission: effectivePermission,
+              created_by: session.user.id,
+            },
+          });
+          action = PermissionAction.GRANT;
+        }
+
+        // 记录审计日志
+        await logPermissionChange({
+          operatorId: session.user.id!,
+          targetUserId: user_id,
+          action,
+          categoryName: categoryName,
+          oldValue: oldValue ?? undefined,
+          newValue: { permission: result.permission },
+        });
+        
+        operationResults.push(result);
+      }
+      return operationResults;
     });
 
     return NextResponse.json({
       success: true,
-      permission: {
-        id: Number(result.id),
-        user_id: result.user_id,
-        category_name: result.category_name,
-        permission: result.permission,
-      },
+      count: results.length,
+      permissions: results.map(r => ({
+        id: Number(r.id),
+        user_id: r.user_id,
+        category_name: r.category_name,
+        permission: r.permission,
+      }))
     });
   } catch (error) {
     console.error("Error assigning permission:", error);
