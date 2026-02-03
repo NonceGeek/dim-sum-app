@@ -51,9 +51,21 @@ function AppCard({ app }: { app: App }) {
     }
   };
 
-  const getLaunchButton = () => {
-    if (app.wechat_micro_app) {
-      return (
+  const getLaunchButton = () => (
+    <>
+      {app.homepage_url && (
+        <a
+          href={app.homepage_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700        
+  border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
+        >
+          <Link className="w-4 h-4 shrink-0" />
+          应用主页
+        </a>
+      )}
+      {app.wechat_micro_app && (
         <>
           <button
             onClick={() => setQrDialogOpen(true)}
@@ -81,12 +93,9 @@ function AppCard({ app }: { app: App }) {
             </DialogContent>
           </Dialog>
         </>
-      );
-    }
+      )}
 
-    
-    if (app.example_img) {
-      return (
+      {app.example_img && (
         <>
           <button
             onClick={() => setExampleDialogOpen(true)}
@@ -118,26 +127,22 @@ function AppCard({ app }: { app: App }) {
             </DialogContent>
           </Dialog>
         </>
-      );
-    }
+      )}
 
-    return (
-      <>
-        {app.url ? (
-          <a
-            href={app.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-green-600 hover:text-green-700        
+      {app.url && (
+        <a
+          href={app.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-green-600 hover:text-green-700        
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
-          >
-            <ArrowBigRight className="w-4 h-4 shrink-0" />
-            {app.localed ? "启动应用" : "启动应用（国际版）"}
-          </a>
-        ) : null}
-      </>
-    );
-  };
+        >
+          <ArrowBigRight className="w-4 h-4 shrink-0" />
+          {app.localed ? "启动应用" : "启动应用（国际版）"}
+        </a>
+      )}
+    </>
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
@@ -187,18 +192,6 @@ function AppCard({ app }: { app: App }) {
         <div className="flex justify-between text-sm text-gray-500">
           {/* <span>❤️ {app.likes}</span> */}
           <div className="flex flex-row gap-4 flex-wrap">
-            {app.homepage_url ? (
-              <a
-                href={app.homepage_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700        
-  border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
-              >
-                <Link className="w-4 h-4 shrink-0" />
-                应用主页
-              </a>
-            ) : null}
             {getLaunchButton()}
           </div>
         </div>
