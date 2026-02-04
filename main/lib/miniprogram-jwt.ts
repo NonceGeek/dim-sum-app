@@ -4,12 +4,14 @@ import { Role } from '@prisma/client';
 // JWT token payload interface
 export interface MiniprogramTokenPayload {
   userId: string;
-  openId: string;
-  unionId?: string;
+  openId?: string;       // Optional: Used for WeChat login
+  unionId?: string;      // Optional: Used for WeChat login
+  phoneNumber?: string;  // Optional: Used for phone login
   role: Role;
   isSystemAdmin: boolean;
   [key: string]: unknown; // 添加索引签名以兼容 JWTPayload
 }
+
 
 // Get JWT secret from environment
 const getJWTSecret = () => {

@@ -21,7 +21,7 @@
 
 ### 1.1 小程序登录
 
-用户通过微信小程序登录,获取访问令牌。
+用户通过微信小程序登录,支持两种登录方式。
 
 #### 接口信息
 
@@ -29,7 +29,14 @@
 - **方法**: `POST`
 - **认证**: 无需认证
 
-#### 请求参数
+#### 登录方式
+
+| 方式 | 必填字段 | 说明 |
+|-----|---------|------|
+| 微信登录 | `code` | 通过 `wx.login()` 获取 |
+| 手机号登录 | `phoneNumber`, `verificationCode` | 需先调用发送验证码接口 |
+
+#### 请求参数 - 微信登录
 
 ```json
 {
@@ -37,7 +44,16 @@
 }
 ```
 
-#### 请求示例
+#### 请求参数 - 手机号登录
+
+```json
+{
+  "phoneNumber": "string, 必填, 手机号码",
+  "verificationCode": "string, 必填, 6位短信验证码"
+}
+```
+
+#### 请求示例 - 微信登录
 
 ```javascript
 // 小程序端代码
@@ -61,6 +77,27 @@ wx.login({
     }
   }
 });
+```
+
+#### 请求示例 - 手机号登录
+
+```javascript
+// 小程序端代码 - 先发送验证码,用户输入后登录
+const response = await wx.request({
+  url: 'https://search.aidimsum.com/api/miniprogram/auth/login',
+  method: 'POST',
+  data: {
+    phoneNumber: '13800138000',
+    verificationCode: '123456'
+  }
+});
+
+const { accessToken, refreshToken, user } = response.data;
+
+// 保存 token
+wx.setStorageSync('accessToken', accessToken);
+wx.setStorageSync('refreshToken', refreshToken);
+wx.setStorageSync('userInfo', user);
 ```
 
 #### 成功响应 (200)
@@ -93,30 +130,108 @@ wx.login({
 
 #### 错误响应
 
-**400 Bad Request** - 参数错误或微信验证失败
+**400 Bad Request** - 参数错误或验证失败
 
 ```json
 {
-  "error": "Failed to authenticate with WeChat",
-  "details": "invalid code"
+  "error": "Missing required parameters. Provide either 'code' for WeChat login, or 'phoneNumber' and 'verificationCode' for phone login."
 }
 ```
 
-**404 Not Found** - 用户未注册
+**400 Bad Request** - 验证码无效 (手机号登录)
 
 ```json
 {
-  "error": "User not found. Please register via web first.",
+  "error": "验证码无效或已过期"
+}
+```
+
+**404 Not Found** - 微信用户未注册
+
+```json
+{
+  "error": "User not found. Please register via web first or use phone login.",
   "openid": "oABC123...",
   "unionid": "oUNI456..."
 }
 ```
 
-> **注意**: 用户必须先通过 Web 端注册账号,小程序才能登录成功。
+**404 Not Found** - 手机号用户未注册
+
+```json
+{
+  "error": "用户不存在，请先通过 Web 端注册或使用微信登录"
+}
+```
 
 ---
 
-### 1.2 刷新访问令牌
+### 1.2 发送短信验证码
+
+发送短信验证码用于手机号登录。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/auth/send-sms`
+- **方法**: `POST`
+- **认证**: 无需认证
+
+#### 请求参数
+
+```json
+{
+  "phoneNumber": "string, 必填, 手机号码"
+}
+```
+
+#### 请求示例
+
+```javascript
+const response = await wx.request({
+  url: 'https://search.aidimsum.com/api/miniprogram/auth/send-sms',
+  method: 'POST',
+  data: {
+    phoneNumber: '13800138000'
+  }
+});
+
+if (response.data.success) {
+  console.log('验证码已发送');
+}
+```
+
+#### 成功响应 (200)
+
+```json
+{
+  "success": true,
+  "message": "验证码已发送",
+  "phoneNumber": "138****8000"
+}
+```
+
+#### 错误响应
+
+**400 Bad Request** - 手机号格式错误
+
+```json
+{
+  "error": "手机号格式不正确"
+}
+```
+
+**429 Too Many Requests** - 发送过于频繁
+
+```json
+{
+  "error": "请稍后再试，验证码发送过于频繁"
+}
+```
+
+---
+
+
+### 1.3 刷新访问令牌
 
 当访问令牌过期时,使用刷新令牌获取新的访问令牌。
 
