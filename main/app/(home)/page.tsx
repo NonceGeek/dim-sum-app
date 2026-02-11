@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
+import CategorySelector from "./_components/category-selector";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -49,6 +50,8 @@ export default function HomePage() {
   // const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
   const [inputValue, setInputValue] = useState<string>("");
+  const [selectCategory, setSelectCategory] = useState<string>("全部");
+
   // Fetch available categories
   // get all categories from the backend
   const { data: categories, isLoading: categoriesLoading } = useAllCategories();
@@ -68,6 +71,7 @@ export default function HomePage() {
       setSelectedDataset(["all"]);
       setResults(null);
       setCurrentPage(1);
+      setSelectCategory("全部");
       return;
     }
 
@@ -102,6 +106,7 @@ export default function HomePage() {
   const handleSearch = () => {
     if (!searchPrompt.trim()) return;
     setCurrentPage(1);
+    setSelectCategory("全部");
 
     const dataset = fiter_not_in
       .map((cat) => {
@@ -130,6 +135,7 @@ export default function HomePage() {
   const handleExampleSearch = (prompt: string) => {
     setSearchPrompt(prompt);
     setCurrentPage(1);
+    setSelectCategory("全部");
 
     // 更新URL参数
     const params = new URLSearchParams();
@@ -144,11 +150,16 @@ export default function HomePage() {
     router.push("/", { scroll: false });
   };
 
-  const totalPages = Math.ceil((results?.length || 0) / itemsPerPage);
+  const filteredResults = useMemo(() => {
+    if (!results) return [];
+    return results.filter((result) => selectCategory === "全部" || result.category === selectCategory);
+  }, [results, selectCategory]);
+
+  const totalPages = Math.ceil((filteredResults?.length || 0) / itemsPerPage);
   const currentResults =
-    results?.slice(
+    filteredResults?.slice(
       (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
+      currentPage * itemsPerPage,
     ) || [];
 
   // Helper function to generate page numbers with ellipsis
@@ -479,6 +490,12 @@ export default function HomePage() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
+                <CategorySelector
+                  selectCategory={selectCategory}
+                  setSelectCategory={setSelectCategory}
+                  results={results}
+                  selectedDataset={selectedDataset}
+                />
                 {currentResults.map((result, index) => (
                   <motion.div
                     key={result.id}
