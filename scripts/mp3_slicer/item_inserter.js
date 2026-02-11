@@ -1,4 +1,4 @@
-// 1. get wav files from xzpq folder
+// 1. get wav files from wlxfbdl folder
 // 2. re organize the data
 // 3. insert the data into the database
 import fs from 'node:fs';   
@@ -68,10 +68,10 @@ async function insertCorpusItem(data, note, category, tags) {
   });
 }
 
-// Get all wav files from xzpq folder
-const xzpqDir = path.join(__dirname, "xzpq");
-const wavFiles = fs.readdirSync(xzpqDir).filter(f => f.endsWith('.wav'));
-console.log(`Found ${wavFiles.length} wav files in xzpq folder`);
+// Get all wav files from wlxfbdl folder
+const wlxfbdlDir = path.join(__dirname, "segments/gfxm4");
+const wavFiles = fs.readdirSync(wlxfbdlDir).filter(f => f.endsWith('.wav'));
+console.log(`Found ${wavFiles.length} wav files in gfxm4 folder`);
 console.log("---------- wav files --------------");
 
 // Main async function to process data
@@ -86,11 +86,11 @@ async function processData() {
     console.log(`\n--- Processing file ${i + 1}/${wavFiles.length} ---`);
 
     let data = fileNameWithoutExt;
-    let note = {context: {}, contributor: "0x11"};
-    note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/xiaozhupeiqi/xzpq/${fileName}`;
+    let note = {context: {}, contributor: "0x18"};
+    note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/gfxm4/${fileName}`;
     note.context.粤语文本 = fileNameWithoutExt;
 
-    const tags = ["audio", "小猪佩奇", "粤语"];
+    const tags = ["音频", "动画", "功夫熊猫4"];
     console.log(tags);
     console.log("---------- tags --------------");
     console.log(data);
@@ -99,7 +99,7 @@ async function processData() {
     console.log("-------------note---------------");
 
     try {
-      const category = "xzpq";
+      const category = "yydh";
       
       console.log(`Inserting: File=${fileName}, Audio=${note.context.audio}`);
       
