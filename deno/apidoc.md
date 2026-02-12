@@ -185,50 +185,15 @@ curl -X GET "https://backend.aidimsum.com/v2/corpus_category?name=zyzd"
 
 ---
 
-### 8. Text Search (Enhanced)
-**GET** `/text_search_v2`
-
-Performs text search with support for both traditional and simplified Chinese characters.
-
-**Parameters:**
-- `keyword` (required): The search keyword
-- `table_name` (required): The table to search in (currently supports "cantonese_corpus_all")
-- `limit` (optional): Maximum number of results to return
-- `supabase_url` (optional): Custom Supabase URL
-
-**Response:**
-```json
-[
-  {
-    "unique_id": "uuid",
-    "data": "character",
-    "note": {
-      "meaning": ["definition1", "definition2"],
-      "pinyin": ["pronunciation1", "pronunciation2"]
-    },
-    "category": "zyzd",
-    "tags": ["word"]
-  }
-]
-```
-
-**Curl Example:**
-```bash
-curl -X GET "https://backend.aidimsum.com/text_search_v2?keyword=為&table_name=cantonese_corpus_all&limit=10"
-```
-
----
-
-### 8.1. Text Search (V2)
+### 8. Text Search (V2)
 **GET** `/v2/text_search`
 
 Performs text search with support for both traditional and simplified Chinese characters. This is an alias for `/text_search_v2`.
 
 **Parameters:**
 - `keyword` (required): The search keyword
-- `table_name` (required): The table to search in (currently supports "cantonese_corpus_all")
+- `table_name` (required): The table to search in
 - `limit` (optional): Maximum number of results to return
-- `supabase_url` (optional): Custom Supabase URL
 
 **Response:**
 ```json
@@ -248,50 +213,12 @@ Performs text search with support for both traditional and simplified Chinese ch
 
 **Curl Example:**
 ```bash
-curl -X GET "https://backend.aidimsum.com/v2/text_search?keyword=為&table_name=cantonese_corpus_all&limit=10"
+curl -X GET "https://backend.aidimsum.com/v2/text_search?keyword=%E7%82%BA&table_name=%22cantonese_corpus_all%22&limit=10"
 ```
 
 ---
 
-### 9. Get Corpus Item
-**GET** `/corpus_item`
-
-Retrieves a specific corpus item by unique_id or data.
-
-**Parameters:**
-- `unique_id` (optional): The unique identifier of the corpus item
-- `data` (optional): The data field of the corpus item
-
-**Note:** Either `unique_id` or `data` parameter is required.
-
-**Response:**
-```json
-[
-  {
-    "unique_id": "uuid",
-    "data": "character",
-    "note": {
-      "meaning": ["definition"],
-      "pinyin": ["pronunciation"]
-    },
-    "category": "zyzd",
-    "tags": ["word"]
-  }
-]
-```
-
-**Curl Examples:**
-```bash
-# Search by unique_id
-curl -X GET "https://backend.aidimsum.com/corpus_item?unique_id=your-uuid-here"
-
-# Search by data
-curl -X GET "https://backend.aidimsum.com/corpus_item?data=為"
-```
-
----
-
-### 9.1. Get Corpus Item (V2)
+### 9. Get Corpus Item (V2)
 **GET** `/v2/corpus_item`
 
 Retrieves a specific corpus item by unique_id or data. Returns a single object instead of an array.
@@ -324,7 +251,7 @@ Retrieves a specific corpus item by unique_id or data. Returns a single object i
 curl -X GET "https://backend.aidimsum.com/v2/corpus_item?unique_id=your-uuid-here"
 
 # Search by data
-curl -X GET "https://backend.aidimsum.com/v2/corpus_item?data=為"
+curl -X GET "https://backend.aidimsum.com/v2/corpus_item?data=%E7%82%BA"
 ```
 
 ---
