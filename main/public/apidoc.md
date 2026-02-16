@@ -4,8 +4,10 @@ Base URL: `https://backend.aidimsum.com`
 
 ## Table of Contents
 - [Public APIs](#public-apis)
+  - [V2 APIs](#v2-apis)
 - [Developer APIs (API Key Required)](#developer-apis-api-key-required)
 - [Admin APIs (Password Required)](#admin-apis-password-required)
+  - [OSS Upload APIs](#21-get-oss-upload-policy-admin)
 
 ## GET API KEY!
 
@@ -183,50 +185,15 @@ curl -X GET "https://backend.aidimsum.com/v2/corpus_category?name=zyzd"
 
 ---
 
-### 8. Text Search (Enhanced)
-**GET** `/text_search_v2`
-
-Performs text search with support for both traditional and simplified Chinese characters.
-
-**Parameters:**
-- `keyword` (required): The search keyword
-- `table_name` (required): The table to search in (currently supports "cantonese_corpus_all")
-- `limit` (optional): Maximum number of results to return
-- `supabase_url` (optional): Custom Supabase URL
-
-**Response:**
-```json
-[
-  {
-    "unique_id": "uuid",
-    "data": "character",
-    "note": {
-      "meaning": ["definition1", "definition2"],
-      "pinyin": ["pronunciation1", "pronunciation2"]
-    },
-    "category": "zyzd",
-    "tags": ["word"]
-  }
-]
-```
-
-**Curl Example:**
-```bash
-curl -X GET "https://backend.aidimsum.com/text_search_v2?keyword=為&table_name=cantonese_corpus_all&limit=10"
-```
-
----
-
-### 8.1. Text Search (V2)
+### 8. Text Search (V2)
 **GET** `/v2/text_search`
 
 Performs text search with support for both traditional and simplified Chinese characters. This is an alias for `/text_search_v2`.
 
 **Parameters:**
 - `keyword` (required): The search keyword
-- `table_name` (required): The table to search in (currently supports "cantonese_corpus_all")
+- `table_name` (required): The table to search in
 - `limit` (optional): Maximum number of results to return
-- `supabase_url` (optional): Custom Supabase URL
 
 **Response:**
 ```json
@@ -246,49 +213,12 @@ Performs text search with support for both traditional and simplified Chinese ch
 
 **Curl Example:**
 ```bash
-curl -X GET "https://backend.aidimsum.com/v2/text_search?keyword=為&table_name=cantonese_corpus_all&limit=10"
+curl -X GET "https://backend.aidimsum.com/v2/text_search?keyword=%E7%82%BA&table_name=%22cantonese_corpus_all%22&limit=10"
 ```
 
 ---
 
-### 9. Get Corpus Item
-**GET** `/corpus_item`
-
-Retrieves a specific corpus item by unique_id or data.
-
-**Parameters:**
-- `unique_id` (optional): The unique identifier of the corpus item
-- `data` (optional): The data field of the corpus item
-
-**Note:** Either `unique_id` or `data` parameter is required.
-
-**Response:**
-```json
-[
-  {
-    "unique_id": "uuid",
-    "data": "character",
-    "note": {
-      "meaning": ["definition"],
-      "pinyin": ["pronunciation"]
-    },
-    "category": "zyzd",
-    "tags": ["word"]
-  }
-]
-```
-
-**Curl Examples:**
-```bash
-# Search by unique_id
-curl -X GET "https://backend.aidimsum.com/corpus_item?unique_id=your-uuid-here"
-
-# Search by data
-curl -X GET "https://backend.aidimsum.com/corpus_item?data=為"
-```
----
-
-### 9.1. Get Corpus Item (V2)
+### 9. Get Corpus Item (V2)
 **GET** `/v2/corpus_item`
 
 Retrieves a specific corpus item by unique_id or data. Returns a single object instead of an array.
@@ -321,7 +251,7 @@ Retrieves a specific corpus item by unique_id or data. Returns a single object i
 curl -X GET "https://backend.aidimsum.com/v2/corpus_item?unique_id=your-uuid-here"
 
 # Search by data
-curl -X GET "https://backend.aidimsum.com/v2/corpus_item?data=為"
+curl -X GET "https://backend.aidimsum.com/v2/corpus_item?data=%E7%82%BA"
 ```
 
 ---
@@ -362,6 +292,13 @@ Retrieves all corpus items from a specified corpus.
 - `corpus_name` (required): The name of the corpus to get a random item from (e.g., "yyjq")
 - `cursor` (optional): Indicating that data after the cursor is retrieved.
 - `limit` (optional): Maximum number of results to return
+- `lifecycle_stage` (optional): Filter by lifecycle stage. Supports multiple values via repeated parameters or comma-separated lists.
+
+**lifecycle_stage available values:**
+- `draft`: Not yet entered any processing flow
+- `normalized`: Automated normalization completed
+- `cleaned`: Manual cleaning completed
+- `active`: Entered routine rule checks
 
 **Response:**
 ```json
@@ -382,6 +319,11 @@ Retrieves all corpus items from a specified corpus.
 **Curl Example:**
 ```bash
 curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2"
+```
+
+**Curl Example (Filter):**
+```bash
+curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&lifecycle_stage=normalized&lifecycle_stage=draft"
 ```
 
 ## Developer APIs (API Key Required)
@@ -446,6 +388,10 @@ Submits a request to update an existing corpus item. Requires an approved API ke
     "field1": "value1",
     "field2": "value2"
   },
+  "structured_note": {
+    "field1": "value1",
+    "field2": "value2"
+  },
   "api_key": "your-approved-api-key"
 }
 ```
@@ -466,6 +412,10 @@ curl -X POST "https://backend.aidimsum.com/dev/update_corpus_item" \
   -d '{
     "uuid": "example-uuid-here",
     "note": {
+      "field1": "value1",
+      "field2": "value2"
+    },
+    "structured_note": {
       "field1": "value1",
       "field2": "value2"
     },
@@ -812,6 +762,95 @@ curl -X POST "https://backend.aidimsum.com/admin/get_user" \
   }'
 ```
 
+### 21. Get OSS Upload Policy (Admin)
+**POST** `/admin/oss/upload-policy`
+
+Generates a presigned upload policy for direct client-side upload to Aliyun OSS. Requires admin password.
+
+**Request Body:**
+```json
+{
+  "password": "your-admin-password",
+  "bucket": "your-bucket-name",
+  "dir": "upload/path/",
+  "expireSeconds": 3600
+}
+```
+
+**Parameters:**
+- `password` (required): Admin password
+- `bucket` (required): OSS bucket name
+- `dir` (required): Directory path in the bucket (should end with `/`)
+- `expireSeconds` (optional): Policy expiration time in seconds (default: 3600)
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "data": {
+    "accessId": "your-access-key-id",
+    "policy": "base64-encoded-policy",
+    "signature": "calculated-signature",
+    "dir": "upload/path/",
+    "host": "https://your-bucket.oss-cn-guangzhou.aliyuncs.com",
+    "expire": 1704067200
+  }
+}
+```
+
+**Curl Example:**
+```bash
+curl -X POST "https://backend.aidimsum.com/admin/oss/upload-policy" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "your-admin-password",
+    "bucket": "dimsum-audio",
+    "dir": "xiaozhupeiqi/xcpq/",
+    "expireSeconds": 3600
+  }'
+```
+
+---
+
+### 22. Upload File to OSS (Admin)
+**POST** `/admin/oss/upload`
+
+Directly uploads a file to Aliyun OSS through the server. Requires admin password. Uses multipart/form-data.
+
+**Request Body (FormData):**
+- `password` (required): Admin password
+- `bucket` (required): OSS bucket name
+- `dir` (required): Directory path in the bucket (should end with `/`)
+- `file` (required): File to upload
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "url": "https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/test/example.wav",
+  "key": "test/example.wav"
+}
+```
+
+**Response (Error):**
+```json
+{
+  "error": "Failed to upload to OSS",
+  "details": "error message from OSS"
+}
+```
+
+**Curl Example:**
+```bash
+curl -X POST "https://backend.aidimsum.com/admin/oss/upload" \
+  -F "password=your-admin-password" \
+  -F "bucket=dimsum-audio" \
+  -F "dir=xiaozhupeiqi/xcpq/" \
+  -F "file=@./test.wav"
+```
+
+---
+
 ## Error Responses
 
 All endpoints may return the following error responses:
@@ -878,7 +917,7 @@ All endpoints may return the following error responses:
 }
 ```
 
-### ZYZD Item Structure (Input)
+### ZYZD Item Structure
 ```json
 {
   "編號": "0005",

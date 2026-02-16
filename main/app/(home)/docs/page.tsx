@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, ChevronRight, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
+// TODO: make apidoc.md load from api docs in backend to make it snyc to the latest.
 import readmeContent from "../../../public/apidoc.md";
 
 export default function DocsPage() {

@@ -166,13 +166,12 @@ async function textSearchV2Handler(context: any) {
   const simplifiedKey = sify(key ?? "");
   console.log("traditionalKey", traditionalKey);
   console.log("simplifiedKey", simplifiedKey);
-  const tableName = JSON.parse(queryParams.get("table_name") ?? "");
+  const tableName = queryParams.get("table_name") ?? "";
   // const column = queryParams.get("column");
   const limitStr = queryParams.get("limit");
   const limit = limitStr ? parseInt(limitStr, 10) : undefined;
   const supabase_url =
     queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
-  // TODO: make SUPABASE_SERVICE_ROLE_KEY for a spec table as a param.
   const supabase = createClient(
     supabase_url,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
