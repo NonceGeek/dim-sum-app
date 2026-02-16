@@ -2,6 +2,8 @@
 
 Base URL: `https://backend.aidimsum.com`
 
+Beta Base URL: `https://beta.backend.aidimsum.com`
+
 ## Table of Contents
 - [Public APIs](#public-apis)
   - [V2 APIs](#v2-apis)
@@ -133,33 +135,7 @@ curl -X GET "https://backend.aidimsum.com/corpus_categories"
 
 ---
 
-### 7. Get Specific Corpus Category
-**GET** `/corpus_category`
-
-Retrieves a specific corpus category by name.
-
-**Parameters:**
-- `name` (required): The name of the category
-
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "name": "category_name",
-    "description": "category_description"
-  }
-]
-```
-
-**Curl Example:**
-```bash
-curl -X GET "https://backend.aidimsum.com/corpus_category?name=zyzd"
-```
-
----
-
-### 7.1. Get Specific Corpus Category (V2)
+### 7. Get Specific Corpus Category (V2)
 **GET** `/v2/corpus_category`
 
 Retrieves a specific corpus category by name. Returns a single object instead of an array.
@@ -211,10 +187,22 @@ Performs text search with support for both traditional and simplified Chinese ch
 ]
 ```
 
-**Curl Example:**
+**Curl Examples:**
+
+**Option 1: Using double quotes with URL encoding:**
 ```bash
-curl -X GET "https://backend.aidimsum.com/v2/text_search?keyword=%E7%82%BA&table_name=%22cantonese_corpus_all%22&limit=10"
+curl -X GET "https://backend.aidimsum.com/v2/text_search?keyword=%E7%82%BA&table_name=cantonese_corpus_all&limit=10"
 ```
+
+**Option 2: Using --data-urlencode with -G flag (best for complex queries):**
+```bash
+curl -G "https://backend.aidimsum.com/v2/text_search" \
+  --data-urlencode "keyword=為" \
+  --data-urlencode "table_name=cantonese_corpus_all" \
+  --data-urlencode "limit=10"
+```
+
+**Note:** For Chinese characters, Option 2 (--data-urlencode) are recommended as they handle encoding automatically.
 
 ---
 
@@ -246,13 +234,26 @@ Retrieves a specific corpus item by unique_id or data. Returns a single object i
 **Note:** Returns an empty object `{}` if no corpus item is found.
 
 **Curl Examples:**
-```bash
-# Search by unique_id
-curl -X GET "https://backend.aidimsum.com/v2/corpus_item?unique_id=your-uuid-here"
 
-# Search by data
+**Search by unique_id:**
+```bash
+curl -X GET "https://backend.aidimsum.com/v2/corpus_item?unique_id=your-uuid-here"
+```
+
+**Search by data (Chinese characters):**
+
+**Option 1: Using double quotes with URL encoding:**
+```bash
 curl -X GET "https://backend.aidimsum.com/v2/corpus_item?data=%E7%82%BA"
 ```
+
+**Option 2: Using --data-urlencode with -G flag (best for complex queries):**
+```bash
+curl -G "https://backend.aidimsum.com/v2/corpus_item" \
+  --data-urlencode "data=為"
+```
+
+**Note:** For Chinese characters, Option 2 (--data-urlencode) are recommended as they handle encoding automatically.
 
 ---
 
