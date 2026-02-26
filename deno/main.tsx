@@ -166,7 +166,7 @@ async function textSearchV2Handler(context: any) {
   const simplifiedKey = sify(key ?? "");
   console.log("traditionalKey", traditionalKey);
   console.log("simplifiedKey", simplifiedKey);
-  const tableName = queryParams.get("table_name") ?? "";
+  const tableName = JSON.parse(queryParams.get("table_name") ?? "");
   // const column = queryParams.get("column");
   const limitStr = queryParams.get("limit");
   const limit = limitStr ? parseInt(limitStr, 10) : undefined;
@@ -241,7 +241,9 @@ router
   })
   .get("/docs", async (context) =>{
     try {
-      const readmeText = await Deno.readTextFile("./apidoc.md");
+      const readmeText = await Deno.readTextFile(
+        new URL("./apidoc.md", import.meta.url),
+      );
       context.response.body = readmeText;
     } catch (err) {
       console.error("Error reading README:", err);
@@ -252,7 +254,9 @@ router
   .get("/docs/html", async (context) => {
       try {
         // Read README.md file
-        const readmeText = await Deno.readTextFile("./apidoc.md");
+        const readmeText = await Deno.readTextFile(
+        new URL("./apidoc.md", import.meta.url),
+      );
         
         // Render markdown to HTML with GFM styles
         const body = render(readmeText);
