@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 // import { Header } from "@/components/layout/header";
 import ReactMarkdown from "react-markdown";
 
@@ -74,6 +74,14 @@ interface Corpus {
 
 // Create a client component for the book card
 import Image from "next/image";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 function BookCard({ book }: { book: Book }) {
   return (
@@ -219,6 +227,31 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
 export default function LibraryPage() {
   const [corpus, setCorpus] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTag, setSelectedTag] = useState("");
+
+  const minTagCount = 2; // 最小标签计数阈值
+  const tags = useMemo(() => {
+    const tagCounts = corpus
+      .map((cps: Corpus) => cps.tags)
+      .flat()
+      .reduce(
+        (acc, tag) => {
+          acc[tag] = (acc[tag] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+    return Object.entries(tagCounts)
+      .filter(([_, count]) => count >= minTagCount)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [corpus]);
+
+  const filteredCorpus = useMemo(() => {
+    if (!selectedTag) return corpus;
+    return corpus.filter((cps: Corpus) => cps.tags?.includes(selectedTag));
+  }, [corpus, selectedTag]);
+
 
   useEffect(() => {
     const fetchCorpus = async () => {
@@ -252,7 +285,7 @@ export default function LibraryPage() {
   return (
     <>
       <div className="h-full p-6 overflow-auto">
-        <div className="flex items-center justify-center w-full mb-8">
+        <div className="flex items-center justify-center w-full mb-4">
           <h1 className="text-4xl font-bold text-center">粤语语料集</h1>
         </div>
 
@@ -261,10 +294,33 @@ export default function LibraryPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {corpus.map((corpus: Corpus) => (
-              <CorpusCard key={corpus.id} corpus={corpus} />
-            ))}
+          <div className="flex flex-col space-y-4">
+            <div className="w-50 ml-auto">
+              <Combobox
+                items={["全部", ...tags.map(t => t.tag)]}
+                value={selectedTag || "全部"}
+                onValueChange={(value) => setSelectedTag(value === "全部" ? "" : value)}
+              >
+                <ComboboxInput placeholder="选择一个标签" />
+                <ComboboxContent>
+                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(item) => {
+                      return (
+                        <ComboboxItem key={item} value={item}>
+                          {item}
+                        </ComboboxItem>
+                      );
+                    }}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCorpus.map((corpus: Corpus) => (
+                <CorpusCard key={corpus.id} corpus={corpus} />
+              ))}
+            </div>
           </div>
         )}
       </div>
