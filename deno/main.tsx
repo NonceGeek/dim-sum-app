@@ -255,8 +255,8 @@ router
       try {
         // Read README.md file
         const readmeText = await Deno.readTextFile(
-        new URL("./apidoc.md", import.meta.url),
-      );
+          new URL("./apidoc.md", import.meta.url),
+        );
         
         // Render markdown to HTML with GFM styles
         const body = render(readmeText);
