@@ -1,8 +1,16 @@
 // Add the "use client" directive to make this a client component
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from 'next/image';
+import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -32,24 +40,23 @@ interface App {
   localed: boolean;
   sorting: number;
 }
+const getTypeDisplay = (type: string): string => {
+  switch (type.toUpperCase()) {
+    case "STUDY":
+      return "学习";
+    case "TOOL":
+      return "工具";
+    case "GAME":
+      return "游戏";
+    default:
+      return type;
+  }
+};
 
 // Create a client component for the app card
 function AppCard({ app }: { app: App }) {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [exampleDialogOpen, setExampleDialogOpen] = useState(false);
-  
-  const getTypeDisplay = (type: string): string => {
-    switch (type.toUpperCase()) {
-      case "STUDY":
-        return "学习";
-      case "TOOL":
-        return "工具";
-      case "GAME":
-        return "游戏";
-      default:
-        return type;
-    }
-  };
 
   const getLaunchButton = () => (
     <>
@@ -204,6 +211,31 @@ function AppCard({ app }: { app: App }) {
 export default function AppStorePage() {
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState("");
+
+  const minTypeCount = 1; // 最小类型计数阈值
+  const types = useMemo(() => {
+    const typeCounts = apps
+      .map((app: App) => getTypeDisplay(app.type))
+      .reduce(
+        (acc, type) => {
+          acc[type] = (acc[type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+    return Object.entries(typeCounts)
+      .filter(([_, count]) => count >= minTypeCount)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [apps]);
+
+  const filteredApps = useMemo(() => {
+    if (!selectedType) return apps;
+    return apps.filter(
+      (app: App) => getTypeDisplay(app.type) === selectedType
+    );
+  }, [apps, selectedType]);
 
   useEffect(() => {
     const fetchApps = async () => {
@@ -247,10 +279,33 @@ export default function AppStorePage() {
             <p className="text-xl text-gray-500">No apps found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {apps.map((app) => (
-              <AppCard key={app.id} app={app} />
-            ))}
+          <div className="flex flex-col space-y-4">
+            <div className="w-50 ml-auto">
+              <Combobox
+                items={["全部", ...types.map(t => t.type)]}
+                value={selectedType || "全部"}
+                onValueChange={(value) => setSelectedType(value === "全部" ? "" : value)}
+              >
+                <ComboboxInput placeholder="选择一个标签" />
+                <ComboboxContent>
+                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(item) => {
+                      return (
+                        <ComboboxItem key={item} value={item}>
+                          {getTypeDisplay(item)}
+                        </ComboboxItem>
+                      );
+                    }}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredApps.map((app) => (
+                <AppCard key={app.id} app={app} />
+              ))}
+            </div>
           </div>
         )}
       </div>
