@@ -43,5 +43,5 @@ next-env.d.ts
 
 .cursorrules
 .cursor/
-
+out_audio/
 backend-linux

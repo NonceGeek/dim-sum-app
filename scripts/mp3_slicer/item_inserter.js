@@ -69,9 +69,9 @@ async function insertCorpusItem(data, note, category, tags) {
 }
 
 // Get all wav files from wlxfbdl folder
-const wlxfbdlDir = path.join(__dirname, "segments/gfxm4");
+const wlxfbdlDir = path.join(__dirname, "segments/gfxm2");
 const wavFiles = fs.readdirSync(wlxfbdlDir).filter(f => f.endsWith('.wav'));
-console.log(`Found ${wavFiles.length} wav files in gfxm4 folder`);
+console.log(`Found ${wavFiles.length} wav files in gfxm2 folder`);
 console.log("---------- wav files --------------");
 
 // Main async function to process data
@@ -86,11 +86,11 @@ async function processData() {
     console.log(`\n--- Processing file ${i + 1}/${wavFiles.length} ---`);
 
     let data = fileNameWithoutExt;
-    let note = {context: {}, contributor: "0x18"};
-    note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/gfxm4/${fileName}`;
+    let note = {context: {}, contributor: "0x19"};
+    note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/gfxm2/${fileName}`;
     note.context.粤语文本 = fileNameWithoutExt;
 
-    const tags = ["音频", "动画", "功夫熊猫4"];
+    const tags = ["音频", "动画", "功夫熊猫2"];
     console.log(tags);
     console.log("---------- tags --------------");
     console.log(data);

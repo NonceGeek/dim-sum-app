@@ -1,0 +1,13 @@
+# Requirements for parquet_getter/run.py
+# Hugging Face datasets library for loading datasets
+datasets>=2.14.0
+
+# Audio processing support (required for Audio feature)
+soundfile>=0.12.0
+
+# Core dependencies for datasets
+numpy>=1.24.0
+pyarrow>=12.0.0
+
+# Optional but recommended for better performance
+fsspec>=2023.1.0
