@@ -166,7 +166,7 @@ async function textSearchV2Handler(context: any) {
   const simplifiedKey = sify(key ?? "");
   console.log("traditionalKey", traditionalKey);
   console.log("simplifiedKey", simplifiedKey);
-  const tableName = JSON.parse(queryParams.get("table_name") ?? "");
+  const tableName = queryParams.get("table_name") ?? "";
   // const column = queryParams.get("column");
   const limitStr = queryParams.get("limit");
   const limit = limitStr ? parseInt(limitStr, 10) : undefined;
