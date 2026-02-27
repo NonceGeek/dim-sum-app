@@ -400,7 +400,7 @@ export default function HomePage() {
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
                         News
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">唔</p>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">唔听</p>
                     </div>
                   </Card>
                   <Card
