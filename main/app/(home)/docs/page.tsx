@@ -98,12 +98,9 @@ export default function DocsPage() {
         { id: "4-get-main-data", label: "4. Get Main Data" },
         { id: "5-get-corpus-apps", label: "5. Get Corpus Apps" },
         { id: "6-get-corpus-categories", label: "6. Get Corpus Categories" },
-        { id: "7-get-specific-corpus-category", label: "7. Get Specific Corpus Category" },
-        { id: "71-get-specific-corpus-category-v2", label: "7.1. Get Specific Corpus Category (V2)" },
-        { id: "8-text-search-enhanced", label: "8. Text Search (Enhanced)" },
-        { id: "81-text-search-v2", label: "8.1. Text Search (V2)" },
-        { id: "9-get-corpus-item", label: "9. Get Corpus Item" },
-        { id: "91-get-corpus-item-v2", label: "9.1. Get Corpus Item (V2)" },
+        { id: "7-get-specific-corpus-category-v2", label: "7. Get Specific Corpus Category (V2)" },
+        { id: "8-text-search-v2", label: "8. Text Search (V2)" },
+        { id: "9-get-corpus-item-v2", label: "9. Get Corpus Item (V2)" },
         { id: "10-get-random-corpus-item", label: "10. Get Random Corpus Item" },
         { id: "11-get-all-corpus-items", label: "11. Get All Corpus Items" },
       ]
@@ -113,7 +110,6 @@ export default function DocsPage() {
       label: "Developer APIs",
       children: [
         { id: "12-create-corpus-item-developer", label: "12. Create Corpus Item" },
-        { id: "13-update-corpus-item-developer", label: "13. Update Corpus Item" },
         { id: "13-update-corpus-item-developer", label: "13. Update Corpus Item" },
         { id: "14-get-update-history", label: "14. Get Update History" },
         { id: "15-approve-corpus-item-admin-api-key-required", label: "15. Approve Corpus Item" },
@@ -146,7 +142,7 @@ export default function DocsPage() {
       label: "Data Structures",
       children: [
         { id: "corpus-item-structure", label: "Corpus Item Structure" },
-        { id: "zyzd-item-structure-input", label: "ZYZD Item Structure (Input)" },
+        { id: "zyzd-item-structure", label: "ZYZD Item Structure" },
       ]
     },
     { 
