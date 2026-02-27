@@ -1,4 +1,4 @@
-be seen in `main/public/apidoc.md`,
+be seen in `./apidoc.md`,
 
 also could be seen in:
 
