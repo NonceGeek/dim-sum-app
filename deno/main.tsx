@@ -406,6 +406,62 @@ router
       context.response.body = { error: "Internal server error" };
     }
   })
+  // exp: https://backend.aidimsum.com/v2/corpus_count?corpus_name=yyjq&lifecycle_stage=normalized,cleaned
+  .get("/v2/corpus_count", async (context) => {
+    const queryParams = context.request.url.searchParams;
+    const corpus_name = queryParams.get("corpus_name");
+    const lifecycleStageParams = queryParams.getAll("lifecycle_stage");
+    const lifecycleStageList = lifecycleStageParams
+      .flatMap((value) => value.split(","))
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+
+    if (!corpus_name) {
+      context.response.status = 400;
+      context.response.body = { error: "corpus_name parameter is required" };
+      return;
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    try {
+      let query = supabase
+        .from("cantonese_corpus_all")
+        .select("*", { count: "exact", head: true })
+        .eq("category", corpus_name);
+
+      if (lifecycleStageList.length > 0) {
+        query = query.in("lifecycle_stage", lifecycleStageList);
+      }
+
+      const { count, error } = await query;
+
+      if (error) {
+        console.error("Database error:", error);
+        context.response.status = 500;
+        context.response.body = { error: "Database query failed" };
+        return;
+      }
+
+      context.response.status = 200;
+      context.response.headers.set(
+        "Cache-Control",
+        "public, max-age=300, stale-while-revalidate=600"
+      );
+      context.response.body = {
+        corpus_name,
+        total_count: count ?? 0,
+        lifecycle_stage: lifecycleStageList,
+      };
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
   // exp: https://backend.aidimsum.com/random_item?corpus_name=zyzdv2
   .get("/random_item", async (context) => {
     const supabase = createClient(
