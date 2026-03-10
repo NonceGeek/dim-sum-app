@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { PrismaClient } from '@prisma/client';
 import { VerificationEmail } from '@/components/email/verification-email';
+import { prisma } from '@/lib/prisma';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const prisma = new PrismaClient();
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {

@@ -127,15 +127,16 @@ export default function AdminPermissionsPage() {
     categoryName: string;
   } | null>(null);
   const [newPermission, setNewPermission] = useState<{
-    user_id: string;
+    user_ids: string[];
     category_names: string[];
     permission: string;
   }>({
-    user_id: "",
+    user_ids: [],
     category_names: [],
     permission: "READ",
   });
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
+  const [userPopoverOpen, setUserPopoverOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -210,7 +211,7 @@ export default function AdminPermissionsPage() {
   // 添加权限
   const addPermissionMutation = useMutation({
     mutationFn: async (data: {
-      user_id: string;
+      user_ids: string[];
       category_names: string[];
       permission: string;
     }) => {
@@ -225,7 +226,7 @@ export default function AdminPermissionsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-permissions"] });
       setIsAddDialogOpen(false);
-      setNewPermission({ user_id: "", category_names: [], permission: "READ" });
+      setNewPermission({ user_ids: [], category_names: [], permission: "READ" });
       setUserSearchQuery("");
       toast.success(`Successfully added ${data.count || 1} permissions`);
     },
@@ -412,71 +413,101 @@ export default function AdminPermissionsPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  {/* 用户选择带搜索 */}
+                  {/* 用户多选 */}
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-300">User</label>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Search user by name, email or phone..."
-                        value={userSearchQuery}
-                        onChange={(e) => setUserSearchQuery(e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white"
-                      />
-                      {newPermission.user_id && (
-                        <div className="flex items-center gap-2 p-2 bg-gray-700 rounded">
-                          <UserIcon className="h-4 w-4 text-gray-400" />
-                          <span className="text-white text-sm">
-                            {getSelectedUserName(newPermission.user_id)}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              setNewPermission({
-                                ...newPermission,
-                                user_id: "",
-                              })
-                            }
-                            className="ml-auto h-6 w-6 p-0 text-gray-400 hover:text-white"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                      {!newPermission.user_id && userSearchQuery && (
-                        <div className="max-h-40 overflow-y-auto bg-gray-700 rounded border border-gray-600">
-                          {filteredUsers.length === 0 ? (
-                            <div className="p-2 text-sm text-gray-400">
-                              No users found
-                            </div>
-                          ) : (
-                            filteredUsers.map((user) => (
+                    <label className="text-sm text-gray-300">Users</label>
+                    <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={userPopoverOpen}
+                          className="w-full justify-between bg-gray-700 border-gray-600 text-white hover:bg-gray-600 hover:text-white"
+                        >
+                          {newPermission.user_ids.length > 0
+                            ? `${newPermission.user_ids.length} selected`
+                            : "Select users..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700">
+                        <Command className="bg-gray-800 border-gray-700">
+                          <CommandInput placeholder="Search user..." className="text-white" />
+                          <CommandList>
+                            <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No user found.</CommandEmpty>
+                            <CommandGroup className="max-h-60 overflow-y-auto">
+                              {filteredUsers.map((user) => (
+                                <CommandItem
+                                  key={user.id}
+                                  value={`${user.name} ${user.email} ${user.phoneNumber || ''} ${user.id}`}
+                                  onSelect={() => {
+                                    setNewPermission((prev) => {
+                                      const isSelected = prev.user_ids.includes(user.id);
+                                      if (isSelected) {
+                                        return {
+                                          ...prev,
+                                          user_ids: prev.user_ids.filter((id) => id !== user.id),
+                                        };
+                                      } else {
+                                        return {
+                                          ...prev,
+                                          user_ids: [...prev.user_ids, user.id],
+                                        };
+                                      }
+                                    });
+                                  }}
+                                  className="text-white hover:bg-gray-700 cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div
+                                      className={cn(
+                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                        newPermission.user_ids.includes(user.id)
+                                          ? "bg-primary text-primary-foreground"
+                                          : "opacity-50 [&_svg]:invisible"
+                                      )}
+                                    >
+                                      <Check className={cn("h-4 w-4")} />
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="text-sm">{user.name || "N/A"}</div>
+                                      <div className="text-xs text-gray-400">
+                                        {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Selected Users Badges */}
+                    {newPermission.user_ids.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto">
+                        {newPermission.user_ids.map((userId) => {
+                          const user = usersData?.users.find(u => u.id === userId);
+                          return (
+                            <Badge key={userId} variant="secondary" className="bg-gray-700 text-gray-200 hover:bg-gray-600">
+                              {user?.name || user?.email || userId}
                               <button
-                                key={user.id}
+                                className="ml-1 hover:text-white"
                                 onClick={() => {
-                                  setNewPermission({
-                                    ...newPermission,
-                                    user_id: user.id,
-                                  });
-                                  setUserSearchQuery("");
+                                  setNewPermission(prev => ({
+                                    ...prev,
+                                    user_ids: prev.user_ids.filter(id => id !== userId)
+                                  }));
                                 }}
-                                className="w-full px-3 py-2 text-left hover:bg-gray-600 flex items-center gap-2"
                               >
-                                <UserIcon className="h-4 w-4 text-gray-400" />
-                                <div>
-                                  <div className="text-sm text-white">
-                                    {user.name || "N/A"}
-                                  </div>
-                                  <div className="text-xs text-gray-400">
-                                    {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
-                                  </div>
-                                </div>
+                                <X className="h-3 w-3" />
                               </button>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* 分类多选 */}
@@ -576,31 +607,30 @@ export default function AdminPermissionsPage() {
                     <label className="text-sm text-gray-300">
                       Permission Level
                     </label>
-                    {newPermission.user_id ? (
-                      <div className="p-3 bg-gray-700 rounded border border-gray-600">
+                    {newPermission.user_ids.length > 0 ? (
+                      <div className="p-3 bg-gray-700 rounded border border-gray-600 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-white font-medium">
-                            {getRolePermissionLevel(
-                              usersData?.users.find(
-                                (u) => u.id === newPermission.user_id,
-                              )?.role || "",
-                            )}
-                          </span>
                           <span className="text-xs text-gray-400">
-                            Auto-set based on role
+                            Auto-set based on each user's role
                           </span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {usersData?.users.find(
-                            (u) => u.id === newPermission.user_id,
-                          )?.role === "RESEARCHER"
-                            ? "RESEARCHER → CREATE (Includes: View, Edit, Add entries)"
-                            : "TAGGER → WRITE (Includes: View, Edit entries)"}
-                        </p>
+                        <div className="text-xs text-gray-400 space-y-1">
+                          {newPermission.user_ids.map((userId) => {
+                            const user = usersData?.users.find((u) => u.id === userId);
+                            if (!user) return null;
+                            const permLevel = getRolePermissionLevel(user.role);
+                            return (
+                              <div key={userId} className="flex justify-between items-center">
+                                <span className="text-white">{user.name || user.email}</span>
+                                <Badge className="bg-blue-500 text-xs">{permLevel}</Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ) : (
                       <div className="p-3 bg-gray-700 rounded border border-gray-600 text-gray-400 text-sm">
-                        Select a user to see the permission level
+                        Select users to see their permission levels
                       </div>
                     )}
                   </div>
@@ -611,7 +641,7 @@ export default function AdminPermissionsPage() {
                     onClick={() => {
                       setIsAddDialogOpen(false);
                       setUserSearchQuery("");
-                      setNewPermission({ user_id: "", category_names: [], permission: "READ" });
+                      setNewPermission({ user_ids: [], category_names: [], permission: "READ" });
                     }}
                     className="bg-gray-700 border-gray-600 text-white"
                   >
@@ -620,7 +650,7 @@ export default function AdminPermissionsPage() {
                   <Button
                     onClick={() => addPermissionMutation.mutate(newPermission)}
                     disabled={
-                      !newPermission.user_id ||
+                      newPermission.user_ids.length === 0 ||
                       newPermission.category_names.length === 0 ||
                       addPermissionMutation.isPending
                     }
@@ -632,7 +662,7 @@ export default function AdminPermissionsPage() {
                         Adding...
                       </>
                     ) : (
-                      "Add Permission"
+                      "Add Permissions"
                     )}
                   </Button>
                 </DialogFooter>

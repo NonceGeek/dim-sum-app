@@ -1,11 +1,16 @@
 import {
-  PrismaClient,
   Role,
   CorpusPermission,
   PermissionAction,
 } from "@prisma/client";
+import { prisma } from "./prisma";
+import type { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+// 定义事务客户端类型
+type TransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends"
+>;
 
 export interface UserContext {
   id: string;
@@ -130,15 +135,19 @@ export function getDefaultPermissionForRole(role: Role): CorpusPermission {
 /**
  * 记录权限变更到审计日志
  */
-export async function logPermissionChange(params: {
-  operatorId: string;
-  targetUserId: string;
-  action: PermissionAction;
-  categoryName?: string;
-  oldValue?: object;
-  newValue?: object;
-}): Promise<void> {
-  await prisma.permission_audit_logs.create({
+export async function logPermissionChange(
+  params: {
+    operatorId: string;
+    targetUserId: string;
+    action: PermissionAction;
+    categoryName?: string;
+    oldValue?: object;
+    newValue?: object;
+  },
+  tx?: TransactionClient | PrismaClient
+): Promise<void> {
+  const client = tx || prisma;
+  await client.permission_audit_logs.create({
     data: {
       operator_id: params.operatorId,
       target_user_id: params.targetUserId,

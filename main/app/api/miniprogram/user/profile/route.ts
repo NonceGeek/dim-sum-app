@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 /**
  * Get user profile

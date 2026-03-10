@@ -12,9 +12,8 @@
  *   --force      强制处理，忽略冷静期（仅用于测试）
  */
 
-import { PrismaClient, UserStatus } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { UserStatus } from "@prisma/client";
+import { prisma } from "../lib/prisma";
 
 // 冷静期天数
 const COOLING_PERIOD_DAYS = 7;

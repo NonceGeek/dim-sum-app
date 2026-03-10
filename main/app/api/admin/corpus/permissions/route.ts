@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import {
-  PrismaClient,
   CorpusPermission,
   PermissionAction,
 } from "@prisma/client";
 import { logPermissionChange } from "@/lib/permission";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET - 获取权限列表
@@ -95,14 +93,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { user_id, category_name, category_names, permission } = body;
+    const { user_id, user_ids, category_name, category_names, permission } = body;
+
+    // Support both single and multiple users
+    const targetUsers: string[] = user_ids || (user_id ? [user_id] : []);
 
     // Support both single category (legacy) and multiple categories
     const targetCategories: string[] = category_names || (category_name ? [category_name] : []);
 
-    if (!user_id || targetCategories.length === 0) {
+    if (targetUsers.length === 0 || targetCategories.length === 0) {
       return NextResponse.json(
-        { error: "user_id and at least one category are required" },
+        { error: "At least one user_id and one category are required" },
         { status: 400 },
       );
     }
@@ -115,16 +116,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check user existence
-    const user = await prisma.user.findUnique({ where: { id: user_id } });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    // Check all users existence
+    const users = await prisma.user.findMany({
+      where: { id: { in: targetUsers } }
+    });
+
+    if (users.length !== targetUsers.length) {
+      return NextResponse.json({ error: "One or more users not found" }, { status: 404 });
     }
 
     // 禁止给 LEARNER 分配权限
-    if (user.role === "LEARNER") {
+    const learnerUsers = users.filter(u => u.role === "LEARNER");
+    if (learnerUsers.length > 0) {
       return NextResponse.json(
-        { error: "Cannot assign permissions to LEARNER users" },
+        { error: `Cannot assign permissions to LEARNER users: ${learnerUsers.map(u => u.name || u.email).join(', ')}` },
         { status: 400 },
       );
     }
@@ -133,7 +138,7 @@ export async function POST(req: NextRequest) {
     const categories = await prisma.cantonese_categories.findMany({
       where: { name: { in: targetCategories } }
     });
-    
+
     if (categories.length !== targetCategories.length) {
        return NextResponse.json(
         { error: "One or more categories not found" },
@@ -141,74 +146,109 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 根据角色自动确定权限级别
-    let effectivePermission: CorpusPermission;
-    if (user.role === "RESEARCHER") {
-      effectivePermission = CorpusPermission.CREATE;
-    } else if (
-      user.role === "TAGGER_PARTNER" ||
-      user.role === "TAGGER_OUTSOURCING"
-    ) {
-      effectivePermission = CorpusPermission.WRITE;
-    } else {
-      // 超级管理员或其他角色使用请求的权限或默认 READ
-      effectivePermission = permission || CorpusPermission.READ;
-    }
-
-    // Use transaction to ensure atomicity
-    const results = await prisma.$transaction(async (tx) => {
-      const operationResults = [];
-
-      for (const categoryName of targetCategories) {
-        // 检查是否已存在权限
-        const existingPermission = await tx.user_corpus_permissions.findUnique({
-          where: {
-            user_id_category_name: { user_id, category_name: categoryName },
-          },
-        });
-
-        let result;
-        let action: PermissionAction;
-        let oldValue = null;
-
-        if (existingPermission) {
-          // 更新权限
-          oldValue = { permission: existingPermission.permission };
-          result = await tx.user_corpus_permissions.update({
-            where: {
-              user_id_category_name: { user_id, category_name: categoryName },
-            },
-            data: {
-              permission: effectivePermission,
-            },
-          });
-          action = PermissionAction.MODIFY;
-        } else {
-          // 创建权限
-          result = await tx.user_corpus_permissions.create({
-            data: {
-              user_id,
-              category_name: categoryName,
-              permission: effectivePermission,
-              created_by: session.user.id,
-            },
-          });
-          action = PermissionAction.GRANT;
-        }
-
-        // 记录审计日志
-        await logPermissionChange({
-          operatorId: session.user.id!,
-          targetUserId: user_id,
-          action,
-          categoryName: categoryName,
-          oldValue: oldValue ?? undefined,
-          newValue: { permission: result.permission },
-        });
-        
-        operationResults.push(result);
+    // 创建用户角色到权限的映射
+    const userPermissionMap = new Map<string, CorpusPermission>();
+    users.forEach(user => {
+      let effectivePermission: CorpusPermission;
+      if (user.role === "RESEARCHER") {
+        effectivePermission = CorpusPermission.CREATE;
+      } else if (
+        user.role === "TAGGER_PARTNER" ||
+        user.role === "TAGGER_OUTSOURCING"
+      ) {
+        effectivePermission = CorpusPermission.WRITE;
+      } else {
+        // 超级管理员或其他角色使用请求的权限或默认 READ
+        effectivePermission = permission || CorpusPermission.READ;
       }
+      userPermissionMap.set(user.id, effectivePermission);
+    });
+
+    // Use transaction to ensure atomicity with increased timeout
+    const results = await prisma.$transaction(async (tx) => {
+      // 优化 1: 批量预查询所有现有权限，减少数据库往返
+      const existingPermissions = await tx.user_corpus_permissions.findMany({
+        where: {
+          user_id: { in: targetUsers },
+          category_name: { in: targetCategories }
+        }
+      });
+
+      // 构建快速查询索引 Map
+      const existingMap = new Map<string, typeof existingPermissions[0]>(
+        existingPermissions.map(p => [`${p.user_id}:${p.category_name}`, p])
+      );
+
+      const operationResults = [];
+      const auditLogs: Array<{
+        operator_id: string;
+        target_user_id: string;
+        action: PermissionAction;
+        category_name: string;
+        old_value?: object;
+        new_value: object;
+      }> = [];
+
+      for (const userId of targetUsers) {
+        const effectivePermission = userPermissionMap.get(userId)!;
+
+        for (const categoryName of targetCategories) {
+          const key = `${userId}:${categoryName}`;
+          const existingPermission = existingMap.get(key);
+
+          let result;
+          let action: PermissionAction;
+          let oldValue = null;
+
+          if (existingPermission) {
+            // 更新权限
+            oldValue = { permission: existingPermission.permission };
+            result = await tx.user_corpus_permissions.update({
+              where: {
+                user_id_category_name: { user_id: userId, category_name: categoryName },
+              },
+              data: {
+                permission: effectivePermission,
+              },
+            });
+            action = PermissionAction.MODIFY;
+          } else {
+            // 创建权限
+            result = await tx.user_corpus_permissions.create({
+              data: {
+                user_id: userId,
+                category_name: categoryName,
+                permission: effectivePermission,
+                created_by: session.user.id,
+              },
+            });
+            action = PermissionAction.GRANT;
+          }
+
+          // 收集审计日志数据，稍后批量插入
+          auditLogs.push({
+            operator_id: session.user.id!,
+            target_user_id: userId,
+            action,
+            category_name: categoryName,
+            old_value: oldValue ?? undefined,
+            new_value: { permission: result.permission },
+          });
+
+          operationResults.push(result);
+        }
+      }
+
+      // 优化 3: 批量插入审计日志，大幅减少数据库往返
+      if (auditLogs.length > 0) {
+        await tx.permission_audit_logs.createMany({
+          data: auditLogs
+        });
+      }
+
       return operationResults;
+    }, {
+      timeout: 30000, // 保留30秒超时作为安全边界
     });
 
     return NextResponse.json({

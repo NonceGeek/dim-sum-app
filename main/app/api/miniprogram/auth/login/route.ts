@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import {
   generateMiniprogramToken,
   generateRefreshToken,
 } from "@/lib/miniprogram-jwt";
 import { getUserCorpusList } from "@/lib/permission";
 import { AliyunSmsService } from "@/lib/services/aliyun-sms";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 interface WeChatAuthResponse {
   openid: string;
