@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient, UserStatus } from "@prisma/client";
+import { UserStatus } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // 冷静期天数
 const COOLING_PERIOD_DAYS = 7;

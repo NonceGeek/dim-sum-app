@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import {
   getAliyunSmsService,
   AliyunSmsService,
 } from "@/lib/services/aliyun-sms";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {

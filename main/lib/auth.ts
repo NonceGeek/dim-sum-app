@@ -7,9 +7,8 @@ import WechatProvider from "@/providers/wechat";
 import { EmailProvider } from "@/providers/email-provider";
 import { SmsProvider } from "@/providers/sms-provider";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient, Role } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Role } from "@prisma/client";
+import { prisma } from "./prisma";
 
 // 扩展 Profile 类型以包含微信特定字段
 interface WeChatProfile {

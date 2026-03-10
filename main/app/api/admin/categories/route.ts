@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
-import { PrismaClient, PermissionAction } from "@prisma/client";
+import { PermissionAction } from "@prisma/client";
 import { logPermissionChange } from "@/lib/permission";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET - 获取语料库分类列表
