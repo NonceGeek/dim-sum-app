@@ -455,7 +455,7 @@ export default function AdminPermissionsPage() {
                             value={userSearchQuery}
                             onValueChange={setUserSearchQuery}
                           />
-                          <CommandList>
+                          <CommandList className="max-h-[300px] overflow-y-auto">
                             {isLoadingUsers ? (
                               <div className="flex items-center justify-center py-6">
                                 <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -464,7 +464,7 @@ export default function AdminPermissionsPage() {
                             ) : (
                               <>
                                 <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No user found.</CommandEmpty>
-                                <CommandGroup className="max-h-60 overflow-y-auto">
+                                <CommandGroup>
                                   {filteredUsers.map((user) => (
                                     <CommandItem
                                       key={user.id}
@@ -561,9 +561,9 @@ export default function AdminPermissionsPage() {
                       <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700">
                         <Command className="bg-gray-800 border-gray-700">
                           <CommandInput placeholder="Search category..." className="text-white" />
-                          <CommandList>
+                          <CommandList className="max-h-[300px] overflow-y-auto">
                             <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No category found.</CommandEmpty>
-                            <CommandGroup className="max-h-60 overflow-y-auto">
+                            <CommandGroup>
                               {categoriesData?.categories.map((cat) => (
                                 <CommandItem
                                   key={cat.name}
