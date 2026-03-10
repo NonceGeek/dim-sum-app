@@ -70,7 +70,7 @@ async function insertCorpusItem(data, note, category, tags) {
   });
 }
 
-const csvPath = path.join(__dirname, "../corpus/yywj.csv");
+const csvPath = path.join(__dirname, "../corpus/yyxy.csv");
 const csv = fs.readFileSync(csvPath, "utf-8");
 let parsed = parse(csv)
 // console.log(parsed);
@@ -90,13 +90,14 @@ async function processData() {
     console.log(`\n--- Processing row ${i}/${parsed.length} ---`);
     // 序号,粤语原文,普通话翻译,粤语拼音,场景
     // 1,你好！,你好！,nei5 hou2！,1问候场景
-    let note = {context: {}, contributor: "0x08"};
+    let note = {context: {}, contributor: "0x10"};
     let data = row[1]; // 粤语原文 - Cantonese original text
     // to make the note with data as json: 序号, 粤语原文, 普通话翻译, 粤语拼音, 场景
     note.context.粤语原文 = row[1];
     note.context.普通话翻译 = row[2];
     note.context.粤语拼音 = row[3];
     note.context.场景 = row[4];
+    note.context.来源 = row[5];
     // Generate audio link based on 序号 and data
     const padded序号 = String(row[0]).padStart(5, '0'); // Pad 序号 to 5 digits
     const encodedData = encodeURIComponent(data); // URL-encode the 粤语原文
@@ -112,7 +113,7 @@ async function processData() {
 
     try {
       // Map to API format - use 粤语原文 as data
-      const category = "yywj"; // Category for YYWJ corpus
+      const category = "yywj2"; // Category for YYWJ corpus
       
       console.log(`Inserting: 序号=${note.context.序号}, 粤语原文=${data}`);
       

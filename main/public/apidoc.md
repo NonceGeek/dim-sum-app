@@ -303,18 +303,171 @@ Retrieves all corpus items from a specified corpus.
 
 **Response:**
 ```json
-[
-  {
-    "unique_id": "uuid",
-    "data": "character",
-    "note": {
-      "meaning": ["definition1", "definition2"],
-      "pinyin": ["pronunciation1", "pronunciation2"]
+{
+  data: [
+    {
+      id: 38551,
+      data: 'fling嚟fling去打烂嘢。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:40.750539+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '6127a331-6bde-4a86-b8f7-37071576bc5a',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-26T01:27:56.313+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
     },
-    "category": "yyjq",
-    "tags": ["lyric"]
-  }
-]
+    {
+      id: 38552,
+      data: 'hea埋呢段日子啊。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:41.319881+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'b35514f3-46b8-4f2f-a376-c07b4b14a4e6',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:41.319881+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38553,
+      data: '一個人都冇食㗎。你交咗解藥出嚟，我唔會傷害你。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:41.645009+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '0d581bc4-fdb8-4744-a4f0-5c9fb20e4474',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:41.645009+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38554,
+      data: '一唔一齊玩啊？',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:41.945722+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'd8e6cc50-403c-48f6-8954-3b89de2b1894',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:41.945722+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38555,
+      data: '一言为定，我等你啊。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:42.241755+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'b12ccb2b-9580-409c-8b4c-61491612bf9b',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-26T00:44:39.712+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38556,
+      data: '七色寶蓮保唔住你哋嘅肉身，不過好在保住個魂魄。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:42.527305+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '91982a32-4e7b-4d03-81f3-e454558cacd9',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:42.527305+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38557,
+      data: '三年後嘅今日，天雷點都會降临，攞佢條命。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:42.833872+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'ac5ef235-e255-436b-9587-df73190a3b66',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-25T06:44:53.962+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38558,
+      data: '三年短係短咗啲。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:43.106982+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '913c9ed5-9554-4f2f-974a-126d79d08e3e',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:43.106982+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38559,
+      data: '上次嘅误会已經澄清咗，係你打走咗只妖怪。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:43.380224+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'a4636c9c-9d8c-4de0-817f-736c09a29747',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:43.380224+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38560,
+      data: '上面呢？好簡單啫，嚇佢上條橋度，咪搞掂晒咯！點嚇啊？',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:43.683963+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'b34833f0-b39c-465c-b1c4-fa5ee1dec562',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:43.683963+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    }
+  ],
+  pagination: { limit: 10, cursor: '0', nextCursor: 38560, hasMore: true }
+}
 ```
 
 **Curl Example:**
