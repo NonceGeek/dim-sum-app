@@ -7,9 +7,10 @@ Beta Base URL: `https://beta.backend.aidimsum.com`
 ## Table of Contents
 - [Public APIs](#public-apis)
   - [V2 APIs](#v2-apis)
+  - [Get Corpus Count (V2)](#12-get-corpus-count-v2)
 - [Developer APIs (API Key Required)](#developer-apis-api-key-required)
 - [Admin APIs (Password Required)](#admin-apis-password-required)
-  - [OSS Upload APIs](#21-get-oss-upload-policy-admin)
+  - [OSS Upload APIs](#22-get-oss-upload-policy-admin)
 
 ## GET API KEY!
 
@@ -303,18 +304,171 @@ Retrieves all corpus items from a specified corpus.
 
 **Response:**
 ```json
-[
-  {
-    "unique_id": "uuid",
-    "data": "character",
-    "note": {
-      "meaning": ["definition1", "definition2"],
-      "pinyin": ["pronunciation1", "pronunciation2"]
+{
+  data: [
+    {
+      id: 38551,
+      data: 'fling嚟fling去打烂嘢。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:40.750539+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '6127a331-6bde-4a86-b8f7-37071576bc5a',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-26T01:27:56.313+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
     },
-    "category": "yyjq",
-    "tags": ["lyric"]
-  }
-]
+    {
+      id: 38552,
+      data: 'hea埋呢段日子啊。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:41.319881+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'b35514f3-46b8-4f2f-a376-c07b4b14a4e6',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:41.319881+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38553,
+      data: '一個人都冇食㗎。你交咗解藥出嚟，我唔會傷害你。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:41.645009+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '0d581bc4-fdb8-4744-a4f0-5c9fb20e4474',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:41.645009+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38554,
+      data: '一唔一齊玩啊？',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:41.945722+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'd8e6cc50-403c-48f6-8954-3b89de2b1894',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:41.945722+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38555,
+      data: '一言为定，我等你啊。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:42.241755+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'b12ccb2b-9580-409c-8b4c-61491612bf9b',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-26T00:44:39.712+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38556,
+      data: '七色寶蓮保唔住你哋嘅肉身，不過好在保住個魂魄。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:42.527305+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '91982a32-4e7b-4d03-81f3-e454558cacd9',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:42.527305+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38557,
+      data: '三年後嘅今日，天雷點都會降临，攞佢條命。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:42.833872+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'ac5ef235-e255-436b-9587-df73190a3b66',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-25T06:44:53.962+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38558,
+      data: '三年短係短咗啲。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:43.106982+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: '913c9ed5-9554-4f2f-974a-126d79d08e3e',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:43.106982+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38559,
+      data: '上次嘅误会已經澄清咗，係你打走咗只妖怪。',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:43.380224+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'a4636c9c-9d8c-4de0-817f-736c09a29747',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:43.380224+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    },
+    {
+      id: 38560,
+      data: '上面呢？好簡單啫，嚇佢上條橋度，咪搞掂晒咯！點嚇啊？',
+      note: [Object],
+      category: 'yydh',
+      created_at: '2026-02-02T12:46:43.683963+00:00',
+      tags: [Array],
+      editable_level: 1,
+      liked_num: 0,
+      unique_id: 'b34833f0-b39c-465c-b1c4-fa5ee1dec562',
+      bookmark_num: 0,
+      view_num: 0,
+      updated_at: '2026-02-02T12:46:43.683963+00:00',
+      lifecycle_stage: 'normalized',
+      structured_note: [Object]
+    }
+  ],
+  pagination: { limit: 10, cursor: '0', nextCursor: 38560, hasMore: true }
+}
 ```
 
 **Curl Example:**
@@ -327,9 +481,46 @@ curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&li
 curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&lifecycle_stage=normalized&lifecycle_stage=draft"
 ```
 
+### 12. Get Corpus Count (V2)
+**GET** `/v2/corpus_count`
+
+Returns the total count of items in a specified corpus without returning actual data. Supports filtering by lifecycle_stage.
+
+Response includes `Cache-Control: public, max-age=300, stale-while-revalidate=600` header.
+
+**Parameters:**
+- `corpus_name` (required): The name of the corpus (e.g., "yyjq")
+- `lifecycle_stage` (optional): Filter by lifecycle stage. Supports multiple values via repeated parameters or comma-separated lists.
+
+**lifecycle_stage available values:**
+- `draft`: Not yet entered any processing flow
+- `normalized`: Automated normalization completed
+- `cleaned`: Manual cleaning completed
+- `active`: Entered routine rule checks
+
+**Response:**
+```json
+{
+  "corpus_name": "yyjq",
+  "total_count": 12345,
+  "lifecycle_stage": ["normalized", "cleaned"]
+}
+```
+
+**Curl Examples:**
+```bash
+curl -X GET "https://backend.aidimsum.com/v2/corpus_count?corpus_name=yyjq"
+```
+
+```bash
+curl -X GET "https://backend.aidimsum.com/v2/corpus_count?corpus_name=yyjq&lifecycle_stage=normalized,cleaned"
+```
+
+---
+
 ## Developer APIs (API Key Required)
 
-### 12. Create Corpus Item (Developer)
+### 13. Create Corpus Item (Developer)
 **POST** `/dev/insert_corpus_item`
 
 Submits a request to create a new corpus item. Requires an approved API key. The request will be pending approval.
@@ -376,7 +567,7 @@ curl -X POST "https://backend.aidimsum.com/dev/insert_corpus_item" \
 
 ---
 
-### 13. Update Corpus Item (Developer)
+### 14. Update Corpus Item (Developer)
 **POST** `/dev/update_corpus_item`
 
 Submits a request to update an existing corpus item. Requires an approved API key. The request will be pending approval.
@@ -426,7 +617,7 @@ curl -X POST "https://backend.aidimsum.com/dev/update_corpus_item" \
 
 ---
 
-### 14. Get Update History
+### 15. Get Update History
 **POST** `/dev/get_update_history`
 
 Retrieves the update history for a specific corpus item by unique_id. Requires an approved API key.
@@ -465,7 +656,7 @@ curl -X POST "https://backend.aidimsum.com/dev/get_update_history" \
 
 ---
 
-### 15. Approve Corpus Item (Admin API Key Required)
+### 16. Approve Corpus Item (Admin API Key Required)
 **POST** `/dev/approve_corpus_item`
 
 Approves a pending corpus item update or creation. Requires an admin-level API key.
@@ -527,7 +718,7 @@ curl -X POST "https://backend.aidimsum.com/dev/approve_corpus_item" \
 
 ---
 
-### 16. Get API Key Status
+### 17. Get API Key Status
 **POST** `/dev/get_api_key_status`
 
 Retrieves the status and details of your API key.
@@ -563,7 +754,7 @@ curl -X POST "https://backend.aidimsum.com/dev/get_api_key_status" \
 
 ---
 
-### 17. Get Taggers by Corpus Name
+### 18. Get Taggers by Corpus Name
 **POST** `/dev/get_taggers_by_corpus_name`
 
 Retrieves detailed information about taggers (users who work on) a specific corpus category. Requires an approved API key.
@@ -613,7 +804,7 @@ curl -X POST "https://backend.aidimsum.com/dev/get_taggers_by_corpus_name" \
 
 ## Admin APIs (Password Required)
 
-### 18. Insert Corpus Item (Admin)
+### 19. Insert Corpus Item (Admin)
 **POST** `/admin/insert_corpus_item`
 
 Directly inserts a new corpus item. Requires admin password.
@@ -670,7 +861,7 @@ curl -X POST "https://backend.aidimsum.com/admin/insert_corpus_item" \
 
 ---
 
-### 19. Update Corpus Item (Admin)
+### 20. Update Corpus Item (Admin)
 **POST** `/admin/update_corpus_item`
 
 Directly updates an existing corpus item. Requires admin password.
@@ -710,7 +901,7 @@ curl -X POST "https://backend.aidimsum.com/admin/update_corpus_item" \
 
 ---
 
-### 20. Get User (Admin)
+### 21. Get User (Admin)
 **POST** `/admin/get_user`
 
 Retrieves user information by user ID or email. Includes associated account information. Requires admin password.
@@ -763,7 +954,7 @@ curl -X POST "https://backend.aidimsum.com/admin/get_user" \
   }'
 ```
 
-### 21. Get OSS Upload Policy (Admin)
+### 22. Get OSS Upload Policy (Admin)
 **POST** `/admin/oss/upload-policy`
 
 Generates a presigned upload policy for direct client-side upload to Aliyun OSS. Requires admin password.
@@ -813,7 +1004,7 @@ curl -X POST "https://backend.aidimsum.com/admin/oss/upload-policy" \
 
 ---
 
-### 22. Upload File to OSS (Admin)
+### 23. Upload File to OSS (Admin)
 **POST** `/admin/oss/upload`
 
 Directly uploads a file to Aliyun OSS through the server. Requires admin password. Uses multipart/form-data.

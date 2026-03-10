@@ -86,7 +86,7 @@ async function processData() {
     console.log(`\n--- Processing file ${i + 1}/${wavFiles.length} ---`);
 
     let data = fileNameWithoutExt;
-    let note = {context: {}, contributor: "0x19"};
+    let note = {context: {}, contributor: "0xff"};
     note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/gfxm2/${fileName}`;
     note.context.粤语文本 = fileNameWithoutExt;
 
