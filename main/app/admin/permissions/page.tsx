@@ -645,7 +645,7 @@ export default function AdminPermissionsPage() {
                             Auto-set based on each user's role
                           </span>
                         </div>
-                        <div className="text-xs text-gray-400 space-y-1">
+                        <div className="text-xs text-gray-400 space-y-1 max-h-32 overflow-y-auto">
                           {newPermission.user_ids.map((userId) => {
                             const user = usersData?.users.find((u) => u.id === userId);
                             if (!user) return null;
