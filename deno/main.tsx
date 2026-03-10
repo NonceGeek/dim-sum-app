@@ -948,7 +948,7 @@ Curl example:
   .post("/dev/update_corpus_item", async (context) => {
     let body = await context.request.body({ type: "json" });
     const content = await body.value;
-    const { uuid, note, structured_note, api_key } = content;
+    const { uuid, note, structured_note, data: dataField, api_key } = content;
 
     // Verify API key
     const apiKeyData = await verifyAPIKey(context, api_key);
@@ -978,11 +978,12 @@ Curl example:
       const hasNote = note !== undefined && note !== null;
       const hasStructuredNote =
         structured_note !== undefined && structured_note !== null;
+      const hasData = dataField !== undefined && dataField !== null;
 
-      if (!hasNote && !hasStructuredNote) {
+      if (!hasNote && !hasStructuredNote && !hasData) {
         context.response.status = 400;
         context.response.body = {
-          error: "Either note or structured_note is required",
+          error: "Either note, structured_note, or data is required",
         };
         return;
       }
@@ -991,6 +992,7 @@ Curl example:
       const resolvedStructuredNote = hasStructuredNote
         ? structured_note
         : corpusItem.structured_note ?? null;
+      const resolvedData = hasData ? dataField : corpusItem.data;
 
       // 4. Insert an item into cantonese_corpus_update_history
       const { data: historyData, error: historyError } = await supabase
@@ -999,10 +1001,12 @@ Curl example:
           unique_id: uuid,
           note: resolvedNote,
           structured_note: resolvedStructuredNote,
+          data: resolvedData,
           status: "PENDING",
           user_id: apiKeyData.user_id,
           last_note: corpusItem.note,
           last_structured_note: corpusItem.structured_note ?? null,
+          last_data: corpusItem.data,
         })
         .select()
         .single();
@@ -1152,13 +1156,17 @@ curl -X POST http://localhost:8000/dev/get_update_history \
 
       } else if (updateHistory.operation_type === "UPDATE") {
         // Update existing item in cantonese_corpus_all
-        const { data: updateData, error: updateError } = await supabase
-          .from("cantonese_corpus_all")
-          .update({
+        const updateFields: Record<string, unknown> = {
             note: updateHistory.note,
             structured_note: updateHistory.structured_note ?? null,
             updated_at: new Date().toISOString(),
-          })
+        };
+        if (updateHistory.data !== undefined && updateHistory.data !== null) {
+            updateFields.data = updateHistory.data;
+        }
+        const { data: updateData, error: updateError } = await supabase
+          .from("cantonese_corpus_all")
+          .update(updateFields)
           .eq("unique_id", updateHistory.unique_id)
           .select()
           .single();
