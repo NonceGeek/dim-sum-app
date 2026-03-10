@@ -447,15 +447,15 @@ export default function AdminPermissionsPage() {
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700">
-                        <Command className="bg-gray-800 border-gray-700">
+                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700 max-h-[400px]">
+                        <Command className="bg-gray-800 border-gray-700" shouldFilter={false}>
                           <CommandInput
                             placeholder="Search user..."
                             className="text-white"
                             value={userSearchQuery}
                             onValueChange={setUserSearchQuery}
                           />
-                          <CommandList className="max-h-[300px] overflow-y-auto">
+                          <CommandList onWheel={(e) => e.stopPropagation()}>
                             {isLoadingUsers ? (
                               <div className="flex items-center justify-center py-6">
                                 <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -558,10 +558,10 @@ export default function AdminPermissionsPage() {
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700">
-                        <Command className="bg-gray-800 border-gray-700">
+                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700 max-h-[400px]">
+                        <Command className="bg-gray-800 border-gray-700" shouldFilter={false}>
                           <CommandInput placeholder="Search category..." className="text-white" />
-                          <CommandList className="max-h-[300px] overflow-y-auto">
+                          <CommandList onWheel={(e) => e.stopPropagation()}>
                             <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No category found.</CommandEmpty>
                             <CommandGroup>
                               {categoriesData?.categories.map((cat) => (
