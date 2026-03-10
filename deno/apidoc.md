@@ -7,9 +7,10 @@ Beta Base URL: `https://beta.backend.aidimsum.com`
 ## Table of Contents
 - [Public APIs](#public-apis)
   - [V2 APIs](#v2-apis)
+  - [Get Corpus Count (V2)](#12-get-corpus-count-v2)
 - [Developer APIs (API Key Required)](#developer-apis-api-key-required)
 - [Admin APIs (Password Required)](#admin-apis-password-required)
-  - [OSS Upload APIs](#21-get-oss-upload-policy-admin)
+  - [OSS Upload APIs](#22-get-oss-upload-policy-admin)
 
 ## GET API KEY!
 
@@ -327,9 +328,46 @@ curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&li
 curl -X GET "https://backend.aidimsum.com/all_items?corpus_name=yyjq&lifecycle_stage=normalized&lifecycle_stage=draft"
 ```
 
+### 12. Get Corpus Count (V2)
+**GET** `/v2/corpus_count`
+
+Returns the total count of items in a specified corpus without returning actual data. Supports filtering by lifecycle_stage.
+
+Response includes `Cache-Control: public, max-age=300, stale-while-revalidate=600` header.
+
+**Parameters:**
+- `corpus_name` (required): The name of the corpus (e.g., "yyjq")
+- `lifecycle_stage` (optional): Filter by lifecycle stage. Supports multiple values via repeated parameters or comma-separated lists.
+
+**lifecycle_stage available values:**
+- `draft`: Not yet entered any processing flow
+- `normalized`: Automated normalization completed
+- `cleaned`: Manual cleaning completed
+- `active`: Entered routine rule checks
+
+**Response:**
+```json
+{
+  "corpus_name": "yyjq",
+  "total_count": 12345,
+  "lifecycle_stage": ["normalized", "cleaned"]
+}
+```
+
+**Curl Examples:**
+```bash
+curl -X GET "https://backend.aidimsum.com/v2/corpus_count?corpus_name=yyjq"
+```
+
+```bash
+curl -X GET "https://backend.aidimsum.com/v2/corpus_count?corpus_name=yyjq&lifecycle_stage=normalized,cleaned"
+```
+
+---
+
 ## Developer APIs (API Key Required)
 
-### 12. Create Corpus Item (Developer)
+### 13. Create Corpus Item (Developer)
 **POST** `/dev/insert_corpus_item`
 
 Submits a request to create a new corpus item. Requires an approved API key. The request will be pending approval.
@@ -376,7 +414,7 @@ curl -X POST "https://backend.aidimsum.com/dev/insert_corpus_item" \
 
 ---
 
-### 13. Update Corpus Item (Developer)
+### 14. Update Corpus Item (Developer)
 **POST** `/dev/update_corpus_item`
 
 Submits a request to update an existing corpus item. Requires an approved API key. The request will be pending approval.
@@ -426,7 +464,7 @@ curl -X POST "https://backend.aidimsum.com/dev/update_corpus_item" \
 
 ---
 
-### 14. Get Update History
+### 15. Get Update History
 **POST** `/dev/get_update_history`
 
 Retrieves the update history for a specific corpus item by unique_id. Requires an approved API key.
@@ -465,7 +503,7 @@ curl -X POST "https://backend.aidimsum.com/dev/get_update_history" \
 
 ---
 
-### 15. Approve Corpus Item (Admin API Key Required)
+### 16. Approve Corpus Item (Admin API Key Required)
 **POST** `/dev/approve_corpus_item`
 
 Approves a pending corpus item update or creation. Requires an admin-level API key.
@@ -527,7 +565,7 @@ curl -X POST "https://backend.aidimsum.com/dev/approve_corpus_item" \
 
 ---
 
-### 16. Get API Key Status
+### 17. Get API Key Status
 **POST** `/dev/get_api_key_status`
 
 Retrieves the status and details of your API key.
@@ -563,7 +601,7 @@ curl -X POST "https://backend.aidimsum.com/dev/get_api_key_status" \
 
 ---
 
-### 17. Get Taggers by Corpus Name
+### 18. Get Taggers by Corpus Name
 **POST** `/dev/get_taggers_by_corpus_name`
 
 Retrieves detailed information about taggers (users who work on) a specific corpus category. Requires an approved API key.
@@ -613,7 +651,7 @@ curl -X POST "https://backend.aidimsum.com/dev/get_taggers_by_corpus_name" \
 
 ## Admin APIs (Password Required)
 
-### 18. Insert Corpus Item (Admin)
+### 19. Insert Corpus Item (Admin)
 **POST** `/admin/insert_corpus_item`
 
 Directly inserts a new corpus item. Requires admin password.
@@ -670,7 +708,7 @@ curl -X POST "https://backend.aidimsum.com/admin/insert_corpus_item" \
 
 ---
 
-### 19. Update Corpus Item (Admin)
+### 20. Update Corpus Item (Admin)
 **POST** `/admin/update_corpus_item`
 
 Directly updates an existing corpus item. Requires admin password.
@@ -710,7 +748,7 @@ curl -X POST "https://backend.aidimsum.com/admin/update_corpus_item" \
 
 ---
 
-### 20. Get User (Admin)
+### 21. Get User (Admin)
 **POST** `/admin/get_user`
 
 Retrieves user information by user ID or email. Includes associated account information. Requires admin password.
@@ -763,7 +801,7 @@ curl -X POST "https://backend.aidimsum.com/admin/get_user" \
   }'
 ```
 
-### 21. Get OSS Upload Policy (Admin)
+### 22. Get OSS Upload Policy (Admin)
 **POST** `/admin/oss/upload-policy`
 
 Generates a presigned upload policy for direct client-side upload to Aliyun OSS. Requires admin password.
@@ -813,7 +851,7 @@ curl -X POST "https://backend.aidimsum.com/admin/oss/upload-policy" \
 
 ---
 
-### 22. Upload File to OSS (Admin)
+### 23. Upload File to OSS (Admin)
 **POST** `/admin/oss/upload`
 
 Directly uploads a file to Aliyun OSS through the server. Requires admin password. Uses multipart/form-data.
