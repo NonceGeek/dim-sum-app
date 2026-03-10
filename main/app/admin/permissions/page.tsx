@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -120,6 +120,7 @@ export default function AdminPermissionsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{
     user_id: string;
     category_name: string;
@@ -139,6 +140,15 @@ export default function AdminPermissionsPage() {
   const [userPopoverOpen, setUserPopoverOpen] = useState(false);
 
   const queryClient = useQueryClient();
+
+  // Debounce user search query (500ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedUserSearch(userSearchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [userSearchQuery]);
 
   // ... existing queries ...
 
@@ -165,33 +175,29 @@ export default function AdminPermissionsPage() {
     },
   });
 
-  // 获取用户列表
-  const { data: usersData } = useQuery<UsersResponse>({
-    queryKey: ["admin-users-all"],
+  // 获取用户列表 - 使用服务端搜索
+  const { data: usersData, isLoading: isLoadingUsers } = useQuery<UsersResponse>({
+    queryKey: ["admin-users-search", debouncedUserSearch],
     queryFn: async () => {
-      const response = await fetch("/api/admin/users?limit=1000");
+      const params = new URLSearchParams();
+      if (debouncedUserSearch) {
+        params.append("search", debouncedUserSearch);
+        params.append("limit", "100"); // 搜索结果限制100个
+      } else {
+        params.append("limit", "100"); // 默认显示100个
+      }
+      const response = await fetch(`/api/admin/users?${params}`);
       if (!response.ok) throw new Error("Failed to fetch users");
       return response.json();
     },
   });
 
-  // 过滤用户列表用于搜索（排除 LEARNER）
+  // 过滤用户列表（仅排除 LEARNER，服务端已处理搜索）
   const filteredUsers = useMemo(() => {
     if (!usersData?.users) return [];
-    // 排除 LEARNER 用户
-    const eligibleUsers = usersData.users.filter((u) => u.role !== "LEARNER");
-    if (!userSearchQuery) return eligibleUsers.slice(0, 20);
-    const query = userSearchQuery.toLowerCase();
-    return eligibleUsers
-      .filter(
-        (user) =>
-          user.name?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.id.toLowerCase().includes(query) ||
-          user.phoneNumber?.includes(query),
-      )
-      .slice(0, 20);
-  }, [usersData?.users, userSearchQuery]);
+    // 仅排除 LEARNER 用户，搜索已由服务端完成
+    return usersData.users.filter((u) => u.role !== "LEARNER");
+  }, [usersData?.users]);
 
   // ... existing helper functions ...
 
@@ -349,14 +355,25 @@ export default function AdminPermissionsPage() {
                   />
                 </div>
                 <SelectItem value="all">All Users</SelectItem>
-                {filteredUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{user.name || user.email || user.id}</span>
-                      <span className="text-xs text-gray-400">{user.role}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {isLoadingUsers ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-400">Searching...</span>
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-gray-400">
+                    No users found
+                  </div>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{user.name || user.email || user.id}</span>
+                        <span className="text-xs text-gray-400">{user.role}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
 
@@ -432,53 +449,67 @@ export default function AdminPermissionsPage() {
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700">
                         <Command className="bg-gray-800 border-gray-700">
-                          <CommandInput placeholder="Search user..." className="text-white" />
+                          <CommandInput
+                            placeholder="Search user..."
+                            className="text-white"
+                            value={userSearchQuery}
+                            onValueChange={setUserSearchQuery}
+                          />
                           <CommandList>
-                            <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No user found.</CommandEmpty>
-                            <CommandGroup className="max-h-60 overflow-y-auto">
-                              {filteredUsers.map((user) => (
-                                <CommandItem
-                                  key={user.id}
-                                  value={`${user.name} ${user.email} ${user.phoneNumber || ''} ${user.id}`}
-                                  onSelect={() => {
-                                    setNewPermission((prev) => {
-                                      const isSelected = prev.user_ids.includes(user.id);
-                                      if (isSelected) {
-                                        return {
-                                          ...prev,
-                                          user_ids: prev.user_ids.filter((id) => id !== user.id),
-                                        };
-                                      } else {
-                                        return {
-                                          ...prev,
-                                          user_ids: [...prev.user_ids, user.id],
-                                        };
-                                      }
-                                    });
-                                  }}
-                                  className="text-white hover:bg-gray-700 cursor-pointer"
-                                >
-                                  <div className="flex items-center gap-2 w-full">
-                                    <div
-                                      className={cn(
-                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                        newPermission.user_ids.includes(user.id)
-                                          ? "bg-primary text-primary-foreground"
-                                          : "opacity-50 [&_svg]:invisible"
-                                      )}
+                            {isLoadingUsers ? (
+                              <div className="flex items-center justify-center py-6">
+                                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                                <span className="ml-2 text-sm text-gray-400">Searching users...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No user found.</CommandEmpty>
+                                <CommandGroup className="max-h-60 overflow-y-auto">
+                                  {filteredUsers.map((user) => (
+                                    <CommandItem
+                                      key={user.id}
+                                      value={`${user.name} ${user.email} ${user.phoneNumber || ''} ${user.id}`}
+                                      onSelect={() => {
+                                        setNewPermission((prev) => {
+                                          const isSelected = prev.user_ids.includes(user.id);
+                                          if (isSelected) {
+                                            return {
+                                              ...prev,
+                                              user_ids: prev.user_ids.filter((id) => id !== user.id),
+                                            };
+                                          } else {
+                                            return {
+                                              ...prev,
+                                              user_ids: [...prev.user_ids, user.id],
+                                            };
+                                          }
+                                        });
+                                      }}
+                                      className="text-white hover:bg-gray-700 cursor-pointer"
                                     >
-                                      <Check className={cn("h-4 w-4")} />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="text-sm">{user.name || "N/A"}</div>
-                                      <div className="text-xs text-gray-400">
-                                        {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
+                                      <div className="flex items-center gap-2 w-full">
+                                        <div
+                                          className={cn(
+                                            "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                            newPermission.user_ids.includes(user.id)
+                                              ? "bg-primary text-primary-foreground"
+                                              : "opacity-50 [&_svg]:invisible"
+                                          )}
+                                        >
+                                          <Check className={cn("h-4 w-4")} />
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="text-sm">{user.name || "N/A"}</div>
+                                          <div className="text-xs text-gray-400">
+                                            {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
+                                          </div>
+                                        </div>
                                       </div>
-                                    </div>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </>
+                            )}
                           </CommandList>
                         </Command>
                       </PopoverContent>
