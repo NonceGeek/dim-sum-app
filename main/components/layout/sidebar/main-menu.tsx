@@ -32,15 +32,35 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
   }, [pathname, searchParams]);
 
   // Initialize expanded items based on current active child
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const getInitialExpandedItems = () => {
+    const initial = new Set<string>();
+    menuItems.forEach((item) => {
+      if (item.children && item.children.length > 0) {
+        const hasActiveChild = item.children.some(child => isChildActive(child.href));
+        if (hasActiveChild) {
+          initial.add(item.href);
+        }
+      }
+    });
+    return initial;
+  };
 
-  // Auto-expand menus based on current active route (only adds, doesn't remove)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(getInitialExpandedItems);
+
+  // Auto-expand menus based on current active route
   useEffect(() => {
     menuItems.forEach((item) => {
       if (item.children && item.children.length > 0) {
         const hasActiveChild = item.children.some(child => isChildActive(child.href));
-        if (hasActiveChild && !expandedItems.has(item.href)) {
-          setExpandedItems(prev => new Set([...prev, item.href]));
+        const isOnParentPage = pathname === item.href;
+
+        if (hasActiveChild || isOnParentPage) {
+          setExpandedItems(prev => {
+            if (!prev.has(item.href)) {
+              return new Set([...prev, item.href]);
+            }
+            return prev;
+          });
         }
       }
     });
@@ -48,13 +68,7 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
   }, [pathname, searchParams]);
 
   const toggleExpanded = (href: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(href)) {
-      newExpanded.delete(href);
-    } else {
-      newExpanded.add(href);
-    }
-    setExpandedItems(newExpanded);
+    setExpandedItems(prev => new Set([...prev, href]));
   };
 
   return (
@@ -70,23 +84,26 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
               <SidebarMenuItem key={item.href}>
                 {hasChildren ? (
                   <>
-                    <SidebarMenuButton
-                      onClick={() => toggleExpanded(item.href)}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-sidebar-foreground",
-                        isActive
-                          ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
-                          : "hover:bg-sidebar-accent-foreground/10"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="flex-1">{item.label}</span>
-                      <ChevronRight
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href={item.href}
+                        onClick={() => toggleExpanded(item.href)}
                         className={cn(
-                          "h-4 w-4 shrink-0 transition-transform",
-                          isExpanded && "rotate-90"
+                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-sidebar-foreground",
+                          isActive
+                            ? "bg-sidebar-accent-foreground/50 text-sidebar-foreground hover:bg-sidebar-accent-foreground/50"
+                            : "hover:bg-sidebar-accent-foreground/10"
                         )}
-                      />
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1">{item.label}</span>
+                        <ChevronRight
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-transform",
+                            isExpanded && "rotate-90"
+                          )}
+                        />
+                      </Link>
                     </SidebarMenuButton>
                     {isExpanded && (
                       <SidebarMenuSub>
