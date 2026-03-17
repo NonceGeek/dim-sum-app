@@ -8,7 +8,11 @@ import {
   Settings,
   CreditCard,
   Key,
-  History
+  History,
+  BookOpen,
+  Gamepad2,
+  Bot,
+  MoreHorizontal
 } from "lucide-react";
 import { Role } from "@prisma/client";
 
@@ -17,12 +21,23 @@ interface MenuItemWithRoles {
   label: string;
   href: string;
   roles?: Role[];
+  children?: Array<{ icon: any; label: string; href: string }>;
 }
 
 export const menuItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: LibraryBig, label: "Library", href: "/library" },
-  { icon: AppWindow, label: "App Store", href: "/appStore" },
+  {
+    icon: AppWindow,
+    label: "App Store",
+    href: "/appStore",
+    children: [
+      { icon: BookOpen, label: "学习", href: "/appStore?category=学习" },
+      { icon: Gamepad2, label: "游戏", href: "/appStore?category=游戏" },
+      { icon: Bot, label: "AI", href: "/appStore?category=AI" },
+      { icon: MoreHorizontal, label: "其它", href: "/appStore?category=其它" },
+    ],
+  },
   // TODO: impl in the future.
   // { icon: Compass, label: "Discover", href: "/discover" },
   { icon: FileCode2, label: "Docs", href: "/docs" },

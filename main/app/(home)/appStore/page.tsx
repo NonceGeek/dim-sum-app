@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Combobox,
@@ -212,6 +213,30 @@ export default function AppStorePage() {
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Initialize selectedType from URL params
+  useEffect(() => {
+    const category = searchParams.get("category");
+    if (category) {
+      setSelectedType(category);
+    }
+  }, [searchParams]);
+
+  // Update URL when selectedType changes
+  const handleTypeChange = (value: string) => {
+    const newValue = value === "全部" ? "" : value;
+    setSelectedType(newValue);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (newValue) {
+      params.set("category", newValue);
+    } else {
+      params.delete("category");
+    }
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
 
   const minTypeCount = 1; // 最小类型计数阈值
   const types = useMemo(() => {
@@ -232,9 +257,12 @@ export default function AppStorePage() {
 
   const filteredApps = useMemo(() => {
     if (!selectedType) return apps;
-    return apps.filter(
-      (app: App) => getTypeDisplay(app.type) === selectedType
-    );
+    if (selectedType === "其它")
+      return apps.filter(
+        (app: App) =>
+          !["学习", "游戏", "AI"].includes(getTypeDisplay(app.type)),
+      );
+    return apps.filter((app: App) => getTypeDisplay(app.type) === selectedType);
   }, [apps, selectedType]);
 
   useEffect(() => {
@@ -269,7 +297,7 @@ export default function AppStorePage() {
         <div className="flex items-center justify-center w-full mb-8">
           <h1 className="text-4xl font-bold">应用商店</h1>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <p className="text-xl text-gray-500">Loading apps...</p>
@@ -284,7 +312,7 @@ export default function AppStorePage() {
               <Combobox
                 items={["全部", ...types.map(t => t.type)]}
                 value={selectedType || "全部"}
-                onValueChange={(value) => setSelectedType(value === "全部" ? "" : value)}
+                onValueChange={handleTypeChange}
               >
                 <ComboboxInput placeholder="选择一个标签" />
                 <ComboboxContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 // import { Header } from "@/components/layout/header";
 import ReactMarkdown from "react-markdown";
 
@@ -228,6 +229,30 @@ export default function LibraryPage() {
   const [corpus, setCorpus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Initialize selectedTag from URL params
+  useEffect(() => {
+    const category = searchParams.get("category");
+    if (category) {
+      setSelectedTag(category);
+    }
+  }, [searchParams]);
+
+  // Update URL when selectedTag changes
+  const handleTagChange = (value: string) => {
+    const newValue = value === "全部" ? "" : value;
+    setSelectedTag(newValue);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (newValue) {
+      params.set("category", newValue);
+    } else {
+      params.delete("category");
+    }
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
 
   const minTagCount = 2; // 最小标签计数阈值
   const tags = useMemo(() => {
@@ -299,7 +324,7 @@ export default function LibraryPage() {
               <Combobox
                 items={["全部", ...tags.map(t => t.tag)]}
                 value={selectedTag || "全部"}
-                onValueChange={(value) => setSelectedTag(value === "全部" ? "" : value)}
+                onValueChange={handleTagChange}
               >
                 <ComboboxInput placeholder="选择一个标签" />
                 <ComboboxContent>
