@@ -1,0 +1,109 @@
+/*
+ * ============================================================================
+ * Semantic Tokens — Light Mode
+ * Maps primitive tokens to purpose-driven names.
+ * ============================================================================
+ *
+ * Layer 2 of the 3-layer token architecture:
+ *   1. Primitives  (primitives.css)  — raw color/spacing/type values
+ *   2. Semantic     (this file)      — contextual aliases
+ *   3. Component    — component-specific overrides
+ *
+ * Variable names (--primary, --background, etc.) match shadcn/ui conventions.
+ * DO NOT rename them — components depend on these exact names.
+ * All values MUST reference primitive tokens — no hardcoded colors.
+ */
+
+:root {
+  /* ==========================================================================
+   * SURFACES
+   * ========================================================================== */
+
+  --background:         var(--ds-color-neutral-0);
+  --foreground:         var(--ds-color-neutral-900);
+
+  --card:               var(--ds-color-neutral-0);
+  --card-foreground:    var(--ds-color-neutral-900);
+
+  --popover:            var(--ds-color-neutral-0);
+  --popover-foreground: var(--ds-color-neutral-900);
+
+  /* ==========================================================================
+   * BRAND
+   * ========================================================================== */
+
+  --primary:              var(--ds-color-brand-600);
+  --primary-foreground:   var(--ds-color-neutral-0);
+
+  --secondary:            var(--ds-color-neutral-100);
+  --secondary-foreground: var(--ds-color-neutral-900);
+
+  /* ==========================================================================
+   * UTILITY
+   * ========================================================================== */
+
+  --muted:              var(--ds-color-neutral-100);
+  --muted-foreground:   var(--ds-color-neutral-500);
+
+  --accent:             var(--ds-color-neutral-100);
+  --accent-foreground:  var(--ds-color-neutral-900);
+  --accent-background:  var(--ds-color-neutral-50);
+
+  --destructive:        var(--ds-color-red-500);
+
+  /* ==========================================================================
+   * BOUNDARIES
+   * ========================================================================== */
+
+  --border: var(--ds-color-neutral-200);
+  --input:  var(--ds-color-neutral-200);
+  --ring:   var(--ds-color-brand-500);
+
+  /* ==========================================================================
+   * FUNCTIONAL COLORS
+   * Semantic status indicators — not present in the legacy codebase.
+   * ========================================================================== */
+
+  --success:            var(--ds-color-green-500);
+  --success-foreground: var(--ds-color-neutral-0);
+
+  --warning:            var(--ds-color-amber-500);
+  --warning-foreground: var(--ds-color-neutral-900);
+
+  --info:               var(--ds-color-blue-500);
+  --info-foreground:    var(--ds-color-neutral-0);
+
+  --error:              var(--ds-color-red-500);
+  --error-foreground:   var(--ds-color-neutral-0);
+
+  /* ==========================================================================
+   * CHART COLORS
+   * ========================================================================== */
+
+  --chart-1: var(--ds-color-brand-500);
+  --chart-2: var(--ds-color-green-500);
+  --chart-3: var(--ds-color-amber-500);
+  --chart-4: var(--ds-color-blue-500);
+  --chart-5: var(--ds-color-red-500);
+
+  /* ==========================================================================
+   * SIDEBAR
+   * ========================================================================== */
+
+  --sidebar:                    var(--ds-color-neutral-0);
+  --sidebar-foreground:         var(--ds-color-neutral-900);
+  --sidebar-primary:            var(--ds-color-brand-600);
+  --sidebar-primary-foreground: var(--ds-color-neutral-0);
+  --sidebar-primary-background: var(--ds-color-neutral-0);
+  --sidebar-accent:             var(--ds-color-neutral-100);
+  --sidebar-accent-foreground:  var(--ds-color-neutral-900);
+  --sidebar-accent-background:  var(--ds-color-neutral-50);
+  --sidebar-border:             var(--ds-color-neutral-200);
+  --sidebar-ring:               var(--ds-color-brand-500);
+
+  /* ==========================================================================
+   * RADIUS
+   * ========================================================================== */
+
+  --radius: var(--ds-radius-lg);
+}
