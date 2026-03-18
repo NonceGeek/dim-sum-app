@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AudioVisualizer from "./_components/audio-visualizer";
-import { Slider } from "@/components/ui/slider2";
+import { Slider } from "@/components/ui/slider";
 import {
   corpusInteractApi,
   IStats,

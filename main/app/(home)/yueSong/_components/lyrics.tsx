@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-} from "@/components/ui/tooltip2";
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";

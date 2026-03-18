@@ -13,7 +13,7 @@ import {
 } from "@/lib/api/corpus-interact";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, set } from "date-fns";
-import { Slider } from "@/components/ui/slider2";
+import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
