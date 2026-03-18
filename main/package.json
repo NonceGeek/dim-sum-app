@@ -13,7 +13,9 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
-    "db:pull": "prisma db pull"
+    "db:pull": "prisma db pull",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^4.3.1",
@@ -108,6 +110,12 @@
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "storybook": "^10.2.19",
+    "@storybook/nextjs-vite": "^10.2.19",
+    "@storybook/addon-a11y": "^10.2.19",
+    "@storybook/addon-docs": "^10.2.19",
+    "vite": "^8.0.0",
+    "eslint-plugin-storybook": "^10.2.19"
   }
 }
