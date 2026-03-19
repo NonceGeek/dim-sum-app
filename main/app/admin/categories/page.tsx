@@ -89,34 +89,34 @@ export default function AdminCategoriesPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Categories
         </h2>
-        <p className="text-gray-400 mt-2">
+        <p className="text-muted-foreground mt-2">
           Manage corpus categories and visibility settings.
         </p>
       </div>
 
       {/* Search */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Search Categories</CardTitle>
+          <CardTitle className="text-foreground">Search Categories</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search by name or nickname..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10 bg-gray-700 border-gray-600 text-white"
+                className="pl-10 bg-secondary border-border text-foreground"
               />
             </div>
             <Button
               onClick={handleSearch}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-primary/90"
             >
               Search
             </Button>
@@ -125,14 +125,14 @@ export default function AdminCategoriesPage() {
       </Card>
 
       {/* Categories Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white">
+              <CardTitle className="text-foreground">
                 Categories List ({data?.categories.length || 0})
               </CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardDescription className="text-muted-foreground">
                 Toggle visibility for each category
               </CardDescription>
             </div>
@@ -141,44 +141,44 @@ export default function AdminCategoriesPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400">Loading categories...</div>
+              <div className="text-muted-foreground">Loading categories...</div>
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-gray-700">
-                  <TableHead className="text-gray-300">Name</TableHead>
-                  <TableHead className="text-gray-300">Nickname</TableHead>
-                  <TableHead className="text-gray-300">
+                <TableRow className="border-border">
+                  <TableHead className="text-muted-foreground">Name</TableHead>
+                  <TableHead className="text-muted-foreground">Nickname</TableHead>
+                  <TableHead className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Database className="h-4 w-4" />
                       Entries
                     </div>
                   </TableHead>
-                  <TableHead className="text-gray-300">
+                  <TableHead className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       Permissions
                     </div>
                   </TableHead>
-                  <TableHead className="text-gray-300">Status</TableHead>
-                  <TableHead className="text-gray-300">Public</TableHead>
-                  <TableHead className="text-gray-300">Created</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-muted-foreground">Public</TableHead>
+                  <TableHead className="text-muted-foreground">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data?.categories.map((category) => (
-                  <TableRow key={category.name} className="border-gray-700">
-                    <TableCell className="text-white font-medium">
+                  <TableRow key={category.name} className="border-border">
+                    <TableCell className="text-foreground font-medium">
                       {category.name}
                     </TableCell>
-                    <TableCell className="text-gray-300">
+                    <TableCell className="text-muted-foreground">
                       {category.nickname || "-"}
                     </TableCell>
-                    <TableCell className="text-gray-300">
+                    <TableCell className="text-muted-foreground">
                       {category.corpusCount}
                     </TableCell>
-                    <TableCell className="text-gray-300">
+                    <TableCell className="text-muted-foreground">
                       {category.permissionsCount}
                     </TableCell>
                     <TableCell>
@@ -186,8 +186,8 @@ export default function AdminCategoriesPage() {
                         <Badge
                           className={
                             category.status === "RAW"
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
+                              ? "bg-warning text-warning-foreground"
+                              : "bg-success text-success-foreground"
                           }
                         >
                           {category.status}
@@ -206,13 +206,13 @@ export default function AdminCategoriesPage() {
                           }
                         />
                         {category.is_public ? (
-                          <Globe className="h-4 w-4 text-green-400" />
+                          <Globe className="h-4 w-4 text-success" />
                         ) : (
-                          <Lock className="h-4 w-4 text-yellow-400" />
+                          <Lock className="h-4 w-4 text-warning" />
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-300">
+                    <TableCell className="text-muted-foreground">
                       {format(new Date(category.created_at), "MMM d, yyyy")}
                     </TableCell>
                   </TableRow>
