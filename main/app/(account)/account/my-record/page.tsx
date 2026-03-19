@@ -218,7 +218,7 @@ export default function MyRecordPage() {
                     key={tab.value}
                     onClick={() => setActiveTab(tab.value)}
                     className={`flex-1 text-center py-2 relative ${
-                      activeTab === tab.value ? "text-white" : "text-gray-500"
+                      activeTab === tab.value ? "text-foreground" : "text-muted-foreground"
                     }`}
                   >
                     {tab.label}
@@ -239,13 +239,13 @@ export default function MyRecordPage() {
             </div>
 
             <div className="w-full mx-auto">
-              <div className="relative w-120 mx-auto flex items-center rounded-lg bg-gray-800 transition-all duration-200 focus-within:ring-2 focus-within:ring-muted-foreground focus-within:border-muted-foreground">
-                <Search className="w-4 text-gray-400 ml-4" />
+              <div className="relative w-120 mx-auto flex items-center rounded-lg bg-secondary transition-all duration-200 focus-within:ring-2 focus-within:ring-muted-foreground focus-within:border-muted-foreground">
+                <Search className="w-4 text-muted-foreground ml-4" />
                 <Input
                   type="search"
                   value={input}
                   placeholder="Search"
-                  className="bg-gray-800 border-none text-white w-full focus-visible::border-none focus-visible:ring-0"
+                  className="bg-secondary border-none text-foreground w-full focus-visible::border-none focus-visible:ring-0"
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => handleSearch(e)}
                 />
@@ -256,7 +256,7 @@ export default function MyRecordPage() {
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <Skeleton
                         key={i}
-                        className="w-20 h-8 rounded-full bg-gray-700"
+                        className="w-20 h-8 rounded-full bg-muted"
                       />
                     ))
                   : categories.map((cat) => (
@@ -264,8 +264,8 @@ export default function MyRecordPage() {
                         key={cat}
                         className={`px-4 py-1.5 rounded-full text-sm cursor-point ${
                           cat === category
-                            ? "bg-primary text-white"
-                            : "bg-gray-800 text-gray-300"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-muted-foreground"
                         }`}
                         onClick={() => setCategory(cat)}
                       >
@@ -279,7 +279,7 @@ export default function MyRecordPage() {
                   ? Array.from({ length: 6 }).map((_, i) => (
                       <Card
                         key={i}
-                        className="bg-gray-800 border-none text-white flex flex-col justify-between"
+                        className="bg-card border-none text-foreground flex flex-col justify-between"
                       >
                         <CardContent className="p-4 flex flex-col flex-1">
                           <Skeleton className="w-full h-40 mb-3 rounded-md" />
@@ -305,7 +305,7 @@ export default function MyRecordPage() {
                   return (
                     <Card
                       key={i}
-                      className="bg-gray-800 border-none text-white flex flex-col justify-between"
+                      className="bg-card border-none text-foreground flex flex-col justify-between"
                     >
                       <CardContent className="p-4 flex flex-col flex-1">
                         {item.image && (
@@ -317,7 +317,7 @@ export default function MyRecordPage() {
                             className="rounded-md mb-3"
                           />
                         )}
-                        <p className="text-sm text-gray-400 mb-1">
+                        <p className="text-sm text-muted-foreground mb-1">
                           {item.type}
                         </p>
                         <Link
@@ -330,7 +330,7 @@ export default function MyRecordPage() {
                           </h3>
                         </Link>
                         {item?.corpus?.note?.context?.song_name_pin && (
-                          <p className="text-gray-400 text-sm mt-1">
+                          <p className="text-muted-foreground text-sm mt-1">
                             {item.corpus.note.context.song_name_pin}
                           </p>
                         )}
@@ -344,15 +344,15 @@ export default function MyRecordPage() {
                             {!isPlaying ? (
                               loaded ? (
                                 <Play
-                                  className="h-4 w-4 text-gray-300 cursor-pointer"
+                                  className="h-4 w-4 text-muted-foreground cursor-pointer"
                                   onClick={togglePlay}
                                 />
                               ) : (
-                                <Loader className="h-4 w-4 text-gray-300" />
+                                <Loader className="h-4 w-4 text-muted-foreground" />
                               )
                             ) : (
                               <Pause
-                                className="h-4 w-4 text-gray-300 cursor-pointer"
+                                className="h-4 w-4 text-muted-foreground cursor-pointer"
                                 onClick={togglePlay}
                               />
                             )}
@@ -388,13 +388,13 @@ export default function MyRecordPage() {
                               }}
                             />
 
-                            <span className="text-sm text-gray-400 w-6">
+                            <span className="text-sm text-muted-foreground w-6">
                               {Math.trunc(duration - progress)}s
                             </span>
                           </div>
                         )}
                         <div className="flex justify-between mt-auto items-end pt-2">
-                          <p className="text-gray-500 text-sm">
+                          <p className="text-muted-foreground text-sm">
                             {activeTab === "Bookmarked" ? "Favorited" : "Liked"}{" "}
                             on{" "}
                             {format(
