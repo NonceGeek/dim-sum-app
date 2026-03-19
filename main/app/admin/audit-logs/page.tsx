@@ -20,10 +20,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   User as UserIcon,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -62,7 +64,17 @@ export default function AdminAuditLogsPage() {
   const [targetUserId, setTargetUserId] = useState("");
   const [categoryName, setCategoryName] = useState("");
   const [offset, setOffset] = useState(0);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const limit = 20;
+
+  const toggleRow = (id: number) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const { data, isLoading } = useQuery<AuditLogsResponse>({
     queryKey: [
@@ -190,69 +202,117 @@ export default function AdminAuditLogsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading audit logs...</div>
+            <div className="space-y-3">
+              {/* Skeleton table header */}
+              <div className="flex gap-4 px-4 py-3 border-b border-border">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              {/* Skeleton table rows */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex gap-4 items-center px-4 py-3 border-b border-border">
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex items-center gap-2 w-32">
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="flex items-center gap-2 w-32">
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              ))}
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
+                    <TableHead className="text-muted-foreground w-8"></TableHead>
                     <TableHead className="text-muted-foreground">Time</TableHead>
                     <TableHead className="text-muted-foreground">Operator</TableHead>
                     <TableHead className="text-muted-foreground">Target User</TableHead>
                     <TableHead className="text-muted-foreground">Action</TableHead>
                     <TableHead className="text-muted-foreground">Category</TableHead>
-                    <TableHead className="text-muted-foreground">Before</TableHead>
-                    <TableHead className="text-muted-foreground">After</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.logs.map((log) => (
-                    <TableRow key={log.id} className="border-border">
-                      <TableCell className="text-muted-foreground whitespace-nowrap">
-                        {format(new Date(log.created_at), "MMM d, HH:mm")}
-                      </TableCell>
-                      <TableCell className="text-foreground">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                            <UserIcon className="w-3 h-3 text-muted-foreground" />
-                          </div>
-                          <span className="text-sm">
-                            {log.operator.name || log.operator.email || "Admin"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-foreground">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                            <UserIcon className="w-3 h-3 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <div className="text-sm">
-                              {log.target_user.name || "N/A"}
+                    <>
+                      <TableRow
+                        key={log.id}
+                        className="border-border cursor-pointer hover:bg-muted/50"
+                        onClick={() => toggleRow(log.id)}
+                      >
+                        <TableCell className="w-8 px-2">
+                          <ChevronDown
+                            className={`h-4 w-4 text-muted-foreground transition-transform ${
+                              expandedRows.has(log.id) ? "rotate-0" : "-rotate-90"
+                            }`}
+                          />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {format(new Date(log.created_at), "MMM d, HH:mm")}
+                        </TableCell>
+                        <TableCell className="text-foreground">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                              <UserIcon className="w-3 h-3 text-muted-foreground" />
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {log.target_user.role}
+                            <span className="text-sm">
+                              {log.operator.name || log.operator.email || "Admin"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-foreground">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                              <UserIcon className="w-3 h-3 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <div className="text-sm">
+                                {log.target_user.name || "N/A"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {log.target_user.role}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getActionBadgeColor(log.action)}>
-                          {getActionLabel(log.action)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {log.category_name || "-"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatValue(log.old_value)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatValue(log.new_value)}
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getActionBadgeColor(log.action)}>
+                            {getActionLabel(log.action)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {log.category_name || "-"}
+                        </TableCell>
+                      </TableRow>
+                      {expandedRows.has(log.id) && (
+                        <TableRow key={`${log.id}-detail`} className="border-border bg-muted/30">
+                          <TableCell colSpan={6} className="py-3 px-6">
+                            <div className="flex gap-8 text-sm">
+                              <div>
+                                <span className="text-muted-foreground font-medium">Before: </span>
+                                <span className="text-foreground">{formatValue(log.old_value)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground font-medium">After: </span>
+                                <span className="text-foreground">{formatValue(log.new_value)}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
                   ))}
                 </TableBody>
               </Table>

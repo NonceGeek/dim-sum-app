@@ -179,7 +179,7 @@ export default function ProfilePage() {
                             <div className="flex items-center space-x-2">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="cursor-pointer hover:text-white">
+                                  <span className="cursor-pointer hover:text-foreground">
                                     {`${profile.ethAddress.slice(
                                       0,
                                       6

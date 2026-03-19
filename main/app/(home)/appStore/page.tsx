@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowBigRight, Link, Video } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Define App interface for type safety
 interface App {
@@ -66,7 +67,7 @@ function AppCard({ app }: { app: App }) {
           href={app.homepage_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700        
+          className="inline-flex items-center gap-1 text-primary hover:text-primary/80        
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
         >
           <Link className="w-4 h-4 shrink-0" />
@@ -77,7 +78,7 @@ function AppCard({ app }: { app: App }) {
         <>
           <button
             onClick={() => setQrDialogOpen(true)}
-            className="inline-flex items-center text-blue-600 hover:text-blue-700        
+            className="inline-flex items-center text-primary hover:text-primary/80        
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
           >
             <ArrowBigRight className="w-4 h-4 shrink-0" />
@@ -107,7 +108,7 @@ function AppCard({ app }: { app: App }) {
         <>
           <button
             onClick={() => setExampleDialogOpen(true)}
-            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700        
+            className="inline-flex items-center gap-1 text-primary hover:text-primary/80        
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
           >
             <Video className="w-4 h-4 shrink-0" />
@@ -142,7 +143,7 @@ function AppCard({ app }: { app: App }) {
           href={app.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-green-600 hover:text-green-700        
+          className="inline-flex items-center gap-1 text-success hover:text-success/80        
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
         >
           <ArrowBigRight className="w-4 h-4 shrink-0" />
@@ -303,8 +304,22 @@ export default function AppStorePage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-xl text-muted-foreground">Loading apps...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden">
+                <Skeleton className="h-48 w-full rounded-none" />
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-6 w-3/5" />
+                  <Skeleton className="h-4 w-2/5" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : apps.length === 0 ? (
           <div className="flex justify-center items-center h-64">

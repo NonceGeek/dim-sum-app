@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Globe, Lock, Users, Database } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -140,8 +141,29 @@ export default function AdminCategoriesPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading categories...</div>
+            <div className="space-y-3">
+              {/* Skeleton table header */}
+              <div className="flex gap-4 px-4 py-3 border-b border-border">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              {/* Skeleton table rows */}
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-4 items-center px-4 py-3 border-b border-border">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
             </div>
           ) : (
             <Table>

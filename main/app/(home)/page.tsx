@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
 import { Search, SearchX } from "lucide-react";
@@ -477,9 +478,30 @@ export default function HomePage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex justify-center items-center h-32"
+                className="w-full max-w-4xl space-y-4 px-2"
               >
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i} className="p-6 shadow-md mb-4">
+                    <div className="space-y-6">
+                      {/* Title area */}
+                      <div className="flex justify-between items-start">
+                        <Skeleton className="h-7 w-2/5" />
+                      </div>
+                      {/* Note content area */}
+                      <div className="space-y-3 rounded-lg p-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-4/5" />
+                        <Skeleton className="h-4 w-3/5" />
+                      </div>
+                      {/* Tags row */}
+                      <div className="flex gap-2 pt-2">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </motion.div>
             ) : results && results.length > 0 ? (
               <motion.div

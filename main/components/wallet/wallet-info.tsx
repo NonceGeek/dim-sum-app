@@ -49,7 +49,7 @@ export function WalletInfo({ address, onUnbind, isUnbinding }: WalletInfoProps) 
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-lg font-semibold">Wallet Information</CardTitle>
-        <Badge variant={isConnected ? "default" : "secondary"} className={isConnected ? "bg-green-600" : ""}>
+        <Badge variant={isConnected ? "default" : "secondary"} className={isConnected ? "bg-success text-success-foreground" : ""}>
           {isConnected ? "Connected" : "Disconnected"}
         </Badge>
       </CardHeader>

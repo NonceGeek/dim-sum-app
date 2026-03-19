@@ -257,7 +257,7 @@ export const ZYZDCorpusDialog = ({
             <Button
               onClick={handleSave}
               disabled={isSubmitting}
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6 ml-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6 ml-2"
             >
               {isSubmitting ? "Saving..." : "Save"}
             </Button>

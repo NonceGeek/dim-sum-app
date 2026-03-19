@@ -179,7 +179,7 @@ export function BindWalletDialog({ open, onOpenChange, onSuccess }: BindWalletDi
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className="text-sm text-muted-foreground cursor-pointer hover:text-white">
+                          <p className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
                             {address.slice(0, 6)}...{address.slice(-4)}
                           </p>
                         </TooltipTrigger>
@@ -231,7 +231,7 @@ export function BindWalletDialog({ open, onOpenChange, onSuccess }: BindWalletDi
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <p className="text-sm cursor-pointer hover:text-white">
+                      <p className="text-sm cursor-pointer hover:text-foreground">
                         <strong>Connected:</strong> {address?.slice(0, 6)}...{address?.slice(-4)}
                       </p>
                     </TooltipTrigger>
@@ -266,7 +266,7 @@ export function BindWalletDialog({ open, onOpenChange, onSuccess }: BindWalletDi
 
           {step === 'success' && (
             <div className="text-center space-y-4">
-              <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
+              <CheckCircle className="h-8 w-8 text-success mx-auto" />
               <p className="text-sm font-medium">Wallet bound successfully!</p>
               <p className="text-sm text-muted-foreground">
                 Your wallet has been linked to your account.
@@ -276,8 +276,8 @@ export function BindWalletDialog({ open, onOpenChange, onSuccess }: BindWalletDi
 
           {step === 'error' && (
             <div className="text-center space-y-4">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
-              <p className="text-sm font-medium text-red-600">Error</p>
+              <AlertCircle className="h-8 w-8 text-error mx-auto" />
+              <p className="text-sm font-medium text-error">Error</p>
               <p className="text-sm text-muted-foreground">{error}</p>
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={resetDialog} className="flex-1">
