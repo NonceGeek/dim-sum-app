@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 
 const adminNavItems = [
   {
@@ -201,7 +202,8 @@ export default function AdminLayout({
               </h1>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
               <span className="text-sm text-muted-foreground">
                 Welcome back, {session.user.name}
               </span>
