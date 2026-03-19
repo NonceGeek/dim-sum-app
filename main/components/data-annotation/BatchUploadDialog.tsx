@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Eye, ExternalLink, Volume2, BookOpen, Video } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Eye, ExternalLink, Volume2, BookOpen, Video, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useBatchCreateCorpusItems } from "@/lib/hooks/useDataAnnotation";
@@ -204,39 +204,39 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
         <div className="flex items-center justify-between mb-6 px-4">
           <div className="flex items-center space-x-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === "upload" ? "bg-purple-600 text-white" :
-              ["validate", "preview"].includes(step) ? "bg-purple-500 text-white" : "bg-gray-600 text-gray-300"
+              step === "upload" ? "bg-primary text-primary-foreground" :
+              ["validate", "preview"].includes(step) ? "bg-primary/80 text-primary-foreground" : "bg-secondary text-muted-foreground"
             }`}>
               <Upload className="w-4 h-4" />
             </div>
-            <span className="text-sm text-gray-300">选择文件</span>
+            <span className="text-sm text-muted-foreground">选择文件</span>
           </div>
 
           <div className={`flex-1 h-0.5 mx-4 ${
-            ["validate", "preview"].includes(step) ? "bg-purple-500" : "bg-gray-600"
+            ["validate", "preview"].includes(step) ? "bg-primary/80" : "bg-secondary"
           }`} />
 
           <div className="flex items-center space-x-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === "validate" ? "bg-purple-600 text-white" :
-              step === "preview" ? "bg-purple-500 text-white" : "bg-gray-600 text-gray-300"
+              step === "validate" ? "bg-primary text-primary-foreground" :
+              step === "preview" ? "bg-primary/80 text-primary-foreground" : "bg-secondary text-muted-foreground"
             }`}>
               <CheckCircle className="w-4 h-4" />
             </div>
-            <span className="text-sm text-gray-300">验证数据</span>
+            <span className="text-sm text-muted-foreground">验证数据</span>
           </div>
 
           <div className={`flex-1 h-0.5 mx-4 ${
-            step === "preview" ? "bg-purple-500" : "bg-gray-600"
+            step === "preview" ? "bg-primary/80" : "bg-secondary"
           }`} />
 
           <div className="flex items-center space-x-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === "preview" ? "bg-purple-600 text-white" : "bg-gray-600 text-gray-300"
+              step === "preview" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
             }`}>
               <Eye className="w-4 h-4" />
             </div>
-            <span className="text-sm text-gray-300">预览确认</span>
+            <span className="text-sm text-muted-foreground">预览确认</span>
           </div>
         </div>
 
@@ -253,17 +253,17 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
                   onChange={handleFileChange}
                   className="mt-2"
                 />
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   请使用我们提供的模板文件，支持 .xlsx 和 .xls 格式。<br/>
                   数据格式：粤音用|分隔，相关文献和视频切片格式为"名称-&gt;链接"
                 </p>
               </div>
 
               {file && (
-                <div className="flex items-center gap-2 p-3 bg-gray-800 border border-gray-700 rounded-lg">
-                  <FileText className="w-5 h-5 text-purple-400" />
-                  <span className="text-sm text-gray-200">{file.name}</span>
-                  <span className="text-sm text-gray-400">
+                <div className="flex items-center gap-2 p-3 bg-card border border-border rounded-lg">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-foreground">{file.name}</span>
+                  <span className="text-sm text-muted-foreground">
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                 </div>
@@ -275,9 +275,9 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 {validationResult.isValid ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <CheckCircle className="w-5 h-5 text-success" />
                 ) : (
-                  <XCircle className="w-5 h-5 text-red-500" />
+                  <XCircle className="w-5 h-5 text-error" />
                 )}
                 <span className="font-medium">
                   {validationResult.isValid ? "验证通过" : "验证失败"}
@@ -285,21 +285,21 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
               </div>
 
               {validationResult.isValid ? (
-                <div className="p-3 bg-green-900/20 border border-green-700 rounded-lg">
+                <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                    <p className="text-green-300">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <p className="text-success">
                       共发现 {validationResult.data.length} 条有效数据，可以进行上传
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="p-3 bg-red-900/20 border border-red-700 rounded-lg">
+                <div className="p-3 bg-error/10 border border-error/30 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="w-5 h-5 text-red-400" />
-                    <p className="text-red-300 font-medium">发现以下错误：</p>
+                    <XCircle className="w-5 h-5 text-error" />
+                    <p className="text-error font-medium">发现以下错误：</p>
                   </div>
-                  <ul className="list-disc list-inside space-y-1 text-red-300 text-sm ml-7">
+                  <ul className="list-disc list-inside space-y-1 text-error text-sm ml-7">
                     {validationResult.errors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -312,76 +312,76 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
           {step === "preview" && validationResult && validationResult.isValid && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Eye className="w-5 h-5 text-purple-400" />
-                <span className="font-medium text-gray-200">数据预览</span>
-                <span className="text-sm text-gray-400">
+                <Eye className="w-5 h-5 text-primary" />
+                <span className="font-medium text-foreground">数据预览</span>
+                <span className="text-sm text-muted-foreground">
                   （共 {validationResult.data.length} 条数据）
                 </span>
               </div>
 
-              <div className="max-h-80 overflow-y-auto border border-gray-700 rounded-lg bg-gray-900/50">
+              <div className="max-h-80 overflow-y-auto border border-border rounded-lg bg-muted/50">
                 <table className="w-full text-sm table-fixed">
-                  <thead className="bg-gray-800 sticky top-0 z-10">
+                  <thead className="bg-card sticky top-0 z-10">
                     <tr>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-16">#</th>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-20">字符</th>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-24">分类</th>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-32">粤音</th>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-80">组词</th>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-80">句子</th>
-                      <th className="p-3 text-left border-r border-gray-700 font-medium text-gray-300 w-64">相关文献</th>
-                      <th className="p-3 text-left font-medium text-gray-300 w-64">视频切片</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-16">#</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-20">字符</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-24">分类</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-32">粤音</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-80">组词</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-80">句子</th>
+                      <th className="p-3 text-left border-r border-border font-medium text-muted-foreground w-64">相关文献</th>
+                      <th className="p-3 text-left font-medium text-muted-foreground w-64">视频切片</th>
                     </tr>
                   </thead>
                   <tbody>
                     {validationResult.data.map((item, index) => (
-                      <tr key={index} className="border-t border-gray-700 hover:bg-gray-800/50">
-                        <td className="p-3 border-r border-gray-700 text-center text-gray-400">{index + 1}</td>
-                        <td className="p-3 border-r border-gray-700 font-medium text-lg text-white">{item.data}</td>
-                        <td className="p-3 border-r border-gray-700">
-                          <span className="bg-gray-700 text-gray-200 px-2 py-1 rounded text-xs">{item.category}</span>
+                      <tr key={index} className="border-t border-border hover:bg-accent/50">
+                        <td className="p-3 border-r border-border text-center text-muted-foreground">{index + 1}</td>
+                        <td className="p-3 border-r border-border font-medium text-lg text-foreground">{item.data}</td>
+                        <td className="p-3 border-r border-border">
+                          <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">{item.category}</span>
                         </td>
-                        <td className="p-3 border-r border-gray-700">
+                        <td className="p-3 border-r border-border">
                           <div className="flex flex-wrap gap-1">
                             {item.pinyin.map((p: string, i: number) => (
-                              <div key={i} className="bg-purple-900/50 text-purple-200 px-2 py-1 rounded text-xs border border-purple-600">
+                              <div key={i} className="bg-primary/20 text-primary px-2 py-1 rounded text-xs border border-primary/30">
                                 <Volume2 className="w-3 h-3 inline mr-1" />
                                 {p}
                               </div>
                             ))}
                           </div>
                         </td>
-                        <td className="p-3 border-r border-gray-700">
+                        <td className="p-3 border-r border-border">
                           <div className="space-y-1">
                             {item.meaning.map((m: string, i: number) => (
-                              <div key={i} className="text-xs text-green-200 bg-green-900/30 px-2 py-1 rounded border border-green-700">
+                              <div key={i} className="text-xs text-success bg-success/10 px-2 py-1 rounded border border-success/30">
                                 <BookOpen className="w-3 h-3 inline mr-1" />
                                 {m}
                               </div>
                             ))}
                           </div>
                         </td>
-                        <td className="p-3 border-r border-gray-700">
+                        <td className="p-3 border-r border-border">
                           <div className="space-y-1">
                             {item.sentence.map((s: string, i: number) => (
-                              <div key={i} className="text-xs text-blue-200 bg-blue-900/30 px-2 py-1 rounded border border-blue-700" title={s}>
+                              <div key={i} className="text-xs text-info bg-info/10 px-2 py-1 rounded border border-info/30" title={s}>
                                 "{s}"
                               </div>
                             ))}
                           </div>
                         </td>
-                        <td className="p-3 border-r border-gray-700">
+                        <td className="p-3 border-r border-border">
                           <div className="space-y-1">
                             {item.related_documents.map((doc: any, i: number) => (
-                              <div key={i} className="text-xs bg-orange-900/30 px-2 py-1 rounded border border-orange-700">
-                                <BookOpen className="w-3 h-3 inline mr-1 text-orange-400" />
-                                <span className="text-orange-200" title={doc.name}>{doc.name}</span>
+                              <div key={i} className="text-xs bg-warning/10 px-2 py-1 rounded border border-warning/30">
+                                <BookOpen className="w-3 h-3 inline mr-1 text-warning" />
+                                <span className="text-warning" title={doc.name}>{doc.name}</span>
                                 {doc.link && (
                                   <a
                                     href={doc.link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-orange-400 ml-1 hover:text-orange-300"
+                                    className="text-warning ml-1 hover:text-warning/80"
                                   >
                                     <ExternalLink className="w-3 h-3 inline" />
                                   </a>
@@ -393,15 +393,15 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
                         <td className="p-3">
                           <div className="space-y-1">
                             {item.video_clips.map((clip: any, i: number) => (
-                              <div key={i} className="text-xs bg-red-900/30 px-2 py-1 rounded border border-red-700">
-                                <Video className="w-3 h-3 inline mr-1 text-red-400" />
-                                <span className="text-red-200" title={clip.name}>{clip.name}</span>
+                              <div key={i} className="text-xs bg-error/10 px-2 py-1 rounded border border-error/30">
+                                <Video className="w-3 h-3 inline mr-1 text-error" />
+                                <span className="text-error" title={clip.name}>{clip.name}</span>
                                 {clip.link && (
                                   <a
                                     href={clip.link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-red-400 ml-1 hover:text-red-300"
+                                    className="text-error ml-1 hover:text-error/80"
                                   >
                                     <ExternalLink className="w-3 h-3 inline" />
                                   </a>
@@ -416,10 +416,10 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
                 </table>
               </div>
 
-              <div className="p-3 bg-purple-900/20 border border-purple-700 rounded-lg">
+              <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-purple-400" />
-                  <p className="text-purple-200 text-sm">
+                  <AlertCircle className="w-5 h-5 text-primary" />
+                  <p className="text-primary text-sm">
                     请仔细检查上述数据是否正确。确认无误后点击"确认上传"按钮。
                   </p>
                 </div>
@@ -429,8 +429,8 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
           </div>
         </div>
 
-        <DialogFooter className="px-4 py-3 border-t border-gray-700">
-          <Button variant="outline" onClick={handleCancel}>
+        <DialogFooter className="px-4 py-3 border-t border-border">
+          <Button variant="outline" onClick={handleCancel} disabled={batchCreateMutation.isPending || isValidating}>
             取消
           </Button>
 
@@ -439,7 +439,14 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
               onClick={handleValidate}
               disabled={!file || isValidating}
             >
-              {isValidating ? "验证中..." : "验证数据"}
+              {isValidating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  验证中...
+                </>
+              ) : (
+                "验证数据"
+              )}
             </Button>
           )}
 
@@ -461,6 +468,7 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
               <Button
                 variant="outline"
                 onClick={() => setStep("upload")}
+                disabled={batchCreateMutation.isPending}
               >
                 重新选择文件
               </Button>
@@ -468,8 +476,17 @@ export function BatchUploadDialog({ open, onOpenChange, onSuccess }: BatchUpload
                 onClick={handleUpload}
                 disabled={batchCreateMutation.isPending}
               >
-                <Upload className="w-4 h-4 mr-2" />
-                {batchCreateMutation.isPending ? "上传中..." : "确认上传"}
+                {batchCreateMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    上传中...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    确认上传
+                  </>
+                )}
               </Button>
             </>
           )}

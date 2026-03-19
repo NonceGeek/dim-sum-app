@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import { useCreateCorpusItem } from "@/lib/hooks/useDataAnnotation";
 import { toast } from "sonner";
 
@@ -322,6 +322,7 @@ export function CreateDialog({ open, onOpenChange, onSuccess }: CreateDialogProp
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={createMutation.isPending}
             >
               取消
             </Button>
@@ -329,7 +330,14 @@ export function CreateDialog({ open, onOpenChange, onSuccess }: CreateDialogProp
               type="submit"
               disabled={createMutation.isPending}
             >
-              {createMutation.isPending ? "创建中..." : "创建"}
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  创建中...
+                </>
+              ) : (
+                "创建"
+              )}
             </Button>
           </DialogFooter>
         </form>

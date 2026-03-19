@@ -50,7 +50,7 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               <Label
                 htmlFor="learner"
                 className={cn(
-                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
+                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
                 )}
               >
                 Learner
@@ -62,7 +62,7 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               <Label
                 htmlFor="tagger"
                 className={cn(
-                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
+                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
                 )}
               >
                 Tagger
@@ -74,7 +74,7 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               <Label
                 htmlFor="researcher"
                 className={cn(
-                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
+                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
                 )}
               >
                 Researcher

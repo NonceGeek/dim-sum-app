@@ -5,11 +5,18 @@ import { useEffect, useState } from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+const themeOrder = ['light', 'dark', 'system'] as const;
+const themeLabels: Record<string, string> = {
+  light: 'Light',
+  dark: 'Dark',
+  system: 'System',
+};
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -17,43 +24,33 @@ export function ThemeToggle() {
 
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) {
-    return (
-      <Button variant="ghost" size="icon" className="h-8 w-8">
-        <Sun className="h-4 w-4" />
-      </Button>
-    );
-  }
+  const cycleTheme = () => {
+    const currentIndex = themeOrder.indexOf(theme as (typeof themeOrder)[number]);
+    const nextIndex = (currentIndex + 1) % themeOrder.length;
+    setTheme(themeOrder[nextIndex]);
+  };
+
+  const icon =
+    !mounted ? <Sun className="h-4 w-4" /> :
+    theme === 'system' ? <Monitor className="h-4 w-4" /> :
+    resolvedTheme === 'dark' ? <Moon className="h-4 w-4" /> :
+    <Sun className="h-4 w-4" />;
+
+  const label = mounted ? themeLabels[theme ?? 'system'] : 'Light';
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          {resolvedTheme === 'dark' ? (
-            <Moon className="h-4 w-4" />
-          ) : (
-            <Sun className="h-4 w-4" />
-          )}
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>
-          <Sun className="mr-2 h-4 w-4" />
-          Light
-          {theme === 'light' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
-          <Moon className="mr-2 h-4 w-4" />
-          Dark
-          {theme === 'dark' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
-          <Monitor className="mr-2 h-4 w-4" />
-          System
-          {theme === 'system' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cycleTheme}>
+            {icon}
+            <span className="sr-only">Toggle theme ({label})</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{label}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

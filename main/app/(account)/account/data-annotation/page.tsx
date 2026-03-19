@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Search, X, Plus, Upload, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Plus, Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CreateDialog } from "@/components/data-annotation/CreateDialog";
 import { BatchUploadDialog } from "@/components/data-annotation/BatchUploadDialog";
@@ -200,20 +200,30 @@ export default function DataAnnotationPage() {
             {searchInput && (
               <Button
                 onClick={handleClearSearch}
+                disabled={isLoading}
                 variant="ghost"
                 size="sm"
                 className="p-1 h-auto text-muted-foreground hover:text-foreground"
               >
-                <X className="w-4 h-4" />
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
               </Button>
             )}
             <Button
               onClick={handleSearch}
+              disabled={isLoading}
               variant="ghost"
               size="sm"
               className="p-2 h-auto text-muted-foreground hover:text-foreground hover:bg-accent"
             >
-              Search
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Search"
+              )}
             </Button>
           </div>
         </div>
@@ -259,13 +269,21 @@ export default function DataAnnotationPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-900/20 border border-red-500 rounded-lg">
             <p className="text-red-400">Error: {error}</p>
-            <Button 
-              onClick={() => fetchCorpusData(currentPage)} 
-              variant="outline" 
-              size="sm" 
+            <Button
+              onClick={() => fetchCorpusData(currentPage)}
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
               className="mt-2"
             >
-              Retry
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Retrying...
+                </>
+              ) : (
+                "Retry"
+              )}
             </Button>
           </div>
         )}
@@ -287,12 +305,20 @@ export default function DataAnnotationPage() {
                 }
               </p>
               {searchQuery && (
-                <Button 
+                <Button
                   onClick={handleClearSearch}
-                  variant="outline" 
+                  disabled={isLoading}
+                  variant="outline"
                   className="mt-4"
                 >
-                  Clear search and show all data
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Clear search and show all data"
+                  )}
                 </Button>
               )}
             </div>
@@ -381,17 +407,21 @@ export default function DataAnnotationPage() {
           <div className="flex items-center justify-center gap-4 mt-8">
             <Button
               onClick={handlePrevPage}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isLoading}
               variant="outline"
               size="sm"
             >
-              <ChevronLeft className="w-4 h-4 mr-1" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <ChevronLeft className="w-4 h-4 mr-1" />
+              )}
               Previous
             </Button>
 
             <Button
               onClick={handleFirstPage}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isLoading}
               variant="outline"
               size="sm"
             >
@@ -417,12 +447,16 @@ export default function DataAnnotationPage() {
             
             <Button
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isLoading}
               variant="outline"
               size="sm"
             >
               Next
-              <ChevronRight className="w-4 h-4 ml-1" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 ml-1 animate-spin" />
+              ) : (
+                <ChevronRight className="w-4 h-4 ml-1" />
+              )}
             </Button>
           </div>
         )}
