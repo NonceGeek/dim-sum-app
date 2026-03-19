@@ -32,10 +32,10 @@ export const menuItems = [
     label: "App Store",
     href: "/appStore",
     children: [
-      { icon: BookOpen, label: "Learning", href: "/appStore?category=学习" },
-      { icon: Gamepad2, label: "Gaming", href: "/appStore?category=游戏" },
+      { icon: BookOpen, label: "Learning", href: "/appStore?category=Learning" },
+      { icon: Gamepad2, label: "Gaming", href: "/appStore?category=Gaming" },
       { icon: Bot, label: "AI", href: "/appStore?category=AI" },
-      { icon: MoreHorizontal, label: "Others", href: "/appStore?category=其他" },
+      { icon: MoreHorizontal, label: "Others", href: "/appStore?category=Others" },
     ],
   },
   // TODO: impl in the future.
