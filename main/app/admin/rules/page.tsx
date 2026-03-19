@@ -243,14 +243,14 @@ export default function AdminRulesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white">规则与 Agent 管理</h1>
+        <h1 className="text-3xl font-bold text-foreground">规则与 Agent 管理</h1>
         <p className="text-muted-foreground mt-2">
           对接 Agent 服务，支持规则编译校验、运行触发与运行历史查询。
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>规则编译检查</CardTitle>
             <CardDescription>验证自然语言规则是否能被 Agent 理解。</CardDescription>
@@ -265,7 +265,7 @@ export default function AdminRulesPage() {
                   onChange={(event) => setCompileText(event.target.value)}
                   placeholder="请输入要编译的规则..."
                   rows={6}
-                  className="bg-gray-950 border-gray-800"
+                  className="bg-background border-border"
                 />
               </div>
               <Button type="submit" disabled={isCompiling} className="w-full">
@@ -274,7 +274,7 @@ export default function AdminRulesPage() {
               </Button>
             </form>
             {compileResult && (
-              <div className="mt-4 rounded-md border border-gray-800 bg-gray-950 p-4">
+              <div className="mt-4 rounded-md border border-border bg-background p-4">
                 <p className="text-sm">
                   编译结果：
                   <Badge
@@ -294,7 +294,7 @@ export default function AdminRulesPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>手动触发规则</CardTitle>
             <CardDescription>调用 `/rules/run` 接口立即创建一次运行。</CardDescription>
@@ -310,7 +310,7 @@ export default function AdminRulesPage() {
                     setRunForm((prev) => ({ ...prev, ruleId: event.target.value }))
                   }
                   placeholder="例如 grammar_check_rule"
-                  className="bg-gray-950 border-gray-800"
+                  className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
@@ -322,7 +322,7 @@ export default function AdminRulesPage() {
                     setRunForm((prev) => ({ ...prev, ruleVersion: event.target.value }))
                   }
                   placeholder="v1.0.0"
-                  className="bg-gray-950 border-gray-800"
+                  className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
@@ -334,7 +334,7 @@ export default function AdminRulesPage() {
                     setRunForm((prev) => ({ ...prev, corpusName: event.target.value }))
                   }
                   placeholder="zyzdv2"
-                  className="bg-gray-950 border-gray-800"
+                  className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
@@ -348,7 +348,7 @@ export default function AdminRulesPage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="bg-gray-950 border-gray-800">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="自动选择 Agent" />
                   </SelectTrigger>
                   <SelectContent>
@@ -371,7 +371,7 @@ export default function AdminRulesPage() {
                   }
                   rows={6}
                   placeholder="请输入自然语言规则..."
-                  className="bg-gray-950 border-gray-800"
+                  className="bg-background border-border"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isTriggeringRun}>
@@ -385,7 +385,7 @@ export default function AdminRulesPage() {
         </Card>
       </div>
 
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="bg-card border-border">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>运行历史</CardTitle>
@@ -409,7 +409,7 @@ export default function AdminRulesPage() {
                 value={filters.ruleId}
                 onChange={(event) => updateFilters({ ruleId: event.target.value })}
                 placeholder="按规则 ID 筛选"
-                className="bg-gray-950 border-gray-800"
+                className="bg-background border-border"
               />
             </div>
             <div className="space-y-2">
@@ -419,7 +419,7 @@ export default function AdminRulesPage() {
                 value={filters.corpusName}
                 onChange={(event) => updateFilters({ corpusName: event.target.value })}
                 placeholder="按语料库筛选"
-                className="bg-gray-950 border-gray-800"
+                className="bg-background border-border"
               />
             </div>
             <div className="space-y-2">
@@ -428,7 +428,7 @@ export default function AdminRulesPage() {
                 value={filters.status || "all"}
                 onValueChange={(value) => updateFilters({ status: value === "all" ? "" : value })}
               >
-                <SelectTrigger className="bg-gray-950 border-gray-800">
+                <SelectTrigger className="bg-background border-border">
                   <SelectValue placeholder="全部状态" />
                 </SelectTrigger>
                 <SelectContent>
@@ -450,12 +450,12 @@ export default function AdminRulesPage() {
                 onChange={(event) =>
                   updateFilters({ pageSize: Number(event.target.value) || 1 })
                 }
-                className="bg-gray-950 border-gray-800"
+                className="bg-background border-border"
               />
             </div>
           </div>
 
-          <div className="rounded-md border border-gray-800">
+          <div className="rounded-md border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -537,7 +537,7 @@ export default function AdminRulesPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle>可用 Agents</CardTitle>
           <CardDescription>/agents 接口返回的数据。</CardDescription>
@@ -549,7 +549,7 @@ export default function AdminRulesPage() {
           {agents.map((agent) => (
             <div
               key={agent.id}
-              className="rounded-md border border-gray-800 bg-gray-950 p-4"
+              className="rounded-md border border-border bg-background p-4"
             >
               <p className="text-sm font-medium">{agent.name}</p>
               <p className="font-mono text-xs text-muted-foreground mt-1 break-all">
