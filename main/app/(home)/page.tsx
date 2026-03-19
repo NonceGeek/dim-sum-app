@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import CategorySelector from "./_components/category-selector";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -205,63 +207,38 @@ export default function HomePage() {
     return pages;
   };
 
+  const hasResults = results !== null && results.length > 0;
+
   return (
     <>
-      {/* <div className="md:hidden fixed top-0 left-0 right-0 z-50">
-        <Header showLogo />
-      </div> */}
-      <motion.div
-        className="container mx-auto p-6 flex flex-col h-[calc(100vh-140px)]"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <motion.div
-          className="flex flex-col items-center space-y-6 w-full h-full"
-          initial={{ justifyContent: "center", opacity: 0, y: 20 }}
-          animate={{
-            justifyContent:
-              results && results.length > 0 ? "flex-start" : "center",
-            paddingTop: results && results.length > 0 ? "1rem" : "0",
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.8,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-        >
-          <motion.h1
-            className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent"
-            initial={{ scale: 1, y: 0, opacity: 0 }}
-            animate={{
-              scale: results && results.length > 0 ? 0.8 : 1,
-              y: results && results.length > 0 ? -20 : 0,
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.8,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          >
-            Try Some Cantonese
-          </motion.h1>
+      {/* Hero Section */}
+      <section className={cn(
+        "transition-all duration-500 ease-out",
+        hasResults
+          ? "py-6 bg-gradient-to-r from-primary/5 to-primary/10"
+          : "py-16 md:py-24 bg-gradient-to-br from-[#0c0f1a] via-[#1a1f35] to-[#0c0f1a]"
+      )}>
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            {/* Title + subtitle - only when no results */}
+            {!hasResults && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <h1 className="text-4xl md:text-5xl font-bold text-white">
+                  Try Some Cantonese
+                </h1>
+                <p className="text-lg text-white/70 mt-3">
+                  The AI-powered platform for Cantonese learning and research
+                </p>
+              </motion.div>
+            )}
 
-          <motion.div
-            className="w-full max-w-2xl space-y-4"
-            initial={{ width: "100%", y: 0, opacity: 0 }}
-            animate={{
-              width: results && results.length > 0 ? "80%" : "100%",
-              y: results && results.length > 0 ? -20 : 0,
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.8,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          >
+            {/* Search bar - always visible */}
             <motion.div
-              className="flex gap-2"
+              className="flex gap-2 max-w-2xl mx-auto"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -272,14 +249,19 @@ export default function HomePage() {
             >
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-muted-foreground" />
+                  <Search className={cn("h-5 w-5", !hasResults ? "text-slate-400" : "text-muted-foreground")} />
                 </div>
                 <Input
                   placeholder="Search Cantonese content..."
                   value={searchPrompt}
                   onChange={(e) => setSearchPrompt(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  className="pl-10 h-12 text-lg dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
+                  className={cn(
+                    "pl-10 h-12 text-lg",
+                    !hasResults
+                      ? "bg-white text-slate-900 placeholder:text-slate-400"
+                      : "dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
+                  )}
                 />
               </div>
               {/* Dataset selection dropdown */}
@@ -287,7 +269,12 @@ export default function HomePage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[180px] justify-between truncate h-12 hover:bg-background! dark:bg-background dark:text-accent-foreground"
+                    className={cn(
+                      "w-[180px] justify-between truncate h-12",
+                      !hasResults
+                        ? "bg-white text-slate-900 border-white/20"
+                        : "hover:bg-background! dark:bg-background dark:text-accent-foreground"
+                    )}
                   >
                     {(fiter_not_in || [])
                       ?.map((cat) => {
@@ -357,7 +344,7 @@ export default function HomePage() {
                 {isPending ? "Searching..." : "Search"}
               </Button>
               {/* TODO: impl in the future.
-                <Button 
+                <Button
                 onClick={() => router.push('/account/data-annotation')}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6 ml-2"
               >
@@ -365,382 +352,302 @@ export default function HomePage() {
               </Button> */}
             </motion.div>
 
-            {/* Hint: Cleaned up homepage content - Search bar only */}
+            {/* CTA links - only when no results */}
+            {!hasResults && (
+              <div className="flex items-center justify-center gap-3 text-sm">
+                <span className="text-white/50">or</span>
+                <Link href="/library" className="text-white/80 hover:text-white underline underline-offset-4">
+                  Browse Library
+                </Link>
+                <span className="text-white/30">|</span>
+                <Link href="/appStore" className="text-white/80 hover:text-white underline underline-offset-4">
+                  Explore App Store
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
-            {results === null && (
-              <motion.div
-                className="w-full max-w-2xl space-y-4 mb-20"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.3,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
+      {/* Example pills - only when no results and not loading */}
+      {results === null && !isPending && (
+        <section className="container mx-auto px-4 py-8">
+          <div className="flex flex-wrap justify-center gap-3">
+            {[
+              { title: "Cantonese Lyrics", prompt: "落花流水" },
+              { title: "News", prompt: "唔听" },
+              { title: "Single Character", prompt: "行" },
+              { title: "Chinese Words", prompt: "姐姐" },
+              { title: "Video Example", prompt: "歡聚一堂" },
+              { title: "3D Model", prompt: "帆船" },
+            ].map((example) => (
+              <button
+                key={example.prompt}
+                onClick={() => handleExampleSearch(example.prompt)}
+                className="px-4 py-2 rounded-full border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <Card
-                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("落花流水")}
-                  >
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                        Cantonese Lyrics
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted-foreground">
-                        落花流水
-                      </p>
-                    </div>
-                  </Card>
-                  <Card
-                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("唔听")}
-                  >
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                        News
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted-foreground">唔听</p>
-                    </div>
-                  </Card>
-                  <Card
-                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("行")}
-                  >
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                        Single Character
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted-foreground">行</p>
-                    </div>
-                  </Card>
-                  <Card
-                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("姐姐")}
-                  >
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                        Chinese Words
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted-foreground">姐姐</p>
-                    </div>
-                  </Card>
-                  <Card
-                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("歡聚一堂")}
-                  >
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                        Video Example
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted-foreground">
-                        歡聚一堂
-                      </p>
-                    </div>
-                  </Card>
-                  <Card
-                    className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("帆船")}
-                  >
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                        3D Model
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted-foreground">帆船</p>
-                    </div>
-                  </Card>
+                {example.title}: {example.prompt}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-center text-muted-foreground mt-6 underline">
+            <a href="https://www.aidimsum.com/zh#stats" target="_blank" rel="noopener noreferrer">
+              👉 查看数据情况 👈
+            </a>
+          </p>
+        </section>
+      )}
+
+      {/* Loading skeletons */}
+      {isPending && (
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="p-6 shadow-md mb-4">
+              <div className="space-y-6">
+                {/* Title area */}
+                <div className="flex justify-between items-start">
+                  <Skeleton className="h-7 w-2/5" />
                 </div>
+                {/* Note content area */}
+                <div className="space-y-3 rounded-lg p-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-4 w-3/5" />
+                </div>
+                {/* Tags row */}
+                <div className="flex gap-2 pt-2">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-                <p className="text-base text-center text-muted-foreground underline">
-                  <a href="https://www.aidimsum.com/zh#stats" target="_blank" rel="noopener noreferrer">
-                  👉 查看数据情况 👈
-                  </a>
-                </p>
-              </motion.div>
-            )}
+      {/* Results */}
+      {results && results.length > 0 && (
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          <CategorySelector
+            selectCategory={selectCategory}
+            setSelectCategory={setSelectCategory}
+            results={results}
+            selectedDataset={selectedDataset}
+          />
+          {currentResults.map((result, index) => (
+            <motion.div
+              key={result.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: index * 0.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              {/* HINT: not delete, to render the result here. */}
+              {result.category !== "粤语曲库" && (
+                  <WordLyricCardDetail
+                    result={result}
+                    setEditingResult={setEditingResult}
+                    setUpdateDialogOpen={setUpdateDialogOpen}
+                    isDictionaryNote={isDictionaryNote}
+                  />
+                )}
+              {result.category === "粤语曲库" && (
+                <YueSongCardDetail result={result} />
+              )}
+            </motion.div>
+          ))}
+
+          {totalPages > 1 && (
+            <motion.div
+              className="flex justify-center gap-2 mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.3,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              {/* Previous button */}
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="w-10 h-10"
+              >
+                &lt;
+              </Button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((page, idx) =>
+                page === '...' ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-10 h-10 flex items-center justify-center text-muted-foreground"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page as number)}
+                    className="w-10 h-10"
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
+
+              {/* Next button */}
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="w-10 h-10"
+              >
+                &gt;
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Try other searches */}
+          <motion.div
+            className="mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-muted-foreground">
+                Try other searches
+              </h3>
+              <Button
+                variant="outline"
+                onClick={handleBackToHome}
+                className="text-sm"
+              >
+                Back to Home
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {[
+                { title: "Cantonese Lyrics", prompt: "落花流水" },
+                { title: "Chinese Words", prompt: "姐姐" },
+                { title: "Single Character", prompt: "行" },
+                { title: "Video Example", prompt: "歡聚一堂" },
+              ].map(
+                (example) =>
+                  example.prompt !== searchPrompt && (
+                    <Card
+                      key={example.prompt}
+                      className="p-3 sm:p-4 hover:shadow-lg cursor-pointer hover:bg-accent transition-colors duration-200 h-24 sm:h-28 flex items-center justify-center"
+                      onClick={() => {
+                        if (isPending) return;
+                        setResults(null);
+                        handleExampleSearch(example.prompt);
+                      }}
+                    >
+                      <div className="text-center space-y-1 sm:space-y-2">
+                        <h3 className="text-xs sm:text-sm font-medium text-foreground">
+                          {example.title}
+                        </h3>
+                        <p className="text-sm sm:text-base text-muted-foreground">
+                          {example.prompt}
+                        </p>
+                      </div>
+                    </Card>
+                  )
+              )}
+            </div>
           </motion.div>
+        </div>
+      )}
 
-          <AnimatePresence mode="wait">
-            {results === null && !isPending ? (
-              <motion.div
-                key="initial"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="flex justify-center items-center h-0"
-              ></motion.div>
-            ) : isPending ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="w-full max-w-4xl space-y-4 px-2"
+      {/* No results */}
+      {results && results.length === 0 && (
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="p-4 rounded-full bg-muted">
+              <SearchX className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-foreground">
+                No results found
+              </h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                We couldn&apos;t find any matches for &quot;
+                {searchPrompt}&quot;. Try searching with different
+                keywords or check out our example searches below.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleBackToHome}
+                className="mt-4"
               >
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="p-6 shadow-md mb-4">
-                    <div className="space-y-6">
-                      {/* Title area */}
-                      <div className="flex justify-between items-start">
-                        <Skeleton className="h-7 w-2/5" />
-                      </div>
-                      {/* Note content area */}
-                      <div className="space-y-3 rounded-lg p-4">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-4/5" />
-                        <Skeleton className="h-4 w-3/5" />
-                      </div>
-                      {/* Tags row */}
-                      <div className="flex gap-2 pt-2">
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </motion.div>
-            ) : results && results.length > 0 ? (
-              <motion.div
-                key="results"
-                className="w-full max-w-4xl flex-1 overflow-y-auto px-2 pb-10 min-h-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                返回首页
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
+              <Card
+                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
+                onClick={() => handleExampleSearch("淡淡交會過")}
               >
-                <CategorySelector
-                  selectCategory={selectCategory}
-                  setSelectCategory={setSelectCategory}
-                  results={results}
-                  selectedDataset={selectedDataset}
-                />
-                {currentResults.map((result, index) => (
-                  <motion.div
-                    key={result.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      delay: index * 0.1,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                  >
-                    {/* HINT: not delete, to render the result here. */}
-                    {result.category !== "粤语曲库" && (
-                        <WordLyricCardDetail
-                          result={result}
-                          setEditingResult={setEditingResult}
-                          setUpdateDialogOpen={setUpdateDialogOpen}
-                          isDictionaryNote={isDictionaryNote}
-                        />
-                      )}
-                    {result.category === "粤语曲库" && (
-                      <YueSongCardDetail result={result} />
-                    )}
-                  </motion.div>
-                ))}
+                <div className="text-center space-y-1 sm:space-y-2">
+                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
+                    Cantonese Lyrics
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    淡淡交會過
+                  </p>
+                </div>
+              </Card>
+              <Card
+                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
+                onClick={() => handleExampleSearch("姐姐")}
+              >
+                <div className="text-center space-y-1 sm:space-y-2">
+                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
+                    Chinese Words
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    姐姐
+                  </p>
+                </div>
+              </Card>
+              <Card
+                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
+                onClick={() => handleExampleSearch("行")}
+              >
+                <div className="text-center space-y-1 sm:space-y-2">
+                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
+                    Single Character
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">行</p>
+                </div>
+              </Card>
+              <Card
+                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
+                onClick={() => handleExampleSearch("歡聚一堂")}
+              >
+                <div className="text-center space-y-1 sm:space-y-2">
+                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
+                    Video Example
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    歡聚一堂
+                  </p>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
 
-                {totalPages > 1 && (
-                  <motion.div
-                    className="flex justify-center gap-2 mt-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      delay: 0.3,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                  >
-                    {/* Previous button */}
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="w-10 h-10"
-                    >
-                      &lt;
-                    </Button>
-
-                    {/* Page numbers */}
-                    {getPageNumbers().map((page, idx) =>
-                      page === '...' ? (
-                        <span
-                          key={`ellipsis-${idx}`}
-                          className="w-10 h-10 flex items-center justify-center text-muted-foreground"
-                        >
-                          ...
-                        </span>
-                      ) : (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "default" : "outline"}
-                          onClick={() => setCurrentPage(page as number)}
-                          className="w-10 h-10"
-                        >
-                          {page}
-                        </Button>
-                      )
-                    )}
-
-                    {/* Next button */}
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="w-10 h-10"
-                    >
-                      &gt;
-                    </Button>
-                  </motion.div>
-                )}
-
-                {/* 示例卡片 */}
-                {results && results.length > 0 && (
-                  <motion.div
-                    className="mt-12"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-muted-foreground">
-                        Try other searches
-                      </h3>
-                      <Button
-                        variant="outline"
-                        onClick={handleBackToHome}
-                        className="text-sm"
-                      >
-                        Back to Home
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                      {[
-                        { title: "Cantonese Lyrics", prompt: "落花流水" },
-                        { title: "Chinese Words", prompt: "姐姐" },
-                        { title: "Single Character", prompt: "行" },
-                        { title: "Video Example", prompt: "歡聚一堂" },
-                      ].map(
-                        (example) =>
-                          example.prompt !== searchPrompt && (
-                            <Card
-                              key={example.prompt}
-                              className="p-3 sm:p-4 hover:shadow-lg cursor-pointer hover:bg-accent transition-colors duration-200 h-24 sm:h-28 flex items-center justify-center"
-                              onClick={() => {
-                                if (isPending) return;
-                                setResults(null);
-                                handleExampleSearch(example.prompt);
-                              }}
-                            >
-                              <div className="text-center space-y-1 sm:space-y-2">
-                                <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                                  {example.title}
-                                </h3>
-                                <p className="text-sm sm:text-base text-muted-foreground">
-                                  {example.prompt}
-                                </p>
-                              </div>
-                            </Card>
-                          )
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            ) : (
-              results &&
-              results.length === 0 && (
-                <motion.div
-                  className="w-full max-w-4xl text-center py-12"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="p-4 rounded-full bg-muted">
-                      <SearchX className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-foreground">
-                        No results found
-                      </h3>
-                      <p className="text-muted-foreground max-w-md mx-auto">
-                        We couldn&apos;t find any matches for &quot;
-                        {searchPrompt}&quot;. Try searching with different
-                        keywords or check out our example searches below.
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={handleBackToHome}
-                        className="mt-4"
-                      >
-                        返回首页
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
-                      <Card
-                        className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("淡淡交會過")}
-                      >
-                        <div className="text-center space-y-1 sm:space-y-2">
-                          <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                            Cantonese Lyrics
-                          </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground">
-                            淡淡交會過
-                          </p>
-                        </div>
-                      </Card>
-                      <Card
-                        className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("姐姐")}
-                      >
-                        <div className="text-center space-y-1 sm:space-y-2">
-                          <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                            Chinese Words
-                          </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground">
-                            姐姐
-                          </p>
-                        </div>
-                      </Card>
-                      <Card
-                        className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("行")}
-                      >
-                        <div className="text-center space-y-1 sm:space-y-2">
-                          <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                            Single Character
-                          </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground">行</p>
-                        </div>
-                      </Card>
-                      <Card
-                        className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                        onClick={() => handleExampleSearch("歡聚一堂")}
-                      >
-                        <div className="text-center space-y-1 sm:space-y-2">
-                          <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                            Video Example
-                          </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground">
-                            歡聚一堂
-                          </p>
-                        </div>
-                      </Card>
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </motion.div>
       {/* Update Dialog */}
       <EditCorpusDialog
         open={updateDialogOpen}

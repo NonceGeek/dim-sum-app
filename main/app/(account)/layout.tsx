@@ -7,10 +7,10 @@ export default function AccountLayout({
 }) {
   return (
     <div className="min-h-screen bg-[var(--color-accent-background)]">
-      <Header titleClassName="text-accent-foreground" />
+      <Header />
       <div className="min-h-[calc(100vh-56px)]">
         {children}
       </div>
     </div>
   );
-} 
+}
