@@ -21,37 +21,37 @@
    * ========================================================================== */
 
   /* --------------------------------------------------------------------------
-   * Brand (hue 260 — violet)
+   * Brand (hue 250 — indigo)
    * Smooth lightness ramp from near-white (50) to near-black (950)
    * ------------------------------------------------------------------------ */
-  --ds-color-brand-50:  oklch(0.97 0.01 260);
-  --ds-color-brand-100: oklch(0.93 0.03 260);
-  --ds-color-brand-200: oklch(0.87 0.07 260);
-  --ds-color-brand-300: oklch(0.78 0.12 260);
-  --ds-color-brand-400: oklch(0.68 0.17 260);
-  --ds-color-brand-500: oklch(0.58 0.21 260);
-  --ds-color-brand-600: oklch(0.50 0.20 260);
-  --ds-color-brand-700: oklch(0.42 0.17 260);
-  --ds-color-brand-800: oklch(0.35 0.13 260);
-  --ds-color-brand-900: oklch(0.28 0.10 260);
-  --ds-color-brand-950: oklch(0.22 0.07 260);
+  --ds-color-brand-50:  oklch(0.97 0.01 250);
+  --ds-color-brand-100: oklch(0.93 0.03 250);
+  --ds-color-brand-200: oklch(0.87 0.07 250);
+  --ds-color-brand-300: oklch(0.78 0.13 250);
+  --ds-color-brand-400: oklch(0.68 0.19 250);
+  --ds-color-brand-500: oklch(0.58 0.22 250);
+  --ds-color-brand-600: oklch(0.50 0.21 250);
+  --ds-color-brand-700: oklch(0.42 0.17 250);
+  --ds-color-brand-800: oklch(0.35 0.12 250);
+  --ds-color-brand-900: oklch(0.28 0.09 250);
+  --ds-color-brand-950: oklch(0.22 0.06 250);
 
   /* --------------------------------------------------------------------------
-   * Neutral (hue 260, very low chroma ~0.005 — tinted gray)
+   * Neutral (hue 250, very low chroma ~0.005 — tinted gray)
    * Full range from white (0) through near-black (950)
    * ------------------------------------------------------------------------ */
-  --ds-color-neutral-0:   oklch(1.00 0.000 260);
-  --ds-color-neutral-50:  oklch(0.98 0.003 260);
-  --ds-color-neutral-100: oklch(0.94 0.005 260);
-  --ds-color-neutral-200: oklch(0.88 0.005 260);
-  --ds-color-neutral-300: oklch(0.80 0.005 260);
-  --ds-color-neutral-400: oklch(0.70 0.005 260);
-  --ds-color-neutral-500: oklch(0.58 0.005 260);
-  --ds-color-neutral-600: oklch(0.48 0.005 260);
-  --ds-color-neutral-700: oklch(0.39 0.005 260);
-  --ds-color-neutral-800: oklch(0.30 0.005 260);
-  --ds-color-neutral-900: oklch(0.22 0.005 260);
-  --ds-color-neutral-950: oklch(0.15 0.005 260);
+  --ds-color-neutral-0:   oklch(1.00 0.000 250);
+  --ds-color-neutral-50:  oklch(0.98 0.003 250);
+  --ds-color-neutral-100: oklch(0.94 0.005 250);
+  --ds-color-neutral-200: oklch(0.88 0.005 250);
+  --ds-color-neutral-300: oklch(0.80 0.005 250);
+  --ds-color-neutral-400: oklch(0.70 0.005 250);
+  --ds-color-neutral-500: oklch(0.58 0.005 250);
+  --ds-color-neutral-600: oklch(0.48 0.005 250);
+  --ds-color-neutral-700: oklch(0.39 0.005 250);
+  --ds-color-neutral-800: oklch(0.30 0.005 250);
+  --ds-color-neutral-900: oklch(0.22 0.005 250);
+  --ds-color-neutral-950: oklch(0.15 0.005 250);
 
   /* --------------------------------------------------------------------------
    * Red / Destructive (hue 25 — warm red-orange)
@@ -174,26 +174,26 @@
    * ========================================================================== */
 
   --ds-shadow-xs:
-    0 1px 2px 0 oklch(0.22 0.005 260 / 0.05);
+    0 1px 2px 0 oklch(0.22 0.005 250 / 0.05);
 
   --ds-shadow-sm:
-    0 1px 3px 0 oklch(0.22 0.005 260 / 0.10),
-    0 1px 2px -1px oklch(0.22 0.005 260 / 0.10);
+    0 1px 3px 0 oklch(0.22 0.005 250 / 0.10),
+    0 1px 2px -1px oklch(0.22 0.005 250 / 0.10);
 
   --ds-shadow-md:
-    0 4px 6px -1px oklch(0.22 0.005 260 / 0.10),
-    0 2px 4px -2px oklch(0.22 0.005 260 / 0.10);
+    0 4px 6px -1px oklch(0.22 0.005 250 / 0.10),
+    0 2px 4px -2px oklch(0.22 0.005 250 / 0.10);
 
   --ds-shadow-lg:
-    0 10px 15px -3px oklch(0.22 0.005 260 / 0.10),
-    0 4px 6px -4px oklch(0.22 0.005 260 / 0.10);
+    0 10px 15px -3px oklch(0.22 0.005 250 / 0.10),
+    0 4px 6px -4px oklch(0.22 0.005 250 / 0.10);
 
   --ds-shadow-xl:
-    0 20px 25px -5px oklch(0.22 0.005 260 / 0.10),
-    0 8px 10px -6px oklch(0.22 0.005 260 / 0.10);
+    0 20px 25px -5px oklch(0.22 0.005 250 / 0.10),
+    0 8px 10px -6px oklch(0.22 0.005 250 / 0.10);
 
   --ds-shadow-2xl:
-    0 25px 50px -12px oklch(0.22 0.005 260 / 0.25);
+    0 25px 50px -12px oklch(0.22 0.005 250 / 0.25);
 
   /* ==========================================================================
    * MOTION
