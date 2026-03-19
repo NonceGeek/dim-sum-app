@@ -13,13 +13,13 @@ export default function YueSongCardDetail({
   const router = useRouter();
 
   return (
-    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200 mb-2">
+    <Card className="p-6 shadow-md hover:bg-accent transition-colors duration-200 mb-2">
       <div className="space-y-6">
         <div className="prose dark:prose-invert max-w-none relative">
           <div className="flex justify-between gap-4">
             <div>
               <div className="flex">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 mr-2">
+                <h3 className="text-xl font-semibold text-foreground mb-4 mr-2">
                   {result.note.context.song_name}
                 </h3>
                 <span className="gray_text_sm relative -bottom-2">
@@ -31,7 +31,7 @@ export default function YueSongCardDetail({
               </div>
             </div>
 
-            <div className="text-indigo-500 flex gap-4 items-center">
+            <div className="text-primary flex gap-4 items-center">
               <CirclePlay
                 className="cursor-pointer"
                 onClick={(e) => {

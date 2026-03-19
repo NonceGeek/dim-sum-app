@@ -58,8 +58,8 @@ export default function CategorySelector({
               <button
                 className={`px-4 py-1.5 rounded-full text-sm cursor-point ${
                   selectCategory === "全部"
-                    ? "bg-primary text-white"
-                    : "bg-gray-800 text-gray-300"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground"
                 }`}
                 onClick={() => setSelectCategory("全部")}
               >
@@ -70,8 +70,8 @@ export default function CategorySelector({
                   key={category}
                   className={`px-4 py-1.5 rounded-full text-sm cursor-point ${
                     category === selectCategory
-                      ? "bg-primary text-white"
-                      : "bg-gray-800 text-gray-300"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-muted-foreground"
                   }`}
                   onClick={() => setSelectCategory(category)}
                 >
@@ -85,14 +85,14 @@ export default function CategorySelector({
                 <button
                   className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm cursor-point ${
                     selectCategory === "全部"
-                      ? "bg-gray-800 text-gray-300"
-                      : "bg-primary text-white"
+                      ? "bg-card text-muted-foreground"
+                      : "bg-primary text-primary-foreground"
                   }`}
                 >
                   {selectCategory}
                   {selectCategory !== "全部" && (
                     <X
-                      className="h-3 w-3 hover:text-gray-200"
+                      className="h-3 w-3 hover:text-muted-foreground"
                       onClick={() => {
                         setSelectCategory("全部");
                       }}
@@ -128,7 +128,7 @@ export default function CategorySelector({
                           <span className="w-[200px] text-left wrap-break-word">
                             全部
                           </span>
-                          <span className="text-xs text-gray-400 ml-2 shrink-0">
+                          <span className="text-xs text-muted-foreground ml-2 shrink-0">
                             {results?.length || 0} 个文档
                           </span>
                         </div>
@@ -153,7 +153,7 @@ export default function CategorySelector({
                               <span className="w-[200px] text-left wrap-break-word">
                                 {category}
                               </span>
-                              <span className="text-xs text-gray-400 ml-2 shrink-0">
+                              <span className="text-xs text-muted-foreground ml-2 shrink-0">
                                 {info.count} 个文档
                               </span>
                             </div>
