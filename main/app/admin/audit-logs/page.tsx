@@ -90,15 +90,15 @@ export default function AdminAuditLogsPage() {
   const getActionBadgeColor = (action: string) => {
     switch (action) {
       case "GRANT":
-        return "bg-green-500";
+        return "bg-success text-success-foreground";
       case "REVOKE":
-        return "bg-red-500";
+        return "bg-error text-error-foreground";
       case "MODIFY":
-        return "bg-blue-500";
+        return "bg-info text-info-foreground";
       case "ROLE_CHANGE":
-        return "bg-purple-500";
+        return "bg-primary text-primary-foreground";
       default:
-        return "bg-gray-500";
+        return "bg-secondary text-secondary-foreground";
     }
   };
 
@@ -132,45 +132,45 @@ export default function AdminAuditLogsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Audit Logs
         </h2>
-        <p className="text-gray-400 mt-2">
+        <p className="text-muted-foreground mt-2">
           View permission change history and user activity.
         </p>
       </div>
 
       {/* Search and Filter */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Filter Logs</CardTitle>
+          <CardTitle className="text-foreground">Filter Logs</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Operator ID..."
                 value={operatorId}
                 onChange={(e) => setOperatorId(e.target.value)}
-                className="pl-10 bg-gray-700 border-gray-600 text-white"
+                className="pl-10 bg-secondary border-border text-foreground"
               />
             </div>
             <Input
               placeholder="Target User ID..."
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
-              className="w-48 bg-gray-700 border-gray-600 text-white"
+              className="w-48 bg-secondary border-border text-foreground"
             />
             <Input
               placeholder="Category..."
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
-              className="w-48 bg-gray-700 border-gray-600 text-white"
+              className="w-48 bg-secondary border-border text-foreground"
             />
             <Button
               onClick={() => setOffset(0)}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-primary/90"
             >
               Search
             </Button>
@@ -179,60 +179,60 @@ export default function AdminAuditLogsPage() {
       </Card>
 
       {/* Audit Logs Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">
+          <CardTitle className="text-foreground">
             Audit Logs ({data?.total || 0})
           </CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription className="text-muted-foreground">
             Permission and role change history
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400">Loading audit logs...</div>
+              <div className="text-muted-foreground">Loading audit logs...</div>
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-gray-300">Time</TableHead>
-                    <TableHead className="text-gray-300">Operator</TableHead>
-                    <TableHead className="text-gray-300">Target User</TableHead>
-                    <TableHead className="text-gray-300">Action</TableHead>
-                    <TableHead className="text-gray-300">Category</TableHead>
-                    <TableHead className="text-gray-300">Before</TableHead>
-                    <TableHead className="text-gray-300">After</TableHead>
+                  <TableRow className="border-border">
+                    <TableHead className="text-muted-foreground">Time</TableHead>
+                    <TableHead className="text-muted-foreground">Operator</TableHead>
+                    <TableHead className="text-muted-foreground">Target User</TableHead>
+                    <TableHead className="text-muted-foreground">Action</TableHead>
+                    <TableHead className="text-muted-foreground">Category</TableHead>
+                    <TableHead className="text-muted-foreground">Before</TableHead>
+                    <TableHead className="text-muted-foreground">After</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.logs.map((log) => (
-                    <TableRow key={log.id} className="border-gray-700">
-                      <TableCell className="text-gray-300 whitespace-nowrap">
+                    <TableRow key={log.id} className="border-border">
+                      <TableCell className="text-muted-foreground whitespace-nowrap">
                         {format(new Date(log.created_at), "MMM d, HH:mm")}
                       </TableCell>
-                      <TableCell className="text-white">
+                      <TableCell className="text-foreground">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                            <UserIcon className="w-3 h-3 text-gray-400" />
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                            <UserIcon className="w-3 h-3 text-muted-foreground" />
                           </div>
                           <span className="text-sm">
                             {log.operator.name || log.operator.email || "Admin"}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-white">
+                      <TableCell className="text-foreground">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                            <UserIcon className="w-3 h-3 text-gray-400" />
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                            <UserIcon className="w-3 h-3 text-muted-foreground" />
                           </div>
                           <div>
                             <div className="text-sm">
                               {log.target_user.name || "N/A"}
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-muted-foreground">
                               {log.target_user.role}
                             </div>
                           </div>
@@ -243,13 +243,13 @@ export default function AdminAuditLogsPage() {
                           {getActionLabel(log.action)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {log.category_name || "-"}
                       </TableCell>
-                      <TableCell className="text-gray-400 text-sm">
+                      <TableCell className="text-muted-foreground text-sm">
                         {formatValue(log.old_value)}
                       </TableCell>
-                      <TableCell className="text-gray-300 text-sm">
+                      <TableCell className="text-muted-foreground text-sm">
                         {formatValue(log.new_value)}
                       </TableCell>
                     </TableRow>
@@ -260,7 +260,7 @@ export default function AdminAuditLogsPage() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     Page {currentPage} of {totalPages}
                   </div>
                   <div className="flex gap-2">
@@ -269,7 +269,7 @@ export default function AdminAuditLogsPage() {
                       size="sm"
                       onClick={() => setOffset(Math.max(0, offset - limit))}
                       disabled={offset === 0}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-secondary border-border text-foreground"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -278,7 +278,7 @@ export default function AdminAuditLogsPage() {
                       size="sm"
                       onClick={() => setOffset(offset + limit)}
                       disabled={currentPage >= totalPages}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-secondary border-border text-foreground"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
