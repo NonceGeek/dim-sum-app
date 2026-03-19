@@ -44,6 +44,8 @@
   ],
   "exclude": [
     "node_modules",
-    "../deno"
+    "../deno",
+    "**/*.stories.ts",
+    "**/*.stories.tsx"
   ]
 }
