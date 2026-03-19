@@ -25,14 +25,14 @@
    * SURFACES
    * ========================================================================== */
 
-  --background:         var(--ds-color-neutral-950);
-  --foreground:         var(--ds-color-neutral-50);
+  --background:         var(--ds-color-dark-bg);
+  --foreground:         var(--ds-color-neutral-100);
 
-  --card:               var(--ds-color-neutral-900);
-  --card-foreground:    var(--ds-color-neutral-50);
+  --card:               var(--ds-color-dark-surface);
+  --card-foreground:    var(--ds-color-neutral-100);
 
-  --popover:            var(--ds-color-neutral-900);
-  --popover-foreground: var(--ds-color-neutral-50);
+  --popover:            var(--ds-color-dark-surface);
+  --popover-foreground: var(--ds-color-neutral-100);
 
   /* ==========================================================================
    * BRAND
@@ -61,8 +61,8 @@
    * BOUNDARIES
    * ========================================================================== */
 
-  --border: var(--ds-color-neutral-700);
-  --input:  var(--ds-color-neutral-700);
+  --border: var(--ds-color-dark-border);
+  --input:  var(--ds-color-dark-border);
   --ring:   var(--ds-color-brand-400);
 
   /* ==========================================================================
