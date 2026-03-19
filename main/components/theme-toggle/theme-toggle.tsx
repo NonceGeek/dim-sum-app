@@ -2,11 +2,14 @@
 
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
 import { Moon, Sun, Monitor } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-const themes = ['light', 'dark', 'system'] as const;
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -16,59 +19,41 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="h-8 w-[88px] rounded-full bg-secondary" />
+      <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Sun className="h-4 w-4" />
+      </Button>
     );
   }
 
-  const currentIndex = themes.indexOf((theme as typeof themes[number]) ?? 'system');
-
-  const handleClick = () => {
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
-  };
-
-  const Icon = theme === 'system' ? Monitor : resolvedTheme === 'dark' ? Moon : Sun;
-
   return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        "relative inline-flex h-8 w-[88px] items-center rounded-full border border-border bg-secondary px-1 transition-colors",
-        "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      )}
-      aria-label={`Current theme: ${theme}. Click to switch.`}
-    >
-      <motion.div
-        className="absolute h-6 w-6 rounded-full bg-background shadow-sm"
-        animate={{
-          x: currentIndex === 0 ? 2 : currentIndex === 1 ? 30 : 56,
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 500,
-          damping: 30,
-        }}
-      />
-      <div className="relative z-10 flex w-full justify-between px-0.5">
-        <span className={cn(
-          "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
-          theme === 'light' ? 'text-foreground' : 'text-muted-foreground'
-        )}>
-          <Sun className="h-3.5 w-3.5" />
-        </span>
-        <span className={cn(
-          "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
-          theme === 'dark' ? 'text-foreground' : 'text-muted-foreground'
-        )}>
-          <Moon className="h-3.5 w-3.5" />
-        </span>
-        <span className={cn(
-          "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
-          theme === 'system' ? 'text-foreground' : 'text-muted-foreground'
-        )}>
-          <Monitor className="h-3.5 w-3.5" />
-        </span>
-      </div>
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          {resolvedTheme === 'dark' ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
+          )}
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTheme('light')}>
+          <Sun className="mr-2 h-4 w-4" />
+          Light
+          {theme === 'light' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark')}>
+          <Moon className="mr-2 h-4 w-4" />
+          Dark
+          {theme === 'dark' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('system')}>
+          <Monitor className="mr-2 h-4 w-4" />
+          System
+          {theme === 'system' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
