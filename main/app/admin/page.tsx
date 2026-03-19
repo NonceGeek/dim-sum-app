@@ -107,14 +107,14 @@ export default function AdminDashboardPage() {
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Card key={i} className="bg-gray-800 border-gray-700">
+            <Card key={i} className="bg-card border-border">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 w-20 bg-gray-600 rounded animate-pulse" />
-                <div className="h-4 w-4 bg-gray-600 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-4 bg-muted rounded animate-pulse" />
               </CardHeader>
               <CardContent>
-                <div className="h-8 w-16 bg-gray-600 rounded animate-pulse mb-1" />
-                <div className="h-3 w-24 bg-gray-600 rounded animate-pulse" />
+                <div className="h-8 w-16 bg-muted rounded animate-pulse mb-1" />
+                <div className="h-3 w-24 bg-muted rounded animate-pulse" />
               </CardContent>
             </Card>
           ))}
@@ -127,10 +127,10 @@ export default function AdminDashboardPage() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Dashboard
         </h2>
-        <p className="text-gray-400 mt-2">
+        <p className="text-muted-foreground mt-2">
           Welcome to the admin panel. Here's an overview of your system.
         </p>
       </div>
@@ -142,20 +142,20 @@ export default function AdminDashboardPage() {
           return (
             <Card
               key={card.title}
-              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer"
+              className="bg-card border-border hover:bg-accent transition-colors cursor-pointer"
             >
               <Link href={card.href}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-200">
+                  <CardTitle className="text-sm font-medium text-card-foreground">
                     {card.title}
                   </CardTitle>
-                  <Icon className="h-4 w-4 text-gray-400" />
+                  <Icon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
+                  <div className="text-2xl font-bold text-foreground">
                     {card.value}
                   </div>
-                  <p className="text-xs text-gray-400">{card.description}</p>
+                  <p className="text-xs text-muted-foreground">{card.description}</p>
                 </CardContent>
               </Link>
             </Card>
@@ -165,23 +165,23 @@ export default function AdminDashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 text-white">Quick Actions</h3>
+        <h3 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h3>
         <div className="grid gap-4 md:grid-cols-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
               <Card
                 key={action.title}
-                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors"
+                className="bg-card border-border hover:bg-accent transition-colors"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">
-                    <Icon className="h-5 w-5 text-purple-400" />
-                    <CardTitle className="text-base text-white">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base text-foreground">
                       {action.title}
                     </CardTitle>
                   </div>
-                  <CardDescription className="text-sm text-gray-400">
+                  <CardDescription className="text-sm text-muted-foreground">
                     {action.description}
                   </CardDescription>
                 </CardHeader>
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
                   <Button
                     asChild
                     size="sm"
-                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    className="w-full bg-primary hover:bg-primary/90"
                   >
                     <Link href={action.href}>Open</Link>
                   </Button>
