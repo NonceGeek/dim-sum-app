@@ -84,40 +84,40 @@ export default function AdminCorpusPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Corpus Data
         </h2>
-        <p className="text-gray-400 mt-2">
+        <p className="text-muted-foreground mt-2">
           Manage Cantonese language corpus entries and annotations.
         </p>
       </div>
 
       {/* Search and Filter */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Search Corpus</CardTitle>
+          <CardTitle className="text-foreground">Search Corpus</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search corpus data..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10 bg-gray-700 border-gray-600 text-white"
+                className="pl-10 bg-secondary border-border text-foreground"
               />
             </div>
             <Input
               placeholder="Filter by category..."
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-48 bg-gray-700 border-gray-600 text-white"
+              className="w-48 bg-secondary border-border text-foreground"
             />
             <Button
               onClick={handleSearch}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-primary/90"
             >
               Search
             </Button>
@@ -126,14 +126,14 @@ export default function AdminCorpusPage() {
       </Card>
 
       {/* Corpus Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white">
+              <CardTitle className="text-foreground">
                 Corpus Entries ({data?.pagination.total || 0})
               </CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardDescription className="text-muted-foreground">
                 View and manage corpus data entries
               </CardDescription>
             </div>
@@ -142,63 +142,63 @@ export default function AdminCorpusPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400">Loading corpus data...</div>
+              <div className="text-muted-foreground">Loading corpus data...</div>
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-gray-300">Data</TableHead>
-                    <TableHead className="text-gray-300">Category</TableHead>
-                    <TableHead className="text-gray-300">
+                  <TableRow className="border-border">
+                    <TableHead className="text-muted-foreground">Data</TableHead>
+                    <TableHead className="text-muted-foreground">Category</TableHead>
+                    <TableHead className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
                         Views
                       </div>
                     </TableHead>
-                    <TableHead className="text-gray-300">
+                    <TableHead className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Heart className="h-4 w-4" />
                         Likes
                       </div>
                     </TableHead>
-                    <TableHead className="text-gray-300">
+                    <TableHead className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4" />
                         Bookmarks
                       </div>
                     </TableHead>
-                    <TableHead className="text-gray-300">Created</TableHead>
+                    <TableHead className="text-muted-foreground">Created</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.corpus.map((entry) => (
-                    <TableRow key={entry.uniqueId} className="border-gray-700">
-                      <TableCell className="text-white max-w-md">
+                    <TableRow key={entry.uniqueId} className="border-border">
+                      <TableCell className="text-foreground max-w-md">
                         <div className="truncate" title={entry.data}>
                           {entry.data}
                         </div>
                       </TableCell>
                       <TableCell>
                         {entry.category ? (
-                          <Badge className="bg-blue-500 text-white">
+                          <Badge className="bg-info text-info-foreground">
                             {entry.category}
                           </Badge>
                         ) : (
-                          <span className="text-gray-500">N/A</span>
+                          <span className="text-muted-foreground">N/A</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {entry.viewNum}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {entry.likedNum}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {entry.bookmarkNum}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {format(new Date(entry.createdAt), "MMM d, yyyy")}
                       </TableCell>
                     </TableRow>
@@ -209,7 +209,7 @@ export default function AdminCorpusPage() {
               {/* Pagination */}
               {data && data.pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     Page {data.pagination.page} of{" "}
                     {data.pagination.totalPages}
                   </div>
@@ -219,7 +219,7 @@ export default function AdminCorpusPage() {
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-secondary border-border text-foreground"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -232,7 +232,7 @@ export default function AdminCorpusPage() {
                         )
                       }
                       disabled={page === data.pagination.totalPages}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-secondary border-border text-foreground"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
