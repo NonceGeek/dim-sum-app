@@ -258,7 +258,7 @@ function CardGeneratorContent() {
   if (!item) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p className="text-gray-500">No data found</p>
+        <p className="text-muted-foreground">No data found</p>
       </div>
     );
   }

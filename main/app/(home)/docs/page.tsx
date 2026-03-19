@@ -167,7 +167,7 @@ export default function DocsPage() {
 
   const SidebarContent = () => (
     <div className="space-y-4 h-full flex flex-col">
-      <h3 className="font-semibold text-sm text-gray-600 uppercase tracking-wider flex-shrink-0">
+      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex-shrink-0">
         API Documentation
       </h3>
       <ScrollArea className="flex-1 min-h-0">
@@ -178,7 +178,7 @@ export default function DocsPage() {
             <div className="flex items-center">
               <a
                 href={`#${item.id}`}
-                className="flex-1 text-sm text-gray-600 hover:text-purple-600 transition-colors duration-200 font-medium cursor-pointer py-1"
+                className="flex-1 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 font-medium cursor-pointer py-1"
                 onClick={(e) => handleAnchorClick(e, item.id)}
               >
                 {item.label}
@@ -187,7 +187,7 @@ export default function DocsPage() {
               {item.children && item.children.length > 0 && (
                 <button
                   onClick={() => toggleSection(item.id)}
-                  className="p-2 ml-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all duration-200 flex items-center justify-center"
+                  className="p-2 ml-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all duration-200 flex items-center justify-center"
                   title={expandedSections.has(item.id) ? "收起" : "展开"}
                 >
                   <ChevronRight 
@@ -205,7 +205,7 @@ export default function DocsPage() {
             {/* 子菜单项 */}
             {item.children && item.children.length > 0 && (
               <div 
-                className={`ml-4 border-l border-gray-200 pl-3 overflow-hidden transition-all duration-300 ease-out`}
+                className={`ml-4 border-l border-border pl-3 overflow-hidden transition-all duration-300 ease-out`}
                 style={{
                   maxHeight: expandedSections.has(item.id) ? `${item.children.length * 40}px` : '0px',
                   opacity: expandedSections.has(item.id) ? 1 : 0,
@@ -218,7 +218,7 @@ export default function DocsPage() {
                     <a
                       key={child.id}
                       href={`#${child.id}`}
-                      className={`block text-xs text-gray-500 hover:text-purple-500 cursor-pointer py-1 px-2 rounded-sm hover:translate-x-1 hover:bg-purple-50 transition-colors duration-150 ${
+                      className={`block text-xs text-muted-foreground hover:text-primary cursor-pointer py-1 px-2 rounded-sm hover:translate-x-1 hover:bg-primary/10 transition-colors duration-150 ${
                         expandedSections.has(item.id) 
                           ? 'translate-x-0 opacity-100' 
                           : 'translate-x-2 opacity-0'
@@ -256,7 +256,7 @@ export default function DocsPage() {
   return (
     <div className="flex min-h-screen w-full">
       {/* 桌面端侧边栏 */}
-      <div className="hidden md:block w-64 border-r border-gray-200 bg-transparent flex-shrink-0 h-screen overflow-hidden">
+      <div className="hidden md:block w-64 border-r border-border bg-transparent flex-shrink-0 h-screen overflow-hidden">
         <div className="p-6 h-full">
           <SidebarContent />
         </div>
@@ -265,11 +265,11 @@ export default function DocsPage() {
       {/* 主内容区域 */}
       <div className="flex-1 min-w-0 relative">
         {/* 移动端导航栏（absolute） */}
-        <div className="md:hidden absolute top-0 left-0 right-0 z-40 backdrop-blur-md border-b border-gray-200 bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)]">
+        <div className="md:hidden absolute top-0 left-0 right-0 z-40 backdrop-blur-md border-b border-border bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)]">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-2 min-w-0">
-              <BookOpen className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <h2 className="text-lg font-semibold text-gray-900 truncate">
+              <BookOpen className="h-5 w-5 text-primary flex-shrink-0" />
+              <h2 className="text-lg font-semibold text-foreground truncate">
                 API Documentation
               </h2>
             </div>
@@ -286,7 +286,7 @@ export default function DocsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-64 max-h-96 overflow-y-auto bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)] backdrop-blur-md border border-gray-200 shadow-lg"
+                className="w-64 max-h-96 overflow-y-auto bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)] backdrop-blur-md border border-border shadow-lg"
               >
                 {navigationItems.map((item) => (
                   <div key={item.id}>
@@ -295,13 +295,13 @@ export default function DocsPage() {
                         e.preventDefault();
                         handleAnchorClick(e as any, item.id);
                       }}
-                      className="cursor-pointer text-gray-900 hover:text-purple-700 hover:bg-white/40 font-medium"
+                      className="cursor-pointer text-foreground hover:text-primary hover:bg-white/40 font-medium"
                     >
                       {item.label}
                     </DropdownMenuItem>
                     {/* 子菜单项 */}
                     {item.children && item.children.length > 0 && (
-                      <div className="ml-4 border-l-2 border-gray-300/50">
+                      <div className="ml-4 border-l-2 border-border">
                         {item.children.map((child) => (
                           <DropdownMenuItem
                             key={child.id}
@@ -309,7 +309,7 @@ export default function DocsPage() {
                               e.preventDefault();
                               handleAnchorClick(e as any, child.id);
                             }}
-                            className="cursor-pointer text-xs text-gray-700 hover:text-purple-600 hover:bg-white/30 pl-3"
+                            className="cursor-pointer text-xs text-muted-foreground hover:text-primary hover:bg-white/30 pl-3"
                           >
                             {child.label}
                           </DropdownMenuItem>
@@ -330,7 +330,7 @@ export default function DocsPage() {
                 components={{
                   // 自定义标题样式
                   h1: ({ children }) => (
-                    <h1 className="text-2xl md:text-4xl font-bold mb-6 md:mb-8 text-gray-900 border-b-2 border-black-200 pb-3 md:pb-4 break-words">
+                    <h1 className="text-2xl md:text-4xl font-bold mb-6 md:mb-8 text-foreground border-b-2 border-border pb-3 md:pb-4 break-words">
                       {children}
                     </h1>
                   ),
@@ -350,7 +350,7 @@ export default function DocsPage() {
                     return (
                       <h2
                         id={headingId}
-                        className="text-xl md:text-2xl font-semibold mt-8 md:mt-10 mb-4 md:mb-6 text-gray-800 border-l-4 border-purple-500 pl-3 md:pl-4 scroll-mt-20 md:scroll-mt-20 break-words"
+                        className="text-xl md:text-2xl font-semibold mt-8 md:mt-10 mb-4 md:mb-6 text-foreground border-l-4 border-primary pl-3 md:pl-4 scroll-mt-20 md:scroll-mt-20 break-words"
                       >
                         {children}
                       </h2>
@@ -372,14 +372,14 @@ export default function DocsPage() {
                     return (
                       <h3 
                         id={headingId}
-                        className="text-lg md:text-xl font-medium mt-6 md:mt-8 mb-3 md:mb-4 text-gray-700 scroll-mt-20 md:scroll-mt-20 break-words"
+                        className="text-lg md:text-xl font-medium mt-6 md:mt-8 mb-3 md:mb-4 text-foreground scroll-mt-20 md:scroll-mt-20 break-words"
                       >
                         {children}
                       </h3>
                     );
                   },
                   h4: ({ children }) => (
-                    <h4 className="text-base md:text-lg font-medium mt-4 md:mt-6 mb-2 md:mb-3 text-gray-600 break-words">
+                    <h4 className="text-base md:text-lg font-medium mt-4 md:mt-6 mb-2 md:mb-3 text-muted-foreground break-words">
                       {children}
                     </h4>
                   ),
@@ -388,7 +388,7 @@ export default function DocsPage() {
                     const isInline = !className;
                     if (isInline) {
                       return (
-                        <code className="bg-gray-100 text-gray-800 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm font-mono border border-gray-200 break-words">
+                        <code className="bg-muted text-foreground px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm font-mono border border-border break-words">
                           {children}
                         </code>
                       );
@@ -396,25 +396,25 @@ export default function DocsPage() {
                     return <code className={className}>{children}</code>;
                   },
                   pre: ({ children }) => (
-                    <pre className="bg-gray-900 text-gray-100 p-3 md:p-6 rounded-lg md:rounded-xl overflow-x-auto my-4 md:my-6 border border-gray-700 shadow-lg text-xs md:text-sm break-words whitespace-pre-wrap">
+                    <pre className="bg-card text-card-foreground p-3 md:p-6 rounded-lg md:rounded-xl overflow-x-auto my-4 md:my-6 border border-border shadow-lg text-xs md:text-sm break-words whitespace-pre-wrap">
                       {children}
                     </pre>
                   ),
                   // 自定义表格样式
                   table: ({ children }) => (
-                    <div className="overflow-x-auto my-4 md:my-6 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="overflow-x-auto my-4 md:my-6 rounded-lg border border-border shadow-sm">
                       <table className="w-full border-collapse min-w-full">
                         {children}
                       </table>
                     </div>
                   ),
                   th: ({ children }) => (
-                    <th className="border-b border-gray-200 px-3 md:px-6 py-2 md:py-4 bg-gray-50 font-semibold text-left text-gray-700 text-xs md:text-sm break-words">
+                    <th className="border-b border-border px-3 md:px-6 py-2 md:py-4 bg-muted font-semibold text-left text-foreground text-xs md:text-sm break-words">
                       {children}
                     </th>
                   ),
                   td: ({ children }) => (
-                    <td className="border-b border-gray-100 px-3 md:px-6 py-2 md:py-4 text-gray-600 text-xs md:text-sm break-words">
+                    <td className="border-b border-border px-3 md:px-6 py-2 md:py-4 text-muted-foreground text-xs md:text-sm break-words">
                       {children}
                     </td>
                   ),
@@ -422,7 +422,7 @@ export default function DocsPage() {
                   a: ({ children, href }) => (
                     <a
                       href={href}
-                      className="text-purple-600 hover:text-purple-700 underline underline-offset-2 transition-colors duration-200 font-medium inline-flex items-center gap-1 text-sm md:text-base break-words"
+                      className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors duration-200 font-medium inline-flex items-center gap-1 text-sm md:text-base break-words"
                       target={href?.startsWith("http") ? "_blank" : undefined}
                       rel={
                         href?.startsWith("http")
@@ -450,44 +450,44 @@ export default function DocsPage() {
                   ),
                   // 自定义列表样式
                   ul: ({ children }) => (
-                    <ul className="list-disc list-inside space-y-1 md:space-y-2 my-4 md:my-6 text-gray-700 text-sm md:text-base">
+                    <ul className="list-disc list-inside space-y-1 md:space-y-2 my-4 md:my-6 text-foreground text-sm md:text-base">
                       {children}
                     </ul>
                   ),
                   ol: ({ children }) => (
-                    <ol className="list-decimal list-inside space-y-1 md:space-y-2 my-4 md:my-6 text-gray-700 text-sm md:text-base">
+                    <ol className="list-decimal list-inside space-y-1 md:space-y-2 my-4 md:my-6 text-foreground text-sm md:text-base">
                       {children}
                     </ol>
                   ),
                   // 自定义引用样式
                   blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-purple-500 bg-purple-50 pl-4 md:pl-6 py-3 md:py-4 italic text-gray-700 my-4 md:my-6 rounded-r-lg text-sm md:text-base break-words">
+                    <blockquote className="border-l-4 border-primary bg-primary/10 pl-4 md:pl-6 py-3 md:py-4 italic text-foreground my-4 md:my-6 rounded-r-lg text-sm md:text-base break-words">
                       {children}
                     </blockquote>
                   ),
                   // 自定义分隔线样式
-                  hr: () => <Separator className="my-6 md:my-8 bg-gray-200" />,
+                  hr: () => <Separator className="my-6 md:my-8 bg-border" />,
                   // 自定义段落样式
                   p: ({ children }) => (
-                    <p className="my-4 md:my-6 leading-relaxed text-gray-700 text-sm md:text-base break-words">
+                    <p className="my-4 md:my-6 leading-relaxed text-foreground text-sm md:text-base break-words">
                       {children}
                     </p>
                   ),
                   // 自定义列表项样式
                   li: ({ children }) => (
-                    <li className="text-gray-700 leading-relaxed text-sm md:text-base break-words">
+                    <li className="text-foreground leading-relaxed text-sm md:text-base break-words">
                       {children}
                     </li>
                   ),
                   // 自定义强调样式
                   strong: ({ children }) => (
-                    <strong className="font-semibold text-gray-900 text-sm md:text-base break-words">
+                    <strong className="font-semibold text-foreground text-sm md:text-base break-words">
                       {children}
                     </strong>
                   ),
                   // 自定义斜体样式
                   em: ({ children }) => (
-                    <em className="italic text-gray-600 text-sm md:text-base break-words">
+                    <em className="italic text-muted-foreground text-sm md:text-base break-words">
                       {children}
                     </em>
                   ),

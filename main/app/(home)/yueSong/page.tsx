@@ -246,7 +246,7 @@ function YueSong() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Card className="p-6 space-y-8 flex my-8 overflow-y-scroll shadow-md min-h-[80vh]">
-        <div className="flex justify-between text-gray-600 dark:text-gray-400 mb-2">
+        <div className="flex justify-between text-muted-foreground mb-2">
           <div className="flex cursor-pointer" onClick={() => router.push("/")}>
             <ChevronLeft />
             <span className="pl-2">Go Back</span>
@@ -325,7 +325,7 @@ function YueSong() {
                 }}
               />
             </div>
-            <div className="lg:flex-[2] text-white">
+            <div className="lg:flex-[2] text-foreground">
               <div className="flex justify-between">
                 <div className="text-2xl font-bold">
                   {data?.note.context.song_name}

@@ -86,9 +86,9 @@ import {
 
 function BookCard({ book }: { book: Book }) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <a href={book.link} target="_blank" rel="noopener noreferrer">
-        <div className="h-48 bg-gray-200 relative">
+        <div className="h-48 bg-muted relative">
           <Image
             src={book.coverImage}
             alt={`Cover of ${book.title}`}
@@ -104,8 +104,8 @@ function BookCard({ book }: { book: Book }) {
         </div>
         <div className="p-4">
           <h3 className="text-xl font-semibold">{book.title}</h3>
-          <p className="text-gray-600 mb-2">{book.author}</p>
-          <p className="text-gray-700 text-sm mb-4 line-clamp-2">
+          <p className="text-muted-foreground mb-2">{book.author}</p>
+          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
             {book.description}
           </p>
           {/* TODO: impl in the future.
@@ -143,13 +143,13 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
+    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
       {corpus.pinned && (
         <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white rounded-md text-xs z-10">
           置顶
         </div>
       )}
-      <div className="h-48 bg-gray-200 relative">
+      <div className="h-48 bg-muted relative">
         <Image
           src={corpus.cover}
           alt={`Cover of ${corpus.name}`}
@@ -170,13 +170,13 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
       </div>
       <div className="p-4">
         <h3 className="text-xl font-semibold">{corpus.nickname}</h3>
-        <div className="text-gray-600 mb-2 max-h-18 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
+        <div className="text-muted-foreground mb-2 max-h-18 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-muted">
           <ReactMarkdown
             components={{
               p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
               strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
               em: ({ node, ...props }) => <em className="italic" {...props} />,
-              code: ({ node, ...props }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm" {...props} />,
+              code: ({ node, ...props }) => <code className="bg-muted px-1 py-0.5 rounded text-sm" {...props} />,
               ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-1" {...props} />,
               ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
               li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
@@ -192,7 +192,7 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
               {corpus.tags && corpus.tags.length > 0 && corpus.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white rounded-full text-xs border border-gray-400 dark:border-gray-500"
+                  className="px-2 py-1 bg-secondary text-secondary-foreground rounded-full text-xs border border-border"
                 >
                   {getTagDisplay(tag)}
                 </span>

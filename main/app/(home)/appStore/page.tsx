@@ -159,7 +159,7 @@ function AppCard({ app }: { app: App }) {
           置顶
         </div>
       )}
-      <div className="h-48 bg-gray-200 relative">
+      <div className="h-48 bg-muted relative">
         <Image 
           src={app.icon_img} 
           alt={`Icon of ${app.name}`}
@@ -177,7 +177,7 @@ function AppCard({ app }: { app: App }) {
           href={app.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="group text-xl font-semibold text-gray-900 relative pb-1          
+          className="group text-xl font-semibold text-foreground relative pb-1
   inline-block"
         >
           <h3 className="text-xl font-semibold">{app.name}</h3>
@@ -186,18 +186,18 @@ function AppCard({ app }: { app: App }) {
   group-hover:scale-x-100 transition-transform duration-300 origin-center"
           />
         </a>
-        <p className="text-gray-600 mb-2">By {app.authors.join(", ")}</p>
-        <p className="text-gray-600 mb-2 h-16 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
+        <p className="text-muted-foreground mb-2">By {app.authors.join(", ")}</p>
+        <p className="text-muted-foreground mb-2 h-16 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-muted">
           {app.description}
         </p>
         {app.type && (
           <div className="mb-4">
-            <span className="px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white rounded-full text-xs border border-gray-400 dark:border-gray-500">
+            <span className="px-2 py-1 bg-secondary text-secondary-foreground rounded-full text-xs border border-border">
               {getTypeDisplay(app.type)}
             </span>
           </div>
         )}
-        <div className="flex justify-between text-sm text-gray-500">
+        <div className="flex justify-between text-sm text-muted-foreground">
           {/* <span>❤️ {app.likes}</span> */}
           <div className="flex flex-row gap-4 flex-wrap">
             {getLaunchButton()}
@@ -304,11 +304,11 @@ export default function AppStorePage() {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <p className="text-xl text-gray-500">Loading apps...</p>
+            <p className="text-xl text-muted-foreground">Loading apps...</p>
           </div>
         ) : apps.length === 0 ? (
           <div className="flex justify-center items-center h-64">
-            <p className="text-xl text-gray-500">No apps found</p>
+            <p className="text-xl text-muted-foreground">No apps found</p>
           </div>
         ) : (
           <div className="flex flex-col space-y-4">

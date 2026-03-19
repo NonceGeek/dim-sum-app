@@ -23,7 +23,7 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 
 
 const buttonClass =
-  "rounded-full border border-gray-400 px-6 py-2 text-white bg-transparent hover:bg-gray-700 transition-colors duration-150";
+  "rounded-full border border-border px-6 py-2 text-foreground bg-transparent hover:bg-accent transition-colors duration-150";
 
 export default function CorpusItemDetailsPage() {
   const params = useParams();
@@ -206,7 +206,7 @@ export default function CorpusItemDetailsPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10" />
-            <div className="h-6 w-px bg-gray-600" />
+            <div className="h-6 w-px bg-border" />
             <Skeleton className="h-8 w-32" />
           </div>
           <Skeleton className="h-10 w-20" />
@@ -283,17 +283,17 @@ export default function CorpusItemDetailsPage() {
             variant="ghost"
             size="icon"
             onClick={handleBack}
-            className="flex items-center gap-2 text-gray-300 hover:text-white"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-6 h-6" />
             {/* 返回列表 */}
           </Button>
-          <div className="h-6 w-px bg-gray-600" />
-          <h1 className="text-xl font-bold text-gray-300">
+          <div className="h-6 w-px bg-border" />
+          <h1 className="text-xl font-bold text-muted-foreground">
             {isEditing ? "编辑数据" : "数据详情"}
           </h1>
           {/* {item && (
-            <span className="text-lg text-gray-500">
+            <span className="text-lg text-muted-foreground">
               {item.data}
             </span>
           )} */}
@@ -334,19 +334,19 @@ export default function CorpusItemDetailsPage() {
       <div className="space-y-8">
         {/* Main Info Table */}
         <Card className="p-6 bg-card">
-          <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20 table-fixed">
+          <Table className="w-full border-collapse overflow-hidden bg-transparent text-foreground text-base border border-white/20 table-fixed">
             <TableHeader>
-              <TableRow className="bg-[#23242a]">
-                <TableHead className="w-24 text-center border-r border-gray-600 text-white text-base">
+              <TableRow className="bg-muted">
+                <TableHead className="w-24 text-center border-r border-border text-foreground text-base">
                   字
                 </TableHead>
-                <TableHead className="w-48 text-center border-r border-gray-600 text-white text-base">
+                <TableHead className="w-48 text-center border-r border-border text-foreground text-base">
                   粤音
                 </TableHead>
-                <TableHead className="w-1/2 text-center border-r border-gray-600 text-white text-base">
+                <TableHead className="w-1/2 text-center border-r border-border text-foreground text-base">
                   组词
                 </TableHead>
-                <TableHead className="text-center text-white text-base">
+                <TableHead className="text-center text-foreground text-base">
                   句子
                 </TableHead>
               </TableRow>
@@ -355,18 +355,18 @@ export default function CorpusItemDetailsPage() {
               {isEditing ? (
                 // Edit mode
                 editPinyin.map((pinyin, index) => (
-                  <TableRow key={index} className="border-t border-gray-600">
+                  <TableRow key={index} className="border-t border-border">
                     {index === 0 && (
                       <TableCell
                         rowSpan={editPinyin.length}
-                        className="text-center border-r border-gray-600 align-middle text-2xl"
+                        className="text-center border-r border-border align-middle text-2xl"
                       >
                         {item.data}
                       </TableCell>
                     )}
-                    <TableCell className="border-r border-gray-600">
+                    <TableCell className="border-r border-border">
                       <div className="flex items-center gap-2">
-                        <Volume2 className="h-5 w-5 cursor-pointer hover:text-purple-400" />
+                        <Volume2 className="h-5 w-5 cursor-pointer hover:text-primary" />
                         <Input
                           value={pinyin}
                           onChange={(e) => {
@@ -386,7 +386,7 @@ export default function CorpusItemDetailsPage() {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="border-r border-gray-600 whitespace-normal">
+                    <TableCell className="border-r border-border whitespace-normal">
                       <Textarea
                         value={editMeanings[index] || ""}
                         onChange={(e) => {
@@ -413,22 +413,22 @@ export default function CorpusItemDetailsPage() {
               ) : (
                 // View mode
                 mainInfoRows.map((row: any, index: number) => (
-                  <TableRow key={index} className="border-t border-gray-600">
+                  <TableRow key={index} className="border-t border-border">
                     {index === 0 && (
                       <TableCell
                         rowSpan={mainInfoRows.length}
-                        className="text-center border-r border-gray-600 align-middle text-2xl"
+                        className="text-center border-r border-border align-middle text-2xl"
                       >
                         {item.data}
                       </TableCell>
                     )}
-                    <TableCell className="border-r border-gray-600">
+                    <TableCell className="border-r border-border">
                       <div className="flex items-center gap-2">
-                        <Volume2 className="h-5 w-5 cursor-pointer hover:text-purple-400" />
+                        <Volume2 className="h-5 w-5 cursor-pointer hover:text-primary" />
                         <span>音节: {row.pinyin}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="border-r border-gray-600 whitespace-normal">
+                    <TableCell className="border-r border-border whitespace-normal">
                       {row.words}
                     </TableCell>
                     <TableCell className="whitespace-normal">{row.sentence}</TableCell>
@@ -451,13 +451,13 @@ export default function CorpusItemDetailsPage() {
 
         {/* Related Documents Table */}
         <Card className="p-6 bg-card">
-          <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20">
+          <Table className="w-full border-collapse overflow-hidden bg-transparent text-foreground text-base border border-white/20">
             <TableHeader>
-              <TableRow className="bg-[#23242a]">
-                <TableHead className="w-1/3 text-center border-r border-gray-600 text-white text-base">
+              <TableRow className="bg-muted">
+                <TableHead className="w-1/3 text-center border-r border-border text-foreground text-base">
                   相关文献
                 </TableHead>
-                <TableHead className="text-center text-white text-base">
+                <TableHead className="text-center text-foreground text-base">
                   链接
                 </TableHead>
               </TableRow>
@@ -467,8 +467,8 @@ export default function CorpusItemDetailsPage() {
                 // Edit mode
                 <>
                   {editRelatedDocs.map((doc, index) => (
-                    <TableRow key={index} className="border-t border-gray-600">
-                      <TableCell className="border-r border-gray-600">
+                    <TableRow key={index} className="border-t border-border">
+                      <TableCell className="border-r border-border">
                         <div className="flex items-center gap-2">
                           <Input
                             value={doc.name}
@@ -514,18 +514,18 @@ export default function CorpusItemDetailsPage() {
                 // View mode
                 relatedDocuments.length > 0 ? (
                   relatedDocuments.map((doc: any, index: number) => (
-                    <TableRow key={index} className="border-t border-gray-600">
-                      <TableCell className="text-center border-r border-gray-600">
+                    <TableRow key={index} className="border-t border-border">
+                      <TableCell className="text-center border-r border-border">
                         {doc.name || "N/A"}
                       </TableCell>
-                      <TableCell className="text-center border-r border-gray-600">
+                      <TableCell className="text-center border-r border-border">
                         {doc.link || "N/A"}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow className="border-t border-gray-600">
-                    <TableCell colSpan={2} className="text-center text-gray-500 py-4">
+                  <TableRow className="border-t border-border">
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
                       没有相关文献数据
                     </TableCell>
                   </TableRow>
@@ -537,13 +537,13 @@ export default function CorpusItemDetailsPage() {
 
         {/* Video Clips Table */}
         <Card className="p-6 bg-card">
-          <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20">
+          <Table className="w-full border-collapse overflow-hidden bg-transparent text-foreground text-base border border-white/20">
             <TableHeader>
-              <TableRow className="bg-[#23242a]">
-                <TableHead className="w-1/3 text-center border-r border-gray-600 text-white text-base">
+              <TableRow className="bg-muted">
+                <TableHead className="w-1/3 text-center border-r border-border text-foreground text-base">
                   视频切片
                 </TableHead>
-                <TableHead className="text-center text-white text-base">
+                <TableHead className="text-center text-foreground text-base">
                   链接
                 </TableHead>
               </TableRow>
@@ -553,8 +553,8 @@ export default function CorpusItemDetailsPage() {
                 // Edit mode
                 <>
                   {editVideoClips.map((clip, index) => (
-                    <TableRow key={index} className="border-t border-gray-600">
-                      <TableCell className="border-r border-gray-600">
+                    <TableRow key={index} className="border-t border-border">
+                      <TableCell className="border-r border-border">
                         <div className="flex items-center gap-2">
                           <Input
                             value={clip.name}
@@ -600,18 +600,18 @@ export default function CorpusItemDetailsPage() {
                 // View mode
                 videoClips.length > 0 ? (
                   videoClips.map((clip: any, index: number) => (
-                    <TableRow key={index} className="border-t border-gray-600">
-                      <TableCell className="text-center border-r border-gray-600">
+                    <TableRow key={index} className="border-t border-border">
+                      <TableCell className="text-center border-r border-border">
                         {clip.name || "N/A"}
                       </TableCell>
-                      <TableCell className="text-center border-r border-gray-600">
+                      <TableCell className="text-center border-r border-border">
                         {clip.link || "N/A"}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow className="border-t border-gray-600">
-                    <TableCell colSpan={2} className="text-center text-gray-500 py-4">
+                  <TableRow className="border-t border-border">
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
                       没有视频切片数据
                     </TableCell>
                   </TableRow>

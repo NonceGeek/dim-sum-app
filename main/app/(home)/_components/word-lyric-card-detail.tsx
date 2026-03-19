@@ -132,11 +132,11 @@ export default function WordLyricCardDetail({
   const related = data?.related || null;
 
   return (
-    <Card className="p-6 shadow-md hover:bg-primary/5 dark:hover:bg-gray-800 transition-colors duration-200 mb-4">
+    <Card className="p-6 shadow-md hover:bg-accent transition-colors duration-200 mb-4">
       <div className="space-y-6">
         <div className="prose dark:prose-invert max-w-none relative">
           <div className="flex justify-between items-start">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               {result.data}
             </h3>
             <EditPermissionChecker result={result} user={user}>
@@ -148,7 +148,7 @@ export default function WordLyricCardDetail({
                       setEditingResult(result);
                       setUpdateDialogOpen(true);
                     }}
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-12 px-6"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6"
                   >
                     Update
                   </Button>
@@ -157,7 +157,7 @@ export default function WordLyricCardDetail({
             </EditPermissionChecker>
           </div>
         </div>
-        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-4">
+        <div className="mt-2 text-sm text-muted-foreground space-y-4">
           {/* Display note content */}
           {result.note && (
             <div className="space-y-2">
@@ -169,7 +169,7 @@ export default function WordLyricCardDetail({
                                     {JSON.stringify(result.note, null, 2)}
                                   </pre> */}
                   {isDictionaryNote(result.note) && (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
+                    <div className="bg-muted/50 p-4 rounded-lg border border-border space-y-2">
                       {result.note.context.meaning && (
                         <p className="leading-relaxed">
                           <b className="text-fuchsia-300">釋義：</b>{" "}
@@ -219,7 +219,7 @@ export default function WordLyricCardDetail({
                   {/* Handle simple string note that is an image URL */}
                   {typeof result.note === "string" &&
                   isImageUrl(result.note) ? (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <div className="bg-muted/50 p-4 rounded-lg border border-border">
                       <img
                         src={result.note}
                         alt="Note image"
@@ -229,17 +229,17 @@ export default function WordLyricCardDetail({
                           e.currentTarget.style.display = "none";
                           const fallback = document.createElement("p");
                           fallback.textContent = `Image failed to load: ${result.note}`;
-                          fallback.className = "text-gray-500 italic";
+                          fallback.className = "text-muted-foreground italic";
                           e.currentTarget.parentNode?.appendChild(fallback);
                         }}
                       />
                     </div>
                   ) : typeof result.note === "string" ? (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <div className="bg-muted/50 p-4 rounded-lg border border-border">
                       <p className="leading-relaxed">{result.note}</p>
                     </div>
                   ) : Array.isArray(result.note) ? (
-                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
+                    <div className="bg-muted/50 p-4 rounded-lg border border-border space-y-2">
                       {result.note.map((item, idx) => (
                         <div key={idx}>
                           {typeof item === "string" && isImageUrl(item) ? (
@@ -252,7 +252,7 @@ export default function WordLyricCardDetail({
                                 e.currentTarget.style.display = "none";
                                 const fallback = document.createElement("p");
                                 fallback.textContent = `Image failed to load: ${item}`;
-                                fallback.className = "text-gray-500 italic";
+                                fallback.className = "text-muted-foreground italic";
                                 e.currentTarget.parentNode?.appendChild(
                                   fallback
                                 );
@@ -305,7 +305,7 @@ export default function WordLyricCardDetail({
                                 }}
                               />
                             </div>
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                            <div className="bg-muted/50 p-4 rounded-lg border border-border">
                               <p className="whitespace-pre-line leading-relaxed">
                                 <b className="text-fuchsia-300">Subtitles:</b>{" "}
                                 {
@@ -321,7 +321,7 @@ export default function WordLyricCardDetail({
                             </div>
                           </div>
                         ) : (
-                          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 space-y-2">
+                          <div className="bg-muted/50 p-4 rounded-lg border border-border space-y-2">
                             {Object.entries(
                               (
                                 result.note as {
@@ -360,7 +360,7 @@ export default function WordLyricCardDetail({
                                               document.createElement("p");
                                             fallback.textContent = `Image failed to load: ${value}`;
                                             fallback.className =
-                                              "text-gray-500 italic";
+                                              "text-muted-foreground italic";
                                             e.currentTarget.parentNode?.appendChild(
                                               fallback
                                             );
@@ -431,7 +431,7 @@ export default function WordLyricCardDetail({
             {result.tags.map((tag, idx) => (
               <span
                 key={idx}
-                className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs border border-gray-200 dark:border-gray-700"
+                className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs border border-border"
               >
                 {tag}
               </span>
