@@ -47,10 +47,10 @@ function SearchFormExample() {
             <FormItem>
               <FormLabel>Search</FormLabel>
               <FormControl>
-                <Input placeholder="Transaction hash, address, or block..." {...field} />
+                <Input placeholder="搜索分类或词条..." {...field} />
               </FormControl>
               <FormDescription>
-                Enter a transaction hash, account address, or block height.
+                Enter a category name, character, or pinyin to search.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -66,22 +66,20 @@ export const Default: Story = {
   render: () => <SearchFormExample />,
 };
 
-const transferSchema = z.object({
-  recipient: z
-    .string()
-    .min(1, "Recipient address is required")
-    .regex(/^0x/, "Address must start with 0x"),
-  amount: z.string().min(1, "Amount is required"),
+const corpusEntrySchema = z.object({
+  character: z.string().min(1, "字符不能为空"),
+  pinyin: z.string().min(1, "粤音不能为空"),
+  meaning: z.string().optional(),
 });
 
-function TransferFormExample() {
-  const form = useForm<z.infer<typeof transferSchema>>({
-    resolver: zodResolver(transferSchema),
-    defaultValues: { recipient: "", amount: "" },
+function CorpusEntryFormExample() {
+  const form = useForm<z.infer<typeof corpusEntrySchema>>({
+    resolver: zodResolver(corpusEntrySchema),
+    defaultValues: { character: "", pinyin: "", meaning: "" },
   });
 
-  function onSubmit(values: z.infer<typeof transferSchema>) {
-    console.log("Transfer submitted:", values);
+  function onSubmit(values: z.infer<typeof corpusEntrySchema>) {
+    console.log("Entry submitted:", values);
   }
 
   return (
@@ -89,15 +87,29 @@ function TransferFormExample() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-[400px]">
         <FormField
           control={form.control}
-          name="recipient"
+          name="character"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Recipient Address</FormLabel>
+              <FormLabel>字符</FormLabel>
               <FormControl>
-                <Input placeholder="0x..." {...field} />
+                <Input placeholder="输入汉字" {...field} />
+              </FormControl>
+              <FormDescription>The character or word to add.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="pinyin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>粤音</FormLabel>
+              <FormControl>
+                <Input placeholder="如 jyut6 jyu5" {...field} />
               </FormControl>
               <FormDescription>
-                The wallet address to send tokens to.
+                Cantonese pronunciation in Jyutping romanization.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -105,20 +117,19 @@ function TransferFormExample() {
         />
         <FormField
           control={form.control}
-          name="amount"
+          name="meaning"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount</FormLabel>
+              <FormLabel>释义</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0.00" {...field} />
+                <Input placeholder="输入释义（可选）" {...field} />
               </FormControl>
-              <FormDescription>Amount of MOVE to transfer.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         <div className="flex gap-2">
-          <Button type="submit">Send</Button>
+          <Button type="submit">创建</Button>
           <Button type="button" variant="outline" onClick={() => form.reset()}>
             Reset
           </Button>
@@ -128,6 +139,6 @@ function TransferFormExample() {
   );
 }
 
-export const MultipleFields: Story = {
-  render: () => <TransferFormExample />,
+export const CorpusEntry: Story = {
+  render: () => <CorpusEntryFormExample />,
 };

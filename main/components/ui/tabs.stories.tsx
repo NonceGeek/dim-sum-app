@@ -15,29 +15,24 @@ export const Default: Story = {
     <Tabs defaultValue="overview" className="w-[500px]">
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="events">Events</TabsTrigger>
-        <TabsTrigger value="payload">Payload</TabsTrigger>
+        <TabsTrigger value="entries">词条</TabsTrigger>
+        <TabsTrigger value="history">修改记录</TabsTrigger>
       </TabsList>
       <TabsContent value="overview">
         <div className="rounded-md border p-4 text-sm">
           <p>
-            Transaction executed successfully with 1,200 gas units consumed.
-            Block height: 84,291,037.
+            广州话正音字典：收录 12,450 个词条，由 15 位标注员协作维护。
           </p>
         </div>
       </TabsContent>
-      <TabsContent value="events">
+      <TabsContent value="entries">
         <div className="rounded-md border p-4 text-sm">
-          <p>3 events emitted: CoinRegister, WithdrawEvent, DepositEvent.</p>
+          <p>最近更新：「粤」jyut6 — 广东省的简称。</p>
         </div>
       </TabsContent>
-      <TabsContent value="payload">
+      <TabsContent value="history">
         <div className="rounded-md border p-4 text-sm">
-          <p>
-            Function: 0x1::coin::transfer
-            <br />
-            Type arguments: 0x1::aptos_coin::AptosCoin
-          </p>
+          <p>张三 于 2026-03-18 修改了「声」的粤音标注。</p>
         </div>
       </TabsContent>
     </Tabs>
@@ -46,31 +41,31 @@ export const Default: Story = {
 
 export const MultipleTabs: Story = {
   render: () => (
-    <Tabs defaultValue="tokens" className="w-[500px]">
+    <Tabs defaultValue="corpus" className="w-[500px]">
       <TabsList>
-        <TabsTrigger value="tokens">Tokens</TabsTrigger>
-        <TabsTrigger value="nfts">NFTs</TabsTrigger>
-        <TabsTrigger value="transactions">Transactions</TabsTrigger>
-        <TabsTrigger value="resources">Resources</TabsTrigger>
+        <TabsTrigger value="corpus">语料集</TabsTrigger>
+        <TabsTrigger value="apps">应用</TabsTrigger>
+        <TabsTrigger value="users">用户</TabsTrigger>
+        <TabsTrigger value="logs">操作日志</TabsTrigger>
       </TabsList>
-      <TabsContent value="tokens">
+      <TabsContent value="corpus">
         <div className="rounded-md border p-4 text-sm">
-          <p>MOVE: 1,250.00 | USDC: 500.00 | WETH: 0.5</p>
+          <p>12 个语料分类，共 45,230 个词条。</p>
         </div>
       </TabsContent>
-      <TabsContent value="nfts">
+      <TabsContent value="apps">
         <div className="rounded-md border p-4 text-sm">
-          <p>3 NFT collections found.</p>
+          <p>8 个已上架应用，涵盖学习、游戏和 AI 工具。</p>
         </div>
       </TabsContent>
-      <TabsContent value="transactions">
+      <TabsContent value="users">
         <div className="rounded-md border p-4 text-sm">
-          <p>142 transactions in the last 30 days.</p>
+          <p>1,247 名注册用户，其中活跃标注员 32 名。</p>
         </div>
       </TabsContent>
-      <TabsContent value="resources">
+      <TabsContent value="logs">
         <div className="rounded-md border p-4 text-sm">
-          <p>12 on-chain resources associated with this account.</p>
+          <p>最近 24 小时：128 次权限变更，45 次角色调整。</p>
         </div>
       </TabsContent>
     </Tabs>

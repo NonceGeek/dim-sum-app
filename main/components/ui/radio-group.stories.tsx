@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { RadioGroup, RadioGroupItem } from "./radio-group";
+import { cn } from "@/lib/utils";
 
 const meta: Meta<typeof RadioGroup> = {
   title: "Components/RadioGroup",
@@ -12,23 +13,23 @@ type Story = StoryObj<typeof RadioGroup>;
 
 export const Default: Story = {
   render: () => (
-    <RadioGroup defaultValue="mainnet">
+    <RadioGroup defaultValue="learner">
       <div className="flex items-center gap-2">
-        <RadioGroupItem value="mainnet" id="mainnet" />
-        <label htmlFor="mainnet" className="text-sm font-medium leading-none">
-          Mainnet
+        <RadioGroupItem value="learner" id="learner" />
+        <label htmlFor="learner" className="text-sm font-medium leading-none">
+          Learner
         </label>
       </div>
       <div className="flex items-center gap-2">
-        <RadioGroupItem value="testnet" id="testnet" />
-        <label htmlFor="testnet" className="text-sm font-medium leading-none">
-          Testnet
+        <RadioGroupItem value="tagger" id="tagger" />
+        <label htmlFor="tagger" className="text-sm font-medium leading-none">
+          Tagger
         </label>
       </div>
       <div className="flex items-center gap-2">
-        <RadioGroupItem value="devnet" id="devnet" />
-        <label htmlFor="devnet" className="text-sm font-medium leading-none">
-          Devnet
+        <RadioGroupItem value="researcher" id="researcher" />
+        <label htmlFor="researcher" className="text-sm font-medium leading-none">
+          Researcher
         </label>
       </div>
     </RadioGroup>
@@ -37,100 +38,90 @@ export const Default: Story = {
 
 export const WithDescriptions: Story = {
   render: () => (
-    <RadioGroup defaultValue="standard">
+    <RadioGroup defaultValue="read">
       <div className="flex items-start gap-3">
-        <RadioGroupItem value="standard" id="standard" className="mt-0.5" />
+        <RadioGroupItem value="read" id="read" className="mt-0.5" />
         <div className="grid gap-0.5">
+          <label htmlFor="read" className="text-sm font-medium leading-none">
+            READ
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Can only view public corpus entries.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-start gap-3">
+        <RadioGroupItem value="write" id="write" className="mt-0.5" />
+        <div className="grid gap-0.5">
+          <label htmlFor="write" className="text-sm font-medium leading-none">
+            WRITE
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Can view and edit existing corpus entries.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-start gap-3">
+        <RadioGroupItem value="create" id="create" className="mt-0.5" />
+        <div className="grid gap-0.5">
+          <label htmlFor="create" className="text-sm font-medium leading-none">
+            CREATE
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Can view, edit, and create new corpus entries.
+          </p>
+        </div>
+      </div>
+    </RadioGroup>
+  ),
+};
+
+export const CardStyle: Story = {
+  render: () => (
+    <RadioGroup
+      defaultValue="learner"
+      className="flex flex-col items-center space-y-4"
+    >
+      {["Learner", "Tagger", "Researcher"].map((role) => (
+        <div key={role} className="w-full max-w-[200px]">
+          <RadioGroupItem
+            value={role.toLowerCase()}
+            id={`card-${role.toLowerCase()}`}
+            className="peer sr-only"
+          />
           <label
-            htmlFor="standard"
-            className="text-sm font-medium leading-none"
+            htmlFor={`card-${role.toLowerCase()}`}
+            className={cn(
+              "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary"
+            )}
           >
-            Standard
+            {role}
           </label>
-          <p className="text-sm text-muted-foreground">
-            Default gas price, confirmed within 30 seconds.
-          </p>
         </div>
-      </div>
-      <div className="flex items-start gap-3">
-        <RadioGroupItem value="fast" id="fast" className="mt-0.5" />
-        <div className="grid gap-0.5">
-          <label htmlFor="fast" className="text-sm font-medium leading-none">
-            Fast
-          </label>
-          <p className="text-sm text-muted-foreground">
-            Higher gas price, confirmed within 10 seconds.
-          </p>
-        </div>
-      </div>
-      <div className="flex items-start gap-3">
-        <RadioGroupItem value="instant" id="instant" className="mt-0.5" />
-        <div className="grid gap-0.5">
-          <label
-            htmlFor="instant"
-            className="text-sm font-medium leading-none"
-          >
-            Instant
-          </label>
-          <p className="text-sm text-muted-foreground">
-            Maximum gas price, near-instant confirmation.
-          </p>
-        </div>
-      </div>
+      ))}
     </RadioGroup>
   ),
 };
 
 export const Disabled: Story = {
   render: () => (
-    <RadioGroup defaultValue="enabled" disabled>
+    <RadioGroup defaultValue="learner" disabled>
       <div className="flex items-center gap-2">
-        <RadioGroupItem value="enabled" id="d-enabled" />
+        <RadioGroupItem value="learner" id="d-learner" />
         <label
-          htmlFor="d-enabled"
+          htmlFor="d-learner"
           className="text-sm font-medium leading-none opacity-50"
         >
-          Option A
+          Learner
         </label>
       </div>
       <div className="flex items-center gap-2">
-        <RadioGroupItem value="disabled" id="d-disabled" />
+        <RadioGroupItem value="tagger" id="d-tagger" />
         <label
-          htmlFor="d-disabled"
+          htmlFor="d-tagger"
           className="text-sm font-medium leading-none opacity-50"
         >
-          Option B
-        </label>
-      </div>
-    </RadioGroup>
-  ),
-};
-
-export const Horizontal: Story = {
-  render: () => (
-    <RadioGroup defaultValue="24h" className="flex gap-4">
-      <div className="flex items-center gap-2">
-        <RadioGroupItem value="1h" id="h-1h" />
-        <label htmlFor="h-1h" className="text-sm leading-none">
-          1H
-        </label>
-      </div>
-      <div className="flex items-center gap-2">
-        <RadioGroupItem value="24h" id="h-24h" />
-        <label htmlFor="h-24h" className="text-sm leading-none">
-          24H
-        </label>
-      </div>
-      <div className="flex items-center gap-2">
-        <RadioGroupItem value="7d" id="h-7d" />
-        <label htmlFor="h-7d" className="text-sm leading-none">
-          7D
-        </label>
-      </div>
-      <div className="flex items-center gap-2">
-        <RadioGroupItem value="30d" id="h-30d" />
-        <label htmlFor="h-30d" className="text-sm leading-none">
-          30D
+          Tagger
         </label>
       </div>
     </RadioGroup>

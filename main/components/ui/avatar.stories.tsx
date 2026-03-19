@@ -17,7 +17,7 @@ export const Default: Story = {
         src="https://github.com/shadcn.png"
         alt="User avatar"
       />
-      <AvatarFallback>SC</AvatarFallback>
+      <AvatarFallback>张</AvatarFallback>
     </Avatar>
   ),
 };
@@ -26,7 +26,7 @@ export const Fallback: Story = {
   render: () => (
     <Avatar>
       <AvatarImage src="/nonexistent.png" alt="Unknown user" />
-      <AvatarFallback>MV</AvatarFallback>
+      <AvatarFallback>U</AvatarFallback>
     </Avatar>
   ),
 };
@@ -34,37 +34,33 @@ export const Fallback: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex items-center gap-4">
-      <Avatar className="size-6">
-        <AvatarFallback className="text-xs">S</AvatarFallback>
+      <Avatar className="h-6 w-6">
+        <AvatarFallback className="text-xs">张</AvatarFallback>
+      </Avatar>
+      <Avatar className="h-8 w-8">
+        <AvatarFallback className="text-sm">李</AvatarFallback>
       </Avatar>
       <Avatar>
-        <AvatarFallback>MD</AvatarFallback>
+        <AvatarFallback>王</AvatarFallback>
       </Avatar>
       <Avatar className="size-12">
-        <AvatarFallback>LG</AvatarFallback>
-      </Avatar>
-      <Avatar className="size-16">
-        <AvatarFallback className="text-lg">XL</AvatarFallback>
+        <AvatarFallback className="text-lg">赵</AvatarFallback>
       </Avatar>
     </div>
   ),
 };
 
-export const Group: Story = {
+export const WithName: Story = {
   render: () => (
-    <div className="flex -space-x-2">
-      <Avatar className="border-2 border-background">
-        <AvatarFallback>V1</AvatarFallback>
+    <div className="flex items-center gap-3">
+      <Avatar className="h-8 w-8">
+        <AvatarImage src="https://github.com/shadcn.png" alt="张三" />
+        <AvatarFallback>张</AvatarFallback>
       </Avatar>
-      <Avatar className="border-2 border-background">
-        <AvatarFallback>V2</AvatarFallback>
-      </Avatar>
-      <Avatar className="border-2 border-background">
-        <AvatarFallback>V3</AvatarFallback>
-      </Avatar>
-      <Avatar className="border-2 border-background">
-        <AvatarFallback>+5</AvatarFallback>
-      </Avatar>
+      <div>
+        <p className="text-sm font-medium">张三</p>
+        <p className="text-xs text-muted-foreground">RESEARCHER</p>
+      </div>
     </div>
   ),
 };

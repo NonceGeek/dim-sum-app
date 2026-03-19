@@ -24,7 +24,7 @@ export const TextLines: Story = {
   ),
 };
 
-export const Avatar: Story = {
+export const UserProfile: Story = {
   render: () => (
     <div className="flex items-center gap-4">
       <Skeleton className="h-12 w-12 rounded-full" />
@@ -36,60 +36,40 @@ export const Avatar: Story = {
   ),
 };
 
-export const Card: Story = {
+export const CorpusCard: Story = {
   render: () => (
     <div className="rounded-lg border p-4 space-y-4 w-full max-w-sm">
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="space-y-1.5">
-          <Skeleton className="h-4 w-[120px]" />
-          <Skeleton className="h-3 w-[80px]" />
-        </div>
+      <div className="space-y-1.5">
+        <Skeleton className="h-5 w-[180px]" />
+        <Skeleton className="h-3 w-[120px]" />
       </div>
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-[80%]" />
-      <Skeleton className="h-8 w-[100px]" />
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-16 rounded-full" />
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </div>
     </div>
   ),
 };
 
-export const TransactionRow: Story = {
+export const TableRows: Story = {
   render: () => (
-    <div className="w-full max-w-2xl space-y-4">
+    <div className="w-full max-w-2xl">
+      <div className="flex gap-4 px-4 py-3 border-b border-border">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-28" />
+      </div>
       {[1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-8 w-8 rounded" />
-            <div className="space-y-1.5">
-              <Skeleton className="h-4 w-[180px]" />
-              <Skeleton className="h-3 w-[120px]" />
-            </div>
-          </div>
-          <div className="text-right space-y-1.5">
-            <Skeleton className="h-4 w-[80px] ml-auto" />
-            <Skeleton className="h-3 w-[60px] ml-auto" />
-          </div>
+        <div key={i} className="flex gap-4 px-4 py-3 border-b border-border">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-4 w-28" />
         </div>
       ))}
-    </div>
-  ),
-};
-
-export const DetailPage: Story = {
-  render: () => (
-    <div className="w-full max-w-lg space-y-6">
-      <div className="space-y-2">
-        <Skeleton className="h-6 w-[200px]" />
-        <Skeleton className="h-4 w-[300px]" />
-      </div>
-      <div className="space-y-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex justify-between py-2">
-            <Skeleton className="h-4 w-[100px]" />
-            <Skeleton className="h-4 w-[200px]" />
-          </div>
-        ))}
-      </div>
     </div>
   ),
 };

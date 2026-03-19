@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Switch } from "./switch";
+import { Globe } from "lucide-react";
 
 const meta: Meta<typeof Switch> = {
   title: "Components/Switch",
@@ -19,18 +20,19 @@ export const Default: Story = {
     <div className="flex items-center gap-2">
       <Switch id="default-switch" />
       <label htmlFor="default-switch" className="text-sm font-medium">
-        Enable notifications
+        公开此分类
       </label>
     </div>
   ),
 };
 
-export const Checked: Story = {
+export const WithIcon: Story = {
   render: () => (
     <div className="flex items-center gap-2">
-      <Switch id="checked-switch" defaultChecked />
-      <label htmlFor="checked-switch" className="text-sm font-medium">
-        Dark mode
+      <Switch id="public-switch" defaultChecked />
+      <Globe className="h-4 w-4 text-success" />
+      <label htmlFor="public-switch" className="text-sm font-medium">
+        Public
       </label>
     </div>
   ),
@@ -64,33 +66,33 @@ export const Disabled: Story = {
 export const SettingsList: Story = {
   render: () => (
     <div className="w-full max-w-sm space-y-4">
-      <h4 className="text-sm font-medium">Explorer Preferences</h4>
+      <h4 className="text-sm font-medium">分类设置</h4>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">Decode Payloads</p>
+          <p className="text-sm font-medium">公开</p>
           <p className="text-xs text-muted-foreground">
-            Automatically decode transaction payloads
+            Allow all users to browse this corpus
           </p>
         </div>
         <Switch defaultChecked />
       </div>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">Show USD Values</p>
+          <p className="text-sm font-medium">置顶</p>
           <p className="text-xs text-muted-foreground">
-            Display approximate USD values for tokens
-          </p>
-        </div>
-        <Switch defaultChecked />
-      </div>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium">Developer Mode</p>
-          <p className="text-xs text-muted-foreground">
-            Show raw data and debug information
+            Pin this corpus to the top of the library
           </p>
         </div>
         <Switch />
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">允许编辑</p>
+          <p className="text-xs text-muted-foreground">
+            Let taggers modify entries in this corpus
+          </p>
+        </div>
+        <Switch defaultChecked />
       </div>
     </div>
   ),
