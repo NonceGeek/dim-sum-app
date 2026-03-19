@@ -111,15 +111,15 @@ export default function AdminUsersPage() {
   const getRoleBadgeColor = (role: Role) => {
     switch (role) {
       case "LEARNER":
-        return "bg-blue-500";
+        return "bg-info text-info-foreground";
       case "TAGGER_PARTNER":
-        return "bg-green-500";
+        return "bg-success text-success-foreground";
       case "TAGGER_OUTSOURCING":
-        return "bg-yellow-500";
+        return "bg-warning text-warning-foreground";
       case "RESEARCHER":
-        return "bg-purple-500";
+        return "bg-primary text-primary-foreground";
       default:
-        return "bg-gray-500";
+        return "bg-secondary text-secondary-foreground";
     }
   };
 
@@ -127,31 +127,31 @@ export default function AdminUsersPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">Users</h2>
-        <p className="text-gray-400 mt-2">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Users</h2>
+        <p className="text-muted-foreground mt-2">
           Manage user accounts and permissions.
         </p>
       </div>
 
       {/* Search and Filter */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Search Users</CardTitle>
+          <CardTitle className="text-foreground">Search Users</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search by name, email or phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10 bg-gray-700 border-gray-600 text-white"
+                className="pl-10 bg-secondary border-border text-foreground"
               />
             </div>
             <Select value={roleFilter || undefined} onValueChange={(value) => setRoleFilter(value === "all" ? "" : value)}>
-              <SelectTrigger className="w-48 bg-gray-700 border-gray-600 text-white">
+              <SelectTrigger className="w-48 bg-secondary border-border text-foreground">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
             </Select>
             <Button
               onClick={handleSearch}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-primary/90"
             >
               Search
             </Button>
@@ -175,14 +175,14 @@ export default function AdminUsersPage() {
       </Card>
 
       {/* Users Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white">
+              <CardTitle className="text-foreground">
                 Users List ({data?.pagination.total || 0})
               </CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardDescription className="text-muted-foreground">
                 Manage user roles and permissions
               </CardDescription>
             </div>
@@ -191,29 +191,29 @@ export default function AdminUsersPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400">Loading users...</div>
+              <div className="text-muted-foreground">Loading users...</div>
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-gray-300">User</TableHead>
-                    <TableHead className="text-gray-300">Email</TableHead>
-                    <TableHead className="text-gray-300">Phone</TableHead>
-                    <TableHead className="text-gray-300">Role</TableHead>
-                    <TableHead className="text-gray-300">Admin</TableHead>
-                    <TableHead className="text-gray-300">
+                  <TableRow className="border-border">
+                    <TableHead className="text-muted-foreground">User</TableHead>
+                    <TableHead className="text-muted-foreground">Email</TableHead>
+                    <TableHead className="text-muted-foreground">Phone</TableHead>
+                    <TableHead className="text-muted-foreground">Role</TableHead>
+                    <TableHead className="text-muted-foreground">Admin</TableHead>
+                    <TableHead className="text-muted-foreground">
                       Interactions
                     </TableHead>
-                    <TableHead className="text-gray-300">Joined</TableHead>
-                    <TableHead className="text-gray-300">Actions</TableHead>
+                    <TableHead className="text-muted-foreground">Joined</TableHead>
+                    <TableHead className="text-muted-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.users.map((user) => (
-                    <TableRow key={user.id} className="border-gray-700">
-                      <TableCell className="text-white">
+                    <TableRow key={user.id} className="border-border">
+                      <TableCell className="text-foreground">
                         <div className="flex items-center gap-3">
                           {user.avatar ? (
                             <img
@@ -222,35 +222,35 @@ export default function AdminUsersPage() {
                               className="w-8 h-8 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                              <UserIcon className="w-5 h-5 text-gray-400" />
+                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                              <UserIcon className="w-5 h-5 text-muted-foreground" />
                             </div>
                           )}
                           <span>{user.name || "N/A"}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {user.email || "N/A"}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {user.phoneNumber || "-"}
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={`${getRoleBadgeColor(user.role)} text-white`}
+                          className={getRoleBadgeColor(user.role)}
                         >
                           {user.role}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         {user.isSystemAdmin && (
-                          <Shield className="h-4 w-4 text-yellow-400" />
+                          <Shield className="h-4 w-4 text-warning" />
                         )}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {user.interactionsCount}
                       </TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-muted-foreground">
                         {format(new Date(user.createdAt), "MMM d, yyyy")}
                       </TableCell>
                       <TableCell>
@@ -263,7 +263,7 @@ export default function AdminUsersPage() {
                             })
                           }
                         >
-                          <SelectTrigger className="w-32 h-8 bg-gray-700 border-gray-600 text-white text-xs">
+                          <SelectTrigger className="w-32 h-8 bg-secondary border-border text-foreground text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -288,7 +288,7 @@ export default function AdminUsersPage() {
               {/* Pagination */}
               {data && data.pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     Page {data.pagination.page} of{" "}
                     {data.pagination.totalPages}
                   </div>
@@ -298,7 +298,7 @@ export default function AdminUsersPage() {
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-secondary border-border text-foreground"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -311,7 +311,7 @@ export default function AdminUsersPage() {
                         )
                       }
                       disabled={page === data.pagination.totalPages}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-secondary border-border text-foreground"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
