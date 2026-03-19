@@ -83,7 +83,7 @@
     @apply bg-background text-foreground;
   }
   .gray_text_sm {
-    @apply text-sm text-gray-600 dark:text-gray-400;
+    @apply text-sm text-muted-foreground;
   }
 
   @keyframes wave {
