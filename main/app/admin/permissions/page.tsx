@@ -296,15 +296,15 @@ export default function AdminPermissionsPage() {
   const getPermissionBadgeColor = (permission: string) => {
     switch (permission) {
       case "FULL":
-        return "bg-red-500";
+        return "bg-error text-error-foreground";
       case "CREATE":
-        return "bg-purple-500";
+        return "bg-primary text-primary-foreground";
       case "WRITE":
-        return "bg-blue-500";
+        return "bg-info text-info-foreground";
       case "READ":
-        return "bg-green-500";
+        return "bg-success text-success-foreground";
       default:
-        return "bg-gray-500";
+        return "bg-secondary text-secondary-foreground";
     }
   };
 
@@ -319,18 +319,18 @@ export default function AdminPermissionsPage() {
     <div className="space-y-8">
       {/* ... existing header ... */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Permissions
         </h2>
-        <p className="text-gray-400 mt-2">
+        <p className="text-muted-foreground mt-2">
           Manage user access to corpus categories.
         </p>
       </div>
 
       {/* Search and Filter */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Filter Permissions</CardTitle>
+          <CardTitle className="text-foreground">Filter Permissions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 flex-wrap">
@@ -341,7 +341,7 @@ export default function AdminPermissionsPage() {
                 setSelectedUserId(value === "all" ? "" : value)
               }
             >
-              <SelectTrigger className="w-64 bg-gray-700 border-gray-600 text-white">
+              <SelectTrigger className="w-64 bg-secondary border-border text-foreground">
                 <SelectValue placeholder="Select user to view permissions" />
               </SelectTrigger>
               <SelectContent>
@@ -350,18 +350,18 @@ export default function AdminPermissionsPage() {
                     placeholder="Search users..."
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
-                    className="h-8 bg-gray-600 border-gray-500 text-white"
+                    className="h-8 bg-muted border-border text-foreground"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
                 <SelectItem value="all">All Users</SelectItem>
                 {isLoadingUsers ? (
                   <div className="flex items-center justify-center py-6">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                    <span className="ml-2 text-sm text-gray-400">Searching...</span>
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-gray-400">
+                  <div className="py-6 text-center text-sm text-muted-foreground">
                     No users found
                   </div>
                 ) : (
@@ -369,7 +369,7 @@ export default function AdminPermissionsPage() {
                     <SelectItem key={user.id} value={user.id}>
                       <div className="flex items-center gap-2">
                         <span>{user.name || user.email || user.id}</span>
-                        <span className="text-xs text-gray-400">{user.role}</span>
+                        <span className="text-xs text-muted-foreground">{user.role}</span>
                       </div>
                     </SelectItem>
                   ))
@@ -384,7 +384,7 @@ export default function AdminPermissionsPage() {
                 setCategoryFilter(value === "all" ? "" : value)
               }
             >
-              <SelectTrigger className="w-48 bg-gray-700 border-gray-600 text-white">
+              <SelectTrigger className="w-48 bg-secondary border-border text-foreground">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -405,7 +405,7 @@ export default function AdminPermissionsPage() {
                   setSelectedUserId("");
                   setCategoryFilter("");
                 }}
-                className="bg-gray-700 border-gray-600 text-white"
+                className="bg-secondary border-border text-foreground"
               >
                 <X className="h-4 w-4 mr-2" />
                 Clear Filters
@@ -415,31 +415,31 @@ export default function AdminPermissionsPage() {
             {/* 添加权限按钮 */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-purple-600 hover:bg-purple-700 ml-auto">
+                <Button className="bg-primary hover:bg-primary/90 ml-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Permission
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-gray-800 border-gray-700 overflow-visible">
+              <DialogContent className="bg-card border-border overflow-visible">
                 <DialogHeader>
-                  <DialogTitle className="text-white">
+                  <DialogTitle className="text-foreground">
                     Add New Permission
                   </DialogTitle>
-                  <DialogDescription className="text-gray-400">
+                  <DialogDescription className="text-muted-foreground">
                     Grant a user access to corpus categories.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   {/* 用户多选 */}
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-300">Users</label>
+                    <label className="text-sm text-muted-foreground">Users</label>
                     <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           role="combobox"
                           aria-expanded={userPopoverOpen}
-                          className="w-full justify-between bg-gray-700 border-gray-600 text-white hover:bg-gray-600 hover:text-white"
+                          className="w-full justify-between bg-secondary border-border text-foreground hover:bg-accent hover:text-foreground"
                         >
                           {newPermission.user_ids.length > 0
                             ? `${newPermission.user_ids.length} selected`
@@ -447,23 +447,23 @@ export default function AdminPermissionsPage() {
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700 max-h-[400px]">
-                        <Command className="bg-gray-800 border-gray-700" shouldFilter={false}>
+                      <PopoverContent className="w-[400px] p-0 bg-card border-border max-h-[400px]">
+                        <Command className="bg-card border-border" shouldFilter={false}>
                           <CommandInput
                             placeholder="Search user..."
-                            className="text-white"
+                            className="text-foreground"
                             value={userSearchQuery}
                             onValueChange={setUserSearchQuery}
                           />
                           <CommandList onWheel={(e) => e.stopPropagation()}>
                             {isLoadingUsers ? (
                               <div className="flex items-center justify-center py-6">
-                                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                                <span className="ml-2 text-sm text-gray-400">Searching users...</span>
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                <span className="ml-2 text-sm text-muted-foreground">Searching users...</span>
                               </div>
                             ) : (
                               <>
-                                <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No user found.</CommandEmpty>
+                                <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">No user found.</CommandEmpty>
                                 <CommandGroup>
                                   {filteredUsers.map((user) => (
                                     <CommandItem
@@ -485,7 +485,7 @@ export default function AdminPermissionsPage() {
                                           }
                                         });
                                       }}
-                                      className="text-white hover:bg-gray-700 cursor-pointer"
+                                      className="text-foreground hover:bg-accent cursor-pointer"
                                     >
                                       <div className="flex items-center gap-2 w-full">
                                         <div
@@ -500,7 +500,7 @@ export default function AdminPermissionsPage() {
                                         </div>
                                         <div className="flex-1">
                                           <div className="text-sm">{user.name || "N/A"}</div>
-                                          <div className="text-xs text-gray-400">
+                                          <div className="text-xs text-muted-foreground">
                                             {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
                                           </div>
                                         </div>
@@ -521,10 +521,10 @@ export default function AdminPermissionsPage() {
                         {newPermission.user_ids.map((userId) => {
                           const user = usersData?.users.find(u => u.id === userId);
                           return (
-                            <Badge key={userId} variant="secondary" className="bg-gray-700 text-gray-200 hover:bg-gray-600">
+                            <Badge key={userId} variant="secondary" className="bg-secondary text-secondary-foreground hover:bg-accent">
                               {user?.name || user?.email || userId}
                               <button
-                                className="ml-1 hover:text-white"
+                                className="ml-1 hover:text-foreground"
                                 onClick={() => {
                                   setNewPermission(prev => ({
                                     ...prev,
@@ -543,14 +543,14 @@ export default function AdminPermissionsPage() {
 
                   {/* 分类多选 */}
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-300">Categories</label>
+                    <label className="text-sm text-muted-foreground">Categories</label>
                     <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           role="combobox"
                           aria-expanded={categoryPopoverOpen}
-                          className="w-full justify-between bg-gray-700 border-gray-600 text-white hover:bg-gray-600 hover:text-white"
+                          className="w-full justify-between bg-secondary border-border text-foreground hover:bg-accent hover:text-foreground"
                         >
                           {newPermission.category_names.length > 0
                             ? `${newPermission.category_names.length} selected`
@@ -558,11 +558,11 @@ export default function AdminPermissionsPage() {
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0 bg-gray-800 border-gray-700 max-h-[400px]">
-                        <Command className="bg-gray-800 border-gray-700" shouldFilter={false}>
-                          <CommandInput placeholder="Search category..." className="text-white" />
+                      <PopoverContent className="w-[400px] p-0 bg-card border-border max-h-[400px]">
+                        <Command className="bg-card border-border" shouldFilter={false}>
+                          <CommandInput placeholder="Search category..." className="text-foreground" />
                           <CommandList onWheel={(e) => e.stopPropagation()}>
-                            <CommandEmpty className="py-2 text-sm text-gray-400 text-center">No category found.</CommandEmpty>
+                            <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">No category found.</CommandEmpty>
                             <CommandGroup>
                               {categoriesData?.categories.map((cat) => (
                                 <CommandItem
@@ -584,7 +584,7 @@ export default function AdminPermissionsPage() {
                                       }
                                     });
                                   }}
-                                  className="text-white hover:bg-gray-700 cursor-pointer"
+                                  className="text-foreground hover:bg-accent cursor-pointer"
                                 >
                                   <div className="flex items-center gap-2 w-full">
                                     <div
@@ -613,10 +613,10 @@ export default function AdminPermissionsPage() {
                         {newPermission.category_names.map((catName) => {
                           const cat = categoriesData?.categories.find(c => c.name === catName);
                           return (
-                            <Badge key={catName} variant="secondary" className="bg-gray-700 text-gray-200 hover:bg-gray-600">
+                            <Badge key={catName} variant="secondary" className="bg-secondary text-secondary-foreground hover:bg-accent">
                               {cat?.nickname || catName}
                               <button
-                                className="ml-1 hover:text-white"
+                                className="ml-1 hover:text-foreground"
                                 onClick={() => {
                                   setNewPermission(prev => ({
                                     ...prev,
@@ -635,32 +635,32 @@ export default function AdminPermissionsPage() {
 
                   {/* 权限级别（根据角色自动确定） */}
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-300">
+                    <label className="text-sm text-muted-foreground">
                       Permission Level
                     </label>
                     {newPermission.user_ids.length > 0 ? (
-                      <div className="p-3 bg-gray-700 rounded border border-gray-600 space-y-2">
+                      <div className="p-3 bg-secondary rounded border border-border space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             Auto-set based on each user's role
                           </span>
                         </div>
-                        <div className="text-xs text-gray-400 space-y-1 max-h-32 overflow-y-auto">
+                        <div className="text-xs text-muted-foreground space-y-1 max-h-32 overflow-y-auto">
                           {newPermission.user_ids.map((userId) => {
                             const user = usersData?.users.find((u) => u.id === userId);
                             if (!user) return null;
                             const permLevel = getRolePermissionLevel(user.role);
                             return (
                               <div key={userId} className="flex justify-between items-center">
-                                <span className="text-white">{user.name || user.email}</span>
-                                <Badge className="bg-blue-500 text-xs">{permLevel}</Badge>
+                                <span className="text-foreground">{user.name || user.email}</span>
+                                <Badge className="bg-info text-xs">{permLevel}</Badge>
                               </div>
                             );
                           })}
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-gray-700 rounded border border-gray-600 text-gray-400 text-sm">
+                      <div className="p-3 bg-secondary rounded border border-border text-muted-foreground text-sm">
                         Select users to see their permission levels
                       </div>
                     )}
@@ -674,7 +674,7 @@ export default function AdminPermissionsPage() {
                       setUserSearchQuery("");
                       setNewPermission({ user_ids: [], category_names: [], permission: "READ" });
                     }}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="bg-secondary border-border text-foreground"
                   >
                     Cancel
                   </Button>
@@ -685,7 +685,7 @@ export default function AdminPermissionsPage() {
                       newPermission.category_names.length === 0 ||
                       addPermissionMutation.isPending
                     }
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     {addPermissionMutation.isPending ? (
                       <>
@@ -705,15 +705,15 @@ export default function AdminPermissionsPage() {
 
       {/* 选中用户信息提示 */}
       {selectedUserId && (
-        <Card className="bg-purple-900/30 border-purple-700">
+        <Card className="bg-primary/10 border-primary/30">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
-              <UserIcon className="h-5 w-5 text-purple-400" />
-              <span className="text-white">
+              <UserIcon className="h-5 w-5 text-primary" />
+              <span className="text-foreground">
                 Viewing permissions for:{" "}
                 <strong>{getSelectedUserName(selectedUserId)}</strong>
               </span>
-              <Badge className="bg-purple-600">
+              <Badge className="bg-primary">
                 {data?.permissions.length || 0} permissions
               </Badge>
             </div>
@@ -722,62 +722,62 @@ export default function AdminPermissionsPage() {
       )}
 
       {/* Permissions Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">
+          <CardTitle className="text-foreground">
             Permissions List ({data?.permissions.length || 0})
           </CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription className="text-muted-foreground">
             User-corpus permission bindings
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400">Loading permissions...</div>
+              <div className="text-muted-foreground">Loading permissions...</div>
             </div>
           ) : data?.permissions.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-gray-400">
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
               No permissions found. Click "Add Permission" to create one.
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-gray-700">
-                  <TableHead className="text-gray-300">User</TableHead>
-                  <TableHead className="text-gray-300">Role</TableHead>
-                  <TableHead className="text-gray-300">Category</TableHead>
-                  <TableHead className="text-gray-300">Permission</TableHead>
-                  <TableHead className="text-gray-300">Created</TableHead>
-                  <TableHead className="text-gray-300">Actions</TableHead>
+                <TableRow className="border-border">
+                  <TableHead className="text-muted-foreground">User</TableHead>
+                  <TableHead className="text-muted-foreground">Role</TableHead>
+                  <TableHead className="text-muted-foreground">Category</TableHead>
+                  <TableHead className="text-muted-foreground">Permission</TableHead>
+                  <TableHead className="text-muted-foreground">Created</TableHead>
+                  <TableHead className="text-muted-foreground">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data?.permissions.map((perm) => (
                   <TableRow
                     key={`${perm.user_id}-${perm.category_name}`}
-                    className="border-gray-700"
+                    className="border-border"
                   >
-                    <TableCell className="text-white">
+                    <TableCell className="text-foreground">
                       <button
                         onClick={() => setSelectedUserId(perm.user_id)}
                         className="flex items-center gap-2 hover:underline"
                       >
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                          <UserIcon className="w-4 h-4 text-gray-400" />
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <UserIcon className="w-4 h-4 text-muted-foreground" />
                         </div>
                         <div className="text-left">
                           <div>{perm.user.name || "N/A"}</div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-muted-foreground">
                             {perm.user.email}
                           </div>
                         </div>
                       </button>
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-blue-500">{perm.user.role}</Badge>
+                      <Badge className="bg-info">{perm.user.role}</Badge>
                     </TableCell>
-                    <TableCell className="text-gray-300">
+                    <TableCell className="text-muted-foreground">
                       {perm.category.nickname || perm.category_name}
                     </TableCell>
                     <TableCell>
@@ -792,7 +792,7 @@ export default function AdminPermissionsPage() {
                         }
                       >
                         <SelectTrigger
-                          className={`w-28 h-8 ${getPermissionBadgeColor(perm.permission)} border-0 text-white text-xs`}
+                          className={`w-28 h-8 ${getPermissionBadgeColor(perm.permission)} border-0 text-xs`}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -804,7 +804,7 @@ export default function AdminPermissionsPage() {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-gray-300">
+                    <TableCell className="text-muted-foreground">
                       {format(new Date(perm.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell>
@@ -821,7 +821,7 @@ export default function AdminPermissionsPage() {
                               perm.category.nickname || perm.category_name,
                           })
                         }
-                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                        className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -839,16 +839,16 @@ export default function AdminPermissionsPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
       >
-        <AlertDialogContent className="bg-gray-800 border-gray-700">
+        <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-foreground">
               Confirm Delete
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
+            <AlertDialogDescription className="text-muted-foreground">
               Are you sure you want to revoke permission for{" "}
-              <strong className="text-white">{deleteTarget?.userName}</strong>{" "}
+              <strong className="text-foreground">{deleteTarget?.userName}</strong>{" "}
               on{" "}
-              <strong className="text-white">
+              <strong className="text-foreground">
                 {deleteTarget?.categoryName}
               </strong>
               ?
@@ -859,7 +859,7 @@ export default function AdminPermissionsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={deletePermissionMutation.isPending}
-              className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+              className="bg-secondary border-border text-foreground hover:bg-accent"
             >
               Cancel
             </AlertDialogCancel>
@@ -873,7 +873,7 @@ export default function AdminPermissionsPage() {
                   });
                 }
               }}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               {deletePermissionMutation.isPending ? (
                 <>
