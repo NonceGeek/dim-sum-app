@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Search, Menu, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -72,6 +73,7 @@ export function Header({ showLogo = true, titleClassName = "" }: HeaderProps) {
               </Link>
             </Button>
           )}
+          <ThemeToggle />
           <Link
             className="flex items-center space-x-2"
             href="https://aidimsum.com/"
