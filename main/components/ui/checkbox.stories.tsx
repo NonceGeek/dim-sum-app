@@ -22,7 +22,7 @@ export const Default: Story = {
         htmlFor="terms"
         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
-        Accept terms and conditions
+        I agree to the Terms of Service and Privacy Policy
       </label>
     </div>
   ),
@@ -33,7 +33,7 @@ export const Checked: Story = {
     <div className="flex items-center gap-2">
       <Checkbox id="checked" defaultChecked />
       <label htmlFor="checked" className="text-sm font-medium leading-none">
-        Show token balances
+        公开此分类
       </label>
     </div>
   ),
@@ -64,32 +64,32 @@ export const Disabled: Story = {
   ),
 };
 
-export const MultipleOptions: Story = {
+export const CategoryFilter: Story = {
   render: () => (
     <div className="grid gap-3">
-      <h4 className="text-sm font-medium">Transaction Filters</h4>
+      <h4 className="text-sm font-medium">选择分类筛选</h4>
       <div className="flex items-center gap-2">
-        <Checkbox id="user-tx" defaultChecked />
-        <label htmlFor="user-tx" className="text-sm leading-none">
-          User transactions
+        <Checkbox id="zyzd" defaultChecked />
+        <label htmlFor="zyzd" className="text-sm leading-none">
+          广州话正音字典
         </label>
       </div>
       <div className="flex items-center gap-2">
-        <Checkbox id="block-metadata" defaultChecked />
-        <label htmlFor="block-metadata" className="text-sm leading-none">
-          Block metadata
+        <Checkbox id="yyjq" defaultChecked />
+        <label htmlFor="yyjq" className="text-sm leading-none">
+          粤语金曲
         </label>
       </div>
       <div className="flex items-center gap-2">
-        <Checkbox id="state-checkpoint" />
-        <label htmlFor="state-checkpoint" className="text-sm leading-none">
-          State checkpoints
+        <Checkbox id="movie" />
+        <label htmlFor="movie" className="text-sm leading-none">
+          粤语电影台词
         </label>
       </div>
       <div className="flex items-center gap-2">
-        <Checkbox id="genesis" />
-        <label htmlFor="genesis" className="text-sm leading-none">
-          Genesis transactions
+        <Checkbox id="drama" />
+        <label htmlFor="drama" className="text-sm leading-none">
+          粤剧唱词
         </label>
       </div>
     </div>

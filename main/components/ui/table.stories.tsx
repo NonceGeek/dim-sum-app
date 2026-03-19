@@ -3,13 +3,12 @@ import {
   Table,
   TableHeader,
   TableBody,
-  TableFooter,
   TableHead,
   TableRow,
   TableCell,
-  TableCaption,
 } from "./table";
 import { Badge } from "./badge";
+import { Globe, Lock } from "lucide-react";
 
 const meta: Meta<typeof Table> = {
   title: "Components/Table",
@@ -20,63 +19,72 @@ const meta: Meta<typeof Table> = {
 export default meta;
 type Story = StoryObj<typeof Table>;
 
-const transactions = [
+const categories = [
   {
-    hash: "0xabc1...def2",
-    type: "Transfer",
-    sender: "0x1a2b...3c4d",
-    gasUsed: "1,200",
-    status: "success" as const,
+    name: "广州话正音字典",
+    nickname: "ZYZD",
+    status: "INPROGRESS" as const,
+    isPublic: true,
+    entries: 12450,
   },
   {
-    hash: "0x4e5f...6a7b",
-    type: "Swap",
-    sender: "0x8c9d...0e1f",
-    gasUsed: "3,450",
-    status: "success" as const,
+    name: "zyzdv2",
+    nickname: "ZYZD V2",
+    status: "RAW" as const,
+    isPublic: false,
+    entries: 8320,
   },
   {
-    hash: "0x2a3b...4c5d",
-    type: "Stake",
-    sender: "0x6e7f...8a9b",
-    gasUsed: "2,100",
-    status: "failed" as const,
+    name: "corpus_yyjq",
+    nickname: "粤语金曲",
+    status: "INPROGRESS" as const,
+    isPublic: true,
+    entries: 3200,
   },
   {
-    hash: "0x0c1d...2e3f",
-    type: "Transfer",
-    sender: "0x4a5b...6c7d",
-    gasUsed: "980",
-    status: "success" as const,
+    name: "corpus_movie",
+    nickname: "粤语电影台词",
+    status: "RAW" as const,
+    isPublic: false,
+    entries: 1580,
   },
 ];
 
 export const Default: Story = {
   render: () => (
     <Table>
-      <TableCaption>Recent transactions on the network.</TableCaption>
       <TableHeader>
-        <TableRow>
-          <TableHead>Hash</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Sender</TableHead>
-          <TableHead className="text-right">Gas Used</TableHead>
-          <TableHead>Status</TableHead>
+        <TableRow className="border-border">
+          <TableHead className="text-muted-foreground">Name</TableHead>
+          <TableHead className="text-muted-foreground">Nickname</TableHead>
+          <TableHead className="text-muted-foreground">Status</TableHead>
+          <TableHead className="text-muted-foreground">Public</TableHead>
+          <TableHead className="text-right text-muted-foreground">
+            Entries
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {transactions.map((tx) => (
-          <TableRow key={tx.hash}>
-            <TableCell className="font-mono">{tx.hash}</TableCell>
-            <TableCell>{tx.type}</TableCell>
-            <TableCell className="font-mono">{tx.sender}</TableCell>
-            <TableCell className="text-right">{tx.gasUsed}</TableCell>
+        {categories.map((cat) => (
+          <TableRow key={cat.name} className="border-border">
+            <TableCell className="font-medium text-foreground">
+              {cat.name}
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              {cat.nickname}
+            </TableCell>
             <TableCell>
-              <Badge
-                variant={tx.status === "success" ? "default" : "destructive"}
-              >
-                {tx.status}
-              </Badge>
+              <Badge variant="outline">{cat.status}</Badge>
+            </TableCell>
+            <TableCell>
+              {cat.isPublic ? (
+                <Globe className="h-4 w-4 text-success" />
+              ) : (
+                <Lock className="h-4 w-4 text-warning" />
+              )}
+            </TableCell>
+            <TableCell className="text-right">
+              {cat.entries.toLocaleString()}
             </TableCell>
           </TableRow>
         ))}
@@ -85,39 +93,40 @@ export const Default: Story = {
   ),
 };
 
-export const WithFooter: Story = {
+const users = [
+  { name: "张三", email: "zhangsan@example.com", role: "RESEARCHER" as const },
+  { name: "李四", email: "lisi@example.com", role: "TAGGER_PARTNER" as const },
+  { name: "王五", email: "wangwu@example.com", role: "LEARNER" as const },
+  {
+    name: "赵六",
+    email: "zhaoliu@example.com",
+    role: "TAGGER_OUTSOURCING" as const,
+  },
+];
+
+export const UsersTable: Story = {
   render: () => (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead>Validator</TableHead>
-          <TableHead>Voting Power</TableHead>
-          <TableHead className="text-right">Stake (MOVE)</TableHead>
+        <TableRow className="border-border">
+          <TableHead className="text-muted-foreground">Name</TableHead>
+          <TableHead className="text-muted-foreground">Email</TableHead>
+          <TableHead className="text-muted-foreground">Role</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow>
-          <TableCell>Validator A</TableCell>
-          <TableCell>12.4%</TableCell>
-          <TableCell className="text-right">2,500,000</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Validator B</TableCell>
-          <TableCell>8.7%</TableCell>
-          <TableCell className="text-right">1,740,000</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Validator C</TableCell>
-          <TableCell>6.2%</TableCell>
-          <TableCell className="text-right">1,240,000</TableCell>
-        </TableRow>
+        {users.map((user) => (
+          <TableRow key={user.email} className="border-border">
+            <TableCell className="font-medium text-foreground">
+              {user.name}
+            </TableCell>
+            <TableCell className="text-muted-foreground">{user.email}</TableCell>
+            <TableCell>
+              <Badge variant="secondary">{user.role}</Badge>
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
-      <TableFooter>
-        <TableRow>
-          <TableCell colSpan={2}>Total</TableCell>
-          <TableCell className="text-right font-bold">5,480,000</TableCell>
-        </TableRow>
-      </TableFooter>
     </Table>
   ),
 };

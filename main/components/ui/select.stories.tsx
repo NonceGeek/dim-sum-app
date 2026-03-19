@@ -4,10 +4,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectSeparator,
 } from "./select";
 
 const meta: Meta<typeof Select> = {
@@ -23,37 +20,30 @@ export const Default: Story = {
   render: () => (
     <Select>
       <SelectTrigger className="w-[200px]">
-        <SelectValue placeholder="Select network" />
+        <SelectValue placeholder="Filter by role" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="mainnet">Mainnet</SelectItem>
-        <SelectItem value="testnet">Testnet</SelectItem>
-        <SelectItem value="devnet">Devnet</SelectItem>
+        <SelectItem value="all">All Roles</SelectItem>
+        <SelectItem value="LEARNER">Learner</SelectItem>
+        <SelectItem value="TAGGER_PARTNER">Tagger Partner</SelectItem>
+        <SelectItem value="TAGGER_OUTSOURCING">Tagger Outsourcing</SelectItem>
+        <SelectItem value="RESEARCHER">Researcher</SelectItem>
       </SelectContent>
     </Select>
   ),
 };
 
-export const WithGroups: Story = {
+export const Permissions: Story = {
   render: () => (
     <Select>
-      <SelectTrigger className="w-[240px]">
-        <SelectValue placeholder="Select transaction type" />
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Permission level" />
       </SelectTrigger>
       <SelectContent>
-        <SelectGroup>
-          <SelectLabel>User Transactions</SelectLabel>
-          <SelectItem value="transfer">Token Transfer</SelectItem>
-          <SelectItem value="swap">Token Swap</SelectItem>
-          <SelectItem value="stake">Stake</SelectItem>
-        </SelectGroup>
-        <SelectSeparator />
-        <SelectGroup>
-          <SelectLabel>System Transactions</SelectLabel>
-          <SelectItem value="block_metadata">Block Metadata</SelectItem>
-          <SelectItem value="state_checkpoint">State Checkpoint</SelectItem>
-          <SelectItem value="genesis">Genesis</SelectItem>
-        </SelectGroup>
+        <SelectItem value="READ">READ</SelectItem>
+        <SelectItem value="WRITE">WRITE</SelectItem>
+        <SelectItem value="CREATE">CREATE</SelectItem>
+        <SelectItem value="FULL">FULL</SelectItem>
       </SelectContent>
     </Select>
   ),
