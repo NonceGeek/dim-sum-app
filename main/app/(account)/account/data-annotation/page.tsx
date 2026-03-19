@@ -21,7 +21,7 @@ import { CreateDialog } from "@/components/data-annotation/CreateDialog";
 import { BatchUploadDialog } from "@/components/data-annotation/BatchUploadDialog";
 
 const buttonClass =
-  "rounded-full border border-gray-400 px-6 py-2 text-white bg-transparent hover:bg-gray-700 transition-colors duration-150 mr-2";
+  "rounded-full border border-border px-6 py-2 text-foreground bg-transparent hover:bg-accent transition-colors duration-150 mr-2";
 
 export default function DataAnnotationPage() {
   const [corpusData, setCorpusData] = useState<CorpusItem[]>([]);
@@ -137,7 +137,7 @@ export default function DataAnnotationPage() {
       {
         name: "查看",
         handler: () => handleView(item.unique_id),
-        className: "text-gray-300 hover:text-blue-400"
+        className: "text-muted-foreground hover:text-info"
       }
     ];
 
@@ -146,7 +146,7 @@ export default function DataAnnotationPage() {
       actions.push({
         name: "编辑",
         handler: () => handleEdit(item.unique_id, item.editable_level),
-        className: "text-gray-300 hover:text-green-400"
+        className: "text-muted-foreground hover:text-success"
       });
     }
 
@@ -187,22 +187,22 @@ export default function DataAnnotationPage() {
     <>
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-end mb-4">
-          <div className="flex items-center gap-2 bg-card border border-gray-600 rounded-lg px-3 py-2">
-            <Search className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
+            <Search className="w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search data..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="border-0 bg-transparent text-white placeholder-gray-400 focus:ring-0 focus:border-0 w-64"
+              className="border-0 bg-transparent text-foreground placeholder-muted-foreground focus:ring-0 focus:border-0 w-64"
             />
             {searchInput && (
               <Button
                 onClick={handleClearSearch}
                 variant="ghost"
                 size="sm"
-                className="p-1 h-auto text-gray-400 hover:text-white"
+                className="p-1 h-auto text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -211,7 +211,7 @@ export default function DataAnnotationPage() {
               onClick={handleSearch}
               variant="ghost"
               size="sm"
-              className="p-2 h-auto text-gray-400 hover:text-white hover:bg-gray-700"
+              className="p-2 h-auto text-muted-foreground hover:text-foreground hover:bg-accent"
             >
               Search
             </Button>
@@ -221,7 +221,7 @@ export default function DataAnnotationPage() {
           <div>
             <h1 className="text-3xl font-bold">Data Annotation</h1>
             {totalCount > 0 && (
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Total: {totalCount} items | Page {currentPage} of {totalPages}
                 {searchQuery && (
                   <span className="ml-2">
@@ -280,7 +280,7 @@ export default function DataAnnotationPage() {
             ))
           ) : corpusData.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-400 text-lg">
+              <p className="text-muted-foreground text-lg">
                 {searchQuery 
                   ? `No results found for "${searchQuery}"` 
                   : "No data available"
@@ -302,27 +302,27 @@ export default function DataAnnotationPage() {
                 key={item.unique_id}
                 className="p-6 bg-card transition-all duration-200 hover:shadow-lg"
               >
-                <Table className="w-full border-collapse overflow-hidden bg-transparent text-white text-base border border-white/20">
+                <Table className="w-full border-collapse overflow-hidden bg-transparent text-foreground text-base border border-border">
                   <TableHeader>
-                    <TableRow className="bg-[#23242a]">
-                      <TableHead className="w-24 text-center border-r border-gray-600 text-white text-base">字</TableHead>
-                      <TableHead className="w-48 text-center border-r border-gray-600 text-white text-base">粤音</TableHead>
-                      <TableHead className="w-1/2 text-center border-r border-gray-600 text-white text-base">详情</TableHead>
+                    <TableRow className="bg-muted">
+                      <TableHead className="w-24 text-center border-r border-border text-foreground text-base">字</TableHead>
+                      <TableHead className="w-48 text-center border-r border-border text-foreground text-base">粤音</TableHead>
+                      <TableHead className="w-1/2 text-center border-r border-border text-foreground text-base">详情</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {item.note?.context?.pinyin && Array.isArray(item.note.context.pinyin) && item.note.context.pinyin.length > 0 ? (
                       item.note.context.pinyin.map((pinyin: any, pinyinIndex: number) => (
-                        <TableRow key={`${item.unique_id}-${pinyinIndex}`} className="text-white text-base">
+                        <TableRow key={`${item.unique_id}-${pinyinIndex}`} className="text-foreground text-base">
                           {pinyinIndex === 0 ? (
-                            <TableCell rowSpan={item.note.context.pinyin.length} className="text-center border-r border-gray-600 align-middle text-2xl">
+                            <TableCell rowSpan={item.note.context.pinyin.length} className="text-center border-r border-border align-middle text-2xl">
                               {item.data}
                             </TableCell>
                           ) : null}
-                          <TableCell className="text-center border border-gray-600 px-4 py-3">
+                          <TableCell className="text-center border border-border px-4 py-3">
                             {pinyin}
                           </TableCell>
-                          <TableCell className="border border-gray-600 px-4 py-3 text-center">
+                          <TableCell className="border border-border px-4 py-3 text-center">
                             {getAvailableActions(item).map((action, actionIndex) => (
                               <React.Fragment key={action.name}>
                                 <a
@@ -336,7 +336,7 @@ export default function DataAnnotationPage() {
                                   {action.name}
                                 </a>
                                 {actionIndex < getAvailableActions(item).length - 1 && (
-                                  <span className="text-gray-500">|</span>
+                                  <span className="text-muted-foreground">|</span>
                                 )}
                               </React.Fragment>
                             ))}
@@ -345,10 +345,10 @@ export default function DataAnnotationPage() {
                       ))
                     ) : (
                       // 如果没有拼音数据，显示一个默认行
-                      <TableRow className="text-white text-base">
-                        <TableCell className="border border-gray-600 px-4 py-3 text-center text-lg">{item.data}</TableCell>
-                        <TableCell className="border border-gray-600 px-4 py-3 italic text-gray-500">No pinyin data</TableCell>
-                        <TableCell className="border border-gray-600 px-4 py-3 text-center">
+                      <TableRow className="text-foreground text-base">
+                        <TableCell className="border border-border px-4 py-3 text-center text-lg">{item.data}</TableCell>
+                        <TableCell className="border border-border px-4 py-3 italic text-muted-foreground">No pinyin data</TableCell>
+                        <TableCell className="border border-border px-4 py-3 text-center">
                           {getAvailableActions(item).map((action, actionIndex) => (
                             <React.Fragment key={action.name}>
                               <a
@@ -362,7 +362,7 @@ export default function DataAnnotationPage() {
                                 {action.name}
                               </a>
                               {actionIndex < getAvailableActions(item).length - 1 && (
-                                <span className="text-gray-500">|</span>
+                                <span className="text-muted-foreground">|</span>
                               )}
                             </React.Fragment>
                           ))}
@@ -398,11 +398,11 @@ export default function DataAnnotationPage() {
               1
             </Button>
             
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-muted-foreground">
               Page {currentPage} of {totalPages}
             </span>
 
-            <Input placeholder="Go to Page" type="number" min={1} max={totalPages} className="w-28 text-center bg-card border border-gray-600 text-white"
+            <Input placeholder="Go to Page" type="number" min={1} max={totalPages} className="w-28 text-center bg-card border border-border text-foreground"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const page = Number((e.target as HTMLInputElement).value);
