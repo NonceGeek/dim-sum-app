@@ -218,10 +218,8 @@ export default function AppStorePage() {
 
   // Initialize selectedType from URL params
   useEffect(() => {
-    const category = searchParams.get("category");
-    if (category) {
-      setSelectedType(category);
-    }
+    const category = searchParams.get("category") || "";
+    setSelectedType(category);
   }, [searchParams]);
 
   // Update URL when selectedType changes
@@ -257,7 +255,7 @@ export default function AppStorePage() {
 
   const filteredApps = useMemo(() => {
     if (!selectedType) return apps;
-    if (selectedType === "其它")
+    if (selectedType === "其他")
       return apps.filter(
         (app: App) =>
           !["学习", "游戏", "AI"].includes(getTypeDisplay(app.type)),

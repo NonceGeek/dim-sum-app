@@ -35,7 +35,7 @@ export const menuItems = [
       { icon: BookOpen, label: "Learning", href: "/appStore?category=学习" },
       { icon: Gamepad2, label: "Gaming", href: "/appStore?category=游戏" },
       { icon: Bot, label: "AI", href: "/appStore?category=AI" },
-      { icon: MoreHorizontal, label: "Others", href: "/appStore?category=其它" },
+      { icon: MoreHorizontal, label: "Others", href: "/appStore?category=其他" },
     ],
   },
   // TODO: impl in the future.
