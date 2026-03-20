@@ -1,11 +1,22 @@
+"use client";
+
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/header";
+import { usePathname } from "next/navigation";
 
 export default function MainMenuLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isHomepage = pathname === "/";
+
+  // Homepage renders its own layout (FloatingNav + MinimalFooter)
+  if (isHomepage) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
