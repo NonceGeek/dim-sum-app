@@ -1,659 +1,314 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSearch, type SearchResult } from "@/lib/api/search";
-import { toast } from "sonner";
-import { Search, SearchX } from "lucide-react";
+import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
-import { DictionaryNote } from "@/lib/types";
-import WordLyricCardDetail from "./_components/word-lyric-card-detail";
-import YueSongCardDetail from "./_components/yue-song-card-detail";
-import { useAllCategories } from "@/lib/api/category";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Checkbox } from "@/components/ui/checkbox";
-import CategorySelector from "./_components/category-selector";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { FloatingNav } from "@/components/layout/floating-nav";
+import { MinimalFooter } from "./_components/minimal-footer";
 import { cn } from "@/lib/utils";
 
-// Type guard for dictionary note
-function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
-  return !Array.isArray(note) && "context" in note;
-}
-
+const HOT_TERMS = ["落花流水", "唔听", "行", "姐姐", "歡聚一堂", "帆船"];
 
 export default function HomePage() {
-  const [searchPrompt, setSearchPrompt] = useState("");
-  const [results, setResults] = useState<SearchResult[] | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  const { mutate: search, isPending } = useSearch();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
-  // const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
-  const [inputValue, setInputValue] = useState<string>("");
-  const [selectCategory, setSelectCategory] = useState<string>("全部");
+  const { mutate: search } = useSearch();
 
-  // Fetch available categories
-  // get all categories from the backend
-  const { data: categories, isLoading: categoriesLoading } = useAllCategories();
-  const fiter_not_in = [
-    { id: "all", name: "all", nickname: "全局搜索" },
-    ...(categories || [])?.filter((cat) => cat.if_in_all_data),
-  ];
+  // --- state ---
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // 从URL参数读取搜索关键词
+  // --- refs ---
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // --- navigate to search results page ---
+  const navigateToSearch = useCallback(
+    (term: string) => {
+      if (!term.trim()) return;
+      const params = new URLSearchParams();
+      params.set("q", term.trim());
+      params.set("dataset", "全局搜索");
+      router.push(`/search?${params.toString()}`);
+    },
+    [router],
+  );
+
+  // --- debounced suggestion fetch ---
   useEffect(() => {
-    const keyword = searchParams.get("q") || "";
-    const datasetParam = searchParams.get("dataset") || "";
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // URL 是空的 → 回到首页
-    if (!keyword && !datasetParam) {
-      setSearchPrompt("");
-      setSelectedDataset(["all"]);
-      setResults(null);
-      setCurrentPage(1);
-      setSelectCategory("全部");
+    if (!query.trim()) {
+      setSuggestions([]);
+      setShowDropdown(false);
       return;
     }
 
-    const datasetName = fiter_not_in
-      .map((cat) =>
-        datasetParam.split(",").includes(cat.nickname ?? cat.name)
-          ? cat.name
-          : null
-      )
-      .filter(Boolean) as string[];
-
-    // 同步 UI 状态
-    setSearchPrompt(keyword);
-    setSelectedDataset(datasetName.length ? datasetName : ["all"]);
-    setCurrentPage(1);
-
-    // 用 URL 里的值直接搜索（不要用 state）
-    search(
-      {
-        keyword,
-        category: JSON.stringify(datasetName.length ? datasetName : ["all"]),
-      },
-      {
-        onSuccess: setResults,
-        onError: (error: Error) => {
-          toast.error("Search failed", { description: error.message });
+    debounceRef.current = setTimeout(() => {
+      search(
+        { keyword: query.trim(), category: JSON.stringify(["all"]) },
+        {
+          onSuccess: (data) => {
+            setSuggestions(data.slice(0, 6));
+            setShowDropdown(data.length > 0);
+            setActiveIndex(-1);
+          },
+          onError: () => {
+            setSuggestions([]);
+            setShowDropdown(false);
+          },
         },
+      );
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, search]);
+
+  // --- click-outside to close dropdown ---
+  useEffect(() => {
+    function handleMouseDown(e: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false);
       }
-    );
-  }, [searchParams, JSON.stringify(fiter_not_in)]);
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, []);
 
-  const handleSearch = () => {
-    if (!searchPrompt.trim()) return;
-    setCurrentPage(1);
-    setSelectCategory("全部");
-
-    const dataset = fiter_not_in
-      .map((cat) => {
-        if (selectedDataset.includes(cat.name)) {
-          return cat.nickname ?? cat.name;
-        }
-        return null;
-      })
-      .filter(Boolean);
-
-    // 更新URL参数
-    const params = new URLSearchParams();
-    params.set("q", searchPrompt.trim());
-    params.set("dataset", dataset.join(","));
-    router.push(`/?${params.toString()}`, { scroll: false });
-
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  // --- keyboard navigation ---
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleSearch();
+      e.preventDefault();
+      if (activeIndex >= 0 && activeIndex < suggestions.length) {
+        navigateToSearch(suggestions[activeIndex].data);
+      } else {
+        navigateToSearch(query);
+      }
+      setShowDropdown(false);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      setShowDropdown(false);
+      setActiveIndex(-1);
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) =>
+        prev < suggestions.length - 1 ? prev + 1 : 0,
+      );
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) =>
+        prev > 0 ? prev - 1 : suggestions.length - 1,
+      );
+      return;
     }
   };
 
-  // 更新示例搜索的点击处理函数
-  const handleExampleSearch = (prompt: string) => {
-    setSearchPrompt(prompt);
-    setCurrentPage(1);
-    setSelectCategory("全部");
-
-    // 更新URL参数
-    const params = new URLSearchParams();
-    params.set("q", prompt);
-    params.set("dataset", "全局搜索");
-    router.push(`/?${params.toString()}`, { scroll: false });
-
-  };
-
-  // 返回首页函数
-  const handleBackToHome = () => {
-    router.push("/", { scroll: false });
-  };
-
-  const filteredResults = useMemo(() => {
-    if (!results) return [];
-    return results.filter((result) => selectCategory === "全部" || result.category === selectCategory);
-  }, [results, selectCategory]);
-
-  const totalPages = Math.ceil((filteredResults?.length || 0) / itemsPerPage);
-  const currentResults =
-    filteredResults?.slice(
-      (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage,
-    ) || [];
-
-  // Helper function to generate page numbers with ellipsis
-  const getPageNumbers = (): (number | string)[] => {
-    const pages: (number | string)[] = [];
-    const showPages = 5; // Number of page buttons to show (excluding ellipsis)
-
-    if (totalPages <= showPages) {
-      // If total pages is small, show all
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    // Always show first page
-    pages.push(1);
-
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
-
-    // Adjust to ensure we always show enough pages
-    if (currentPage <= 3) {
-      endPage = 4;
-    } else if (currentPage >= totalPages - 2) {
-      startPage = totalPages - 3;
-    }
-
-    // Add ellipsis and middle pages
-    if (startPage > 2) {
-      pages.push('...');
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    if (endPage < totalPages - 1) {
-      pages.push('...');
-    }
-
-    // Always show last page
-    pages.push(totalPages);
-
-    return pages;
-  };
-
-  const hasResults = results !== null && results.length > 0;
+  const hasSuggestions = showDropdown && suggestions.length > 0;
 
   return (
-    <>
-      {/* Hero Section */}
-      <section className={cn(
-        "transition-all duration-500 ease-out",
-        hasResults
-          ? "py-6 bg-gradient-to-r from-primary/5 to-primary/10"
-          : "py-16 md:py-24 bg-gradient-to-br from-[#0c0f1a] via-[#1a1f35] to-[#0c0f1a]"
-      )}>
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            {/* Title + subtitle - only when no results */}
-            {!hasResults && (
+    <div className="relative min-h-screen flex flex-col">
+      {/* Background gradient */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 40%, oklch(0.95 0.02 256 / 0.08), transparent 70%)",
+        }}
+      />
+      <div
+        className="pointer-events-none fixed inset-0 z-0 hidden dark:block"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 40%, oklch(0.20 0.03 256 / 0.15), transparent 70%)",
+        }}
+      />
+
+      {/* FloatingNav */}
+      <FloatingNav />
+
+      {/* Main content - positioned slightly above center like Google */}
+      <main className="relative z-10 flex flex-1 flex-col items-center px-4 pt-[25vh]">
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-4"
+        >
+          <Image
+            src="/logo.png"
+            alt="DimSum Logo"
+            width={72}
+            height={72}
+            priority
+          />
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="text-2xl md:text-3xl font-semibold text-foreground"
+        >
+          DimSum AI Labs
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mt-1.5 text-sm text-muted-foreground"
+        >
+          Discover and explore AI resources
+        </motion.p>
+
+        {/* Search bar + dropdown wrapper */}
+        <motion.div
+          ref={wrapperRef}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="relative mt-8 w-full max-w-[580px]"
+        >
+          {/* Search bar */}
+          <div
+            className={cn(
+              "flex items-center h-12 w-full border bg-background transition-shadow",
+              hasSuggestions
+                ? "rounded-t-full rounded-b-none border-b-0 shadow-md"
+                : "rounded-full shadow-sm hover:shadow-md",
+              isFocused && !hasSuggestions && "shadow-md",
+            )}
+          >
+            {/* Search icon */}
+            <div className="flex items-center pl-4 pr-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </div>
+
+            {/* Input */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => {
+                setIsFocused(true);
+                if (suggestions.length > 0 && query.trim()) {
+                  setShowDropdown(true);
+                }
+              }}
+              onBlur={() => setIsFocused(false)}
+              placeholder="搜索 AI 模型、工具、资源..."
+              className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+
+            {/* Search button */}
+            <Button
+              size="sm"
+              onClick={() => {
+                navigateToSearch(query);
+                setShowDropdown(false);
+              }}
+              className="mr-1.5 h-8 rounded-full px-4 text-sm"
+            >
+              搜索
+            </Button>
+          </div>
+
+          {/* Dropdown suggestions */}
+          <AnimatePresence>
+            {hasSuggestions && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 right-0 top-full z-50 overflow-hidden rounded-b-2xl border border-t-0 bg-background shadow-md"
               >
-                <h1 className="text-4xl md:text-5xl font-bold text-white">
-                  Try Some Cantonese
-                </h1>
-                <p className="text-lg text-white/70 mt-3">
-                  The AI-powered platform for Cantonese learning and research
-                </p>
+                {/* Divider line */}
+                <div className="mx-4 border-t" />
+
+                <ul className="py-1">
+                  {suggestions.map((item, idx) => (
+                    <li
+                      key={item.id}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        navigateToSearch(item.data);
+                        setShowDropdown(false);
+                      }}
+                      onMouseEnter={() => setActiveIndex(idx)}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                        activeIndex === idx
+                          ? "bg-accent"
+                          : "hover:bg-accent/50",
+                      )}
+                    >
+                      <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                      <span className="flex-1 truncate text-foreground">
+                        {item.data}
+                      </span>
+                      <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {item.category}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
             )}
+          </AnimatePresence>
+        </motion.div>
 
-            {/* Search bar - always visible */}
-            <motion.div
-              className="flex gap-2 max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.2,
-                ease: [0.16, 1, 0.3, 1],
-              }}
+        {/* Hot search pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+          className="mt-6 flex flex-wrap items-center justify-center gap-2"
+        >
+          <span className="mr-1 text-xs font-medium text-muted-foreground">
+            热搜
+          </span>
+          {HOT_TERMS.map((term) => (
+            <button
+              key={term}
+              onClick={() => navigateToSearch(term)}
+              className="rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
             >
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className={cn("h-5 w-5", !hasResults ? "text-slate-400" : "text-muted-foreground")} />
-                </div>
-                <Input
-                  placeholder="Search Cantonese content..."
-                  value={searchPrompt}
-                  onChange={(e) => setSearchPrompt(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  className={cn(
-                    "pl-10 h-12 text-lg",
-                    !hasResults
-                      ? "bg-white text-slate-900 placeholder:text-slate-400"
-                      : "dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
-                  )}
-                />
-              </div>
-              {/* Dataset selection dropdown */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[180px] justify-between truncate h-12",
-                      !hasResults
-                        ? "bg-white text-slate-900 border-white/20"
-                        : "hover:bg-background! dark:bg-background dark:text-accent-foreground"
-                    )}
-                  >
-                    {(fiter_not_in || [])
-                      ?.map((cat) => {
-                        if (selectedDataset.includes(cat.name)) {
-                          return cat.nickname || cat.name;
-                        }
-                        return null;
-                      })
-                      .filter(Boolean)
-                      .join(", ") || "请选择"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command className="bg-background!">
-                    <CommandInput
-                      placeholder={"搜索数据集"}
-                      value={inputValue}
-                      onValueChange={setInputValue}
-                    />
-                    <CommandList>
-                      {(fiter_not_in || [])?.map((cat) => (
-                        <CommandItem
-                          key={cat.id}
-                          value={cat.nickname || cat.name}
-                          onSelect={() => {
-                            if (cat.name === "all") {
-                              setSelectedDataset(["all"]);
-                              return;
-                            }
-                            setSelectedDataset((prev) =>
-                              (prev.includes(cat.name)
-                                ? prev.filter((item) => item !== cat.name)
-                                : [...prev, cat.name]
-                              ).filter((item) => item !== "all")
-                            );
-                          }}
-                        >
-                          <Checkbox
-                            className="mr-2 dark:bg-accent-background"
-                            checked={selectedDataset.includes(cat.name)}
-                            onChange={() => {
-                              if (cat.name === "all") {
-                                setSelectedDataset(["all"]);
-                                return;
-                              }
-                              setSelectedDataset((prev) =>
-                                (prev.includes(cat.name)
-                                  ? prev.filter((item) => item !== cat.name)
-                                  : [...prev, cat.name]
-                                ).filter((item) => item !== "all")
-                              );
-                            }}
-                            id={cat.id + ""}
-                          />
-                          {cat.nickname ?? cat.name}
-                        </CommandItem>
-                      ))}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <Button
-                onClick={handleSearch}
-                disabled={isPending}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6"
-              >
-                {isPending ? "Searching..." : "Search"}
-              </Button>
-              {/* TODO: impl in the future.
-                <Button
-                onClick={() => router.push('/account/data-annotation')}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6 ml-2"
-              >
-                Add
-              </Button> */}
-            </motion.div>
-
-            {/* CTA links - only when no results */}
-            {!hasResults && (
-              <div className="flex items-center justify-center gap-3 text-sm">
-                <span className="text-white/50">or</span>
-                <Link href="/library" className="text-white/80 hover:text-white underline underline-offset-4">
-                  Browse Library
-                </Link>
-                <span className="text-white/30">|</span>
-                <Link href="/appStore" className="text-white/80 hover:text-white underline underline-offset-4">
-                  Explore App Store
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Example pills - only when no results and not loading */}
-      {results === null && !isPending && (
-        <section className="container mx-auto px-4 py-8">
-          <div className="flex flex-wrap justify-center gap-3">
-            {[
-              { title: "Cantonese Lyrics", prompt: "落花流水" },
-              { title: "News", prompt: "唔听" },
-              { title: "Single Character", prompt: "行" },
-              { title: "Chinese Words", prompt: "姐姐" },
-              { title: "Video Example", prompt: "歡聚一堂" },
-              { title: "3D Model", prompt: "帆船" },
-            ].map((example) => (
-              <button
-                key={example.prompt}
-                onClick={() => handleExampleSearch(example.prompt)}
-                className="px-4 py-2 rounded-full border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                {example.title}: {example.prompt}
-              </button>
-            ))}
-          </div>
-          <p className="text-sm text-center text-muted-foreground mt-6 underline">
-            <a href="https://www.aidimsum.com/zh#stats" target="_blank" rel="noopener noreferrer">
-              👉 查看数据情况 👈
-            </a>
-          </p>
-        </section>
-      )}
-
-      {/* Loading skeletons */}
-      {isPending && (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="p-6 shadow-md mb-4">
-              <div className="space-y-6">
-                {/* Title area */}
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-7 w-2/5" />
-                </div>
-                {/* Note content area */}
-                <div className="space-y-3 rounded-lg p-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-4 w-3/5" />
-                </div>
-                {/* Tags row */}
-                <div className="flex gap-2 pt-2">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-24 rounded-full" />
-                </div>
-              </div>
-            </Card>
+              {term}
+            </button>
           ))}
-        </div>
-      )}
+        </motion.div>
+      </main>
 
-      {/* Results */}
-      {results && results.length > 0 && (
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
-          <CategorySelector
-            selectCategory={selectCategory}
-            setSelectCategory={setSelectCategory}
-            results={results}
-            selectedDataset={selectedDataset}
-          />
-          {currentResults.map((result, index) => (
-            <motion.div
-              key={result.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: index * 0.1,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              {/* HINT: not delete, to render the result here. */}
-              {result.category !== "粤语曲库" && (
-                  <WordLyricCardDetail
-                    result={result}
-                    setEditingResult={setEditingResult}
-                    setUpdateDialogOpen={setUpdateDialogOpen}
-                    isDictionaryNote={isDictionaryNote}
-                  />
-                )}
-              {result.category === "粤语曲库" && (
-                <YueSongCardDetail result={result} />
-              )}
-            </motion.div>
-          ))}
-
-          {totalPages > 1 && (
-            <motion.div
-              className="flex justify-center gap-2 mt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.3,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              {/* Previous button */}
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="w-10 h-10"
-              >
-                &lt;
-              </Button>
-
-              {/* Page numbers */}
-              {getPageNumbers().map((page, idx) =>
-                page === '...' ? (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    className="w-10 h-10 flex items-center justify-center text-muted-foreground"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    onClick={() => setCurrentPage(page as number)}
-                    className="w-10 h-10"
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-
-              {/* Next button */}
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="w-10 h-10"
-              >
-                &gt;
-              </Button>
-            </motion.div>
-          )}
-
-          {/* Try other searches */}
-          <motion.div
-            className="mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-muted-foreground">
-                Try other searches
-              </h3>
-              <Button
-                variant="outline"
-                onClick={handleBackToHome}
-                className="text-sm"
-              >
-                Back to Home
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              {[
-                { title: "Cantonese Lyrics", prompt: "落花流水" },
-                { title: "Chinese Words", prompt: "姐姐" },
-                { title: "Single Character", prompt: "行" },
-                { title: "Video Example", prompt: "歡聚一堂" },
-              ].map(
-                (example) =>
-                  example.prompt !== searchPrompt && (
-                    <Card
-                      key={example.prompt}
-                      className="p-3 sm:p-4 hover:shadow-lg cursor-pointer hover:bg-accent transition-colors duration-200 h-24 sm:h-28 flex items-center justify-center"
-                      onClick={() => {
-                        if (isPending) return;
-                        setResults(null);
-                        handleExampleSearch(example.prompt);
-                      }}
-                    >
-                      <div className="text-center space-y-1 sm:space-y-2">
-                        <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                          {example.title}
-                        </h3>
-                        <p className="text-sm sm:text-base text-muted-foreground">
-                          {example.prompt}
-                        </p>
-                      </div>
-                    </Card>
-                  )
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* No results */}
-      {results && results.length === 0 && (
-        <div className="container mx-auto px-4 py-12 max-w-4xl">
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <div className="p-4 rounded-full bg-muted">
-              <SearchX className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-foreground">
-                No results found
-              </h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                We couldn&apos;t find any matches for &quot;
-                {searchPrompt}&quot;. Try searching with different
-                keywords or check out our example searches below.
-              </p>
-              <Button
-                variant="outline"
-                onClick={handleBackToHome}
-                className="mt-4"
-              >
-                返回首页
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("淡淡交會過")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Cantonese Lyrics
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    淡淡交會過
-                  </p>
-                </div>
-              </Card>
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("姐姐")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Chinese Words
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    姐姐
-                  </p>
-                </div>
-              </Card>
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("行")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Single Character
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">行</p>
-                </div>
-              </Card>
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("歡聚一堂")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Video Example
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    歡聚一堂
-                  </p>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Update Dialog */}
-      <EditCorpusDialog
-        open={updateDialogOpen}
-        onOpenChange={setUpdateDialogOpen}
-        editingResult={editingResult}
-      />
-    </>
+      {/* Footer */}
+      <div className="relative z-10">
+        <MinimalFooter />
+      </div>
+    </div>
   );
 }

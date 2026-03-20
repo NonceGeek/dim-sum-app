@@ -28,9 +28,9 @@
 ### Core Principles
 
 - **HuggingFace-inspired layout**: Horizontal top-bar navigation, no sidebar for main app
-- **Blue-white academic feel**: Modern blue (`hue 230`) as primary brand color, clean white surfaces in light mode, deep blue-black in dark mode
+- **Blue-white academic feel**: Azure blue (`hue 256`) as primary brand color, clean white surfaces in light mode, deep blue-black in dark mode
 - **3-layer token architecture**: Primitives → Semantic → Component, ensuring consistent theming
-- **OKLCH color space**: Perceptually uniform colors for natural transitions across the palette
+- **OKLCH color space**: Perceptually uniform colors for natural transitions across the palette (hue 256)
 - **shadcn/ui foundation**: 60+ Radix UI-based components with design token integration
 
 ### Visual Identity
@@ -39,7 +39,7 @@
 |--------|-----------|-----------|
 | Background | Clean white (`neutral-0`) | Deep blue-black (`#0c0f1a`) |
 | Surface | White cards | Dark blue surface (`#1a1f35`) |
-| Primary | Modern blue (`brand-600 ≈ #2563eb`) | Lighter blue (`brand-400`) |
+| Primary | Azure blue (`brand-600 ≈ #007fff`) | Lighter blue (`brand-400`) |
 | Text | Near-black (`neutral-900`) | Light gray (`neutral-100`) |
 | Borders | Subtle gray (`neutral-200`) | Dark blue-gray (`#2d3555`) |
 
@@ -77,42 +77,42 @@ styles/
 
 ## 3. Color System
 
-### 3.1 Brand Colors (Hue 230 — Modern Blue)
+### 3.1 Brand Colors (Hue 256 — Azure Blue)
 
-Primary brand color targets `#2563eb` at the 600 level.
+Primary brand color targets `#007fff` at the 600 level.
 
-| Token | OKLCH Value | Approx Hex | Usage |
-|-------|-------------|------------|-------|
-| `brand-50` | `oklch(0.97 0.01 230)` | `#f0f4ff` | Tinted background |
-| `brand-100` | `oklch(0.93 0.03 230)` | `#dbe6ff` | Hover backgrounds |
-| `brand-200` | `oklch(0.87 0.08 230)` | `#b8ccff` | Light accent |
-| `brand-300` | `oklch(0.76 0.14 230)` | `#7fa3ff` | — |
-| `brand-400` | `oklch(0.66 0.19 230)` | `#5580f0` | Dark mode primary |
-| `brand-500` | `oklch(0.59 0.22 230)` | `#3b82f6` | Ring / chart-1 |
-| `brand-600` | `oklch(0.52 0.22 230)` | `#2563eb` | **Light mode primary** |
-| `brand-700` | `oklch(0.45 0.18 230)` | `#1d4ed8` | Hover/pressed |
-| `brand-800` | `oklch(0.37 0.14 230)` | `#1e3a8a` | — |
-| `brand-900` | `oklch(0.30 0.10 230)` | `#1e2d6d` | — |
-| `brand-950` | `oklch(0.23 0.07 230)` | `#172554` | — |
+| Token | Hex Value | Usage |
+|-------|-----------|-------|
+| `brand-50` | `#f1f6fc` | Tinted background |
+| `brand-100` | `#dbe9fc` | Hover backgrounds |
+| `brand-200` | `#b2d7ff` | Light accent |
+| `brand-300` | `#80c0ff` | — |
+| `brand-400` | `#5aa8ff` | Dark mode primary |
+| `brand-500` | `#3193ff` | Ring / chart-1 |
+| `brand-600` | `#007fff` | **Light mode primary** |
+| `brand-700` | `#005fc6` | Hover/pressed |
+| `brand-800` | `#004591` | — |
+| `brand-900` | `#052f61` | — |
+| `brand-950` | `#051f3f` | — |
 
-### 3.2 Neutral Colors (Hue 230, Chroma ~0.005)
+### 3.2 Neutral Colors (Hue 256, Chroma ~0.005)
 
-Blue-tinted grays for a cohesive feel with the brand.
+Azure-tinted grays for a cohesive feel with the brand.
 
 | Token | OKLCH Value | Usage |
 |-------|-------------|-------|
-| `neutral-0` | `oklch(1.00 0.000 230)` | Pure white, light background |
-| `neutral-50` | `oklch(0.98 0.003 230)` | Accent background (light) |
-| `neutral-100` | `oklch(0.94 0.005 230)` | Secondary / muted (light) |
-| `neutral-200` | `oklch(0.88 0.005 230)` | Border / input (light) |
-| `neutral-300` | `oklch(0.80 0.005 230)` | — |
-| `neutral-400` | `oklch(0.70 0.005 230)` | Muted foreground (dark) |
-| `neutral-500` | `oklch(0.58 0.005 230)` | Muted foreground (light) |
-| `neutral-600` | `oklch(0.48 0.005 230)` | — |
-| `neutral-700` | `oklch(0.39 0.005 230)` | Sidebar border (dark) |
-| `neutral-800` | `oklch(0.30 0.005 230)` | Secondary / muted (dark) |
-| `neutral-900` | `oklch(0.22 0.005 230)` | Foreground (light) |
-| `neutral-950` | `oklch(0.15 0.005 230)` | Sidebar background (dark) |
+| `neutral-0` | `oklch(1.00 0.000 256)` | Pure white, light background |
+| `neutral-50` | `oklch(0.98 0.003 256)` | Accent background (light) |
+| `neutral-100` | `oklch(0.94 0.005 256)` | Secondary / muted (light) |
+| `neutral-200` | `oklch(0.88 0.005 256)` | Border / input (light) |
+| `neutral-300` | `oklch(0.80 0.005 256)` | — |
+| `neutral-400` | `oklch(0.70 0.005 256)` | Muted foreground (dark) |
+| `neutral-500` | `oklch(0.58 0.005 256)` | Muted foreground (light) |
+| `neutral-600` | `oklch(0.48 0.005 256)` | — |
+| `neutral-700` | `oklch(0.39 0.005 256)` | Sidebar border (dark) |
+| `neutral-800` | `oklch(0.30 0.005 256)` | Secondary / muted (dark) |
+| `neutral-900` | `oklch(0.22 0.005 256)` | Foreground (light) |
+| `neutral-950` | `oklch(0.15 0.005 256)` | Sidebar background (dark) |
 
 ### 3.3 Functional Colors
 
@@ -131,9 +131,9 @@ Dedicated deep blue-black primitives for immersive dark mode:
 
 | Token | OKLCH Value | Approx Hex | Semantic Mapping |
 |-------|-------------|------------|------------------|
-| `dark-bg` | `oklch(0.13 0.02 230)` | `#0c0f1a` | `--background` |
-| `dark-surface` | `oklch(0.18 0.02 230)` | `#1a1f35` | `--card`, `--popover` |
-| `dark-border` | `oklch(0.25 0.02 230)` | `#2d3555` | `--border`, `--input` |
+| `dark-bg` | `oklch(0.13 0.02 256)` | `#0c0f1a` | `--background` |
+| `dark-surface` | `oklch(0.18 0.02 256)` | `#1a1f35` | `--card`, `--popover` |
+| `dark-border` | `oklch(0.25 0.02 256)` | `#2d3555` | `--border`, `--input` |
 
 ### 3.5 Semantic Token Mapping
 
