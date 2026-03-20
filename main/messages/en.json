@@ -54,8 +54,9 @@
     "globalSearch": "Global Search",
     "trending": "Trending",
     "searchPlaceholder": "Search Cantonese content...",
-    "subtitle": "Discover and explore AI resources",
-    "searchButton": "Search"
+    "subtitle": "Discover and explore Cantonese resources",
+    "searchButton": "Search",
+    "viewDataStats": "View Data Stats"
   },
   "Library": {
     "title": "Cantonese Corpus",
