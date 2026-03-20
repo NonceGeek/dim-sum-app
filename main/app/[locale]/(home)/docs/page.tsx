@@ -15,10 +15,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, ChevronRight, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl";
 // TODO: make apidoc.md load from api docs in backend to make it snyc to the latest.
-import readmeContent from "../../../../public/apidoc.md";
+import readmeContentEn from "../../../../public/apidoc.en.md";
+import readmeContentZhCN from "../../../../public/apidoc.zh-CN.md";
+
+const readmeContentMap: Record<string, string> = {
+  'en': readmeContentEn,
+  'zh-CN': readmeContentZhCN,
+};
 
 export default function DocsPage() {
+  const locale = useLocale();
+  const tDocs = useTranslations('Docs');
+  const readmeContent = readmeContentMap[locale] || readmeContentMap['en'];
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   // Handle URL anchor on page load
@@ -168,7 +178,7 @@ export default function DocsPage() {
   const SidebarContent = () => (
     <div className="space-y-4 h-full flex flex-col">
       <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex-shrink-0">
-        API Documentation
+        {tDocs('apiDocumentation')}
       </h3>
       <ScrollArea className="flex-1 min-h-0">
         <nav className="space-y-1 pr-4">
@@ -188,7 +198,7 @@ export default function DocsPage() {
                 <button
                   onClick={() => toggleSection(item.id)}
                   className="p-2 ml-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all duration-200 flex items-center justify-center"
-                  title={expandedSections.has(item.id) ? "收起" : "展开"}
+                  title={expandedSections.has(item.id) ? tDocs('collapse') : tDocs('expand')}
                 >
                   <ChevronRight 
                     className={`h-4 w-4 font-semibold transition-transform duration-300 ease-in-out ${
@@ -270,7 +280,7 @@ export default function DocsPage() {
             <div className="flex items-center space-x-2 min-w-0">
               <BookOpen className="h-5 w-5 text-primary flex-shrink-0" />
               <h2 className="text-lg font-semibold text-foreground truncate">
-                API Documentation
+                {tDocs('apiDocumentation')}
               </h2>
             </div>
             <DropdownMenu>
@@ -280,7 +290,7 @@ export default function DocsPage() {
                   size="sm"
                   className="flex items-center space-x-1 flex-shrink-0"
                 >
-                  <span className="text-sm">Sections</span>
+                  <span className="text-sm">{tDocs('sections')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
