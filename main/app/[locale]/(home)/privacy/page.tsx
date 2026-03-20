@@ -2,7 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 
 export default function PrivacyPage() {
   const router = useRouter();

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useSearch, type SearchResult } from "@/lib/api/search";
 import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { FloatingNav } from "@/components/layout/floating-nav";
 import { MinimalFooter } from "./_components/minimal-footer";

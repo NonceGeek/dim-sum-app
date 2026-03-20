@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { dataAnnotationApi, CorpusItem } from "@/lib/api/data-annotation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, Search, X, Plus, Upload, Download, Loader2 } from "lucide-react";

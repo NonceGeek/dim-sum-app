@@ -11,7 +11,8 @@ import { useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
 import { Search, SearchX } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { DictionaryNote } from "@/lib/types";
 import WordLyricCardDetail from "../_components/word-lyric-card-detail";
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import CategorySelector from "../_components/category-selector";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // Type guard for dictionary note

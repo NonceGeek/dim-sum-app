@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { corpusInteractApi } from "@/lib/api/corpus-interact";
 import { SearchResult } from "@/lib/api/search";
 import { CirclePlay, Share2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
 
 export default function YueSongCardDetail({

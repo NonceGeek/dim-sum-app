@@ -14,7 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, set } from "date-fns";
 import { Slider } from "@/components/ui/slider";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 // const SampleItems = [
