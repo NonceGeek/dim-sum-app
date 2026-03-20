@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Menu, Settings, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -14,11 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { LoginDialog } from "@/components/dialogs/login-dialog";
 import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
 import { getAccountSubmenuItems, workplaceSubmenuItems } from "./sidebar/menu-config";
@@ -26,10 +28,10 @@ import { Role } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
 const allNavLinks = [
-  { label: "Home", href: "/" },
-  { label: "Library", href: "/library" },
-  { label: "App Store", href: "/appStore" },
-  { label: "Docs", href: "/docs" },
+  { labelKey: "home", href: "/" },
+  { labelKey: "library", href: "/library" },
+  { labelKey: "appStore", href: "/appStore" },
+  { labelKey: "docs", href: "/docs" },
 ];
 
 export function Header() {
@@ -41,6 +43,8 @@ export function Header() {
   const [showRoleSelect, setShowRoleSelect] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const t = useTranslations('Nav');
+  const tCommon = useTranslations('Common');
 
   const accountSubmenuItems = getAccountSubmenuItems(user?.role as Role);
 
@@ -92,7 +96,7 @@ export function Header() {
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -104,11 +108,12 @@ export function Header() {
               <Button variant="ghost" size="sm" asChild className="hidden md:flex">
                 <Link href="/admin" target="_blank" rel="noopener noreferrer">
                   <Settings className="w-4 h-4 mr-1" />
-                  Admin
+                  {t('admin')}
                 </Link>
               </Button>
             )}
 
+            <LocaleSwitcher />
             <ThemeToggle />
 
             {/* User menu */}
@@ -130,20 +135,20 @@ export function Header() {
                   {accountSubmenuItems.map((item) => (
                     <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
                       <item.icon className="mr-2 h-4 w-4" />
-                      {item.label}
+                      {t(item.labelKey)}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
                   {workplaceSubmenuItems.map((item) => (
                     <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
                       <item.icon className="mr-2 h-4 w-4" />
-                      {item.label}
+                      {t(item.labelKey)}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    {tCommon('signOut')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -153,7 +158,7 @@ export function Header() {
                 size="sm"
                 onClick={() => setShowRoleSelect(true)}
               >
-                Sign In
+                {tCommon('signIn')}
               </Button>
             )}
 
@@ -189,7 +194,7 @@ export function Header() {
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                         )}
                       >
-                        {link.label}
+                        {t(link.labelKey)}
                       </Link>
                     ))}
                     {session?.user?.isSystemAdmin && (
@@ -200,7 +205,7 @@ export function Header() {
                         className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50"
                       >
                         <Settings className="w-4 h-4 mr-2" />
-                        Admin Panel
+                        {t('admin')}
                       </Link>
                     )}
                   </nav>

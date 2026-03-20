@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Settings, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { LoginDialog } from "@/components/dialogs/login-dialog";
 import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
 
@@ -28,6 +29,7 @@ export function UserSection({
   const [showRoleSelect, setShowRoleSelect] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const tCommon = useTranslations('Common');
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
@@ -77,7 +79,7 @@ export function UserSection({
                 onClick={handleLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign Out</span>
+                <span>{tCommon('signOut')}</span>
               </Button>
             </>
           ) : (
@@ -99,7 +101,7 @@ export function UserSection({
               </div>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
-                <span className="sr-only">Sign Out</span>
+                <span className="sr-only">{tCommon('signOut')}</span>
               </Button>
             </div>
           )}
@@ -112,7 +114,7 @@ export function UserSection({
               className="w-full"
               onClick={() => setShowRoleSelect(true)}
             >
-              Sign In
+              {tCommon('signIn')}
             </Button>
           ) : (
             <div className="flex flex-col items-center gap-4">
@@ -123,7 +125,7 @@ export function UserSection({
                 className="h-8 w-8"
               >
                 <User className="h-4 w-4" />
-                <span className="sr-only">Sign In</span>
+                <span className="sr-only">{tCommon('signIn')}</span>
               </Button>
             </div>
           )}

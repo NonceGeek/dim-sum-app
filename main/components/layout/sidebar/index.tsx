@@ -11,7 +11,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import { useAuthStore } from "@/lib/store/useAuthStore";
