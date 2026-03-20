@@ -2,7 +2,7 @@
 
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/header";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 
 export default function MainMenuLayout({
   children,

@@ -17,7 +17,7 @@ import {
   Shield,
   FileText,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 interface DashboardStats {

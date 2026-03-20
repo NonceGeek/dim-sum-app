@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 export default function ApiPage() {
   return (
