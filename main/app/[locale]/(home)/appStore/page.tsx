@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowBigRight, Link, Video } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 // Define App interface for type safety
 interface App {
@@ -43,14 +44,15 @@ interface App {
   localed: boolean;
   sorting: number;
 }
-const getTypeDisplay = (type: string): string => {
+// Maps backend type codes to Nav translation keys
+const getTypeKey = (type: string): string => {
   switch (type.toUpperCase()) {
     case "STUDY":
-      return "学习";
+      return "learning";
     case "TOOL":
-      return "工具";
+      return "tool";
     case "GAME":
-      return "游戏";
+      return "gaming";
     default:
       return type;
   }
@@ -58,8 +60,19 @@ const getTypeDisplay = (type: string): string => {
 
 // Create a client component for the app card
 function AppCard({ app }: { app: App }) {
+  const t = useTranslations("AppStore");
+  const tn = useTranslations("Nav");
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [exampleDialogOpen, setExampleDialogOpen] = useState(false);
+
+  const getTypeDisplay = (type: string): string => {
+    const key = getTypeKey(type);
+    try {
+      return tn(key as any);
+    } catch {
+      return type;
+    }
+  };
 
   const getLaunchButton = () => (
     <>
@@ -68,27 +81,27 @@ function AppCard({ app }: { app: App }) {
           href={app.homepage_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-primary hover:text-primary/80        
+          className="inline-flex items-center gap-1 text-primary hover:text-primary/80
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
         >
           <Link className="w-4 h-4 shrink-0" />
-          应用主页
+          {t("appHome")}
         </a>
       )}
       {app.wechat_micro_app && (
         <>
           <button
             onClick={() => setQrDialogOpen(true)}
-            className="inline-flex items-center text-primary hover:text-primary/80        
+            className="inline-flex items-center text-primary hover:text-primary/80
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
           >
             <ArrowBigRight className="w-4 h-4 shrink-0" />
-            启动应用（小程序）
+            {t("launchMiniApp")}
           </button>
           <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>微信小程序二维码</DialogTitle>
+                <DialogTitle>{t("wechatQrCode")}</DialogTitle>
               </DialogHeader>
               <div className="flex items-center justify-center p-4">
                 <Image
@@ -109,16 +122,16 @@ function AppCard({ app }: { app: App }) {
         <>
           <button
             onClick={() => setExampleDialogOpen(true)}
-            className="inline-flex items-center gap-1 text-primary hover:text-primary/80        
+            className="inline-flex items-center gap-1 text-primary hover:text-primary/80
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
           >
             <Video className="w-4 h-4 shrink-0" />
-            <span>演示视频</span>
+            <span>{t("demoVideo")}</span>
           </button>
           <Dialog open={exampleDialogOpen} onOpenChange={setExampleDialogOpen}>
             <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
-                <DialogTitle>应用页面</DialogTitle>
+                <DialogTitle>{t("appPage")}</DialogTitle>
               </DialogHeader>
               <div className="flex items-center justify-center p-4">
                 {app.example_img.endsWith(".mp4") ? (
@@ -144,11 +157,11 @@ function AppCard({ app }: { app: App }) {
           href={app.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-success hover:text-success/80        
+          className="inline-flex items-center gap-1 text-success hover:text-success/80
   border-b border-transparent hover:border-current transition-all duration-200 cursor-pointer"
         >
           <ArrowBigRight className="w-4 h-4 shrink-0" />
-          {app.localed ? "启动应用" : "启动应用（国际版）"}
+          {app.localed ? t("launch") : t("launchIntl")}
         </a>
       )}
     </>
@@ -158,7 +171,7 @@ function AppCard({ app }: { app: App }) {
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
       {app.pinned && (
         <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white rounded-md text-xs z-10">
-          置顶
+          {t("pinned")}
         </div>
       )}
       <div className="h-48 bg-muted relative">
@@ -212,31 +225,42 @@ function AppCard({ app }: { app: App }) {
 
 // Keep the main page component as a server component
 export default function AppStorePage() {
+  const t = useTranslations("AppStore");
+  const tn = useTranslations("Nav");
   const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const getTypeDisplay = (type: string): string => {
+    const key = getTypeKey(type);
+    try {
+      return tn(key as any);
+    } catch {
+      return type;
+    }
+  };
+
   // Initialize selectedType from URL params
   useEffect(() => {
     let category = searchParams.get("category") || "";
-    if (category === "Learning") category = "学习";
-    else if (category === "Gaming") category = "游戏";
-    else if (category === "Others") category = "其他";
+    if (category === "Learning") category = tn("learning");
+    else if (category === "Gaming") category = tn("gaming");
+    else if (category === "Others") category = tn("others");
     setSelectedType(category);
-  }, [searchParams]);
+  }, [searchParams, tn]);
 
   // Update URL when selectedType changes
   const handleTypeChange = (value: string) => {
-    let newValue = value === "全部" ? "" : value;
+    let newValue = value === t("all") ? "" : value;
     setSelectedType(newValue);
 
     const params = new URLSearchParams(searchParams.toString());
     if (newValue) {
-      if (newValue === "学习") newValue = "Learning";
-      else if (newValue === "游戏") newValue = "Gaming";
-      else if (newValue === "其他") newValue = "Others";
+      if (newValue === tn("learning")) newValue = "Learning";
+      else if (newValue === tn("gaming")) newValue = "Gaming";
+      else if (newValue === tn("others")) newValue = "Others";
       params.set("category", newValue);
     } else {
       params.delete("category");
@@ -244,7 +268,7 @@ export default function AppStorePage() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  const minTypeCount = 1; // 最小类型计数阈值
+  const minTypeCount = 1;
   const types = useMemo(() => {
     const typeCounts = apps
       .map((app: App) => getTypeDisplay(app.type))
@@ -263,10 +287,10 @@ export default function AppStorePage() {
 
   const filteredApps = useMemo(() => {
     if (!selectedType) return apps;
-    if (selectedType === "其他")
+    if (selectedType === tn("others"))
       return apps.filter(
         (app: App) =>
-          !["学习", "游戏", "AI"].includes(getTypeDisplay(app.type)),
+          ![tn("learning"), tn("gaming"), "AI"].includes(getTypeDisplay(app.type)),
       );
     return apps.filter((app: App) => getTypeDisplay(app.type) === selectedType);
   }, [apps, selectedType]);
@@ -301,7 +325,7 @@ export default function AppStorePage() {
     <>
       <div className="h-full p-6 overflow-auto">
         <div className="flex items-center justify-center w-full mb-8">
-          <h1 className="text-4xl font-bold">应用商店</h1>
+          <h1 className="text-4xl font-bold">{t("title")}</h1>
         </div>
 
         {loading ? (
@@ -324,24 +348,24 @@ export default function AppStorePage() {
           </div>
         ) : apps.length === 0 ? (
           <div className="flex justify-center items-center h-64">
-            <p className="text-xl text-muted-foreground">No apps found</p>
+            <p className="text-xl text-muted-foreground">{t("noAppsFound")}</p>
           </div>
         ) : (
           <div className="flex flex-col space-y-4">
             <div className="w-50 ml-auto">
               <Combobox
-                items={["全部", ...types.map(t => t.type)]}
-                value={selectedType || "全部"}
+                items={[t("all"), ...types.map(tp => tp.type)]}
+                value={selectedType || t("all")}
                 onValueChange={handleTypeChange}
               >
-                <ComboboxInput placeholder="选择一个标签" />
+                <ComboboxInput placeholder={t("selectTag")} />
                 <ComboboxContent>
-                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                  <ComboboxEmpty>{t("noItemsFound")}</ComboboxEmpty>
                   <ComboboxList>
                     {(item) => {
                       return (
                         <ComboboxItem key={item} value={item}>
-                          {getTypeDisplay(item)}
+                          {item}
                         </ComboboxItem>
                       );
                     }}

@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useUnbindWallet } from "@/lib/api/wallet";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 export default function ProfilePage() {
+  const t = useTranslations("Profile");
   const [bindWalletOpen, setBindWalletOpen] = useState(false);
   const [bindPhoneOpen, setBindPhoneOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -37,9 +39,9 @@ export default function ProfilePage() {
   const copyWalletAddress = async (address: string) => {
     try {
       await navigator.clipboard.writeText(address);
-      toast.success("Wallet address copied to clipboard");
+      toast.success(t("walletCopied"));
     } catch (error) {
-      toast.error("Failed to copy wallet address");
+      toast.error(t("walletCopyFailed"));
     }
   };
 
@@ -58,11 +60,11 @@ export default function ProfilePage() {
 
     try {
       await unbindWalletMutation.mutateAsync();
-      toast.success("Wallet unbound successfully!");
+      toast.success(t("walletUnbound"));
     } catch (error) {
       console.error("Failed to unbind wallet:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to unbind wallet"
+        error instanceof Error ? error.message : t("walletUnbindFailed")
       );
     }
   };
@@ -71,7 +73,7 @@ export default function ProfilePage() {
     <>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Profile</h1>
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
         </div>
 
         {loading && (
@@ -95,8 +97,8 @@ export default function ProfilePage() {
         {error && (
           <Card className="p-6 bg-destructive/10 border-destructive/20">
             <div className="text-destructive text-center">
-              <p className="font-medium">Failed to load profile</p>
-              <p className="text-sm mt-1">Please try again later</p>
+              <p className="font-medium">{t("loadFailed")}</p>
+              <p className="text-sm mt-1">{t("tryAgainLater")}</p>
             </div>
           </Card>
         )}
@@ -130,7 +132,7 @@ export default function ProfilePage() {
                     </Badge>
                     {profile.isSystemAdmin && (
                       <Badge variant="destructive" className="text-sm">
-                        System Admin
+                        {t("systemAdmin")}
                       </Badge>
                     )}
                     {profile && (
@@ -144,11 +146,11 @@ export default function ProfilePage() {
                   <div className="mt-2 space-y-2">
                     <div className="flex items-center text-muted-foreground">
                       <Mail className="w-4 h-4 mr-2" />
-                      <span>{profile.email || "Not set"}</span>
+                      <span>{profile.email || t("notSet")}</span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <Phone className="w-4 h-4 mr-2" />
-                      <span>{profile.phoneNumber || "Not set"}</span>
+                      <span>{profile.phoneNumber || t("notSet")}</span>
                       {profile.phoneNumber ? (
                         <Button
                           size="sm"
@@ -157,7 +159,7 @@ export default function ProfilePage() {
                           className="h-6 px-2 text-xs ml-2"
                         >
                           <Link className="w-3 h-3 mr-1" />
-                          Change
+                          {t("change")}
                         </Button>
                       ) : (
                         <Button
@@ -167,7 +169,7 @@ export default function ProfilePage() {
                           className="h-6 px-2 text-xs ml-2"
                         >
                           <Link className="w-3 h-3 mr-1" />
-                          Bind
+                          {t("bind")}
                         </Button>
                       )}
                     </div>
@@ -205,7 +207,7 @@ export default function ProfilePage() {
                             </div>
                           </TooltipProvider>
                         ) : (
-                          <span>No wallet bound</span>
+                          <span>{t("noWallet")}</span>
                         )}
                       </div>
                       {profile.ethAddress ? (
@@ -218,8 +220,8 @@ export default function ProfilePage() {
                         >
                           <Unlink className="w-3 h-3 mr-1" />
                           {unbindWalletMutation.isPending
-                            ? "Unbinding..."
-                            : "Unbind"}
+                            ? t("unbinding")
+                            : t("unbind")}
                         </Button>
                       ) : (
                         <Button
@@ -230,7 +232,7 @@ export default function ProfilePage() {
                         >
                           {" "}
                           <Link className="w-3 h-3 mr-1" />
-                          Bind Wallet
+                          {t("bindWallet")}
                         </Button>
                       )}
                     </div>
@@ -240,7 +242,7 @@ export default function ProfilePage() {
               {profile.bio && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                    About
+                    {t("about")}
                   </h3>
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {profile.bio}
@@ -250,10 +252,10 @@ export default function ProfilePage() {
               {!profile.bio && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                    About
+                    {t("about")}
                   </h3>
                   <p className="text-sm text-muted-foreground italic">
-                    No bio added yet
+                    {t("noBio")}
                   </p>
                 </div>
               )}

@@ -10,12 +10,15 @@ import Image from "next/image";
 import { FloatingNav } from "@/components/layout/floating-nav";
 import { MinimalFooter } from "./_components/minimal-footer";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const HOT_TERMS = ["落花流水", "唔听", "行", "姐姐", "歡聚一堂", "帆船"];
 
 export default function HomePage() {
   const router = useRouter();
   const { mutate: search } = useSearch();
+  const t = useTranslations("Home");
+  const tc = useTranslations("Common");
 
   // --- state ---
   const [query, setQuery] = useState("");
@@ -35,7 +38,7 @@ export default function HomePage() {
       if (!term.trim()) return;
       const params = new URLSearchParams();
       params.set("q", term.trim());
-      params.set("dataset", "全局搜索");
+      params.set("dataset", t("globalSearch"));
       router.push(`/search?${params.toString()}`);
     },
     [router],
@@ -181,7 +184,7 @@ export default function HomePage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="mt-1.5 text-sm text-muted-foreground"
         >
-          Discover and explore AI resources
+          {t("subtitle")}
         </motion.p>
 
         {/* Search bar + dropdown wrapper */}
@@ -221,7 +224,7 @@ export default function HomePage() {
                 }
               }}
               onBlur={() => setIsFocused(false)}
-              placeholder="Search Cantonese content..."
+              placeholder={t("searchPlaceholder")}
               className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
 
@@ -234,7 +237,7 @@ export default function HomePage() {
               }}
               className="mr-1.5 h-8 rounded-full px-4 text-sm"
             >
-              搜索
+              {t("searchButton")}
             </Button>
           </div>
 
@@ -291,7 +294,7 @@ export default function HomePage() {
           className="mt-6 flex flex-wrap items-center justify-center gap-2"
         >
           <span className="mr-1 text-xs font-medium text-muted-foreground">
-            热搜
+            {t("trending")}
           </span>
           {HOT_TERMS.map((term) => (
             <button

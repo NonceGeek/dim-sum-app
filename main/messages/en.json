@@ -29,7 +29,8 @@
     "learning": "Learning",
     "gaming": "Gaming",
     "ai": "AI",
-    "others": "Others"
+    "others": "Others",
+    "tool": "Tool"
   },
   "Auth": {
     "selectRole": "Select Your Role",
@@ -40,12 +41,21 @@
     "signInWith": "Sign in with {provider}",
     "orContinueWith": "Or continue with",
     "termsOfService": "Terms of Service",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "signInTitle": "Sign In",
+    "signInSubtitle": "Sign in to continue to your account",
+    "signInContinueAs": "Sign in to continue as {role}",
+    "signInFailed": "Sign in failed",
+    "signInFailedDesc": "Please try again later",
+    "agreementPrefix": "By signing in, you agree to our",
+    "agreementAnd": "and"
   },
   "Home": {
     "globalSearch": "Global Search",
     "trending": "Trending",
-    "searchPlaceholder": "Search Cantonese content..."
+    "searchPlaceholder": "Search Cantonese content...",
+    "subtitle": "Discover and explore AI resources",
+    "searchButton": "Search"
   },
   "Library": {
     "title": "Cantonese Corpus",
@@ -54,12 +64,26 @@
     "dictionary": "Dictionary",
     "importing": "Importing",
     "rawCorpus": "Raw Corpus",
-    "size": "Size"
+    "size": "Size",
+    "pinned": "Pinned",
+    "viewOriginal": "View original data",
+    "all": "All",
+    "noItemsFound": "No items found"
   },
   "AppStore": {
     "launch": "Launch App",
     "launchIntl": "Launch App (International)",
-    "appHome": "App Homepage"
+    "appHome": "App Homepage",
+    "title": "App Store",
+    "pinned": "Pinned",
+    "selectTag": "Select a tag",
+    "all": "All",
+    "noAppsFound": "No apps found",
+    "noItemsFound": "No items found",
+    "launchMiniApp": "Launch App (Mini Program)",
+    "wechatQrCode": "WeChat Mini Program QR Code",
+    "appPage": "App Page",
+    "demoVideo": "Demo Video"
   },
   "DataAnnotation": {
     "title": "Data Annotation",
@@ -72,7 +96,24 @@
     "sentence": "Sentence",
     "reference": "Reference",
     "videoClip": "Video Clip",
-    "notEditable": "This entry is not editable"
+    "notEditable": "This entry is not editable",
+    "view": "View",
+    "details": "Details",
+    "searchPlaceholder": "Search data...",
+    "searchButton": "Search",
+    "noResults": "No results found for \"{query}\"",
+    "clearSearch": "Clear search and show all data",
+    "previous": "Previous",
+    "next": "Next",
+    "goToPage": "Go to Page",
+    "pageOf": "Page {current} of {total}",
+    "total": "Total: {count} items",
+    "searchingFor": "(searching for: \"{query}\")",
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "error": "Error",
+    "noPinyinData": "No pinyin data",
+    "invalidPage": "Please enter a valid page number between 1 and {max}"
   },
   "Profile": {
     "title": "Profile",
@@ -84,7 +125,17 @@
     "notSet": "Not set",
     "noWallet": "No wallet bound",
     "updateSuccess": "Profile updated successfully",
-    "updateFailed": "Failed to update profile"
+    "updateFailed": "Failed to update profile",
+    "about": "About",
+    "noBio": "No bio added yet",
+    "walletCopied": "Wallet address copied to clipboard",
+    "walletCopyFailed": "Failed to copy wallet address",
+    "walletUnbound": "Wallet unbound successfully!",
+    "walletUnbindFailed": "Failed to unbind wallet",
+    "bindWallet": "Bind Wallet",
+    "unbinding": "Unbinding...",
+    "loadFailed": "Failed to load profile",
+    "tryAgainLater": "Please try again later"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",
