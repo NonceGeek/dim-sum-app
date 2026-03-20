@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Menu, Settings, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -14,27 +15,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useSession } from "next-auth/react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { LoginDialog } from "@/components/dialogs/login-dialog";
 import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
 import { getAccountSubmenuItems, workplaceSubmenuItems } from "./sidebar/menu-config";
 import { Role } from "@prisma/client";
 
 const navLinks = [
-  { label: "Library", href: "/library" },
-  { label: "App Store", href: "/appStore" },
-  { label: "Docs", href: "/docs" },
+  { labelKey: "library", href: "/library" },
+  { labelKey: "appStore", href: "/appStore" },
+  { labelKey: "docs", href: "/docs" },
 ];
 
 const mobileNavLinks = [
-  { label: "Home", href: "/" },
-  { label: "Library", href: "/library" },
-  { label: "App Store", href: "/appStore" },
-  { label: "Docs", href: "/docs" },
+  { labelKey: "home", href: "/" },
+  { labelKey: "library", href: "/library" },
+  { labelKey: "appStore", href: "/appStore" },
+  { labelKey: "docs", href: "/docs" },
 ];
 
 export function FloatingNav() {
@@ -45,6 +47,8 @@ export function FloatingNav() {
   const [showRoleSelect, setShowRoleSelect] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const t = useTranslations('Nav');
+  const tCommon = useTranslations('Common');
 
   const accountSubmenuItems = getAccountSubmenuItems(user?.role as Role);
 
@@ -70,7 +74,7 @@ export function FloatingNav() {
               href={link.href}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {link.label}
+              {t(link.labelKey)}
             </Link>
           ))}
         </div>
@@ -80,12 +84,13 @@ export function FloatingNav() {
           <Button variant="ghost" size="icon" className="hidden md:flex h-8 w-8" asChild>
             <Link href="/admin" target="_blank" rel="noopener noreferrer">
               <Settings className="w-4 h-4" />
-              <span className="sr-only">Admin</span>
+              <span className="sr-only">{t('admin')}</span>
             </Link>
           </Button>
         )}
 
-        {/* Theme toggle */}
+        {/* Locale + Theme toggle */}
+        <LocaleSwitcher />
         <ThemeToggle />
 
         {/* User menu / Sign In */}
@@ -107,20 +112,20 @@ export function FloatingNav() {
               {accountSubmenuItems.map((item) => (
                 <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
                   <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
+                  {t(item.labelKey)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               {workplaceSubmenuItems.map((item) => (
                 <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
                   <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
+                  {t(item.labelKey)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+                {tCommon('signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -130,7 +135,7 @@ export function FloatingNav() {
             size="sm"
             onClick={() => setShowRoleSelect(true)}
           >
-            Sign In
+            {tCommon('signIn')}
           </Button>
         )}
 
@@ -161,7 +166,7 @@ export function FloatingNav() {
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 ))}
                 {session?.user?.isSystemAdmin && (
@@ -172,7 +177,7 @@ export function FloatingNav() {
                     className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   >
                     <Settings className="w-4 h-4 mr-2" />
-                    Admin Panel
+                    {t('admin')}
                   </Link>
                 )}
               </nav>
