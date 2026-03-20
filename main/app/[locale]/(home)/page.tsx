@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useSearch, type SearchResult } from "@/lib/api/search";
-import { Search } from "lucide-react";
+import { Search, BarChart3, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
@@ -305,6 +305,25 @@ export default function HomePage() {
               {term}
             </button>
           ))}
+        </motion.div>
+
+        {/* Data stats link */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="mt-4"
+        >
+          <a
+            href="https://www.aidimsum.com/zh#stats"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>{t("viewDataStats")}</span>
+            <ExternalLink className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+          </a>
         </motion.div>
       </main>
 

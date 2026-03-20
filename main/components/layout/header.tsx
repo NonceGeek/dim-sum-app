@@ -104,15 +104,6 @@ export function Header() {
 
           {/* Right: Theme + User */}
           <div className="flex items-center gap-2">
-            {session?.user?.isSystemAdmin && (
-              <Button variant="ghost" size="sm" asChild className="hidden md:flex">
-                <Link href="/admin" target="_blank" rel="noopener noreferrer">
-                  <Settings className="w-4 h-4 mr-1" />
-                  {t('admin')}
-                </Link>
-              </Button>
-            )}
-
             <LocaleSwitcher />
             <ThemeToggle />
 
@@ -145,6 +136,15 @@ export function Header() {
                       {t(item.labelKey)}
                     </DropdownMenuItem>
                   ))}
+                  {session?.user?.isSystemAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => window.open('/admin', '_blank')}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        {t('admin')}
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />

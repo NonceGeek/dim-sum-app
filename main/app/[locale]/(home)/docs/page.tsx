@@ -1,10 +1,7 @@
 "use client";
 
-import { Header } from "@/components/layout/header";
+import React from "react";
 import ReactMarkdown from "react-markdown";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,30 +10,338 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronRight, BookOpen } from "lucide-react";
-import { useState, useEffect } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  BookOpen,
+  Copy,
+  Check,
+  ArrowUp,
+} from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-// TODO: make apidoc.md load from api docs in backend to make it snyc to the latest.
+import { cn } from "@/lib/utils";
+// TODO: make apidoc.md load from api docs in backend to make it sync to the latest.
 import readmeContentEn from "../../../../public/apidoc.en.md";
 import readmeContentZhCN from "../../../../public/apidoc.zh-CN.md";
 
 const readmeContentMap: Record<string, string> = {
-  'en': readmeContentEn,
-  'zh-CN': readmeContentZhCN,
+  en: readmeContentEn,
+  "zh-CN": readmeContentZhCN,
 };
+
+// --- Shared utility ---
+
+const generateId = (text: string): string => {
+  if (typeof text !== "string") return "";
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "") // Unicode-aware: keep letters, numbers, spaces, hyphens
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+};
+
+// --- Navigation data (parsed from markdown) ---
+
+type NavItem = {
+  id: string;
+  label: string;
+  children: { id: string; label: string }[];
+};
+
+/** Skip the "Table of Contents" / "目录" section */
+const TOC_HEADINGS = new Set(["table-of-contents", "目录"]);
+
+function parseNavigation(markdown: string): NavItem[] {
+  const items: NavItem[] = [];
+  const lines = markdown.split("\n");
+
+  for (const line of lines) {
+    const h2Match = line.match(/^## (.+)$/);
+    const h3Match = line.match(/^### (.+)$/);
+
+    if (h2Match) {
+      const label = h2Match[1].trim();
+      const id = generateId(label);
+      if (TOC_HEADINGS.has(id)) continue;
+      items.push({ id, label, children: [] });
+    } else if (h3Match && items.length > 0) {
+      const label = h3Match[1].trim();
+      const id = generateId(label);
+      items[items.length - 1].children.push({ id, label });
+    }
+  }
+
+  return items;
+}
+
+// --- Copy button component ---
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-2 py-1 rounded text-xs text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 transition-colors cursor-pointer"
+      title="Copy to clipboard"
+    >
+      {copied ? (
+        <>
+          <Check className="h-3.5 w-3.5" />
+          <span>Copied!</span>
+        </>
+      ) : (
+        <>
+          <Copy className="h-3.5 w-3.5" />
+          <span>Copy</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+// --- Sidebar component ---
+
+interface SidebarContentProps {
+  navigationItems: NavItem[];
+  expandedSections: Set<string>;
+  toggleSection: (id: string) => void;
+  handleAnchorClick: (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    targetId: string
+  ) => void;
+  activeSection: string;
+  tDocs: (key: string) => string;
+}
+
+function SidebarContent({
+  navigationItems,
+  expandedSections,
+  toggleSection,
+  handleAnchorClick,
+  activeSection,
+  tDocs,
+}: SidebarContentProps) {
+  return (
+    <div className="space-y-4 h-full flex flex-col">
+      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex-shrink-0">
+        {tDocs("apiDocumentation")}
+      </h3>
+      <ScrollArea className="flex-1 min-h-0">
+        <nav className="space-y-0.5 pr-4">
+          {navigationItems.map((item) => {
+            const isParentActive =
+              activeSection === item.id ||
+              item.children.some((c) => c.id === activeSection);
+
+            return (
+              <div key={item.id}>
+                {/* Parent nav item */}
+                <div
+                  className={cn(
+                    "flex items-center border-l-2 pl-2 -ml-[2px] transition-colors duration-200",
+                    isParentActive ? "border-primary" : "border-transparent"
+                  )}
+                >
+                  <a
+                    href={`#${item.id}`}
+                    className={cn(
+                      "flex-1 text-sm transition-colors duration-200 font-medium cursor-pointer py-1.5",
+                      activeSection === item.id
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-primary"
+                    )}
+                    onClick={(e) => handleAnchorClick(e, item.id)}
+                  >
+                    {item.label}
+                  </a>
+                  {item.children.length > 0 && (
+                    <button
+                      onClick={() => toggleSection(item.id)}
+                      className="p-1.5 ml-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all duration-200 flex items-center justify-center cursor-pointer"
+                      title={
+                        expandedSections.has(item.id)
+                          ? tDocs("collapse")
+                          : tDocs("expand")
+                      }
+                    >
+                      <ChevronRight
+                        className={cn(
+                          "h-3.5 w-3.5 transition-transform duration-300 ease-in-out",
+                          expandedSections.has(item.id)
+                            ? "rotate-90"
+                            : "rotate-0"
+                        )}
+                      />
+                    </button>
+                  )}
+                </div>
+
+                {/* Children */}
+                {item.children.length > 0 && (
+                  <div
+                    className="ml-4 border-l border-border pl-3 overflow-hidden transition-all duration-300 ease-out"
+                    style={{
+                      maxHeight: expandedSections.has(item.id)
+                        ? `${item.children.length * 36 + 16}px`
+                        : "0px",
+                      opacity: expandedSections.has(item.id) ? 1 : 0,
+                      marginTop: expandedSections.has(item.id) ? "4px" : "0px",
+                      marginBottom: expandedSections.has(item.id)
+                        ? "4px"
+                        : "0px",
+                    }}
+                  >
+                    <div className="space-y-0.5 py-1">
+                      {item.children.map((child, index) => (
+                        <a
+                          key={child.id}
+                          href={`#${child.id}`}
+                          className={cn(
+                            "block text-xs cursor-pointer py-1 px-2 rounded-sm transition-colors duration-150",
+                            activeSection === child.id
+                              ? "text-primary bg-primary/10 font-medium"
+                              : "text-muted-foreground hover:text-primary hover:bg-primary/10",
+                            expandedSections.has(item.id)
+                              ? "translate-x-0 opacity-100"
+                              : "translate-x-2 opacity-0"
+                          )}
+                          style={{
+                            transitionProperty: "transform, opacity, color, background-color",
+                            transitionDuration: "200ms",
+                            transitionDelay: expandedSections.has(item.id)
+                              ? `${index * 30}ms`
+                              : "0ms",
+                          }}
+                          onClick={(e) => handleAnchorClick(e, child.id)}
+                        >
+                          {child.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// --- HTTP Method badge colors ---
+
+const METHOD_COLORS: Record<string, string> = {
+  GET: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
+  POST: "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800",
+  PUT: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800",
+  DELETE:
+    "bg-red-100 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-800",
+  PATCH:
+    "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800",
+};
+
+// --- Syntax highlighting helpers ---
+
+function highlightJson(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(
+      /("(?:[^"\\]|\\.)*")(\s*:)/g,
+      '<span style="color:#c792ea">$1</span>$2'
+    ) // keys
+    .replace(
+      /:\s*("(?:[^"\\]|\\.)*")/g,
+      ': <span style="color:#c3e88d">$1</span>'
+    ) // string values
+    .replace(
+      /:\s*(true|false)/g,
+      ': <span style="color:#ffcb6b">$1</span>'
+    ) // booleans
+    .replace(
+      /:\s*(\d+\.?\d*)/g,
+      ': <span style="color:#f78c6c">$1</span>'
+    ) // numbers
+    .replace(
+      /:\s*(null)/g,
+      ': <span style="color:#676e95">$1</span>'
+    ); // null
+}
+
+function highlightBash(text: string): string {
+  // Tokenize first, then colorize — avoids regex conflicts
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  // Split on quoted strings first to protect them
+  const parts = escaped.split(/("(?:[^"\\]|\\.)*")/g);
+
+  return parts
+    .map((part, i) => {
+      // Odd indices are quoted strings
+      if (i % 2 === 1) {
+        return `<span style="color:#c3e88d">${part}</span>`;
+      }
+      // Even indices are non-string parts — highlight commands and flags
+      return part
+        .replace(
+          /\b(curl)\b/g,
+          '<span style="color:#82aaff">$1</span>'
+        )
+        .replace(
+          /(\s)(-[A-Za-z]+)/g,
+          '$1<span style="color:#ffcb6b">$2</span>'
+        )
+        .replace(
+          /(\\)(\s*\n|$)/g,
+          '<span style="color:#676e95">$1</span>$2'
+        );
+    })
+    .join("");
+}
+
+// ============================================================================
+// Main component
+// ============================================================================
 
 export default function DocsPage() {
   const locale = useLocale();
-  const tDocs = useTranslations('Docs');
-  const readmeContent = readmeContentMap[locale] || readmeContentMap['en'];
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const tDocs = useTranslations("Docs");
+  const readmeContent = readmeContentMap[locale] || readmeContentMap["en"];
+  const navigationItems = useMemo(
+    () => parseNavigation(readmeContent),
+    [readmeContent]
+  );
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set()
+  );
+  const [activeSection, setActiveSection] = useState<string>("");
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Handle URL anchor on page load
   useEffect(() => {
     const handleInitialAnchor = () => {
-      const hash = window.location.hash.substring(1); // Remove the '#' prefix
+      const hash = window.location.hash.substring(1);
       if (hash) {
-        // Small delay to ensure the page has rendered
         setTimeout(() => {
           const targetElement = document.getElementById(hash);
           if (targetElement) {
@@ -49,19 +354,88 @@ export default function DocsPage() {
       }
     };
 
-    // Handle initial load
     handleInitialAnchor();
-
-    // Handle hash changes (back/forward navigation)
-    window.addEventListener('hashchange', handleInitialAnchor);
-
-    return () => {
-      window.removeEventListener('hashchange', handleInitialAnchor);
-    };
+    window.addEventListener("hashchange", handleInitialAnchor);
+    return () => window.removeEventListener("hashchange", handleInitialAnchor);
   }, []);
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
+  // Scroll spy — track which heading is nearest the top of the content area
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const updateActiveSection = () => {
+      const headings = container.querySelectorAll("h2[id], h3[id]");
+      if (headings.length === 0) return;
+
+      let closest: Element | null = null;
+      let closestDistance = Infinity;
+
+      for (const heading of headings) {
+        const rect = heading.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const relativeTop = rect.top - containerRect.top;
+
+        // Find heading closest to top of container (within top 40%)
+        if (
+          relativeTop <= containerRect.height * 0.4 &&
+          relativeTop > -rect.height
+        ) {
+          const distance = Math.abs(relativeTop);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closest = heading;
+          }
+        }
+      }
+
+      if (closest) {
+        setActiveSection(closest.id);
+      }
+    };
+
+    container.addEventListener("scroll", updateActiveSection, {
+      passive: true,
+    });
+    // Run once on mount after markdown renders
+    const timer = setTimeout(updateActiveSection, 300);
+
+    return () => {
+      container.removeEventListener("scroll", updateActiveSection);
+      clearTimeout(timer);
+    };
+  }, [readmeContent]);
+
+  // Auto-expand sidebar section when scroll spy activates a child
+  useEffect(() => {
+    if (!activeSection) return;
+    const parentItem = navigationItems.find(
+      (item) =>
+        item.id === activeSection ||
+        item.children.some((c) => c.id === activeSection)
+    );
+    if (
+      parentItem &&
+      parentItem.children.length > 0 &&
+      !expandedSections.has(parentItem.id)
+    ) {
+      setExpandedSections((prev) => new Set([...prev, parentItem.id]));
+    }
+  }, [activeSection, expandedSections]);
+
+  // Back to top visibility — listen on content area scroll
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      setShowBackToTop(container.scrollTop > 400);
+    };
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const toggleSection = useCallback((sectionId: string) => {
+    setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
@@ -70,217 +444,45 @@ export default function DocsPage() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const handleAnchorClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    targetId: string
-  ) => {
-    e.preventDefault();
-    
-    // Update URL hash
-    window.history.pushState(null, '', `#${targetId}`);
-    
-    const targetElement = document.getElementById(targetId);
-    if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    } else {
-      console.log("Target element not found:", targetId);
-    }
-  };
-
-  const navigationItems = [
-    { 
-      id: "get-api-key", 
-      label: "GET API KEY!",
-      children: []
+  const handleAnchorClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+      e.preventDefault();
+      window.history.pushState(null, "", `#${targetId}`);
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     },
-    { 
-      id: "public-apis", 
-      label: "Public APIs",
-      children: [
-        { id: "1-health-check", label: "1. Health Check" },
-        { id: "2-get-api-documentation-markdown", label: "2. Get API Documentation (Markdown)" },
-        { id: "3-get-api-documentation-html", label: "3. Get API Documentation (HTML)" },
-        { id: "4-get-main-data", label: "4. Get Main Data" },
-        { id: "5-get-corpus-apps", label: "5. Get Corpus Apps" },
-        { id: "6-get-corpus-categories", label: "6. Get Corpus Categories" },
-        { id: "7-get-specific-corpus-category-v2", label: "7. Get Specific Corpus Category (V2)" },
-        { id: "8-text-search-v2", label: "8. Text Search (V2)" },
-        { id: "9-get-corpus-item-v2", label: "9. Get Corpus Item (V2)" },
-        { id: "10-get-random-corpus-item", label: "10. Get Random Corpus Item" },
-        { id: "11-get-all-corpus-items", label: "11. Get All Corpus Items" },
-      ]
-    },
-    { 
-      id: "developer-apis-api-key-required", 
-      label: "Developer APIs",
-      children: [
-        { id: "12-create-corpus-item-developer", label: "12. Create Corpus Item" },
-        { id: "13-update-corpus-item-developer", label: "13. Update Corpus Item" },
-        { id: "14-get-update-history", label: "14. Get Update History" },
-        { id: "15-approve-corpus-item-admin-api-key-required", label: "15. Approve Corpus Item" },
-        { id: "16-get-api-key-status", label: "16. Get API Key Status" },
-        { id: "17-get-taggers-by-corpus-name", label: "17. Get Taggers by Corpus Name" },
-      ]
-    },
-    { 
-      id: "admin-apis-password-required", 
-      label: "Admin APIs",
-      children: [
-        { id: "18-insert-corpus-item-admin", label: "18. Insert Corpus Item" },
-        { id: "19-update-corpus-item-admin", label: "19. Update Corpus Item" },
-        { id: "20-get-user-admin", label: "20. Get User" },
-      ]
-    },
-    { 
-      id: "error-responses", 
-      label: "Error Responses",
-      children: [
-        { id: "400-bad-request", label: "400 Bad Request" },
-        { id: "401-unauthorized", label: "401 Unauthorized" },
-        { id: "403-forbidden", label: "403 Forbidden" },
-        { id: "404-not-found", label: "404 Not Found" },
-        { id: "500-internal-server-error", label: "500 Internal Server Error" },
-      ]
-    },
-    { 
-      id: "data-structures", 
-      label: "Data Structures",
-      children: [
-        { id: "corpus-item-structure", label: "Corpus Item Structure" },
-        { id: "zyzd-item-structure", label: "ZYZD Item Structure" },
-      ]
-    },
-    { 
-      id: "authentication", 
-      label: "Authentication",
-      children: [
-        { id: "api-key-authentication", label: "API Key Authentication" },
-        { id: "admin-password-authentication", label: "Admin Password Authentication" },
-      ]
-    },
-    { 
-      id: "rate-limiting", 
-      label: "Rate Limiting",
-      children: []
-    },
-    { 
-      id: "support", 
-      label: "Support",
-      children: []
-    },
-  ];
-
-  const SidebarContent = () => (
-    <div className="space-y-4 h-full flex flex-col">
-      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex-shrink-0">
-        {tDocs('apiDocumentation')}
-      </h3>
-      <ScrollArea className="flex-1 min-h-0">
-        <nav className="space-y-1 pr-4">
-        {navigationItems.map((item) => (
-          <div key={item.id}>
-            {/* 主菜单项 */}
-            <div className="flex items-center">
-              <a
-                href={`#${item.id}`}
-                className="flex-1 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 font-medium cursor-pointer py-1"
-                onClick={(e) => handleAnchorClick(e, item.id)}
-              >
-                {item.label}
-              </a>
-              {/* 展开/折叠按钮 */}
-              {item.children && item.children.length > 0 && (
-                <button
-                  onClick={() => toggleSection(item.id)}
-                  className="p-2 ml-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all duration-200 flex items-center justify-center"
-                  title={expandedSections.has(item.id) ? tDocs('collapse') : tDocs('expand')}
-                >
-                  <ChevronRight 
-                    className={`h-4 w-4 font-semibold transition-transform duration-300 ease-in-out ${
-                      expandedSections.has(item.id) ? 'rotate-90' : 'rotate-0'
-                    }`}
-                    style={{
-                      transformOrigin: 'center'
-                    }}
-                  />
-                </button>
-              )}
-            </div>
-            
-            {/* 子菜单项 */}
-            {item.children && item.children.length > 0 && (
-              <div 
-                className={`ml-4 border-l border-border pl-3 overflow-hidden transition-all duration-300 ease-out`}
-                style={{
-                  maxHeight: expandedSections.has(item.id) ? `${item.children.length * 40}px` : '0px',
-                  opacity: expandedSections.has(item.id) ? 1 : 0,
-                  marginTop: expandedSections.has(item.id) ? '8px' : '0px',
-                  marginBottom: expandedSections.has(item.id) ? '4px' : '0px',
-                }}
-              >
-                <div className="space-y-1 py-2">
-                  {item.children.map((child, index) => (
-                    <a
-                      key={child.id}
-                      href={`#${child.id}`}
-                      className={`block text-xs text-muted-foreground hover:text-primary cursor-pointer py-1 px-2 rounded-sm hover:translate-x-1 hover:bg-primary/10 transition-colors duration-150 ${
-                        expandedSections.has(item.id) 
-                          ? 'translate-x-0 opacity-100' 
-                          : 'translate-x-2 opacity-0'
-                      }`}
-                      style={{
-                        transitionProperty: 'transform, opacity',
-                        transitionDuration: '200ms',
-                        transitionDelay: expandedSections.has(item.id) ? `${index * 50}ms` : '0ms',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transitionDelay = '0ms';
-                        e.currentTarget.style.transitionProperty = 'transform, background-color, color';
-                        e.currentTarget.style.transitionDuration = '150ms';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transitionProperty = 'transform, background-color, color';
-                        e.currentTarget.style.transitionDuration = '150ms';
-                        e.currentTarget.style.transitionDelay = '0ms';
-                      }}
-                      onClick={(e) => handleAnchorClick(e, child.id)}
-                    >
-                      {child.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-        </nav>
-      </ScrollArea>
-    </div>
+    []
   );
 
   return (
-    <div className="flex min-h-screen w-full">
-      {/* 桌面端侧边栏 */}
-      <div className="hidden md:block w-64 border-r border-border bg-transparent flex-shrink-0 h-screen overflow-hidden">
-        <div className="p-6 h-full">
-          <SidebarContent />
+    <div className="flex h-[calc(100vh-3.5rem)] w-full">
+      {/* Desktop sidebar — normal flex child, no fixed/sticky needed */}
+      <div className="hidden md:flex w-64 border-r border-border bg-background/50 flex-shrink-0 overflow-hidden">
+        <div className="p-6 h-full w-full">
+          <SidebarContent
+            navigationItems={navigationItems}
+            expandedSections={expandedSections}
+            toggleSection={toggleSection}
+            handleAnchorClick={handleAnchorClick}
+            activeSection={activeSection}
+            tDocs={tDocs}
+          />
         </div>
       </div>
 
-      {/* 主内容区域 */}
-      <div className="flex-1 min-w-0 relative">
-        {/* 移动端导航栏（absolute） */}
-        <div className="md:hidden absolute top-0 left-0 right-0 z-40 backdrop-blur-md border-b border-border bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)]">
+      {/* Main content — independently scrollable */}
+      <div ref={contentRef} className="flex-1 min-w-0 overflow-y-auto relative">
+        {/* Mobile nav bar */}
+        <div className="md:hidden sticky top-0 left-0 right-0 z-40 backdrop-blur-md border-b border-border bg-background/90">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-2 min-w-0">
               <BookOpen className="h-5 w-5 text-primary flex-shrink-0" />
               <h2 className="text-lg font-semibold text-foreground truncate">
-                {tDocs('apiDocumentation')}
+                {tDocs("apiDocumentation")}
               </h2>
             </div>
             <DropdownMenu>
@@ -290,36 +492,41 @@ export default function DocsPage() {
                   size="sm"
                   className="flex items-center space-x-1 flex-shrink-0"
                 >
-                  <span className="text-sm">{tDocs('sections')}</span>
+                  <span className="text-sm">{tDocs("sections")}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-64 max-h-96 overflow-y-auto bg-[linear-gradient(135deg,_#b2c7ff_0%,_#d7d7fe_100%)] backdrop-blur-md border border-border shadow-lg"
+                className="w-64 max-h-96 overflow-y-auto bg-popover backdrop-blur-md border border-border shadow-lg"
               >
                 {navigationItems.map((item) => (
                   <div key={item.id}>
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.preventDefault();
-                        handleAnchorClick(e as any, item.id);
+                        handleAnchorClick(
+                          e as unknown as React.MouseEvent<HTMLAnchorElement>,
+                          item.id
+                        );
                       }}
-                      className="cursor-pointer text-foreground hover:text-primary hover:bg-white/40 font-medium"
+                      className="cursor-pointer text-foreground hover:text-primary font-medium"
                     >
                       {item.label}
                     </DropdownMenuItem>
-                    {/* 子菜单项 */}
-                    {item.children && item.children.length > 0 && (
+                    {item.children.length > 0 && (
                       <div className="ml-4 border-l-2 border-border">
                         {item.children.map((child) => (
                           <DropdownMenuItem
                             key={child.id}
                             onClick={(e) => {
                               e.preventDefault();
-                              handleAnchorClick(e as any, child.id);
+                              handleAnchorClick(
+                                e as unknown as React.MouseEvent<HTMLAnchorElement>,
+                                child.id
+                              );
                             }}
-                            className="cursor-pointer text-xs text-muted-foreground hover:text-primary hover:bg-white/30 pl-3"
+                            className="cursor-pointer text-xs text-muted-foreground hover:text-primary pl-3"
                           >
                             {child.label}
                           </DropdownMenuItem>
@@ -333,181 +540,267 @@ export default function DocsPage() {
           </div>
         </div>
 
-        <ScrollArea className="h-screen pt-6">
-          <div className="p-4 md:p-8 max-w-4xl mx-auto pt-18 md:pt-0">
-            <div className="prose prose-gray max-w-none prose-sm md:prose-base prose-p:break-words prose-pre:break-words">
-              <ReactMarkdown
-                components={{
-                  // 自定义标题样式
-                  h1: ({ children }) => (
-                    <h1 className="text-2xl md:text-4xl font-bold mb-6 md:mb-8 text-foreground border-b-2 border-border pb-3 md:pb-4 break-words">
-                      {children}
-                    </h1>
-                  ),
-                  h2: ({ children, id }) => {
-                    // 生成标准的锚点ID
-                    const generateId = (text: string) => {
-                      return text
-                        .toLowerCase()
-                        .replace(/[^a-z0-9\s-]/g, "")
-                        .replace(/\s+/g, "-")
-                        .replace(/-+/g, "-")
-                        .trim();
-                    };
-
-                    const headingId = id || generateId(children as string);
-
-                    return (
-                      <h2
-                        id={headingId}
-                        className="text-xl md:text-2xl font-semibold mt-8 md:mt-10 mb-4 md:mb-6 text-foreground border-l-4 border-primary pl-3 md:pl-4 scroll-mt-20 md:scroll-mt-20 break-words"
-                      >
-                        {children}
-                      </h2>
-                    );
-                  },
-                  h3: ({ children, id }) => {
-                    // 生成标准的锚点ID
-                    const generateId = (text: string) => {
-                      return text
-                        .toLowerCase()
-                        .replace(/[^a-z0-9\s-]/g, "")
-                        .replace(/\s+/g, "-")
-                        .replace(/-+/g, "-")
-                        .trim();
-                    };
-
-                    const headingId = id || generateId(children as string);
-
-                    return (
-                      <h3 
-                        id={headingId}
-                        className="text-lg md:text-xl font-medium mt-6 md:mt-8 mb-3 md:mb-4 text-foreground scroll-mt-20 md:scroll-mt-20 break-words"
-                      >
-                        {children}
-                      </h3>
-                    );
-                  },
-                  h4: ({ children }) => (
-                    <h4 className="text-base md:text-lg font-medium mt-4 md:mt-6 mb-2 md:mb-3 text-muted-foreground break-words">
-                      {children}
-                    </h4>
-                  ),
-                  // 自定义代码块样式
-                  code: ({ children, className }) => {
-                    const isInline = !className;
-                    if (isInline) {
-                      return (
-                        <code className="bg-muted text-foreground px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm font-mono border border-border break-words">
-                          {children}
-                        </code>
-                      );
-                    }
-                    return <code className={className}>{children}</code>;
-                  },
-                  pre: ({ children }) => (
-                    <pre className="bg-card text-card-foreground p-3 md:p-6 rounded-lg md:rounded-xl overflow-x-auto my-4 md:my-6 border border-border shadow-lg text-xs md:text-sm break-words whitespace-pre-wrap">
-                      {children}
-                    </pre>
-                  ),
-                  // 自定义表格样式
-                  table: ({ children }) => (
-                    <div className="overflow-x-auto my-4 md:my-6 rounded-lg border border-border shadow-sm">
-                      <table className="w-full border-collapse min-w-full">
-                        {children}
-                      </table>
-                    </div>
-                  ),
-                  th: ({ children }) => (
-                    <th className="border-b border-border px-3 md:px-6 py-2 md:py-4 bg-muted font-semibold text-left text-foreground text-xs md:text-sm break-words">
-                      {children}
-                    </th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="border-b border-border px-3 md:px-6 py-2 md:py-4 text-muted-foreground text-xs md:text-sm break-words">
-                      {children}
-                    </td>
-                  ),
-                  // 自定义链接样式
-                  a: ({ children, href }) => (
-                    <a
-                      href={href}
-                      className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors duration-200 font-medium inline-flex items-center gap-1 text-sm md:text-base break-words"
-                      target={href?.startsWith("http") ? "_blank" : undefined}
-                      rel={
-                        href?.startsWith("http")
-                          ? "noopener noreferrer"
-                          : undefined
-                      }
+        {/* Content */}
+        <div className="p-4 md:p-8 max-w-4xl mx-auto">
+          <div className="prose prose-gray max-w-none prose-sm md:prose-base">
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => (
+                  <h1 className="text-2xl md:text-4xl font-bold mb-6 md:mb-8 text-foreground border-b-2 border-border pb-3 md:pb-4 break-words">
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children, id }) => {
+                  const headingId =
+                    id || generateId(children as string);
+                  return (
+                    <h2
+                      id={headingId}
+                      className="text-xl md:text-2xl font-semibold mt-10 md:mt-12 mb-4 md:mb-6 text-foreground border-l-4 border-primary pl-3 md:pl-4 scroll-mt-20 break-words"
                     >
                       {children}
-                      {href?.startsWith("http") && (
-                        <svg
-                          className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    </h2>
+                  );
+                },
+                h3: ({ children, id }) => {
+                  const headingId =
+                    id || generateId(children as string);
+                  return (
+                    <h3
+                      id={headingId}
+                      className="text-lg md:text-xl font-medium mt-10 md:mt-12 mb-3 md:mb-4 pt-6 md:pt-8 text-foreground scroll-mt-20 break-words border-t border-border first:border-t-0 first:pt-0 first:mt-6"
+                    >
+                      {children}
+                    </h3>
+                  );
+                },
+                h4: ({ children }) => (
+                  <h4 className="text-base md:text-lg font-medium mt-4 md:mt-6 mb-2 md:mb-3 text-muted-foreground break-words">
+                    {children}
+                  </h4>
+                ),
+
+                // Inline code only — block code is handled in `pre`
+                code: ({ children, className }) => {
+                  const isInline = !className;
+                  if (isInline) {
+                    return (
+                      <code className="bg-muted text-foreground px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm font-mono border border-border break-words">
+                        {children}
+                      </code>
+                    );
+                  }
+                  // Block code: just pass through, pre handles everything
+                  return <code className="font-mono">{children}</code>;
+                },
+
+                pre: ({ children }) => {
+                  // Extract language and raw text from code child
+                  let language = "";
+                  let rawText = "";
+
+                  React.Children.forEach(children, (child) => {
+                    if (React.isValidElement(child) && child.props) {
+                      const codeClassName =
+                        (child.props as Record<string, unknown>).className || "";
+                      const match =
+                        typeof codeClassName === "string"
+                          ? codeClassName.match(/language-(\w+)/)
+                          : null;
+                      if (match) language = match[1];
+
+                      const codeChildren = (child.props as Record<string, unknown>).children;
+                      if (typeof codeChildren === "string") {
+                        rawText = codeChildren;
+                      }
+                    }
+                  });
+
+                  const langLabel =
+                    language === "json"
+                      ? "JSON"
+                      : language === "bash"
+                        ? "Shell"
+                        : language
+                          ? language.toUpperCase()
+                          : "";
+
+                  // Apply syntax highlighting if we have raw text
+                  let highlightedHtml = "";
+                  if (rawText) {
+                    if (language === "json") {
+                      highlightedHtml = highlightJson(rawText);
+                    } else if (language === "bash") {
+                      highlightedHtml = highlightBash(rawText);
+                    }
+                  }
+
+                  return (
+                    <div className="relative group my-4 md:my-6 rounded-lg overflow-hidden border border-neutral-700/50">
+                      {/* Header bar */}
+                      <div className="flex items-center justify-between px-4 py-2 bg-neutral-800 border-b border-neutral-700/50">
+                        <span className="text-xs font-mono text-neutral-400">
+                          {langLabel}
+                        </span>
+                        <CopyButton text={rawText} />
+                      </div>
+                      {/* Code content */}
+                      {highlightedHtml ? (
+                        <pre className="bg-neutral-900 text-neutral-200 p-4 md:p-5 overflow-x-auto text-xs md:text-sm font-mono leading-relaxed whitespace-pre-wrap break-words m-0 rounded-none border-0">
+                          <code
+                            className="font-mono"
+                            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
                           />
-                        </svg>
+                        </pre>
+                      ) : (
+                        <pre className="bg-neutral-900 text-neutral-200 p-4 md:p-5 overflow-x-auto text-xs md:text-sm font-mono leading-relaxed whitespace-pre-wrap break-words m-0 rounded-none border-0">
+                          {children}
+                        </pre>
                       )}
-                    </a>
-                  ),
-                  // 自定义列表样式
-                  ul: ({ children }) => (
-                    <ul className="list-disc list-inside space-y-1 md:space-y-2 my-4 md:my-6 text-foreground text-sm md:text-base">
-                      {children}
-                    </ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="list-decimal list-inside space-y-1 md:space-y-2 my-4 md:my-6 text-foreground text-sm md:text-base">
-                      {children}
-                    </ol>
-                  ),
-                  // 自定义引用样式
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-primary bg-primary/10 pl-4 md:pl-6 py-3 md:py-4 italic text-foreground my-4 md:my-6 rounded-r-lg text-sm md:text-base break-words">
-                      {children}
-                    </blockquote>
-                  ),
-                  // 自定义分隔线样式
-                  hr: () => <Separator className="my-6 md:my-8 bg-border" />,
-                  // 自定义段落样式
-                  p: ({ children }) => (
-                    <p className="my-4 md:my-6 leading-relaxed text-foreground text-sm md:text-base break-words">
+                    </div>
+                  );
+                },
+
+                // HTTP Method badges
+                p: ({ children }) => {
+                  const childArray = React.Children.toArray(children);
+
+                  // Detect: <strong>GET</strong> <code>/path</code>
+                  if (childArray.length >= 2) {
+                    const first = childArray[0];
+                    if (React.isValidElement(first)) {
+                      const firstProps = first.props as Record<string, unknown>;
+                      const text =
+                        typeof firstProps?.children === "string"
+                          ? firstProps.children.trim()
+                          : "";
+
+                      if (METHOD_COLORS[text]) {
+                        return (
+                          <div className="flex items-center gap-3 my-4 md:my-5">
+                            <span
+                              className={cn(
+                                "inline-flex items-center justify-center rounded-md border px-2.5 py-1 text-xs font-bold font-mono tracking-wider min-w-[4rem]",
+                                METHOD_COLORS[text]
+                              )}
+                            >
+                              {text}
+                            </span>
+                            <span className="text-base md:text-lg font-mono font-medium text-foreground">
+                              {childArray.slice(1)}
+                            </span>
+                          </div>
+                        );
+                      }
+                    }
+                  }
+
+                  return (
+                    <p className="my-3 md:my-4 leading-relaxed text-foreground text-sm md:text-base break-words">
                       {children}
                     </p>
-                  ),
-                  // 自定义列表项样式
-                  li: ({ children }) => (
-                    <li className="text-foreground leading-relaxed text-sm md:text-base break-words">
+                  );
+                },
+
+                table: ({ children }) => (
+                  <div className="overflow-x-auto my-4 md:my-6 rounded-lg border border-border shadow-sm">
+                    <table className="w-full border-collapse min-w-full">
                       {children}
-                    </li>
-                  ),
-                  // 自定义强调样式
-                  strong: ({ children }) => (
-                    <strong className="font-semibold text-foreground text-sm md:text-base break-words">
-                      {children}
-                    </strong>
-                  ),
-                  // 自定义斜体样式
-                  em: ({ children }) => (
-                    <em className="italic text-muted-foreground text-sm md:text-base break-words">
-                      {children}
-                    </em>
-                  ),
-                }}
-              >
-                {readmeContent}
-              </ReactMarkdown>
-            </div>
+                    </table>
+                  </div>
+                ),
+                th: ({ children }) => (
+                  <th className="border-b border-border px-3 md:px-6 py-2 md:py-4 bg-muted font-semibold text-left text-foreground text-xs md:text-sm break-words">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="border-b border-border px-3 md:px-6 py-2 md:py-4 text-muted-foreground text-xs md:text-sm break-words">
+                    {children}
+                  </td>
+                ),
+                a: ({ children, href }) => (
+                  <a
+                    href={href}
+                    className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors duration-200 font-medium inline-flex items-center gap-1 text-sm md:text-base break-words"
+                    target={
+                      href?.startsWith("http") ? "_blank" : undefined
+                    }
+                    rel={
+                      href?.startsWith("http")
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
+                  >
+                    {children}
+                    {href?.startsWith("http") && (
+                      <svg
+                        className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
+                      </svg>
+                    )}
+                  </a>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc list-inside space-y-1 md:space-y-2 my-3 md:my-4 text-foreground text-sm md:text-base">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal list-inside space-y-1 md:space-y-2 my-3 md:my-4 text-foreground text-sm md:text-base">
+                    {children}
+                  </ol>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-primary bg-primary/10 pl-4 md:pl-6 py-3 md:py-4 italic text-foreground my-4 md:my-6 rounded-r-lg text-sm md:text-base break-words">
+                    {children}
+                  </blockquote>
+                ),
+                // hr between endpoints: now just spacing since h3 has border-t
+                hr: () => <div className="my-2" />,
+                li: ({ children }) => (
+                  <li className="text-foreground leading-relaxed text-sm md:text-base break-words">
+                    {children}
+                  </li>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-foreground text-sm md:text-base break-words">
+                    {children}
+                  </strong>
+                ),
+                em: ({ children }) => (
+                  <em className="italic text-muted-foreground text-sm md:text-base break-words">
+                    {children}
+                  </em>
+                ),
+              }}
+            >
+              {readmeContent}
+            </ReactMarkdown>
           </div>
-        </ScrollArea>
+        </div>
+
+        {/* Back to top */}
+        {showBackToTop && (
+          <button
+            onClick={() =>
+              contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })
+            }
+            className="sticky bottom-6 float-right mr-6 z-50 p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-105 cursor-pointer"
+            title="Back to top"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
+        )}
       </div>
     </div>
   );

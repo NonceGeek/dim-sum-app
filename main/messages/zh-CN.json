@@ -54,8 +54,9 @@
     "globalSearch": "全局搜索",
     "trending": "热搜",
     "searchPlaceholder": "搜索粤语内容...",
-    "subtitle": "探索和发现 AI 资源",
-    "searchButton": "搜索"
+    "subtitle": "探索和发现粤语资源",
+    "searchButton": "搜索",
+    "viewDataStats": "查看数据情况"
   },
   "Library": {
     "title": "粤语语料集",
