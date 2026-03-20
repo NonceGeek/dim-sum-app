@@ -394,7 +394,7 @@ export default function HomePage() {
                   </Card>
                   <Card
                     className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-24 sm:h-28 flex items-center justify-center"
-                    onClick={() => handleExampleSearch("唔")}
+                    onClick={() => handleExampleSearch("唔听")}
                   >
                     <div className="text-center space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
