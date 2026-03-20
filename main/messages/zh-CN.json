@@ -29,7 +29,8 @@
     "learning": "学习",
     "gaming": "游戏",
     "ai": "AI",
-    "others": "其他"
+    "others": "其他",
+    "tool": "工具"
   },
   "Auth": {
     "selectRole": "选择你的角色",
@@ -40,12 +41,21 @@
     "signInWith": "使用 {provider} 登录",
     "orContinueWith": "或者使用",
     "termsOfService": "服务条款",
-    "privacyPolicy": "隐私政策"
+    "privacyPolicy": "隐私政策",
+    "signInTitle": "登录",
+    "signInSubtitle": "登录以继续使用您的账户",
+    "signInContinueAs": "以 {role} 身份登录",
+    "signInFailed": "登录失败",
+    "signInFailedDesc": "请稍后再试",
+    "agreementPrefix": "登录即表示您同意我们的",
+    "agreementAnd": "和"
   },
   "Home": {
     "globalSearch": "全局搜索",
     "trending": "热搜",
-    "searchPlaceholder": "搜索粤语内容..."
+    "searchPlaceholder": "搜索粤语内容...",
+    "subtitle": "探索和发现 AI 资源",
+    "searchButton": "搜索"
   },
   "Library": {
     "title": "粤语语料集",
@@ -54,25 +64,56 @@
     "dictionary": "字典",
     "importing": "入库中",
     "rawCorpus": "生语料",
-    "size": "大小"
+    "size": "大小",
+    "pinned": "置顶",
+    "viewOriginal": "查看原始数据",
+    "all": "全部",
+    "noItemsFound": "未找到匹配项"
   },
   "AppStore": {
     "launch": "启动应用",
     "launchIntl": "启动应用（国际版）",
-    "appHome": "应用主页"
+    "appHome": "应用主页",
+    "title": "应用商店",
+    "pinned": "置顶",
+    "selectTag": "选择一个标签",
+    "all": "全部",
+    "noAppsFound": "未找到应用",
+    "noItemsFound": "未找到匹配项",
+    "launchMiniApp": "启动应用（小程序）",
+    "wechatQrCode": "微信小程序二维码",
+    "appPage": "应用页面",
+    "demoVideo": "演示视频"
   },
   "DataAnnotation": {
     "title": "数据标注",
     "batchUpload": "批量上传",
     "downloadTemplate": "下载模板",
-    "character": "字符",
+    "character": "字",
     "category": "分类",
     "pronunciation": "粤音",
     "wordGroup": "组词",
     "sentence": "句子",
     "reference": "相关文献",
     "videoClip": "视频切片",
-    "notEditable": "此条目不可编辑"
+    "notEditable": "此条目不可编辑",
+    "view": "查看",
+    "details": "详情",
+    "searchPlaceholder": "搜索数据...",
+    "searchButton": "搜索",
+    "noResults": "未找到 \"{query}\" 的结果",
+    "clearSearch": "清除搜索并显示全部数据",
+    "previous": "上一页",
+    "next": "下一页",
+    "goToPage": "跳转到页",
+    "pageOf": "第 {current} 页 / 共 {total} 页",
+    "total": "共 {count} 条",
+    "searchingFor": "搜索: \"{query}\"",
+    "retry": "重试",
+    "retrying": "重试中...",
+    "error": "错误",
+    "noPinyinData": "暂无粤音数据",
+    "invalidPage": "请输入 1 到 {max} 之间的有效页码"
   },
   "Profile": {
     "title": "个人资料",
@@ -84,7 +125,17 @@
     "notSet": "未设置",
     "noWallet": "未绑定钱包",
     "updateSuccess": "资料更新成功",
-    "updateFailed": "资料更新失败"
+    "updateFailed": "资料更新失败",
+    "about": "关于",
+    "noBio": "尚未添加个人简介",
+    "walletCopied": "钱包地址已复制到剪贴板",
+    "walletCopyFailed": "复制钱包地址失败",
+    "walletUnbound": "钱包已成功解绑！",
+    "walletUnbindFailed": "解绑钱包失败",
+    "bindWallet": "绑定钱包",
+    "unbinding": "解绑中...",
+    "loadFailed": "加载资料失败",
+    "tryAgainLater": "请稍后再试"
   },
   "Validation": {
     "enterCharacter": "请输入字符",

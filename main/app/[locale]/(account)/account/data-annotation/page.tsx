@@ -19,11 +19,15 @@ import { ChevronLeft, ChevronRight, Search, X, Plus, Upload, Download, Loader2 }
 import { toast } from "sonner";
 import { CreateDialog } from "@/components/data-annotation/CreateDialog";
 import { BatchUploadDialog } from "@/components/data-annotation/BatchUploadDialog";
+import { useTranslations } from "next-intl";
 
 const buttonClass =
   "rounded-full border border-border px-6 py-2 text-foreground bg-transparent hover:bg-accent transition-colors duration-150 mr-2";
 
 export default function DataAnnotationPage() {
+  const t = useTranslations("DataAnnotation");
+  const tc = useTranslations("Common");
+  const tv = useTranslations("Validation");
   const [corpusData, setCorpusData] = useState<CorpusItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,7 +118,7 @@ export default function DataAnnotationPage() {
   const handleEdit = (uuid: string, editableLevel: number) => {
     // 检查是否可编辑
     if (editableLevel === 0) {
-      toast.error("此条目不可编辑");
+      toast.error(t("notEditable"));
       return;
     }
     // 跳转到详情页，编辑模式
@@ -135,7 +139,7 @@ export default function DataAnnotationPage() {
   const getAvailableActions = (item: CorpusItem) => {
     const actions = [
       {
-        name: "查看",
+        name: t("view"),
         handler: () => handleView(item.unique_id),
         className: "text-muted-foreground hover:text-info"
       }
@@ -144,7 +148,7 @@ export default function DataAnnotationPage() {
     // 只有可编辑的条目才显示编辑按钮
     if (item.editable_level > 0) {
       actions.push({
-        name: "编辑",
+        name: tc("edit"),
         handler: () => handleEdit(item.unique_id, item.editable_level),
         className: "text-muted-foreground hover:text-success"
       });
@@ -191,7 +195,7 @@ export default function DataAnnotationPage() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search data..."
+              placeholder={t("searchPlaceholder")}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -222,20 +226,20 @@ export default function DataAnnotationPage() {
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                "Search"
+                t("searchButton")
               )}
             </Button>
           </div>
         </div>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Data Annotation</h1>
+            <h1 className="text-3xl font-bold">{t("title")}</h1>
             {totalCount > 0 && (
               <p className="text-sm text-muted-foreground mt-1">
-                Total: {totalCount} items | Page {currentPage} of {totalPages}
+                {t("total", { count: totalCount })} | {t("pageOf", { current: currentPage, total: totalPages })}
                 {searchQuery && (
                   <span className="ml-2">
-                    (searching for: "{searchQuery}")
+                    {t("searchingFor", { query: searchQuery })}
                   </span>
                 )}
               </p>
@@ -247,28 +251,28 @@ export default function DataAnnotationPage() {
               className={buttonClass}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create
+              {tc("create")}
             </Button>
             <Button
               onClick={() => setShowBatchUploadDialog(true)}
               className={buttonClass}
             >
               <Upload className="w-4 h-4 mr-2" />
-              Batch Upload
+              {t("batchUpload")}
             </Button>
             <Button
               onClick={downloadTemplate}
               className={buttonClass}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Template
+              {t("downloadTemplate")}
             </Button>
           </div>
         </div>
 
         {error && (
           <div className="mb-6 p-4 bg-red-900/20 border border-red-500 rounded-lg">
-            <p className="text-red-400">Error: {error}</p>
+            <p className="text-red-400">{t("error")}: {error}</p>
             <Button
               onClick={() => fetchCorpusData(currentPage)}
               disabled={isLoading}
@@ -279,10 +283,10 @@ export default function DataAnnotationPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Retrying...
+                  {t("retrying")}
                 </>
               ) : (
-                "Retry"
+                t("retry")
               )}
             </Button>
           </div>
@@ -299,9 +303,9 @@ export default function DataAnnotationPage() {
           ) : corpusData.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">
-                {searchQuery 
-                  ? `No results found for "${searchQuery}"` 
-                  : "No data available"
+                {searchQuery
+                  ? t("noResults", { query: searchQuery })
+                  : tc("noData")
                 }
               </p>
               {searchQuery && (
@@ -314,10 +318,10 @@ export default function DataAnnotationPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Loading...
+                      {tc("loading")}
                     </>
                   ) : (
-                    "Clear search and show all data"
+                    t("clearSearch")
                   )}
                 </Button>
               )}
@@ -331,9 +335,9 @@ export default function DataAnnotationPage() {
                 <Table className="w-full border-collapse overflow-hidden bg-transparent text-foreground text-base border border-border">
                   <TableHeader>
                     <TableRow className="bg-muted">
-                      <TableHead className="w-24 text-center border-r border-border text-foreground text-base">字</TableHead>
-                      <TableHead className="w-48 text-center border-r border-border text-foreground text-base">粤音</TableHead>
-                      <TableHead className="w-1/2 text-center border-r border-border text-foreground text-base">详情</TableHead>
+                      <TableHead className="w-24 text-center border-r border-border text-foreground text-base">{t("character")}</TableHead>
+                      <TableHead className="w-48 text-center border-r border-border text-foreground text-base">{t("pronunciation")}</TableHead>
+                      <TableHead className="w-1/2 text-center border-r border-border text-foreground text-base">{t("details")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -373,7 +377,7 @@ export default function DataAnnotationPage() {
                       // 如果没有拼音数据，显示一个默认行
                       <TableRow className="text-foreground text-base">
                         <TableCell className="border border-border px-4 py-3 text-center text-lg">{item.data}</TableCell>
-                        <TableCell className="border border-border px-4 py-3 italic text-muted-foreground">No pinyin data</TableCell>
+                        <TableCell className="border border-border px-4 py-3 italic text-muted-foreground">{t("noPinyinData")}</TableCell>
                         <TableCell className="border border-border px-4 py-3 text-center">
                           {getAvailableActions(item).map((action, actionIndex) => (
                             <React.Fragment key={action.name}>
@@ -416,7 +420,7 @@ export default function DataAnnotationPage() {
               ) : (
                 <ChevronLeft className="w-4 h-4 mr-1" />
               )}
-              Previous
+              {t("previous")}
             </Button>
 
             <Button
@@ -427,19 +431,19 @@ export default function DataAnnotationPage() {
             >
               1
             </Button>
-            
+
             <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("pageOf", { current: currentPage, total: totalPages })}
             </span>
 
-            <Input placeholder="Go to Page" type="number" min={1} max={totalPages} className="w-28 text-center bg-card border border-border text-foreground"
+            <Input placeholder={t("goToPage")} type="number" min={1} max={totalPages} className="w-28 text-center bg-card border border-border text-foreground"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const page = Number((e.target as HTMLInputElement).value);
                   if (page >= 1 && page <= totalPages) {
                     fetchCorpusData(page, searchQuery);
                   } else {
-                    toast.error(`Please enter a valid page number between 1 and ${totalPages}`);
+                    toast.error(t("invalidPage", { max: totalPages }));
                   }
                 }
               }}
@@ -451,7 +455,7 @@ export default function DataAnnotationPage() {
               variant="outline"
               size="sm"
             >
-              Next
+              {t("next")}
               {isLoading ? (
                 <Loader2 className="w-4 h-4 ml-1 animate-spin" />
               ) : (

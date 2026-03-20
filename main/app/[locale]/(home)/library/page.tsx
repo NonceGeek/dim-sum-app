@@ -5,6 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 // import { Header } from "@/components/layout/header";
 import ReactMarkdown from "react-markdown";
+import { useTranslations } from "next-intl";
 
 // Mock data for the library
 // const mockBooks = [
@@ -121,12 +122,14 @@ function BookCard({ book }: { book: Book }) {
 }
 
 function CorpusCard({ corpus }: { corpus: Corpus }) {
+  const t = useTranslations("Library");
+
   const getTagDisplay = (tag: string): string => {
     switch (tag.toLowerCase()) {
       case "classic":
-        return "经典";
+        return t("classic");
       case "dict":
-        return "字典";
+        return t("dictionary");
       default:
         return tag;
     }
@@ -135,9 +138,9 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
   const getStatusDisplay = (status: string): string => {
     switch (status) {
       case "INPROGRESS":
-        return "入库中";
+        return t("importing");
       case "RAW":
-        return "生语料";
+        return t("rawCorpus");
       default:
         return status;
     }
@@ -147,7 +150,7 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
     <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
       {corpus.pinned && (
         <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white rounded-md text-xs z-10">
-          置顶
+          {t("pinned")}
         </div>
       )}
       <div className="h-48 bg-muted relative">
@@ -201,7 +204,7 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
             </div>
             {corpus.size !== null && corpus.size !== undefined && (
               <p className="text-red-500 text-sm">
-                大小: {corpus.size.toFixed(2)} GB
+                {t("size")}: {corpus.size.toFixed(2)} GB
               </p>
             )}
           </div>
@@ -213,7 +216,7 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
             rel="noopener noreferrer"
             className="text-primary hover:text-primary/80 text-sm font-medium"
           >
-            👉 查看原始数据
+            {t("viewOriginal")}
           </a>
         )}
         {/* <div className="flex justify-between text-sm text-gray-500">
@@ -227,6 +230,7 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
 
 // Keep the main page component as a server component
 export default function LibraryPage() {
+  const t = useTranslations("Library");
   const [corpus, setCorpus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState("");
@@ -243,7 +247,7 @@ export default function LibraryPage() {
 
   // Update URL when selectedTag changes
   const handleTagChange = (value: string) => {
-    const newValue = value === "全部" ? "" : value;
+    const newValue = value === t("all") ? "" : value;
     setSelectedTag(newValue);
 
     const params = new URLSearchParams(searchParams.toString());
@@ -312,7 +316,7 @@ export default function LibraryPage() {
     <>
       <div className="h-full p-6 overflow-auto">
         <div className="flex items-center justify-center w-full mb-4">
-          <h1 className="text-4xl font-bold text-center">粤语语料集</h1>
+          <h1 className="text-4xl font-bold text-center">{t("title")}</h1>
         </div>
 
         {loading ? (
@@ -323,13 +327,13 @@ export default function LibraryPage() {
           <div className="flex flex-col space-y-4">
             <div className="w-50 ml-auto">
               <Combobox
-                items={["全部", ...tags.map(t => t.tag)]}
-                value={selectedTag || "全部"}
+                items={[t("all"), ...tags.map(tg => tg.tag)]}
+                value={selectedTag || t("all")}
                 onValueChange={handleTagChange}
               >
-                <ComboboxInput placeholder="选择一个标签" />
+                <ComboboxInput placeholder={t("selectTag")} />
                 <ComboboxContent>
-                  <ComboboxEmpty>No items found.</ComboboxEmpty>
+                  <ComboboxEmpty>{t("noItemsFound")}</ComboboxEmpty>
                   <ComboboxList>
                     {(item) => {
                       return (
