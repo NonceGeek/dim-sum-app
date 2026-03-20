@@ -1,0 +1,94 @@
+{
+  "Common": {
+    "signIn": "登录",
+    "signOut": "退出登录",
+    "cancel": "取消",
+    "confirm": "确认",
+    "search": "搜索",
+    "create": "创建",
+    "edit": "编辑",
+    "delete": "删除",
+    "save": "保存",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "back": "返回"
+  },
+  "Nav": {
+    "home": "首页",
+    "library": "语料库",
+    "appStore": "应用商店",
+    "docs": "文档",
+    "myAccount": "我的账户",
+    "myRecord": "我的记录",
+    "dataAnnotation": "数据标注",
+    "api": "API",
+    "admin": "管理后台",
+    "settings": "设置",
+    "learning": "学习",
+    "gaming": "游戏",
+    "ai": "AI",
+    "others": "其他"
+  },
+  "Auth": {
+    "selectRole": "选择你的角色",
+    "selectRoleDesc": "请选择你的角色以继续",
+    "learner": "学习者",
+    "tagger": "标注员",
+    "researcher": "研究者",
+    "signInWith": "使用 {provider} 登录",
+    "orContinueWith": "或者使用",
+    "termsOfService": "服务条款",
+    "privacyPolicy": "隐私政策"
+  },
+  "Home": {
+    "globalSearch": "全局搜索",
+    "trending": "热搜",
+    "searchPlaceholder": "搜索粤语内容..."
+  },
+  "Library": {
+    "title": "粤语语料集",
+    "selectTag": "选择一个标签",
+    "classic": "经典",
+    "dictionary": "字典",
+    "importing": "入库中",
+    "rawCorpus": "生语料",
+    "size": "大小"
+  },
+  "AppStore": {
+    "launch": "启动应用",
+    "launchIntl": "启动应用（国际版）",
+    "appHome": "应用主页"
+  },
+  "DataAnnotation": {
+    "title": "数据标注",
+    "batchUpload": "批量上传",
+    "downloadTemplate": "下载模板",
+    "character": "字符",
+    "category": "分类",
+    "pronunciation": "粤音",
+    "wordGroup": "组词",
+    "sentence": "句子",
+    "reference": "相关文献",
+    "videoClip": "视频切片",
+    "notEditable": "此条目不可编辑"
+  },
+  "Profile": {
+    "title": "个人资料",
+    "editProfile": "编辑资料",
+    "systemAdmin": "系统管理员",
+    "bind": "绑定",
+    "unbind": "解绑",
+    "change": "更改",
+    "notSet": "未设置",
+    "noWallet": "未绑定钱包",
+    "updateSuccess": "资料更新成功",
+    "updateFailed": "资料更新失败"
+  },
+  "Validation": {
+    "enterCharacter": "请输入字符",
+    "atLeastOnePronunciation": "请至少输入一个粤音",
+    "selectFile": "请先选择文件",
+    "enterPhone": "请输入手机号",
+    "invalidPhone": "请输入有效的手机号格式"
+  }
+}

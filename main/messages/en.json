@@ -1,0 +1,94 @@
+{
+  "Common": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "search": "Search",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "back": "Back"
+  },
+  "Nav": {
+    "home": "Home",
+    "library": "Library",
+    "appStore": "App Store",
+    "docs": "Docs",
+    "myAccount": "My Account",
+    "myRecord": "My Record",
+    "dataAnnotation": "Data Annotation",
+    "api": "API",
+    "admin": "Admin",
+    "settings": "Settings",
+    "learning": "Learning",
+    "gaming": "Gaming",
+    "ai": "AI",
+    "others": "Others"
+  },
+  "Auth": {
+    "selectRole": "Select Your Role",
+    "selectRoleDesc": "Please choose your role to continue",
+    "learner": "Learner",
+    "tagger": "Tagger",
+    "researcher": "Researcher",
+    "signInWith": "Sign in with {provider}",
+    "orContinueWith": "Or continue with",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "Home": {
+    "globalSearch": "Global Search",
+    "trending": "Trending",
+    "searchPlaceholder": "Search Cantonese content..."
+  },
+  "Library": {
+    "title": "Cantonese Corpus",
+    "selectTag": "Select a tag",
+    "classic": "Classic",
+    "dictionary": "Dictionary",
+    "importing": "Importing",
+    "rawCorpus": "Raw Corpus",
+    "size": "Size"
+  },
+  "AppStore": {
+    "launch": "Launch App",
+    "launchIntl": "Launch App (International)",
+    "appHome": "App Homepage"
+  },
+  "DataAnnotation": {
+    "title": "Data Annotation",
+    "batchUpload": "Batch Upload",
+    "downloadTemplate": "Download Template",
+    "character": "Character",
+    "category": "Category",
+    "pronunciation": "Pronunciation",
+    "wordGroup": "Word Group",
+    "sentence": "Sentence",
+    "reference": "Reference",
+    "videoClip": "Video Clip",
+    "notEditable": "This entry is not editable"
+  },
+  "Profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "systemAdmin": "System Admin",
+    "bind": "Bind",
+    "unbind": "Unbind",
+    "change": "Change",
+    "notSet": "Not set",
+    "noWallet": "No wallet bound",
+    "updateSuccess": "Profile updated successfully",
+    "updateFailed": "Failed to update profile"
+  },
+  "Validation": {
+    "enterCharacter": "Please enter a character",
+    "atLeastOnePronunciation": "Please enter at least one pronunciation",
+    "selectFile": "Please select a file first",
+    "enterPhone": "Please enter phone number",
+    "invalidPhone": "Please enter a valid phone number"
+  }
+}
