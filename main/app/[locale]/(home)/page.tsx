@@ -221,7 +221,7 @@ export default function HomePage() {
                 }
               }}
               onBlur={() => setIsFocused(false)}
-              placeholder="搜索 AI 模型、工具、资源..."
+              placeholder="Search Cantonese content..."
               className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
 
