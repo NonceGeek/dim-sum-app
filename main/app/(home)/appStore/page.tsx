@@ -218,19 +218,23 @@ export default function AppStorePage() {
 
   // Initialize selectedType from URL params
   useEffect(() => {
-    const category = searchParams.get("category");
-    if (category) {
-      setSelectedType(category);
-    }
+    let category = searchParams.get("category") || "";
+    if (category === "Learning") category = "学习";
+    else if (category === "Gaming") category = "游戏";
+    else if (category === "Others") category = "其他";
+    setSelectedType(category);
   }, [searchParams]);
 
   // Update URL when selectedType changes
   const handleTypeChange = (value: string) => {
-    const newValue = value === "全部" ? "" : value;
+    let newValue = value === "全部" ? "" : value;
     setSelectedType(newValue);
 
     const params = new URLSearchParams(searchParams.toString());
     if (newValue) {
+      if (newValue === "学习") newValue = "Learning";
+      else if (newValue === "游戏") newValue = "Gaming";
+      else if (newValue === "其他") newValue = "Others";
       params.set("category", newValue);
     } else {
       params.delete("category");
@@ -257,7 +261,7 @@ export default function AppStorePage() {
 
   const filteredApps = useMemo(() => {
     if (!selectedType) return apps;
-    if (selectedType === "其它")
+    if (selectedType === "其他")
       return apps.filter(
         (app: App) =>
           !["学习", "游戏", "AI"].includes(getTypeDisplay(app.type)),
