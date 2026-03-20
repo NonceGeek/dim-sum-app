@@ -137,6 +137,12 @@
     "loadFailed": "加载资料失败",
     "tryAgainLater": "请稍后再试"
   },
+  "Docs": {
+    "apiDocumentation": "API 文档",
+    "sections": "目录",
+    "collapse": "收起",
+    "expand": "展开"
+  },
   "Validation": {
     "enterCharacter": "请输入字符",
     "atLeastOnePronunciation": "请至少输入一个粤音",

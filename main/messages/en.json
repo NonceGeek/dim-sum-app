@@ -137,6 +137,12 @@
     "loadFailed": "Failed to load profile",
     "tryAgainLater": "Please try again later"
   },
+  "Docs": {
+    "apiDocumentation": "API Documentation",
+    "sections": "Sections",
+    "collapse": "Collapse",
+    "expand": "Expand"
+  },
   "Validation": {
     "enterCharacter": "Please enter a character",
     "atLeastOnePronunciation": "Please enter at least one pronunciation",
