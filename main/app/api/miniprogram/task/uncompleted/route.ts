@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status") || DEFAULT_STATUS;
   const page = parseNumber(searchParams.get("page"), 1);
   const pageSize = parseNumber(searchParams.get("pageSize"), 10);
+  // assigneeRef: 要查看谁的任务列表；不传时默认查看 actorRef（当前用户）自己的任务
+  const assigneeRef = searchParams.get("assigneeRef");
 
   return requireMiniprogramMarker(req, async (_req, user) => {
     if (!user.userId) {
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
     try {
       const data = await fetchAgentTasks({
         actorRef: user.userId,
+        assigneeRef: assigneeRef || undefined,
         status,
         page,
         pageSize,

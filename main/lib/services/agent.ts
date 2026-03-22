@@ -86,6 +86,8 @@ export interface AgentTaskQuery {
   pageSize?: number;
   corpusName?: string;
   violationType?: string;
+  // assigneeRef: 要查看谁的任务列表，不传时默认查看 actorRef 自己的任务
+  assigneeRef?: string;
 }
 
 export interface RuleRunPayload {
@@ -191,6 +193,8 @@ export async function fetchAgentTasks(query: AgentTaskQuery) {
   return agentFetch<AgentTaskListResponse>("/tasks", {
     query: {
       actorRef: query.actorRef,
+      // assigneeRef: 要查看谁的任务列表；不传时后端默认为 actorRef 自己的任务
+      assigneeRef: query.assigneeRef,
       status: query.status,
       page: query.page,
       pageSize: query.pageSize,
@@ -278,4 +282,36 @@ export async function compileAgentRule(ruleText: string) {
 
 export async function fetchAgentDescriptors() {
   return agentFetch<AgentDescriptor[]>("/agents");
+}
+
+// ---- Task Stats ----
+
+export interface AgentTaskStatsQuery {
+  // corpusName: 语料库名称，多个名称用英文逗号分隔（必填）
+  corpusName: string;
+  // assigneeRef: 标注员 ID，多个 ID 用英文逗号分隔；不传则统计所有标注员
+  assigneeRef?: string;
+}
+
+export interface AgentTaskStatsResponse {
+  filters: {
+    corpusIds: string[];
+    assigneeRefs: string[];
+  };
+  summary: {
+    totalCount: number;
+    processedCount: number;
+    unprocessedCount: number;
+    totalCorpusCount: number | null;
+    completionRate: number;
+  };
+}
+
+export async function fetchAgentTaskStats(query: AgentTaskStatsQuery) {
+  return agentFetch<AgentTaskStatsResponse>("/tasks/stats", {
+    query: {
+      corpusName: query.corpusName,
+      assigneeRef: query.assigneeRef,
+    },
+  });
 }
