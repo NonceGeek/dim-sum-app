@@ -79,16 +79,6 @@ export function FloatingNav() {
           ))}
         </div>
 
-        {/* Admin button */}
-        {session?.user?.isSystemAdmin && (
-          <Button variant="ghost" size="icon" className="hidden md:flex h-8 w-8" asChild>
-            <Link href="/admin" target="_blank" rel="noopener noreferrer">
-              <Settings className="w-4 h-4" />
-              <span className="sr-only">{t('admin')}</span>
-            </Link>
-          </Button>
-        )}
-
         {/* Locale + Theme toggle */}
         <LocaleSwitcher />
         <ThemeToggle />
@@ -122,6 +112,15 @@ export function FloatingNav() {
                   {t(item.labelKey)}
                 </DropdownMenuItem>
               ))}
+              {session?.user?.isSystemAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => window.open('/admin', '_blank')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    {t('admin')}
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
