@@ -11,6 +11,9 @@ import { FloatingNav } from "@/components/layout/floating-nav";
 import { MinimalFooter } from "./_components/minimal-footer";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import BorderGlow from "@/components/ui/border-glow";
+import SplitText from "@/components/ui/split-text";
+import TextType from "@/components/ui/text-type";
 
 const HOT_TERMS = ["落花流水", "唔听", "行", "姐姐", "歡聚一堂", "帆船"];
 
@@ -150,42 +153,63 @@ export default function HomePage() {
       <FloatingNav />
 
       {/* Main content - positioned slightly above center like Google */}
-      <main className="relative z-10 flex flex-1 flex-col items-center px-4 pt-[20svh] md:pt-[25vh]">
+      <main className="relative z-10 flex flex-1 flex-col items-center px-4 pt-[15svh] md:pt-[18vh]">
         {/* Logo */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-4"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <Image
             src="/logo.png"
             alt="DimSum Logo"
-            width={72}
-            height={72}
+            width={52}
+            height={52}
             priority
           />
         </motion.div>
 
         {/* Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="text-2xl md:text-3xl font-semibold text-foreground"
-        >
-          DimSum AI Labs
-        </motion.h1>
+        <SplitText
+          text="DimSum AI Labs"
+          tag="h1"
+          className="mt-3 text-2xl md:text-3xl font-semibold text-foreground"
+          delay={40}
+          duration={0.6}
+          ease="power3.out"
+          splitType="chars"
+          from={{ opacity: 0, y: 20 }}
+          to={{ opacity: 1, y: 0 }}
+          threshold={0.1}
+          rootMargin="0px"
+          textAlign="center"
+        />
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mt-1.5 text-sm text-muted-foreground"
+        {/* Subtitle — typing effect */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+          className="mt-1.5 h-6 w-full max-w-[720px] text-center"
         >
-          {t("subtitle")}
-        </motion.p>
+          <TextType
+            text={[
+              t("typingTexts_0"),
+              t("typingTexts_1"),
+              t("typingTexts_2"),
+              t("typingTexts_3"),
+            ]}
+            className="text-sm text-muted-foreground"
+            typingSpeed={60}
+            deletingSpeed={30}
+            pauseDuration={2000}
+            showCursor
+            cursorCharacter="|"
+            cursorClassName="text-muted-foreground/50"
+            cursorBlinkDuration={0.6}
+            loop
+          />
+        </motion.div>
 
         {/* Search bar + dropdown wrapper */}
         <motion.div
@@ -193,53 +217,57 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="relative mt-8 w-full max-w-[580px]"
+          className="relative mt-6 w-full max-w-[720px]"
         >
-          {/* Search bar */}
-          <div
-            className={cn(
-              "flex items-center h-12 w-full border bg-background transition-shadow",
-              hasSuggestions
-                ? "rounded-t-full rounded-b-none border-b-0 shadow-md"
-                : "rounded-full shadow-sm hover:shadow-md",
-              isFocused && !hasSuggestions && "shadow-md",
-            )}
+          {/* Search card with border glow */}
+          <BorderGlow
+            borderRadius={16}
+            glowRadius={30}
+            glowIntensity={0.8}
+            edgeSensitivity={25}
+            coneSpread={30}
+            fillOpacity={0.3}
+            glowColor="210 80 70"
+            backgroundColor="var(--background)"
+            colors={["#3193ff", "#007fff", "#5aa8ff"]}
+            className="w-full"
           >
-            {/* Search icon */}
-            <div className="flex items-center pl-4 pr-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
+            <div className="px-2.5 py-2">
+              {/* Input row */}
+              <div className="flex items-center h-11">
+                <Search className="h-4 w-4 text-muted-foreground mr-2.5 flex-shrink-0" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => {
+                    setIsFocused(true);
+                    if (suggestions.length > 0 && query.trim()) {
+                      setShowDropdown(true);
+                    }
+                  }}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder={t("searchPlaceholder")}
+                  className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+
+              {/* Button row */}
+              <div className="flex justify-end mt-2.5">
+                <Button
+                  onClick={() => {
+                    navigateToSearch(query);
+                    setShowDropdown(false);
+                  }}
+                  className="h-9 px-6 rounded-lg text-sm font-medium"
+                >
+                  {t("searchButton")}
+                </Button>
+              </div>
             </div>
-
-            {/* Input */}
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => {
-                setIsFocused(true);
-                if (suggestions.length > 0 && query.trim()) {
-                  setShowDropdown(true);
-                }
-              }}
-              onBlur={() => setIsFocused(false)}
-              placeholder={t("searchPlaceholder")}
-              className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-
-            {/* Search button */}
-            <Button
-              size="sm"
-              onClick={() => {
-                navigateToSearch(query);
-                setShowDropdown(false);
-              }}
-              className="mr-1.5 h-8 rounded-full px-4 text-sm"
-            >
-              {t("searchButton")}
-            </Button>
-          </div>
+          </BorderGlow>
 
           {/* Dropdown suggestions */}
           <AnimatePresence>
