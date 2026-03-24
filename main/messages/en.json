@@ -11,7 +11,8 @@
     "save": "Save",
     "loading": "Loading...",
     "noData": "No data available",
-    "back": "Back"
+    "back": "Back",
+    "update": "Update"
   },
   "Nav": {
     "home": "Home",
@@ -147,6 +148,29 @@
     "sections": "Sections",
     "collapse": "Collapse",
     "expand": "Expand"
+  },
+  "Search": {
+    "selectDataset": "Please select",
+    "searchDatasetPlaceholder": "Search datasets",
+    "searching": "Searching...",
+    "tryOtherSearches": "Try other searches",
+    "backToHome": "Back to Home",
+    "noResultsTitle": "No results found",
+    "noResultsDesc": "We couldn't find any matches for \"{query}\". Try searching with different keywords or check out our example searches below.",
+    "exampleLyrics": "Cantonese Lyrics",
+    "exampleWords": "Chinese Words",
+    "exampleCharacter": "Single Character",
+    "exampleVideo": "Video Example",
+    "searchFailed": "Search failed",
+    "meaning": "Meaning",
+    "pinyin": "Jyutping",
+    "contributor": "Contributor",
+    "pageNumber": "Page",
+    "number": "Number",
+    "others": "Others",
+    "subtitles": "Subtitles",
+    "relatedApps": "Related Apps",
+    "relatedLinks": "Related Links"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

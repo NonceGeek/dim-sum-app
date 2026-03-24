@@ -11,7 +11,8 @@
     "save": "保存",
     "loading": "加载中...",
     "noData": "暂无数据",
-    "back": "返回"
+    "back": "返回",
+    "update": "更新"
   },
   "Nav": {
     "home": "首页",
@@ -147,6 +148,29 @@
     "sections": "目录",
     "collapse": "收起",
     "expand": "展开"
+  },
+  "Search": {
+    "selectDataset": "请选择",
+    "searchDatasetPlaceholder": "搜索数据集",
+    "searching": "搜索中...",
+    "tryOtherSearches": "试试其他搜索",
+    "backToHome": "返回首页",
+    "noResultsTitle": "未找到结果",
+    "noResultsDesc": "未找到 \"{query}\" 的匹配结果。试试其他关键词或查看下方的搜索示例。",
+    "exampleLyrics": "粤语歌词",
+    "exampleWords": "中文词汇",
+    "exampleCharacter": "单字查询",
+    "exampleVideo": "视频示例",
+    "searchFailed": "搜索失败",
+    "meaning": "釋義",
+    "pinyin": "粵拼",
+    "contributor": "貢獻者",
+    "pageNumber": "頁碼",
+    "number": "編號",
+    "others": "其他",
+    "subtitles": "字幕",
+    "relatedApps": "关联应用",
+    "relatedLinks": "关联链接"
   },
   "Validation": {
     "enterCharacter": "请输入字符",

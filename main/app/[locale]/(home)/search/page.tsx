@@ -33,6 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import CategorySelector from "../_components/category-selector";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -53,6 +54,8 @@ export default function SearchPage() {
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
   const [inputValue, setInputValue] = useState<string>("");
   const [selectCategory, setSelectCategory] = useState<string>("全部");
+  const t = useTranslations("Search");
+  const th = useTranslations("Home");
 
   // Fetch available categories
   const { data: categories, isLoading: categoriesLoading } = useAllCategories();
@@ -94,7 +97,7 @@ export default function SearchPage() {
       {
         onSuccess: setResults,
         onError: (error: Error) => {
-          toast.error("Search failed", { description: error.message });
+          toast.error(t("searchFailed"), { description: error.message });
         },
       }
     );
@@ -215,7 +218,7 @@ export default function SearchPage() {
                   <Search className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <Input
-                  placeholder="Search Cantonese content..."
+                  placeholder={th("searchPlaceholder")}
                   value={searchPrompt}
                   onChange={(e) => setSearchPrompt(e.target.value)}
                   onKeyDown={handleKeyPress}
@@ -227,7 +230,7 @@ export default function SearchPage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[180px] justify-between truncate h-12 hover:bg-background! dark:bg-background dark:text-accent-foreground"
+                    className="w-[180px] justify-between truncate h-12 dark:text-accent-foreground"
                   >
                     {(fiter_not_in || [])
                       ?.map((cat) => {
@@ -237,13 +240,13 @@ export default function SearchPage() {
                         return null;
                       })
                       .filter(Boolean)
-                      .join(", ") || "请选择"}
+                      .join(", ") || t("selectDataset")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
                   <Command className="bg-background!">
                     <CommandInput
-                      placeholder={"搜索数据集"}
+                      placeholder={t("searchDatasetPlaceholder")}
                       value={inputValue}
                       onValueChange={setInputValue}
                     />
@@ -294,7 +297,7 @@ export default function SearchPage() {
                 disabled={isPending}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6"
               >
-                {isPending ? "Searching..." : "Search"}
+                {isPending ? t("searching") : th("searchButton")}
               </Button>
             </motion.div>
           </div>
@@ -426,22 +429,22 @@ export default function SearchPage() {
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-muted-foreground">
-                Try other searches
+                {t("tryOtherSearches")}
               </h3>
               <Button
                 variant="outline"
                 onClick={handleBackToHome}
                 className="text-sm"
               >
-                Back to Home
+                {t("backToHome")}
               </Button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {[
-                { title: "Cantonese Lyrics", prompt: "落花流水" },
-                { title: "Chinese Words", prompt: "姐姐" },
-                { title: "Single Character", prompt: "行" },
-                { title: "Video Example", prompt: "歡聚一堂" },
+                { title: t("exampleLyrics"), prompt: "落花流水" },
+                { title: t("exampleWords"), prompt: "姐姐" },
+                { title: t("exampleCharacter"), prompt: "行" },
+                { title: t("exampleVideo"), prompt: "歡聚一堂" },
               ].map(
                 (example) =>
                   example.prompt !== searchPrompt && (
@@ -479,72 +482,41 @@ export default function SearchPage() {
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-semibold text-foreground">
-                No results found
+                {t("noResultsTitle")}
               </h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                We couldn&apos;t find any matches for &quot;
-                {searchPrompt}&quot;. Try searching with different
-                keywords or check out our example searches below.
+                {t("noResultsDesc", { query: searchPrompt })}
               </p>
               <Button
                 variant="outline"
                 onClick={handleBackToHome}
                 className="mt-4"
               >
-                返回首页
+                {t("backToHome")}
               </Button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("淡淡交會過")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Cantonese Lyrics
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    淡淡交會過
-                  </p>
-                </div>
-              </Card>
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("姐姐")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Chinese Words
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    姐姐
-                  </p>
-                </div>
-              </Card>
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("行")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Single Character
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">行</p>
-                </div>
-              </Card>
-              <Card
-                className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                onClick={() => handleExampleSearch("歡聚一堂")}
-              >
-                <div className="text-center space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                    Video Example
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    歡聚一堂
-                  </p>
-                </div>
-              </Card>
+              {[
+                { title: t("exampleLyrics"), prompt: "淡淡交會過" },
+                { title: t("exampleWords"), prompt: "姐姐" },
+                { title: t("exampleCharacter"), prompt: "行" },
+                { title: t("exampleVideo"), prompt: "歡聚一堂" },
+              ].map((example) => (
+                <Card
+                  key={example.prompt}
+                  className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
+                  onClick={() => handleExampleSearch(example.prompt)}
+                >
+                  <div className="text-center space-y-1 sm:space-y-2">
+                    <h3 className="text-xs sm:text-sm font-medium text-foreground">
+                      {example.title}
+                    </h3>
+                    <p className="text-sm sm:text-base text-muted-foreground">
+                      {example.prompt}
+                    </p>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         </div>

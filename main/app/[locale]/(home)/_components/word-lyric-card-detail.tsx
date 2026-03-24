@@ -5,6 +5,7 @@ import ReactPlayer from "react-player";
 import { DictionaryNote } from "@/lib/types";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   Tooltip,
   TooltipContent,
@@ -118,6 +119,8 @@ export default function WordLyricCardDetail({
   isDictionaryNote: (note: SearchResult["note"]) => note is DictionaryNote;
 }) {
   const { user } = useAuthStore();
+  const t = useTranslations("Search");
+  const tc = useTranslations("Common");
 
   const { data, isLoading } = useQuery({
     queryKey: ["corpusCatrgory", result.category_name],
@@ -150,7 +153,7 @@ export default function WordLyricCardDetail({
                     }}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6"
                   >
-                    Update
+                    {tc("update")}
                   </Button>
                 )
               }
@@ -172,7 +175,7 @@ export default function WordLyricCardDetail({
                     <div className="bg-muted/50 p-4 rounded-lg border border-border space-y-2">
                       {result.note.context.meaning && (
                         <p className="leading-relaxed">
-                          <b className="text-fuchsia-300">釋義：</b>{" "}
+                          <b className="text-primary">{t("meaning")}：</b>{" "}
                           {Array.isArray(result.note.context.meaning)
                             ? result.note.context.meaning.join("、 ")
                             : result.note.context.meaning}
@@ -180,7 +183,7 @@ export default function WordLyricCardDetail({
                       )}
                       {result.note.context.pinyin && (
                         <p className="leading-relaxed">
-                          <b className="text-fuchsia-300">粵拼：</b>{" "}
+                          <b className="text-primary">{t("pinyin")}：</b>{" "}
                           {Array.isArray(result.note.context.pinyin)
                             ? result.note.context.pinyin.join("、 ")
                             : result.note.context.pinyin}
@@ -188,25 +191,25 @@ export default function WordLyricCardDetail({
                       )}
                       {result.note.contributor && (
                         <p className="leading-relaxed">
-                          <b className="text-fuchsia-300">貢獻者：</b>{" "}
+                          <b className="text-primary">{t("contributor")}：</b>{" "}
                           {result.note.contributor}
                         </p>
                       )}
                       {result.note.context.page && (
                         <p className="leading-relaxed">
-                          <b className="text-fuchsia-300">頁碼：</b>{" "}
+                          <b className="text-primary">{t("pageNumber")}：</b>{" "}
                           {result.note.context.page}
                         </p>
                       )}
                       {result.note.context.number && (
                         <p className="leading-relaxed">
-                          <b className="text-fuchsia-300">編號：</b>{" "}
+                          <b className="text-primary">{t("number")}：</b>{" "}
                           {result.note.context.number}
                         </p>
                       )}
                       {result.note.context.others && (
                         <p className="leading-relaxed">
-                          <b className="text-fuchsia-300">其他：</b>{" "}
+                          <b className="text-primary">{t("others")}：</b>{" "}
                           {JSON.stringify(result.note.context.others)}
                         </p>
                       )}
@@ -307,7 +310,7 @@ export default function WordLyricCardDetail({
                             </div>
                             <div className="bg-muted/50 p-4 rounded-lg border border-border">
                               <p className="whitespace-pre-line leading-relaxed">
-                                <b className="text-fuchsia-300">Subtitles:</b>{" "}
+                                <b className="text-primary">{t("subtitles")}:</b>{" "}
                                 {
                                   (
                                     result.note as {
@@ -339,7 +342,7 @@ export default function WordLyricCardDetail({
                                   (typeof value === "string" &&
                                     !isAudioByExt(value)) ? (
                                     <p className="leading-relaxed" key={key}>
-                                      <b className="text-fuchsia-300">
+                                      <b className="text-primary">
                                         {key.charAt(0).toUpperCase() +
                                           key.slice(1)}
                                         :
@@ -391,7 +394,7 @@ export default function WordLyricCardDetail({
                                     </p>
                                   ) : (
                                     <div className="flex flex-col space-y-4">
-                                      <b className="text-fuchsia-300">
+                                      <b className="text-primary">
                                         {key.charAt(0).toUpperCase() +
                                           key.slice(1)}
                                         :
@@ -425,7 +428,7 @@ export default function WordLyricCardDetail({
             </div>
           )}
           <div className="flex flex-wrap gap-2 pt-2">
-            <span className="px-3 py-1 bg-primary/10 text-fuchsia-300 rounded-full text-xs font-medium border border-primary/20">
+            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20">
               {result.category}
             </span>
             {result.tags.map((tag, idx) => (
@@ -442,7 +445,7 @@ export default function WordLyricCardDetail({
             <>
               {related?.apps?.length > 0 && (
                 <DisplayRelatedAppsorLinks
-                  title="关联应用"
+                  title={t("relatedApps")}
                   related={related?.apps}
                   data={result}
                 />
@@ -450,7 +453,7 @@ export default function WordLyricCardDetail({
 
               {related?.links?.length > 0 && (
                 <DisplayRelatedAppsorLinks
-                  title="关联链接"
+                  title={t("relatedLinks")}
                   related={related?.links}
                   data={result}
                 />
