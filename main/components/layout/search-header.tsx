@@ -14,7 +14,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -157,78 +156,86 @@ export function SearchHeader({
             />
           </Link>
 
-          {/* Search input */}
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          {/* Search input — dataset selector embedded on right */}
+          <div className="relative flex-1 flex items-center rounded-md border border-input bg-background shadow-sm transition-all hover:ring-1 hover:ring-primary/40 focus-within:ring-1 focus-within:ring-primary/50 dark:bg-background">
+            {/* Search icon */}
+            <div className="pl-3 flex items-center pointer-events-none shrink-0">
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
-            <Input
+
+            {/* Text input */}
+            <input
+              type="text"
               placeholder={searchPlaceholder}
               value={searchPrompt}
               onChange={(e) => onSearchPromptChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") onSearch();
               }}
-              className="pl-9 pr-8 h-9 text-sm dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
+              className="flex-1 min-w-0 h-9 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
             />
-            {searchPrompt && (
-              <button
-                type="button"
-                onClick={() => onSearchPromptChange("")}
-                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
 
-          {/* Dataset selector */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground shrink-0 relative"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline truncate max-w-[100px]">
-                  {datasetLabel || tSearch("selectDataset")}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                {activeDatasetCount > 0 && (
-                  <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
-                    {activeDatasetCount}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <Command className="bg-background!">
-                <CommandInput
-                  placeholder={tSearch("searchDatasetPlaceholder")}
-                  value={inputValue}
-                  onValueChange={setInputValue}
-                />
-                <CommandList>
-                  {categories.map((cat) => (
-                    <CommandItem
-                      key={cat.id}
-                      value={cat.nickname ?? cat.name}
-                      onSelect={() => toggleDataset(cat.name)}
-                    >
-                      <Checkbox
-                        className="mr-2 dark:bg-accent-background"
-                        checked={selectedDataset.includes(cat.name)}
-                        onChange={() => toggleDataset(cat.name)}
-                        id={`dataset-${cat.id}`}
-                      />
-                      {cat.nickname ?? cat.name}
-                    </CommandItem>
-                  ))}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+            {/* Divider + dataset selector + clear button */}
+            <div className="flex items-center shrink-0 pr-1">
+              <div className="w-px h-4 bg-border mx-1" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline truncate max-w-[80px]">
+                      {datasetLabel || tSearch("selectDataset")}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                    {activeDatasetCount > 0 && (
+                      <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
+                        {activeDatasetCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command className="bg-background!">
+                    <CommandInput
+                      placeholder={tSearch("searchDatasetPlaceholder")}
+                      value={inputValue}
+                      onValueChange={setInputValue}
+                    />
+                    <CommandList>
+                      {categories.map((cat) => (
+                        <CommandItem
+                          key={cat.id}
+                          value={cat.nickname ?? cat.name}
+                          onSelect={() => toggleDataset(cat.name)}
+                        >
+                          <Checkbox
+                            className="mr-2 dark:bg-accent-background"
+                            checked={selectedDataset.includes(cat.name)}
+                            onChange={() => toggleDataset(cat.name)}
+                            id={`dataset-${cat.id}`}
+                          />
+                          {cat.nickname ?? cat.name}
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {searchPrompt && (
+                <button
+                  type="button"
+                  onClick={() => onSearchPromptChange("")}
+                  className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
 
           {/* Search button */}
           <Button
