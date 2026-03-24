@@ -178,7 +178,10 @@
     "collapseContent": "Collapse",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "allCategories": "All"
+    "allCategories": "All",
+    "relatedSearches": "Related searches",
+    "noResultsTip1": "Check for typos or spelling errors",
+    "noResultsTip2": "Try a shorter or simpler keyword"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

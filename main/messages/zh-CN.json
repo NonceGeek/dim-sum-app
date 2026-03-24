@@ -178,7 +178,10 @@
     "collapseContent": "收起",
     "prevPage": "上一页",
     "nextPage": "下一页",
-    "allCategories": "全部"
+    "allCategories": "全部",
+    "relatedSearches": "相关搜索",
+    "noResultsTip1": "检查输入是否有误",
+    "noResultsTip2": "尝试更简短的关键词"
   },
   "Validation": {
     "enterCharacter": "请输入字符",

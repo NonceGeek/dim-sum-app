@@ -258,8 +258,9 @@ export default function SearchPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
+                <ChevronLeft className="h-4 w-4" />
                 {t("prevPage")}
               </button>
 
@@ -278,7 +279,7 @@ export default function SearchPage() {
                     className={cn(
                       "px-3 py-1.5 rounded transition-colors",
                       currentPage === page
-                        ? "font-bold text-primary"
+                        ? "bg-primary text-primary-foreground rounded-full font-medium min-w-[32px] text-center"
                         : "text-muted-foreground hover:bg-muted"
                     )}
                   >
@@ -288,21 +289,20 @@ export default function SearchPage() {
               )}
 
               <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {t("nextPage")}
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
 
-          {/* ── Try other searches ────────────────────────────────────── */}
+          {/* ── Related searches ──────────────────────────────────────── */}
           <div className="mt-10 pt-6 border-t border-border">
-            <p className="text-sm text-muted-foreground mb-3">{t("tryOtherSearches")}</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <p className="text-sm text-muted-foreground mb-3">{t("relatedSearches")}</p>
+            <div className="flex flex-wrap gap-2">
               {[
                 { title: t("exampleLyrics"), prompt: "落花流水" },
                 { title: t("exampleWords"), prompt: "姐姐" },
@@ -318,8 +318,9 @@ export default function SearchPage() {
                       setResults(null);
                       handleExampleSearch(example.prompt);
                     }}
-                    className="text-primary hover:underline"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
                   >
+                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
                     {example.title}「{example.prompt}」
                   </button>
                 ))}
@@ -341,27 +342,35 @@ export default function SearchPage() {
                 {t("noResultsDesc", { query: searchPrompt })}
               </p>
             </div>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2 text-sm">
-              {[
-                { title: t("exampleLyrics"), prompt: "落花流水" },
-                { title: t("exampleWords"), prompt: "姐姐" },
-                { title: t("exampleCharacter"), prompt: "行" },
-                { title: t("exampleVideo"), prompt: "歡聚一堂" },
-              ]
-                .filter((e) => e.prompt !== searchPrompt)
-                .map((example) => (
-                  <button
-                    key={example.prompt}
-                    onClick={() => {
-                      if (isPending) return;
-                      setResults(null);
-                      handleExampleSearch(example.prompt);
-                    }}
-                    className="text-primary hover:underline"
-                  >
-                    {example.title}「{example.prompt}」
-                  </button>
-                ))}
+            <ul className="text-sm text-muted-foreground text-left space-y-1">
+              <li>• {t("noResultsTip1")}</li>
+              <li>• {t("noResultsTip2")}</li>
+            </ul>
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">{t("relatedSearches")}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {[
+                  { title: t("exampleLyrics"), prompt: "落花流水" },
+                  { title: t("exampleWords"), prompt: "姐姐" },
+                  { title: t("exampleCharacter"), prompt: "行" },
+                  { title: t("exampleVideo"), prompt: "歡聚一堂" },
+                ]
+                  .filter((e) => e.prompt !== searchPrompt)
+                  .map((example) => (
+                    <button
+                      key={example.prompt}
+                      onClick={() => {
+                        if (isPending) return;
+                        setResults(null);
+                        handleExampleSearch(example.prompt);
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                      {example.title}「{example.prompt}」
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
         </div>
