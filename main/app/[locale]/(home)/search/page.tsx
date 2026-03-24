@@ -245,6 +245,7 @@ export default function SearchPage() {
                     result={result}
                     setEditingResult={setEditingResult}
                     setUpdateDialogOpen={setUpdateDialogOpen}
+                    keyword={searchPrompt}
                   />
                 </motion.div>
               ))}

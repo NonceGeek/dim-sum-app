@@ -92,6 +92,21 @@ function hasRichContent(note: SearchResult["note"]): boolean {
   return false;
 }
 
+function highlightKeyword(text: string, keyword: string): React.ReactNode {
+  if (!keyword.trim()) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === keyword.toLowerCase() ? (
+      <strong key={i} className="font-semibold text-foreground">
+        {part}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
+
 // ─── Edit permission ──────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -367,10 +382,12 @@ export default function SearchResultItem({
   result,
   setEditingResult,
   setUpdateDialogOpen,
+  keyword = "",
 }: {
   result: SearchResult;
   setEditingResult: React.Dispatch<React.SetStateAction<SearchResult | null>>;
   setUpdateDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  keyword?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuthStore();
@@ -407,6 +424,7 @@ export default function SearchResultItem({
       <div className="py-5 border-b border-border last:border-0">
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground mb-0.5">{result.category}</p>
             <h3 className="text-lg font-semibold text-primary leading-snug">
               {songNote.context.song_name}
             </h3>
@@ -419,11 +437,6 @@ export default function SearchResultItem({
                 {songNote.context.introduction}
               </p>
             )}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded border border-primary/20">
-                {result.category}
-              </span>
-            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 text-primary">
             <Button
@@ -460,14 +473,38 @@ export default function SearchResultItem({
   }
 
   // WordLyric / default variant
+  const isRichMedia =
+    richContent &&
+    (() => {
+      const n = result.note as unknown;
+      if (typeof n === "string") return isImageUrl(n) || isAudioByExt(n);
+      if (Array.isArray(n))
+        return (n as unknown[]).some(
+          (i) => typeof i === "string" && (isImageUrl(i) || isAudioByExt(i)),
+        );
+      if (typeof n === "object" && "context" in (n as object)) {
+        const ctx = (n as { context: Record<string, unknown> }).context;
+        return !!(
+          ctx.video ||
+          Object.values(ctx).some(
+            (v) => typeof v === "string" && (isAudioByExt(v) || isImageUrl(v)),
+          )
+        );
+      }
+      return false;
+    })();
+
   return (
     <div className="py-5 border-b border-border last:border-0">
+      {/* Breadcrumb */}
+      <p className="text-xs text-muted-foreground mb-0.5">{result.category}</p>
+
       <div className="flex justify-between items-start gap-4">
         <h3 className="text-lg font-semibold text-primary leading-snug flex-1 min-w-0">
           {result.data}
         </h3>
         <div className="flex items-center gap-1 shrink-0">
-          {richContent && (
+          {isRichMedia && (
             <Button
               variant="ghost"
               size="sm"
@@ -503,9 +540,10 @@ export default function SearchResultItem({
         </div>
       </div>
 
-      {!expanded && snippet && (
+      {/* Snippet — always visible, with keyword highlight */}
+      {snippet && !expanded && (
         <p className="text-sm text-foreground mt-1.5 line-clamp-3 leading-relaxed">
-          {snippet}
+          {highlightKeyword(snippet, keyword)}
         </p>
       )}
 
@@ -543,19 +581,19 @@ export default function SearchResultItem({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-wrap gap-1.5 mt-2.5">
-        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded border border-primary/20">
-          {result.category}
-        </span>
-        {result.tags.map((tag, idx) => (
-          <span
-            key={idx}
-            className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded border border-border"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+      {/* Tags only (category moved to breadcrumb above) */}
+      {result.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {result.tags.map((tag, idx) => (
+            <span
+              key={idx}
+              className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded border border-border"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
