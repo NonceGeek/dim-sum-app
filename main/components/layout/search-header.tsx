@@ -141,229 +141,383 @@ export function SearchHeader({
     .filter(Boolean)
     .join(", ");
 
+  // Reusable search input component
+  const SearchInput = () => (
+    <div className="relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring">
+      {/* Search icon */}
+      <div className="pl-3 flex items-center pointer-events-none shrink-0">
+        <Search className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Text input */}
+      <input
+        type="text"
+        placeholder={searchPlaceholder}
+        value={searchPrompt}
+        onChange={(e) => onSearchPromptChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSearch();
+        }}
+        className="flex-1 min-w-0 h-11 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
+      />
+
+      {/* Divider + dataset selector + clear button */}
+      <div className="flex items-center shrink-0 pr-1">
+        <div className="w-px h-4 bg-border mx-1" />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline truncate max-w-[80px]">
+                {datasetLabel || tSearch("selectDataset")}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
+              {activeDatasetCount > 0 && (
+                <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
+                  {activeDatasetCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0">
+            <Command className="bg-background!">
+              <CommandInput
+                placeholder={tSearch("searchDatasetPlaceholder")}
+                value={inputValue}
+                onValueChange={setInputValue}
+              />
+              <CommandList>
+                {categories.map((cat) => (
+                  <CommandItem
+                    key={cat.id}
+                    value={cat.nickname ?? cat.name}
+                    onSelect={() => toggleDataset(cat.name)}
+                  >
+                    <Checkbox
+                      className="mr-2 dark:bg-accent-background"
+                      checked={selectedDataset.includes(cat.name)}
+                      onChange={() => toggleDataset(cat.name)}
+                      id={`dataset-${cat.id}`}
+                    />
+                    {cat.nickname ?? cat.name}
+                  </CommandItem>
+                ))}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {searchPrompt && (
+          <button
+            type="button"
+            onClick={() => onSearchPromptChange("")}
+            className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Search button */}
+        <Button
+          onClick={onSearch}
+          disabled={isPending}
+          size="sm"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full"
+        >
+          {isPending ? searchingLabel : searchButtonLabel}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background border-b border-border">
-        <div className="px-4 h-16 flex items-center gap-3">
-          {/* Logo */}
-          <Link href="/" className="shrink-0">
-            <Image
-              src="/logo.png"
-              alt="DimSum AI Labs"
-              width={28}
-              height={28}
-              className="rounded-sm"
-            />
-          </Link>
+      <header className="sticky top-0 z-50 bg-background">
+        {/* Desktop & Tablet Layout - Single Row */}
+        <div className="hidden sm:flex items-center gap-3 h-16 px-4">
+          {/* Left: Logo - Fixed width */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/logo.png"
+                alt="DimSum AI Labs"
+                width={28}
+                height={28}
+                className="rounded-sm"
+              />
+              <span className="text-base font-semibold">DimSum AI</span>
+            </Link>
+          </div>
 
-          {/* Search input — dataset selector embedded on right */}
-          <div className="relative flex-1 max-w-2xl flex items-center rounded-md border border-input bg-background shadow-sm transition-all hover:ring-1 hover:ring-primary/40 focus-within:ring-1 focus-within:ring-primary/50 dark:bg-background">
-            {/* Search icon */}
-            <div className="pl-3 flex items-center pointer-events-none shrink-0">
-              <Search className="h-4 w-4 text-muted-foreground" />
-            </div>
+          {/* Center: Search Bar - Flexible width with max limit */}
+          <div className="min-w-0 max-w-3xl flex-1">
+            <SearchInput />
+          </div>
 
-            {/* Text input */}
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchPrompt}
-              onChange={(e) => onSearchPromptChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onSearch();
-              }}
-              className="flex-1 min-w-0 h-11 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
-            />
-
-            {/* Divider + dataset selector + clear button */}
-            <div className="flex items-center shrink-0 pr-1">
-              <div className="w-px h-4 bg-border mx-1" />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
-                  >
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline truncate max-w-[80px]">
-                      {datasetLabel || tSearch("selectDataset")}
-                    </span>
-                    <ChevronDown className="h-3 w-3 shrink-0" />
-                    {activeDatasetCount > 0 && (
-                      <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
-                        {activeDatasetCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command className="bg-background!">
-                    <CommandInput
-                      placeholder={tSearch("searchDatasetPlaceholder")}
-                      value={inputValue}
-                      onValueChange={setInputValue}
-                    />
-                    <CommandList>
-                      {categories.map((cat) => (
-                        <CommandItem
-                          key={cat.id}
-                          value={cat.nickname ?? cat.name}
-                          onSelect={() => toggleDataset(cat.name)}
-                        >
-                          <Checkbox
-                            className="mr-2 dark:bg-accent-background"
-                            checked={selectedDataset.includes(cat.name)}
-                            onChange={() => toggleDataset(cat.name)}
-                            id={`dataset-${cat.id}`}
-                          />
-                          {cat.nickname ?? cat.name}
-                        </CommandItem>
-                      ))}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              {searchPrompt && (
-                <button
-                  type="button"
-                  onClick={() => onSearchPromptChange("")}
-                  className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
+          {/* Right: Navigation - Push to far right */}
+          <div className="flex items-center gap-3 shrink-0 ml-auto">
+            {/* Desktop nav links - Hidden on smaller screens */}
+            <div className="hidden lg:flex items-center gap-3">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-
-              {/* Search button */}
-              <Button
-                onClick={onSearch}
-                disabled={isPending}
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground ml-1"
-              >
-                {isPending ? searchingLabel : searchButtonLabel}
-              </Button>
+                  {t(link.labelKey)}
+                </Link>
+              ))}
             </div>
-          </div>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-3 ml-auto">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t(link.labelKey)}
-              </Link>
-            ))}
-          </div>
-
-          {/* Locale + Theme toggle */}
-          <LocaleSwitcher />
-          <ThemeToggle />
-
-          {/* User menu / Sign In */}
-          {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={user?.avatar || ""} alt={user?.name || ""} />
-                    <AvatarFallback className="text-xs">
-                      {user?.name?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden sm:inline text-sm">{user?.name || "User"}</span>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            {/* Hamburger menu - Shown when nav links are hidden */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8">
+                  <Menu className="h-5 w-5" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {accountSubmenuItems.map((item) => (
-                  <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {t(item.labelKey)}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                {workplaceSubmenuItems.map((item) => (
-                  <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {t(item.labelKey)}
-                  </DropdownMenuItem>
-                ))}
-                {session?.user?.isSystemAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => window.open("/admin", "_blank")}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      {t("admin")}
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {tCommon("signOut")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setShowRoleSelect(true)}
-            >
-              {tCommon("signIn")}
-            </Button>
-          )}
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64 p-0">
+                <div className="flex flex-col h-full">
+                  <div className="flex h-14 items-center border-b px-4">
+                    <Image
+                      src="/logo.png"
+                      alt="DimSum AI Labs Logo"
+                      width={24}
+                      height={24}
+                      className="rounded-sm"
+                    />
+                    <span className="ml-2 text-sm font-medium">DimSum AI</span>
+                  </div>
+                  <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
+                    {/* Navigation Links */}
+                    {mobileNavLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                      >
+                        {t(link.labelKey)}
+                      </Link>
+                    ))}
 
-          {/* Mobile hamburger */}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-64 p-0">
-              <div className="flex flex-col h-full">
-                <div className="flex h-14 items-center border-b px-4">
-                  <Image
-                    src="/logo.png"
-                    alt="DimSum AI Labs Logo"
-                    width={24}
-                    height={24}
-                    className="rounded-sm"
-                  />
-                  <span className="ml-2 text-sm font-medium">DimSum AI</span>
+                    {/* Divider */}
+                    <div className="border-t border-border my-2" />
+
+                    {/* Language & Theme Settings */}
+                    <div className="px-3 py-2 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{tCommon("language")}</span>
+                        <LocaleSwitcher />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{tCommon("theme")}</span>
+                        <ThemeToggle />
+                      </div>
+                    </div>
+                  </nav>
                 </div>
-                <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                  {mobileNavLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-                    >
-                      {t(link.labelKey)}
-                    </Link>
+              </SheetContent>
+            </Sheet>
+
+            {/* Locale + Theme toggle - Hidden when hamburger menu is shown */}
+            <div className="hidden lg:flex items-center gap-3">
+              <LocaleSwitcher />
+              <ThemeToggle />
+            </div>
+
+            {/* User menu / Sign In */}
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1.5">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={user?.avatar || ""} alt={user?.name || ""} />
+                      <AvatarFallback className="text-xs">
+                        {user?.name?.[0] || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:inline text-sm">{user?.name || "User"}</span>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {accountSubmenuItems.map((item) => (
+                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {t(item.labelKey)}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  {workplaceSubmenuItems.map((item) => (
+                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {t(item.labelKey)}
+                    </DropdownMenuItem>
                   ))}
                   {session?.user?.isSystemAdmin && (
-                    <Link
-                      href="/admin"
-                      target="_blank"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      {t("admin")}
-                    </Link>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => window.open("/admin", "_blank")}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        {t("admin")}
+                      </DropdownMenuItem>
+                    </>
                   )}
-                </nav>
-              </div>
-            </SheetContent>
-          </Sheet>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {tCommon("signOut")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowRoleSelect(true)}
+              >
+                {tCommon("signIn")}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Layout - Two Rows */}
+        <div className="sm:hidden">
+          {/* First Row: Menu + Logo (centered) + User */}
+          <div className="grid grid-cols-3 items-center h-14 px-4">
+            {/* Left: Hamburger Menu */}
+            <div className="flex justify-start">
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-64 p-0">
+                  <div className="flex flex-col h-full">
+                    <div className="flex h-14 items-center border-b px-4">
+                      <Image
+                        src="/logo.png"
+                        alt="DimSum AI Labs Logo"
+                        width={24}
+                        height={24}
+                        className="rounded-sm"
+                      />
+                      <span className="ml-2 text-sm font-medium">DimSum AI</span>
+                    </div>
+                    <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
+                      {/* Navigation Links */}
+                      {mobileNavLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                        >
+                          {t(link.labelKey)}
+                        </Link>
+                      ))}
+
+                      {/* Divider */}
+                      <div className="border-t border-border my-2" />
+
+                      {/* Language & Theme Settings */}
+                      <div className="px-3 py-2 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">{tCommon("language")}</span>
+                          <LocaleSwitcher />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">{tCommon("theme")}</span>
+                          <ThemeToggle />
+                        </div>
+                      </div>
+                    </nav>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Center: Logo */}
+            <div className="flex justify-center">
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/logo.png"
+                  alt="DimSum AI Labs"
+                  width={24}
+                  height={24}
+                  className="rounded-sm"
+                />
+                <span className="text-sm font-semibold">DimSum AI</span>
+              </Link>
+            </div>
+
+            {/* Right: User */}
+            <div className="flex justify-end items-center gap-2">
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={user?.avatar || ""} alt={user?.name || ""} />
+                        <AvatarFallback className="text-xs">
+                          {user?.name?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {accountSubmenuItems.map((item) => (
+                      <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {t(item.labelKey)}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    {workplaceSubmenuItems.map((item) => (
+                      <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {t(item.labelKey)}
+                      </DropdownMenuItem>
+                    ))}
+                    {session?.user?.isSystemAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => window.open("/admin", "_blank")}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          {t("admin")}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {tCommon("signOut")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowRoleSelect(true)}
+                >
+                  {tCommon("signIn")}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Second Row: Search Bar */}
+          <div className="px-4 pb-3">
+            <SearchInput />
+          </div>
         </div>
       </header>
 

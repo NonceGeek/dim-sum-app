@@ -14,7 +14,9 @@
     "back": "Back",
     "update": "Update",
     "share": "Share",
-    "play": "Play"
+    "play": "Play",
+    "language": "Language",
+    "theme": "Theme"
   },
   "Nav": {
     "home": "Home",

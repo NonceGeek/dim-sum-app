@@ -170,6 +170,9 @@ export default function SearchPage() {
 
   return (
     <>
+      {/* ── Top spacer that disappears on scroll ─────────────────────── */}
+      <div className="h-4" />
+
       {/* ── Sticky search header ─────────────────────────────────────── */}
       <SearchHeader
         searchPrompt={searchPrompt}
@@ -199,131 +202,271 @@ export default function SearchPage() {
 
       {/* ── Loading skeletons ─────────────────────────────────────────── */}
       {isPending && (
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="py-5 border-b border-border">
-              <Skeleton className="h-5 w-2/5 mb-2" />
-              <Skeleton className="h-4 w-full mb-1.5" />
-              <Skeleton className="h-4 w-4/5 mb-3" />
-              <div className="flex gap-2">
-                <Skeleton className="h-5 w-16 rounded" />
-                <Skeleton className="h-5 w-14 rounded" />
-              </div>
+        <div className="px-4 py-6">
+          {/* Desktop/Tablet: Align with search bar */}
+          <div className="hidden sm:flex">
+            <div className="shrink-0 w-[152px]">{/* Spacer */}</div>
+            <div className="flex-1 max-w-3xl">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="py-5 border-b border-border">
+                  <Skeleton className="h-5 w-2/5 mb-2" />
+                  <Skeleton className="h-4 w-full mb-1.5" />
+                  <Skeleton className="h-4 w-4/5 mb-3" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-16 rounded" />
+                    <Skeleton className="h-5 w-14 rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Mobile: Full width */}
+          <div className="sm:hidden">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="py-5 border-b border-border">
+                <Skeleton className="h-5 w-2/5 mb-2" />
+                <Skeleton className="h-4 w-full mb-1.5" />
+                <Skeleton className="h-4 w-4/5 mb-3" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-16 rounded" />
+                  <Skeleton className="h-5 w-14 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ── Results ──────────────────────────────────────────────────── */}
       {results && results.length > 0 && (
-        <div className="container mx-auto px-4 py-4 max-w-4xl">
-          {/* Result count */}
-          <p className="text-sm text-muted-foreground mb-1">
-            {t("resultCount", { count: filteredResults.length })}
-          </p>
+        <div className="px-4 py-4">
+          {/* Desktop/Tablet: Align with search bar */}
+          <div className="hidden sm:flex">
+            <div className="shrink-0 w-[152px]">{/* Spacer */}</div>
+            <div className="flex-1 max-w-3xl">
+              {/* Result count */}
+              <p className="text-sm text-muted-foreground mb-1">
+                {t("resultCount", { count: filteredResults.length })}
+              </p>
 
-          {/* Result items */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectCategory}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              {currentResults.map((result, index) => (
+              {/* Result items */}
+              <AnimatePresence mode="wait">
                 <motion.div
-                  key={result.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.35,
-                    delay: index * 0.06,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
+                  key={selectCategory}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <SearchResultItem
-                    result={result}
-                    setEditingResult={setEditingResult}
-                    setUpdateDialogOpen={setUpdateDialogOpen}
-                    keyword={searchPrompt}
-                  />
+                  {currentResults.map((result, index) => (
+                    <motion.div
+                      key={result.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.35,
+                        delay: index * 0.06,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                    >
+                      <SearchResultItem
+                        result={result}
+                        setEditingResult={setEditingResult}
+                        setUpdateDialogOpen={setUpdateDialogOpen}
+                        keyword={searchPrompt}
+                      />
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
+              </AnimatePresence>
 
-          {/* ── Pagination ────────────────────────────────────────────── */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-1 mt-8 text-sm">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                {t("prevPage")}
-              </button>
-
-              {getPageNumbers().map((page, idx) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    className="px-2 py-1.5 text-muted-foreground"
-                  >
-                    ...
-                  </span>
-                ) : (
+              {/* ── Pagination ────────────────────────────────────────────── */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-1 mt-8 text-sm">
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    className={cn(
-                      "px-3 py-1.5 rounded transition-colors",
-                      currentPage === page
-                        ? "bg-primary text-primary-foreground rounded-full font-medium min-w-[32px] text-center"
-                        : "text-muted-foreground hover:bg-muted"
-                    )}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
-                    {page}
+                    <ChevronLeft className="h-4 w-4" />
+                    {t("prevPage")}
                   </button>
-                )
+
+                  {getPageNumbers().map((page, idx) =>
+                    page === "..." ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 py-1.5 text-muted-foreground"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page as number)}
+                        className={cn(
+                          "px-3 py-1.5 rounded transition-colors",
+                          currentPage === page
+                            ? "bg-primary text-primary-foreground rounded-full font-medium min-w-[32px] text-center"
+                            : "text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {t("nextPage")}
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               )}
 
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {t("nextPage")}
-                <ChevronRight className="h-4 w-4" />
-              </button>
+              {/* ── Related searches ──────────────────────────────────────── */}
+              <div className="mt-10 pt-6 border-t border-border">
+                <p className="text-sm text-muted-foreground mb-3">{t("relatedSearches")}</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { title: t("exampleLyrics"), prompt: "落花流水" },
+                    { title: t("exampleWords"), prompt: "姐姐" },
+                    { title: t("exampleCharacter"), prompt: "行" },
+                    { title: t("exampleVideo"), prompt: "歡聚一堂" },
+                  ]
+                    .filter((e) => e.prompt !== searchPrompt)
+                    .map((example) => (
+                      <button
+                        key={example.prompt}
+                        onClick={() => {
+                          if (isPending) return;
+                          setResults(null);
+                          handleExampleSearch(example.prompt);
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                        {example.title}「{example.prompt}」
+                      </button>
+                    ))}
+                </div>
+              </div>
             </div>
-          )}
+          </div>
 
-          {/* ── Related searches ──────────────────────────────────────── */}
-          <div className="mt-10 pt-6 border-t border-border">
-            <p className="text-sm text-muted-foreground mb-3">{t("relatedSearches")}</p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { title: t("exampleLyrics"), prompt: "落花流水" },
-                { title: t("exampleWords"), prompt: "姐姐" },
-                { title: t("exampleCharacter"), prompt: "行" },
-                { title: t("exampleVideo"), prompt: "歡聚一堂" },
-              ]
-                .filter((e) => e.prompt !== searchPrompt)
-                .map((example) => (
-                  <button
-                    key={example.prompt}
-                    onClick={() => {
-                      if (isPending) return;
-                      setResults(null);
-                      handleExampleSearch(example.prompt);
+          {/* Mobile: Full width */}
+          <div className="sm:hidden">
+            {/* Result count */}
+            <p className="text-sm text-muted-foreground mb-1">
+              {t("resultCount", { count: filteredResults.length })}
+            </p>
+
+            {/* Result items */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectCategory}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {currentResults.map((result, index) => (
+                  <motion.div
+                    key={result.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.35,
+                      delay: index * 0.06,
+                      ease: [0.16, 1, 0.3, 1],
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
                   >
-                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                    {example.title}「{example.prompt}」
-                  </button>
+                    <SearchResultItem
+                      result={result}
+                      setEditingResult={setEditingResult}
+                      setUpdateDialogOpen={setUpdateDialogOpen}
+                      keyword={searchPrompt}
+                    />
+                  </motion.div>
                 ))}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* ── Pagination ────────────────────────────────────────────── */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1 mt-8 text-sm">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {t("prevPage")}
+                </button>
+
+                {getPageNumbers().map((page, idx) =>
+                  page === "..." ? (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-2 py-1.5 text-muted-foreground"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page as number)}
+                      className={cn(
+                        "px-3 py-1.5 rounded transition-colors",
+                        currentPage === page
+                          ? "bg-primary text-primary-foreground rounded-full font-medium min-w-[32px] text-center"
+                          : "text-muted-foreground hover:bg-muted"
+                      )}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {t("nextPage")}
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {/* ── Related searches ──────────────────────────────────────── */}
+            <div className="mt-10 pt-6 border-t border-border">
+              <p className="text-sm text-muted-foreground mb-3">{t("relatedSearches")}</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { title: t("exampleLyrics"), prompt: "落花流水" },
+                  { title: t("exampleWords"), prompt: "姐姐" },
+                  { title: t("exampleCharacter"), prompt: "行" },
+                  { title: t("exampleVideo"), prompt: "歡聚一堂" },
+                ]
+                  .filter((e) => e.prompt !== searchPrompt)
+                  .map((example) => (
+                    <button
+                      key={example.prompt}
+                      onClick={() => {
+                        if (isPending) return;
+                        setResults(null);
+                        handleExampleSearch(example.prompt);
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                      {example.title}「{example.prompt}」
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
         </div>
@@ -331,8 +474,57 @@ export default function SearchPage() {
 
       {/* ── No results ───────────────────────────────────────────────── */}
       {results && results.length === 0 && (
-        <div className="container mx-auto px-4 py-16 max-w-4xl">
-          <div className="flex flex-col items-center text-center gap-4">
+        <div className="px-4 py-16">
+          {/* Desktop/Tablet: Align with search bar */}
+          <div className="hidden sm:flex">
+            <div className="shrink-0 w-[152px]">{/* Spacer */}</div>
+            <div className="flex-1 max-w-3xl">
+              <div className="flex flex-col items-center text-center gap-4">
+                <SearchX className="h-10 w-10 text-muted-foreground" />
+                <div className="space-y-1.5">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {t("noResultsTitle")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    {t("noResultsDesc", { query: searchPrompt })}
+                  </p>
+                </div>
+                <ul className="text-sm text-muted-foreground text-left space-y-1">
+                  <li>• {t("noResultsTip1")}</li>
+                  <li>• {t("noResultsTip2")}</li>
+                </ul>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-3">{t("relatedSearches")}</p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      { title: t("exampleLyrics"), prompt: "落花流水" },
+                      { title: t("exampleWords"), prompt: "姐姐" },
+                      { title: t("exampleCharacter"), prompt: "行" },
+                      { title: t("exampleVideo"), prompt: "歡聚一堂" },
+                    ]
+                      .filter((e) => e.prompt !== searchPrompt)
+                      .map((example) => (
+                        <button
+                          key={example.prompt}
+                          onClick={() => {
+                            if (isPending) return;
+                            setResults(null);
+                            handleExampleSearch(example.prompt);
+                          }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                          {example.title}「{example.prompt}」
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: Full width centered */}
+          <div className="sm:hidden flex flex-col items-center text-center gap-4">
             <SearchX className="h-10 w-10 text-muted-foreground" />
             <div className="space-y-1.5">
               <h3 className="text-lg font-semibold text-foreground">

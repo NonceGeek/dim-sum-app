@@ -14,7 +14,9 @@
     "back": "返回",
     "update": "更新",
     "share": "分享",
-    "play": "播放"
+    "play": "播放",
+    "language": "语言",
+    "theme": "主题"
   },
   "Nav": {
     "home": "首页",

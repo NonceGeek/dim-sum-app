@@ -39,9 +39,34 @@ export default function CategoryTabs({
   ];
 
   return (
-    <div className="border-b border-border bg-background">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="bg-background">
+      <div className="px-4 border-b border-border">
+        {/* Desktop/Tablet: Align with search bar (logo + gap ≈ 152px) */}
+        <div className="hidden sm:flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2 shrink-0 w-[152px]">
+            {/* Spacer to match logo width */}
+          </div>
+          <div className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => onSelect(tab.value)}
+                className={cn(
+                  "shrink-0 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-colors duration-150",
+                  selectedCategory === tab.value
+                    ? "border-primary text-primary font-medium"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab.label}
+                <span className="ml-1 text-xs opacity-60">({tab.count})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile: No left spacing */}
+        <div className="sm:hidden flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => (
             <button
               key={tab.value}
