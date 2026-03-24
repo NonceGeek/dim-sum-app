@@ -5,7 +5,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
@@ -15,8 +14,6 @@ import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { DictionaryNote } from "@/lib/types";
-import WordLyricCardDetail from "../_components/word-lyric-card-detail";
-import YueSongCardDetail from "../_components/yue-song-card-detail";
 import { useAllCategories } from "@/lib/api/category";
 import {
   Popover,
@@ -30,10 +27,12 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
-import CategorySelector from "../_components/category-selector";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import SearchResultItem from "../_components/search-result-item";
+import CategoryTabs from "../_components/category-tabs";
+import { ChevronDown, Home } from "lucide-react";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -198,331 +197,273 @@ export default function SearchPage() {
 
   return (
     <>
-      {/* Collapsed Hero Section - always the light gradient search bar */}
-      <section className="py-6 bg-gradient-to-r from-primary/5 to-primary/10">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            {/* Search bar - always visible */}
-            <motion.div
-              className="flex gap-2 max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.2,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <Input
-                  placeholder={th("searchPlaceholder")}
-                  value={searchPrompt}
-                  onChange={(e) => setSearchPrompt(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  className="pl-10 h-12 text-lg dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
-                />
-              </div>
-              {/* Dataset selection dropdown */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-[180px] justify-between truncate h-12 dark:text-accent-foreground"
-                  >
-                    {(fiter_not_in || [])
-                      ?.map((cat) => {
-                        if (selectedDataset.includes(cat.name)) {
-                          return cat.nickname || cat.name;
-                        }
-                        return null;
-                      })
-                      .filter(Boolean)
-                      .join(", ") || t("selectDataset")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command className="bg-background!">
-                    <CommandInput
-                      placeholder={t("searchDatasetPlaceholder")}
-                      value={inputValue}
-                      onValueChange={setInputValue}
-                    />
-                    <CommandList>
-                      {(fiter_not_in || [])?.map((cat) => (
-                        <CommandItem
-                          key={cat.id}
-                          value={cat.nickname || cat.name}
-                          onSelect={() => {
-                            if (cat.name === "all") {
-                              setSelectedDataset(["all"]);
-                              return;
-                            }
-                            setSelectedDataset((prev) =>
-                              (prev.includes(cat.name)
-                                ? prev.filter((item) => item !== cat.name)
-                                : [...prev, cat.name]
-                              ).filter((item) => item !== "all")
-                            );
-                          }}
-                        >
-                          <Checkbox
-                            className="mr-2 dark:bg-accent-background"
-                            checked={selectedDataset.includes(cat.name)}
-                            onChange={() => {
-                              if (cat.name === "all") {
-                                setSelectedDataset(["all"]);
-                                return;
-                              }
-                              setSelectedDataset((prev) =>
-                                (prev.includes(cat.name)
-                                  ? prev.filter((item) => item !== cat.name)
-                                  : [...prev, cat.name]
-                                ).filter((item) => item !== "all")
-                              );
-                            }}
-                            id={cat.id + ""}
-                          />
-                          {cat.nickname ?? cat.name}
-                        </CommandItem>
-                      ))}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <Button
-                onClick={handleSearch}
-                disabled={isPending}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-6"
-              >
-                {isPending ? t("searching") : th("searchButton")}
-              </Button>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      {/* ── Sticky search header ─────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-background border-b border-border">
+        <div className="container mx-auto px-4 max-w-5xl h-14 flex items-center gap-3">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="font-bold text-primary text-base shrink-0 hidden sm:block"
+          >
+            点心探索
+          </Link>
+          <Link href="/" className="shrink-0 sm:hidden">
+            <Home className="h-5 w-5 text-primary" />
+          </Link>
 
-      {/* Loading skeletons */}
+          {/* Search input */}
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <Input
+              placeholder={th("searchPlaceholder")}
+              value={searchPrompt}
+              onChange={(e) => setSearchPrompt(e.target.value)}
+              onKeyDown={handleKeyPress}
+              className="pl-9 h-9 text-sm dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
+            />
+          </div>
+
+          {/* Dataset selector */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground shrink-0 max-w-[140px]"
+              >
+                <span className="truncate">
+                  {(fiter_not_in || [])
+                    .map((cat) =>
+                      selectedDataset.includes(cat.name)
+                        ? cat.nickname || cat.name
+                        : null
+                    )
+                    .filter(Boolean)
+                    .join(", ") || t("selectDataset")}
+                </span>
+                <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command className="bg-background!">
+                <CommandInput
+                  placeholder={t("searchDatasetPlaceholder")}
+                  value={inputValue}
+                  onValueChange={setInputValue}
+                />
+                <CommandList>
+                  {(fiter_not_in || [])?.map((cat) => (
+                    <CommandItem
+                      key={cat.id}
+                      value={cat.nickname || cat.name}
+                      onSelect={() => {
+                        if (cat.name === "all") {
+                          setSelectedDataset(["all"]);
+                          return;
+                        }
+                        setSelectedDataset((prev) =>
+                          (prev.includes(cat.name)
+                            ? prev.filter((item) => item !== cat.name)
+                            : [...prev, cat.name]
+                          ).filter((item) => item !== "all")
+                        );
+                      }}
+                    >
+                      <Checkbox
+                        className="mr-2 dark:bg-accent-background"
+                        checked={selectedDataset.includes(cat.name)}
+                        onChange={() => {
+                          if (cat.name === "all") {
+                            setSelectedDataset(["all"]);
+                            return;
+                          }
+                          setSelectedDataset((prev) =>
+                            (prev.includes(cat.name)
+                              ? prev.filter((item) => item !== cat.name)
+                              : [...prev, cat.name]
+                            ).filter((item) => item !== "all")
+                          );
+                        }}
+                        id={cat.id + ""}
+                      />
+                      {cat.nickname ?? cat.name}
+                    </CommandItem>
+                  ))}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Search button */}
+          <Button
+            onClick={handleSearch}
+            disabled={isPending}
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+          >
+            {isPending ? t("searching") : th("searchButton")}
+          </Button>
+        </div>
+      </header>
+
+      {/* ── Category tabs ────────────────────────────────────────────── */}
+      {results && results.length > 0 && (
+        <CategoryTabs
+          results={results}
+          selectedCategory={selectCategory}
+          onSelect={(cat) => {
+            setSelectCategory(cat);
+            setCurrentPage(1);
+          }}
+          selectedDataset={selectedDataset}
+        />
+      )}
+
+      {/* ── Loading skeletons ─────────────────────────────────────────── */}
       {isPending && (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="p-6 shadow-md mb-4">
-              <div className="space-y-6">
-                {/* Title area */}
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-7 w-2/5" />
-                </div>
-                {/* Note content area */}
-                <div className="space-y-3 rounded-lg p-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-4 w-3/5" />
-                </div>
-                {/* Tags row */}
-                <div className="flex gap-2 pt-2">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-24 rounded-full" />
-                </div>
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="py-5 border-b border-border">
+              <Skeleton className="h-5 w-2/5 mb-2" />
+              <Skeleton className="h-4 w-full mb-1.5" />
+              <Skeleton className="h-4 w-4/5 mb-3" />
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-16 rounded" />
+                <Skeleton className="h-5 w-14 rounded" />
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Results */}
+      {/* ── Results ──────────────────────────────────────────────────── */}
       {results && results.length > 0 && (
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
-          <CategorySelector
-            selectCategory={selectCategory}
-            setSelectCategory={setSelectCategory}
-            results={results}
-            selectedDataset={selectedDataset}
-          />
-          {currentResults.map((result, index) => (
+        <div className="container mx-auto px-4 py-4 max-w-4xl">
+          {/* Result count */}
+          <p className="text-sm text-muted-foreground mb-1">
+            {t("resultCount", { count: filteredResults.length })}
+          </p>
+
+          {/* Result items */}
+          <AnimatePresence mode="wait">
             <motion.div
-              key={result.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: index * 0.1,
-                ease: [0.16, 1, 0.3, 1],
-              }}
+              key={selectCategory}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
             >
-              {result.category !== "粤语曲库" && (
-                  <WordLyricCardDetail
+              {currentResults.map((result, index) => (
+                <motion.div
+                  key={result.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.35,
+                    delay: index * 0.06,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  <SearchResultItem
                     result={result}
                     setEditingResult={setEditingResult}
                     setUpdateDialogOpen={setUpdateDialogOpen}
-                    isDictionaryNote={isDictionaryNote}
                   />
-                )}
-              {result.category === "粤语曲库" && (
-                <YueSongCardDetail result={result} />
-              )}
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
+          </AnimatePresence>
 
+          {/* ── Pagination ────────────────────────────────────────────── */}
           {totalPages > 1 && (
-            <motion.div
-              className="flex justify-center gap-2 mt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.3,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              {/* Previous button */}
-              <Button
-                variant="outline"
+            <div className="flex justify-center items-center gap-1 mt-8 text-sm">
+              <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="w-10 h-10"
+                className="px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                &lt;
-              </Button>
+                {t("prevPage")}
+              </button>
 
-              {/* Page numbers */}
               {getPageNumbers().map((page, idx) =>
-                page === '...' ? (
+                page === "..." ? (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="w-10 h-10 flex items-center justify-center text-muted-foreground"
+                    className="px-2 py-1.5 text-muted-foreground"
                   >
                     ...
                   </span>
                 ) : (
-                  <Button
+                  <button
                     key={page}
-                    variant={currentPage === page ? "default" : "outline"}
                     onClick={() => setCurrentPage(page as number)}
-                    className="w-10 h-10"
+                    className={cn(
+                      "px-3 py-1.5 rounded transition-colors",
+                      currentPage === page
+                        ? "font-bold text-primary"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
                   >
                     {page}
-                  </Button>
+                  </button>
                 )
               )}
 
-              {/* Next button */}
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
-                className="w-10 h-10"
+                className="px-3 py-1.5 rounded text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                &gt;
-              </Button>
-            </motion.div>
-          )}
-
-          {/* Try other searches */}
-          <motion.div
-            className="mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-muted-foreground">
-                {t("tryOtherSearches")}
-              </h3>
-              <Button
-                variant="outline"
-                onClick={handleBackToHome}
-                className="text-sm"
-              >
-                {t("backToHome")}
-              </Button>
+                {t("nextPage")}
+              </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          )}
+        </div>
+      )}
+
+      {/* ── No results ───────────────────────────────────────────────── */}
+      {results && results.length === 0 && (
+        <div className="container mx-auto px-4 py-16 max-w-4xl">
+          <div className="flex flex-col items-center text-center gap-4">
+            <SearchX className="h-10 w-10 text-muted-foreground" />
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-semibold text-foreground">
+                {t("noResultsTitle")}
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {t("noResultsDesc", { query: searchPrompt })}
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2 text-sm">
               {[
                 { title: t("exampleLyrics"), prompt: "落花流水" },
                 { title: t("exampleWords"), prompt: "姐姐" },
                 { title: t("exampleCharacter"), prompt: "行" },
                 { title: t("exampleVideo"), prompt: "歡聚一堂" },
-              ].map(
-                (example) =>
-                  example.prompt !== searchPrompt && (
-                    <Card
-                      key={example.prompt}
-                      className="p-3 sm:p-4 hover:shadow-lg cursor-pointer hover:bg-accent transition-colors duration-200 h-24 sm:h-28 flex items-center justify-center"
-                      onClick={() => {
-                        if (isPending) return;
-                        setResults(null);
-                        handleExampleSearch(example.prompt);
-                      }}
-                    >
-                      <div className="text-center space-y-1 sm:space-y-2">
-                        <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                          {example.title}
-                        </h3>
-                        <p className="text-sm sm:text-base text-muted-foreground">
-                          {example.prompt}
-                        </p>
-                      </div>
-                    </Card>
-                  )
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* No results */}
-      {results && results.length === 0 && (
-        <div className="container mx-auto px-4 py-12 max-w-4xl">
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <div className="p-4 rounded-full bg-muted">
-              <SearchX className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-foreground">
-                {t("noResultsTitle")}
-              </h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                {t("noResultsDesc", { query: searchPrompt })}
-              </p>
-              <Button
-                variant="outline"
-                onClick={handleBackToHome}
-                className="mt-4"
-              >
-                {t("backToHome")}
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
-              {[
-                { title: t("exampleLyrics"), prompt: "淡淡交會過" },
-                { title: t("exampleWords"), prompt: "姐姐" },
-                { title: t("exampleCharacter"), prompt: "行" },
-                { title: t("exampleVideo"), prompt: "歡聚一堂" },
-              ].map((example) => (
-                <Card
-                  key={example.prompt}
-                  className="p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer hover:bg-accent h-24 sm:h-28 flex items-center justify-center"
-                  onClick={() => handleExampleSearch(example.prompt)}
-                >
-                  <div className="text-center space-y-1 sm:space-y-2">
-                    <h3 className="text-xs sm:text-sm font-medium text-foreground">
-                      {example.title}
-                    </h3>
-                    <p className="text-sm sm:text-base text-muted-foreground">
-                      {example.prompt}
-                    </p>
-                  </div>
-                </Card>
-              ))}
+              ]
+                .filter((e) => e.prompt !== searchPrompt)
+                .map((example) => (
+                  <button
+                    key={example.prompt}
+                    onClick={() => {
+                      if (isPending) return;
+                      setResults(null);
+                      handleExampleSearch(example.prompt);
+                    }}
+                    className="text-primary hover:underline"
+                  >
+                    {example.title}「{example.prompt}」
+                  </button>
+                ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* Update Dialog */}
+      {/* ── Edit dialog ──────────────────────────────────────────────── */}
       <EditCorpusDialog
         open={updateDialogOpen}
         onOpenChange={setUpdateDialogOpen}
