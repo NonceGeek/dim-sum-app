@@ -234,18 +234,18 @@ export function SearchHeader({
                   <X className="h-4 w-4" />
                 </button>
               )}
+
+              {/* Search button */}
+              <Button
+                onClick={onSearch}
+                disabled={isPending}
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground ml-1"
+              >
+                {isPending ? searchingLabel : searchButtonLabel}
+              </Button>
             </div>
           </div>
-
-          {/* Search button */}
-          <Button
-            onClick={onSearch}
-            disabled={isPending}
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
-          >
-            {isPending ? searchingLabel : searchButtonLabel}
-          </Button>
 
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-3">
