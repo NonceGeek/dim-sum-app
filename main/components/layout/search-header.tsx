@@ -144,7 +144,7 @@ export function SearchHeader({
   return (
     <>
       <header className="sticky top-0 z-50 bg-background border-b border-border">
-        <div className="px-4 h-14 flex items-center gap-3">
+        <div className="px-4 h-16 flex items-center gap-3">
           {/* Logo */}
           <Link href="/" className="shrink-0">
             <Image
@@ -157,7 +157,7 @@ export function SearchHeader({
           </Link>
 
           {/* Search input — dataset selector embedded on right */}
-          <div className="relative flex-1 flex items-center rounded-md border border-input bg-background shadow-sm transition-all hover:ring-1 hover:ring-primary/40 focus-within:ring-1 focus-within:ring-primary/50 dark:bg-background">
+          <div className="relative flex-1 max-w-2xl flex items-center rounded-md border border-input bg-background shadow-sm transition-all hover:ring-1 hover:ring-primary/40 focus-within:ring-1 focus-within:ring-primary/50 dark:bg-background">
             {/* Search icon */}
             <div className="pl-3 flex items-center pointer-events-none shrink-0">
               <Search className="h-4 w-4 text-muted-foreground" />
@@ -172,7 +172,7 @@ export function SearchHeader({
               onKeyDown={(e) => {
                 if (e.key === "Enter") onSearch();
               }}
-              className="flex-1 min-w-0 h-9 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
+              className="flex-1 min-w-0 h-11 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
             />
 
             {/* Divider + dataset selector + clear button */}
@@ -248,7 +248,7 @@ export function SearchHeader({
           </div>
 
           {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 ml-auto">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
