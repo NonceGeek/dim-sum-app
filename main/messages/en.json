@@ -170,7 +170,12 @@
     "others": "Others",
     "subtitles": "Subtitles",
     "relatedApps": "Related Apps",
-    "relatedLinks": "Related Links"
+    "relatedLinks": "Related Links",
+    "resultCount": "About {count} results",
+    "expandContent": "Expand",
+    "collapseContent": "Collapse",
+    "prevPage": "Previous",
+    "nextPage": "Next"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

@@ -170,7 +170,12 @@
     "others": "其他",
     "subtitles": "字幕",
     "relatedApps": "关联应用",
-    "relatedLinks": "关联链接"
+    "relatedLinks": "关联链接",
+    "resultCount": "找到约 {count} 条结果",
+    "expandContent": "展开",
+    "collapseContent": "收起",
+    "prevPage": "上一页",
+    "nextPage": "下一页"
   },
   "Validation": {
     "enterCharacter": "请输入字符",
