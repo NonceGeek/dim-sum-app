@@ -3,37 +3,21 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
-import { Search, SearchX } from "lucide-react";
+import { Search, SearchX, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { DictionaryNote } from "@/lib/types";
 import { useAllCategories } from "@/lib/api/category";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 import SearchResultItem from "../_components/search-result-item";
 import CategoryTabs from "../_components/category-tabs";
-import { ChevronDown } from "lucide-react";
+import { SearchHeader } from "@/components/layout/search-header";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -52,10 +36,9 @@ export default function SearchPage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
-  const [inputValue, setInputValue] = useState<string>("");
   const [selectCategory, setSelectCategory] = useState<string>("全部");
   const t = useTranslations("Search");
-  const th = useTranslations("Home");
+  const th = useTranslations("Home"); // used for searchPlaceholder + searchButton passed to SearchHeader
 
   // Fetch available categories
   const { data: categories, isLoading: categoriesLoading } = useAllCategories();
@@ -124,12 +107,6 @@ export default function SearchPage() {
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
-
   // Example search click handler -- navigates to /search
   const handleExampleSearch = (prompt: string) => {
     setSearchPrompt(prompt);
@@ -140,11 +117,6 @@ export default function SearchPage() {
     params.set("q", prompt);
     params.set("dataset", "全局搜索");
     router.push(`/search?${params.toString()}`, { scroll: false });
-  };
-
-  // Back to home
-  const handleBackToHome = () => {
-    router.push("/");
   };
 
   const filteredResults = useMemo(() => {
@@ -199,109 +171,18 @@ export default function SearchPage() {
   return (
     <>
       {/* ── Sticky search header ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-background border-b border-border">
-        <div className="container mx-auto px-4 max-w-5xl h-14 flex items-center gap-3">
-          {/* Back to home */}
-          <Link href="/" className="shrink-0">
-            <Image src="/logo.png" alt="DimSum AI Labs" width={28} height={28} />
-          </Link>
-
-          {/* Search input */}
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <Input
-              placeholder={th("searchPlaceholder")}
-              value={searchPrompt}
-              onChange={(e) => setSearchPrompt(e.target.value)}
-              onKeyDown={handleKeyPress}
-              className="pl-9 h-9 text-sm dark:text-accent-foreground dark:placeholder:text-accent-foreground dark:bg-background"
-            />
-          </div>
-
-          {/* Dataset selector */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground shrink-0 max-w-[140px]"
-              >
-                <span className="truncate">
-                  {(fiter_not_in || [])
-                    .map((cat) =>
-                      selectedDataset.includes(cat.name)
-                        ? cat.nickname || cat.name
-                        : null
-                    )
-                    .filter(Boolean)
-                    .join(", ") || t("selectDataset")}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <Command className="bg-background!">
-                <CommandInput
-                  placeholder={t("searchDatasetPlaceholder")}
-                  value={inputValue}
-                  onValueChange={setInputValue}
-                />
-                <CommandList>
-                  {(fiter_not_in || [])?.map((cat) => (
-                    <CommandItem
-                      key={cat.id}
-                      value={cat.nickname || cat.name}
-                      onSelect={() => {
-                        if (cat.name === "all") {
-                          setSelectedDataset(["all"]);
-                          return;
-                        }
-                        setSelectedDataset((prev) =>
-                          (prev.includes(cat.name)
-                            ? prev.filter((item) => item !== cat.name)
-                            : [...prev, cat.name]
-                          ).filter((item) => item !== "all")
-                        );
-                      }}
-                    >
-                      <Checkbox
-                        className="mr-2 dark:bg-accent-background"
-                        checked={selectedDataset.includes(cat.name)}
-                        onChange={() => {
-                          if (cat.name === "all") {
-                            setSelectedDataset(["all"]);
-                            return;
-                          }
-                          setSelectedDataset((prev) =>
-                            (prev.includes(cat.name)
-                              ? prev.filter((item) => item !== cat.name)
-                              : [...prev, cat.name]
-                            ).filter((item) => item !== "all")
-                          );
-                        }}
-                        id={cat.id + ""}
-                      />
-                      {cat.nickname ?? cat.name}
-                    </CommandItem>
-                  ))}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* Search button */}
-          <Button
-            onClick={handleSearch}
-            disabled={isPending}
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
-          >
-            {isPending ? t("searching") : th("searchButton")}
-          </Button>
-        </div>
-      </header>
+      <SearchHeader
+        searchPrompt={searchPrompt}
+        onSearchPromptChange={setSearchPrompt}
+        onSearch={handleSearch}
+        isPending={isPending}
+        selectedDataset={selectedDataset}
+        onDatasetChange={setSelectedDataset}
+        categories={fiter_not_in}
+        searchPlaceholder={th("searchPlaceholder")}
+        searchButtonLabel={th("searchButton")}
+        searchingLabel={t("searching")}
+      />
 
       {/* ── Category tabs ────────────────────────────────────────────── */}
       {results && results.length > 0 && (
