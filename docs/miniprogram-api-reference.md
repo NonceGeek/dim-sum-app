@@ -596,7 +596,63 @@ const response = await wx.request({
 
 ---
 
-### 3.3 获取任务详情
+### 3.3 获取任务列表 (通用)
+
+获取当前用户 (或指定标注员) 的任务列表,支持按状态、语料库、违规类型等全量筛选条件查询。
+
+> 与 3.1/3.2 的区别: 本接口不预设 `status` 默认值,所有筛选条件均由调用方自由传入,适合需要灵活组合查询的场景。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/task/list`
+- **方法**: `GET`
+- **认证**: 需要 Bearer Token (标注员)
+
+#### 请求参数 (Query String)
+
+| 参数名 | 类型 | 必填 | 默认值 | 说明 |
+|-------|------|-----|-------|------|
+| `status` | string | 否 | - | 任务状态,多个用逗号分隔;不传则不过滤状态 |
+| `page` | number | 否 | `1` | 页码 |
+| `pageSize` | number | 否 | `10` | 每页数量 |
+| `assigneeRef` | string | 否 | - | 要查看谁的任务列表;不传时查看自己的任务 |
+| `corpusName` | string | 否 | - | 按语料库名称筛选 |
+| `violationType` | string | 否 | - | 按违规类型筛选 |
+
+#### 请求示例
+
+```javascript
+const accessToken = wx.getStorageSync('accessToken');
+
+// 查询指定语料库下进行中的任务
+const response = await wx.request({
+  url: 'https://search.aidimsum.com/api/miniprogram/task/list?status=in_progress&corpusName=corpus_a&page=1&pageSize=20',
+  method: 'GET',
+  header: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const { items, pagination } = response.data;
+```
+
+#### 成功响应 (200)
+
+响应格式与 [3.1 获取未完成任务列表](#31-获取未完成任务列表) 相同。
+
+#### 错误响应
+
+**400 Bad Request** - 缺少用户标识
+
+```json
+{
+  "error": "Missing user identifier"
+}
+```
+
+---
+
+### 3.4 获取任务详情
 
 根据任务 ID 获取单个任务的详细信息。
 
@@ -644,7 +700,7 @@ const task = response.data;
 
 ---
 
-### 3.4 标记任务已查看
+### 3.5 标记任务已查看
 
 标记指定任务为已查看状态。
 
@@ -704,7 +760,7 @@ const response = await wx.request({
 
 ---
 
-### 3.5 提交任务
+### 3.6 提交任务
 
 提交任务的标注结果。
 
@@ -776,7 +832,7 @@ const response = await wx.request({
 
 ---
 
-### 3.6 跳过/取消任务
+### 3.7 跳过/取消任务
 
 跳过当前任务并重新分配给其他标注员。
 
@@ -824,7 +880,7 @@ const response = await wx.request({
 
 ---
 
-### 3.7 获取任务统计
+### 3.8 获取任务统计
 
 获取指定语料库的任务完成统计,支持按标注员筛选。
 
