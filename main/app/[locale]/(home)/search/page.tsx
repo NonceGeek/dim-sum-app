@@ -30,9 +30,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import SearchResultItem from "../_components/search-result-item";
 import CategoryTabs from "../_components/category-tabs";
-import { ChevronDown, Home } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -201,8 +202,8 @@ export default function SearchPage() {
       <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="container mx-auto px-4 max-w-5xl h-14 flex items-center gap-3">
           {/* Back to home */}
-          <Link href="/" className="shrink-0 text-primary hover:text-primary/80 transition-colors">
-            <Home className="h-5 w-5" />
+          <Link href="/" className="shrink-0">
+            <Image src="/logo.png" alt="DimSum AI Labs" width={28} height={28} />
           </Link>
 
           {/* Search input */}
@@ -415,6 +416,33 @@ export default function SearchPage() {
               </button>
             </div>
           )}
+
+          {/* ── Try other searches ────────────────────────────────────── */}
+          <div className="mt-10 pt-6 border-t border-border">
+            <p className="text-sm text-muted-foreground mb-3">{t("tryOtherSearches")}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              {[
+                { title: t("exampleLyrics"), prompt: "落花流水" },
+                { title: t("exampleWords"), prompt: "姐姐" },
+                { title: t("exampleCharacter"), prompt: "行" },
+                { title: t("exampleVideo"), prompt: "歡聚一堂" },
+              ]
+                .filter((e) => e.prompt !== searchPrompt)
+                .map((example) => (
+                  <button
+                    key={example.prompt}
+                    onClick={() => {
+                      if (isPending) return;
+                      setResults(null);
+                      handleExampleSearch(example.prompt);
+                    }}
+                    className="text-primary hover:underline"
+                  >
+                    {example.title}「{example.prompt}」
+                  </button>
+                ))}
+            </div>
+          </div>
         </div>
       )}
 
