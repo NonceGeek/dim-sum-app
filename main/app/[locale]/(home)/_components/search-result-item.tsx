@@ -26,7 +26,7 @@ function isImageUrl(url: unknown): boolean {
   if (typeof url !== "string") return false;
   const exts = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"];
   const lower = url.toLowerCase();
-  return exts.some((e) => lower.endsWith(e)) || lower.includes("image");
+  return exts.some((e) => lower.endsWith(e));
 }
 
 function isAudioByExt(url: unknown): boolean {
@@ -428,6 +428,7 @@ export default function SearchResultItem({
             <Button
               variant="ghost"
               size="sm"
+              aria-label="Play"
               onClick={() => {
                 corpusInteractApi.updateView(result.unique_id);
                 router.push(`/yueSong?id=${result.unique_id}`);
@@ -435,23 +436,22 @@ export default function SearchResultItem({
             >
               <CirclePlay className="h-4 w-4" />
             </Button>
-            <a
-              href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                const url = e.currentTarget.href;
-                navigator.clipboard
-                  .writeText(url)
-                  .then(() => toast("Link copied."));
-              }}
-            >
-              <Button variant="ghost" size="sm" asChild>
-                <span>
-                  <Share2 className="h-4 w-4" />
-                </span>
-              </Button>
-            </a>
+            <Button variant="ghost" size="sm" asChild>
+              <a
+                href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share"
+                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                  e.preventDefault();
+                  navigator.clipboard
+                    .writeText(e.currentTarget.href)
+                    .then(() => toast("Link copied."));
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+              </a>
+            </Button>
           </div>
         </div>
       </div>
@@ -470,6 +470,7 @@ export default function SearchResultItem({
             <Button
               variant="ghost"
               size="sm"
+              aria-expanded={expanded}
               onClick={() => setExpanded((v) => !v)}
               className="text-muted-foreground hover:text-foreground"
             >
