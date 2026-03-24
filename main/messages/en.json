@@ -12,7 +12,9 @@
     "loading": "Loading...",
     "noData": "No data available",
     "back": "Back",
-    "update": "Update"
+    "update": "Update",
+    "share": "Share",
+    "play": "Play"
   },
   "Nav": {
     "home": "Home",
@@ -175,7 +177,8 @@
     "expandContent": "Expand",
     "collapseContent": "Collapse",
     "prevPage": "Previous",
-    "nextPage": "Next"
+    "nextPage": "Next",
+    "allCategories": "All"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

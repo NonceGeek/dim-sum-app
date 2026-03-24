@@ -11,9 +11,10 @@ export default function MainMenuLayout({
 }) {
   const pathname = usePathname();
   const isHomepage = pathname === "/";
+  const isSearchPage = pathname === "/search";
 
-  // Homepage renders its own layout (FloatingNav + MinimalFooter)
-  if (isHomepage) {
+  // Homepage and search page render their own layout
+  if (isHomepage || isSearchPage) {
     return <>{children}</>;
   }
 

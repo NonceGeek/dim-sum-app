@@ -376,6 +376,7 @@ export default function SearchResultItem({
   const { user } = useAuthStore();
   const canEdit = useCanEdit(result, user);
   const t = useTranslations("Search");
+  const tc = useTranslations("Common");
   const router = useRouter();
 
   const { data: categoryData } = useQuery({
@@ -428,7 +429,7 @@ export default function SearchResultItem({
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Play"
+              aria-label={tc("play")}
               onClick={() => {
                 corpusInteractApi.updateView(result.unique_id);
                 router.push(`/yueSong?id=${result.unique_id}`);
@@ -441,7 +442,7 @@ export default function SearchResultItem({
                 href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Share"
+                aria-label={tc("share")}
                 onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                   e.preventDefault();
                   navigator.clipboard
@@ -496,7 +497,7 @@ export default function SearchResultItem({
                 setUpdateDialogOpen(true);
               }}
             >
-              编辑
+              {tc("edit")}
             </Button>
           )}
         </div>

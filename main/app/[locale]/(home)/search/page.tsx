@@ -200,15 +200,9 @@ export default function SearchPage() {
       {/* ── Sticky search header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="container mx-auto px-4 max-w-5xl h-14 flex items-center gap-3">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="font-bold text-primary text-base shrink-0 hidden sm:block"
-          >
-            点心探索
-          </Link>
-          <Link href="/" className="shrink-0 sm:hidden">
-            <Home className="h-5 w-5 text-primary" />
+          {/* Back to home */}
+          <Link href="/" className="shrink-0 text-primary hover:text-primary/80 transition-colors">
+            <Home className="h-5 w-5" />
           </Link>
 
           {/* Search input */}

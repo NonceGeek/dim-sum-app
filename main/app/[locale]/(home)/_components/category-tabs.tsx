@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { type SearchResult } from "@/lib/api/search";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 interface CategoryTabsProps {
   results: SearchResult[];
@@ -17,6 +18,8 @@ export default function CategoryTabs({
   onSelect,
   selectedDataset,
 }: CategoryTabsProps) {
+  const t = useTranslations("Search");
+
   const categories = useMemo(() => {
     const map = new Map<string, number>();
     results?.forEach((r) => {
@@ -31,7 +34,7 @@ export default function CategoryTabs({
   }
 
   const tabs = [
-    { label: "全部", value: "全部", count: results.length },
+    { label: t("allCategories"), value: "全部", count: results.length },
     ...categories.map(([cat, count]) => ({ label: cat, value: cat, count })),
   ];
 
