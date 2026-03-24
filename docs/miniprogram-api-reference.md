@@ -375,7 +375,121 @@ console.log('用户信息:', user);
 
 ---
 
-### 2.2 上传资源
+### 2.2 批量获取用户公开信息
+
+根据用户 ID 批量获取用户的公开信息（用于显示用户头像、昵称等）。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/users/public`
+- **方法**: `GET`
+- **认证**: 无需认证
+
+#### 请求参数 (Query String)
+
+| 参数名 | 类型 | 必填 | 说明 |
+|-------|------|-----|------|
+| `userIds` | string | 是 | 用户 ID 列表，支持逗号分隔字符串（如 "id1,id2,id3"）或 JSON 数组格式（如 ["id1","id2","id3"]），单次最多 100 个 |
+
+#### 请求示例
+
+```javascript
+// 方式 1: 使用逗号分隔的字符串
+const userIds = ['user_001', 'user_002', 'user_003'];
+const response = await wx.request({
+  url: `https://search.aidimsum.com/api/miniprogram/users/public?userIds=${userIds.join(',')}`,
+  method: 'GET'
+});
+
+// 方式 2: 使用 JSON 数组字符串
+const response = await wx.request({
+  url: `https://search.aidimsum.com/api/miniprogram/users/public?userIds=${encodeURIComponent(JSON.stringify(userIds))}`,
+  method: 'GET'
+});
+
+const { users, total } = response.data;
+console.log('用户信息列表:', users);
+```
+
+#### 成功响应 (200)
+
+```json
+{
+  "users": [
+    {
+      "userId": "clx123abc456",
+      "username": "张三",
+      "avatar": "https://wx.qlogo.cn/..."
+    },
+    {
+      "userId": "clx456def789",
+      "username": "李四",
+      "avatar": null
+    },
+    {
+      "userId": "clx789ghi012",
+      "username": "匿名用户",
+      "avatar": "https://thirdwx.qlogo.cn/..."
+    }
+  ],
+  "total": 3
+}
+```
+
+#### 响应字段说明
+
+| 字段 | 类型 | 说明 |
+|-----|------|-----|
+| `users` | array | 用户公开信息数组 |
+| `users[].userId` | string | 用户 ID |
+| `users[].username` | string | 用户昵称，如果用户未设置昵称则显示 "匿名用户" |
+| `users[].avatar` | string \| null | 用户头像 URL，优先返回微信头像，可能为 null |
+| `total` | number | 返回的用户数量 |
+
+#### 注意事项
+
+- 仅返回状态为 `ACTIVE` 的用户
+- 如果某个用户 ID 不存在或用户已被删除，不会在结果中返回
+- 头像优先使用微信头像 (`wechatAvatar`)，如果没有则使用普通头像 (`image`)
+- 单次请求最多支持查询 100 个用户 ID
+
+#### 错误响应
+
+**400 Bad Request** - 缺少必填参数
+
+```json
+{
+  "error": "Missing required parameter: userIds"
+}
+```
+
+**400 Bad Request** - 用户 ID 为空
+
+```json
+{
+  "error": "No valid user IDs provided"
+}
+```
+
+**400 Bad Request** - 超过最大限制
+
+```json
+{
+  "error": "Maximum 100 user IDs allowed per request"
+}
+```
+
+**500 Internal Server Error** - 服务器错误
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+---
+
+### 2.3 上传资源
 
 标注员上传音频等资源文件到 OSS。
 
