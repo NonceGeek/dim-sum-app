@@ -424,8 +424,9 @@ export default function HomePage() {
               {(hotTerms ?? []).map((term) => (
                 <button
                   key={term}
+                  title={term}
                   onClick={() => navigateToSearch(term)}
-                  className="rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                  className="max-w-[14rem] truncate rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                 >
                   {term}
                 </button>
