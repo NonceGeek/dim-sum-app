@@ -6,7 +6,13 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
-import { Search, SearchX, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import {
+  Search,
+  SearchX,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
@@ -235,7 +241,7 @@ export default function SearchPage() {
           <div className="px-4 py-6">
             {/* Desktop/Tablet: Align with search bar */}
             <div className="hidden sm:flex">
-              <div className="shrink-0 w-[152px]">{/* Spacer */}</div>
+              <div className="shrink-0 w-[172px]">{/* Spacer */}</div>
               <div className="flex-1 max-w-3xl">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="py-5 border-b border-border">
@@ -278,7 +284,7 @@ export default function SearchPage() {
           >
             {/* Desktop/Tablet: Align with search bar */}
             <div className="hidden sm:flex">
-              <div className="shrink-0 w-[152px]">{/* Spacer */}</div>
+              <div className="shrink-0 w-[172px]">{/* Spacer */}</div>
               <div className="flex-1 max-w-3xl">
                 {/* Result count */}
                 <p className="text-sm text-muted-foreground mb-1">
@@ -323,7 +329,10 @@ export default function SearchPage() {
                   <div className="flex flex-wrap gap-2">
                     {hotTermsLoading
                       ? [20, 24, 16, 28, 20, 24].map((w, i) => (
-                          <Skeleton key={i} className={`h-9 w-${w} rounded-lg`} />
+                          <Skeleton
+                            key={i}
+                            className={`h-9 w-${w} rounded-lg`}
+                          />
                         ))
                       : (hotTerms ?? [])
                           .filter((term) => term !== searchPrompt)
@@ -378,10 +387,16 @@ export default function SearchPage() {
                             <motion.span
                               layoutId="page-bubble-desktop"
                               className="absolute inset-0 bg-primary rounded-md"
-                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 380,
+                                damping: 30,
+                              }}
                             />
                           )}
-                          <span className="relative z-10 font-medium">{page}</span>
+                          <span className="relative z-10 font-medium">
+                            {page}
+                          </span>
                         </button>
                       ),
                     )}
@@ -500,10 +515,16 @@ export default function SearchPage() {
                           <motion.span
                             layoutId="page-bubble-mobile"
                             className="absolute inset-0 bg-primary rounded-md"
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 380,
+                              damping: 30,
+                            }}
                           />
                         )}
-                        <span className="relative z-10 font-medium">{page}</span>
+                        <span className="relative z-10 font-medium">
+                          {page}
+                        </span>
                       </button>
                     ),
                   )}
@@ -528,7 +549,7 @@ export default function SearchPage() {
           <div className="flex-1 flex flex-col justify-center px-4 pb-32">
             {/* Desktop/Tablet: Align with search bar */}
             <div className="hidden sm:flex">
-              <div className="shrink-0 w-[152px]">{/* Spacer */}</div>
+              <div className="shrink-0 w-[172px]">{/* Spacer */}</div>
               <div className="flex-1 max-w-3xl flex flex-col gap-8">
                 <div className="flex items-center gap-3">
                   <SearchX className="h-7 w-7 text-muted-foreground shrink-0" />

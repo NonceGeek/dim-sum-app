@@ -39,7 +39,9 @@ function ScrollableTabList({
     const hasOverflow = scrollWidth > clientWidth;
 
     setShowLeftArrow(hasOverflow && scrollLeft > 5);
-    setShowRightArrow(hasOverflow && scrollLeft < scrollWidth - clientWidth - 5);
+    setShowRightArrow(
+      hasOverflow && scrollLeft < scrollWidth - clientWidth - 5,
+    );
   }, []);
 
   // Scroll handler
@@ -60,7 +62,7 @@ function ScrollableTabList({
     if (!container) return;
 
     const selectedButton = container.querySelector(
-      `[data-value="${selectedCategory}"]`
+      `[data-value="${selectedCategory}"]`,
     ) as HTMLButtonElement;
 
     if (selectedButton) {
@@ -120,7 +122,7 @@ function ScrollableTabList({
   return (
     <div className="flex">
       {withSpacer && (
-        <div className="flex items-center gap-2 shrink-0 w-[152px]">
+        <div className="flex items-center gap-2 shrink-0 w-[172px]">
           {/* Spacer to match logo width */}
         </div>
       )}
@@ -173,7 +175,7 @@ function ScrollableTabList({
                   "shrink-0 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-colors duration-150",
                   selectedCategory === tab.value
                     ? "border-primary text-primary font-medium"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
                 {tab.label}
@@ -216,7 +218,7 @@ export default function CategoryTabs({
   return (
     <div className="bg-background">
       <div className="px-4 border-b border-border">
-        {/* Desktop/Tablet: Align with search bar (logo + gap ≈ 152px) */}
+        {/* Desktop/Tablet: Align with search bar (logo + gap ≈ 172px) */}
         <div className="hidden sm:block">
           <ScrollableTabList
             tabs={tabs}
