@@ -14,7 +14,10 @@ import {
   LogOut,
   Loader2,
   Check,
+  Clock,
 } from "lucide-react";
+import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
+import type { SearchResult } from "@/lib/api/search";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,6 +48,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
+import { HamburgerDropdownContent } from "@/components/layout/hamburger-dropdown-content";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -71,6 +75,8 @@ interface SearchHeaderProps {
   searchPrompt: string;
   onSearchPromptChange: (value: string) => void;
   onSearch: () => void;
+  /** Called when user selects from suggestion/history dropdown — must update prompt AND trigger search */
+  onSearchTerm: (term: string) => void;
   isPending: boolean;
   selectedDataset: string[];
   onDatasetChange: (dataset: string[]) => void;
@@ -79,6 +85,21 @@ interface SearchHeaderProps {
   searchButtonLabel: string;
   searchingLabel: string;
   shadowActive?: boolean;
+}
+
+interface DropdownState {
+  showDropdown: boolean;
+  mode: "history" | "suggestions";
+  suggestions: SearchResult[];
+  history: string[];
+  activeIndex: number;
+  handleFocus: () => void;
+  handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  closeDropdown: () => void;
+  selectItem: (term: string) => void;
+  addToHistory: (term: string) => void;
+  removeHistory: (term: string) => void;
+  clearHistory: () => void;
 }
 
 interface SearchInputProps {
@@ -98,6 +119,7 @@ interface SearchInputProps {
   activeDatasetCount: number;
   toggleDataset: (name: string) => void;
   tSearch: (key: string) => string;
+  dropdownState: DropdownState;
 }
 
 function SearchInputField({
@@ -109,181 +131,293 @@ function SearchInputField({
   categories,
   searchPlaceholder,
   searchButtonLabel,
-  searchingLabel,
   inputValue,
   setInputValue,
   datasetLabel,
   activeDatasetCount,
   toggleDataset,
   tSearch,
+  dropdownState,
 }: SearchInputProps) {
   const isGlobal = selectedDataset.includes("all");
   const allCategory = categories.find((cat) => cat.name === "all");
   const specificCategories = categories.filter((cat) => cat.name !== "all");
 
+  const {
+    showDropdown,
+    mode,
+    suggestions,
+    history,
+    activeIndex,
+    handleFocus,
+    handleKeyDown,
+    closeDropdown,
+    selectItem,
+    addToHistory,
+    removeHistory,
+    clearHistory,
+  } = dropdownState;
+
+  const handleManualSearch = () => {
+    if (searchPrompt.trim()) addToHistory(searchPrompt.trim());
+    onSearch();
+    closeDropdown();
+  };
+
   return (
-    <div className="relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring">
-      {/* Search icon */}
-      <div className="pl-3 flex items-center pointer-events-none shrink-0">
-        <Search className="h-4 w-4 text-muted-foreground" />
-      </div>
+    <div className="relative">
+      {/* Pill input bar */}
+      <div className="relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring">
+        {/* Search icon */}
+        <div className="pl-3 flex items-center pointer-events-none shrink-0">
+          <Search className="h-4 w-4 text-muted-foreground" />
+        </div>
 
-      {/* Text input */}
-      <input
-        type="text"
-        placeholder={searchPlaceholder}
-        value={searchPrompt}
-        onChange={(e) => onSearchPromptChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") onSearch();
-        }}
-        className="flex-1 min-w-0 h-12 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
-      />
+        {/* Text input */}
+        <input
+          type="text"
+          placeholder={searchPlaceholder}
+          value={searchPrompt}
+          onChange={(e) => onSearchPromptChange(e.target.value)}
+          onFocus={handleFocus}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              if (showDropdown && activeIndex >= 0) {
+                handleKeyDown(e); // select from dropdown
+              } else {
+                handleManualSearch();
+              }
+              return;
+            }
+            handleKeyDown(e); // ↑↓ Escape
+          }}
+          className="flex-1 min-w-0 h-12 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
+        />
 
-      {/* Divider + dataset selector + clear button */}
-      <div className="flex items-center shrink-0 pr-1">
-        <div className="w-px h-4 bg-border mx-1" />
-        <Popover>
-          <Tooltip>
-            <PopoverTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-                  <span className="hidden sm:flex items-center overflow-hidden max-w-[80px]">
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.span
-                        key={datasetLabel}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.12, ease: "easeInOut" }}
-                        className="truncate"
-                      >
-                        {datasetLabel || tSearch("selectDataset")}
-                      </motion.span>
-                    </AnimatePresence>
-                  </span>
-                  <ChevronDown className="h-3 w-3 shrink-0" />
-                  {activeDatasetCount > 0 && (
-                    <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
-                      {activeDatasetCount}
-                    </Badge>
-                  )}
-                </Button>
-              </TooltipTrigger>
-            </PopoverTrigger>
-            {activeDatasetCount > 1 && (
-              <TooltipContent side="bottom" className="flex flex-col gap-0.5">
-                {categories
-                  .filter((cat) => selectedDataset.includes(cat.name))
-                  .map((cat) => (
-                    <span key={cat.name}>{cat.nickname ?? cat.name}</span>
-                  ))}
-              </TooltipContent>
-            )}
-          </Tooltip>
-          <PopoverContent className="w-[220px] p-0">
-            <Command className="bg-background!">
-              <CommandInput
-                placeholder={tSearch("searchDatasetPlaceholder")}
-                value={inputValue}
-                onValueChange={setInputValue}
-              />
-              <CommandList>
-                {/* Global / All item */}
-                <CommandGroup>
-                  {allCategory && (
-                    <CommandItem
-                      value={allCategory.nickname ?? allCategory.name}
-                      onSelect={() => toggleDataset("all")}
-                      className="cursor-pointer"
-                    >
-                      <motion.div
-                        animate={{ scale: isGlobal ? 1 : 0.5, opacity: isGlobal ? 1 : 0 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="h-4 w-4 flex items-center justify-center shrink-0"
-                      >
-                        <Check className="h-3.5 w-3.5 text-primary" />
-                      </motion.div>
-                      {allCategory.nickname ?? allCategory.name}
-                    </CommandItem>
-                  )}
-                </CommandGroup>
-
-                {/* Specific datasets — dims when Global is active */}
-                {specificCategories.length > 0 && (
-                  <motion.div
-                    animate={{ opacity: isGlobal ? 0.45 : 1 }}
-                    transition={{ duration: 0.2 }}
+        {/* Divider + dataset selector + clear button */}
+        <div className="flex items-center shrink-0 pr-1">
+          <div className="w-px h-4 bg-border mx-1" />
+          <Popover>
+            <Tooltip>
+              <PopoverTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
                   >
-                    <CommandGroup heading={tSearch("orSelectSpecific")}>
-                      {specificCategories.map((cat) => (
-                        <CommandItem
-                          key={cat.id}
-                          value={cat.nickname ?? cat.name}
-                          onSelect={() => toggleDataset(cat.name)}
-                          className="cursor-pointer"
+                    <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                    <span className="hidden sm:flex items-center overflow-hidden max-w-[80px]">
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={datasetLabel}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.12, ease: "easeInOut" }}
+                          className="truncate"
                         >
-                          <motion.div
-                            animate={{
-                              scale: selectedDataset.includes(cat.name) ? 1 : 0.5,
-                              opacity: selectedDataset.includes(cat.name) ? 1 : 0,
-                            }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="h-4 w-4 flex items-center justify-center shrink-0"
+                          {datasetLabel || tSearch("selectDataset")}
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                    {activeDatasetCount > 0 && (
+                      <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
+                        {activeDatasetCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+              </PopoverTrigger>
+              {activeDatasetCount > 1 && (
+                <TooltipContent side="bottom" className="flex flex-col gap-0.5">
+                  {categories
+                    .filter((cat) => selectedDataset.includes(cat.name))
+                    .map((cat) => (
+                      <span key={cat.name}>{cat.nickname ?? cat.name}</span>
+                    ))}
+                </TooltipContent>
+              )}
+            </Tooltip>
+            <PopoverContent className="w-[220px] p-0">
+              <Command className="bg-background!">
+                <CommandInput
+                  placeholder={tSearch("searchDatasetPlaceholder")}
+                  value={inputValue}
+                  onValueChange={setInputValue}
+                />
+                <CommandList>
+                  <CommandGroup>
+                    {allCategory && (
+                      <CommandItem
+                        value={allCategory.nickname ?? allCategory.name}
+                        onSelect={() => toggleDataset("all")}
+                        className="cursor-pointer"
+                      >
+                        <motion.div
+                          animate={{ scale: isGlobal ? 1 : 0.5, opacity: isGlobal ? 1 : 0 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className="h-4 w-4 flex items-center justify-center shrink-0"
+                        >
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        </motion.div>
+                        {allCategory.nickname ?? allCategory.name}
+                      </CommandItem>
+                    )}
+                  </CommandGroup>
+                  {specificCategories.length > 0 && (
+                    <motion.div
+                      animate={{ opacity: isGlobal ? 0.45 : 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CommandGroup heading={tSearch("orSelectSpecific")}>
+                        {specificCategories.map((cat) => (
+                          <CommandItem
+                            key={cat.id}
+                            value={cat.nickname ?? cat.name}
+                            onSelect={() => toggleDataset(cat.name)}
+                            className="cursor-pointer"
                           >
-                            <Check className="h-3.5 w-3.5 text-primary" />
-                          </motion.div>
-                          <span className="truncate">{cat.nickname ?? cat.name}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </motion.div>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+                            <motion.div
+                              animate={{
+                                scale: selectedDataset.includes(cat.name) ? 1 : 0.5,
+                                opacity: selectedDataset.includes(cat.name) ? 1 : 0,
+                              }}
+                              transition={{ duration: 0.15, ease: "easeOut" }}
+                              className="h-4 w-4 flex items-center justify-center shrink-0"
+                            >
+                              <Check className="h-3.5 w-3.5 text-primary" />
+                            </motion.div>
+                            <span className="truncate">{cat.nickname ?? cat.name}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </motion.div>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
-        {searchPrompt && (
-          <button
-            type="button"
-            onClick={() => onSearchPromptChange("")}
-            className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
+          {searchPrompt && (
+            <button
+              type="button"
+              onClick={() => onSearchPromptChange("")}
+              className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Search button — icon-only on mobile, text on sm+ */}
+          <Button
+            onClick={handleManualSearch}
+            disabled={isPending}
+            className="relative bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full shrink-0 h-9 w-9 p-0 sm:h-10 sm:w-auto sm:px-4"
           >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-
-        {/* Search button — icon-only on mobile, text on sm+ */}
-        <Button
-          onClick={onSearch}
-          disabled={isPending}
-          className="relative bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full shrink-0 h-9 w-9 p-0 sm:h-10 sm:w-auto sm:px-4"
-        >
-          <Loader2
-            className={cn(
-              "absolute inset-0 m-auto h-4 w-4 animate-spin transition-opacity",
-              isPending ? "opacity-100" : "opacity-0"
-            )}
-          />
-          {/* Mobile: search icon */}
-          <Search
-            className={cn(
-              "h-4 w-4 sm:hidden transition-opacity",
-              isPending ? "opacity-0" : "opacity-100"
-            )}
-          />
-          {/* Desktop: text label */}
-          <span className={cn("hidden sm:inline transition-opacity", isPending ? "opacity-0" : "opacity-100")}>
-            {searchButtonLabel}
-          </span>
-        </Button>
+            <Loader2
+              className={cn(
+                "absolute inset-0 m-auto h-4 w-4 animate-spin transition-opacity",
+                isPending ? "opacity-100" : "opacity-0"
+              )}
+            />
+            <Search
+              className={cn(
+                "h-4 w-4 sm:hidden transition-opacity",
+                isPending ? "opacity-0" : "opacity-100"
+              )}
+            />
+            <span className={cn("hidden sm:inline transition-opacity", isPending ? "opacity-0" : "opacity-100")}>
+              {searchButtonLabel}
+            </span>
+          </Button>
+        </div>
       </div>
+
+      {/* Suggestion / History Dropdown */}
+      <AnimatePresence>
+        {showDropdown && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute top-full left-0 right-0 mt-1.5 bg-background border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+          >
+            {mode === "history" ? (
+              <>
+                <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+                  <span className="text-xs font-medium text-muted-foreground">最近搜索</span>
+                  <button
+                    onMouseDown={(e) => { e.preventDefault(); clearHistory(); }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    清空
+                  </button>
+                </div>
+                {history.map((term, idx) => (
+                  <div
+                    key={term}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 group",
+                      activeIndex === idx ? "bg-accent" : "hover:bg-accent/50"
+                    )}
+                  >
+                    <button
+                      className="flex items-center gap-2 flex-1 min-w-0 text-left text-sm"
+                      onMouseDown={(e) => { e.preventDefault(); selectItem(term); }}
+                    >
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="truncate">{term}</span>
+                    </button>
+                    <button
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0"
+                      onMouseDown={(e) => { e.preventDefault(); removeHistory(term); }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </>
+            ) : (
+              suggestions.map((result, idx) => (
+                <div
+                  key={`${result.id ?? idx}`}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer",
+                    activeIndex === idx ? "bg-accent" : "hover:bg-accent/50"
+                  )}
+                  onMouseDown={(e) => { e.preventDefault(); selectItem(result.data); }}
+                >
+                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{result.data}</span>
+                </div>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MobileSheetContent({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex h-14 items-center border-b px-4">
+        <Image
+          src="/logo.png"
+          alt="DimSum AI Labs Logo"
+          width={24}
+          height={24}
+          className="rounded-sm"
+        />
+        <span className="ml-2 text-sm font-medium">DimSum AI</span>
+      </div>
+      <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
+        <HamburgerMenuContent onNavClick={onClose} />
+      </nav>
     </div>
   );
 }
@@ -413,8 +547,8 @@ export function SearchHeader({
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 p-2">
-                <HamburgerMenuContent />
+              <DropdownMenuContent align="end" className="w-52">
+                <HamburgerDropdownContent />
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -426,21 +560,7 @@ export function SearchHeader({
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64 p-0">
-                <div className="flex flex-col h-full">
-                  <div className="flex h-14 items-center border-b px-4">
-                    <Image
-                      src="/logo.png"
-                      alt="DimSum AI Labs Logo"
-                      width={24}
-                      height={24}
-                      className="rounded-sm"
-                    />
-                    <span className="ml-2 text-sm font-medium">DimSum AI</span>
-                  </div>
-                  <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                    <HamburgerMenuContent onNavClick={() => setMobileOpen(false)} />
-                  </nav>
-                </div>
+                <MobileSheetContent onClose={() => setMobileOpen(false)} />
               </SheetContent>
             </Sheet>
 
@@ -512,23 +632,7 @@ export function SearchHeader({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-64 p-0">
-                  <div className="flex flex-col h-full">
-                    <div className="flex h-14 items-center border-b px-4">
-                      <Image
-                        src="/logo.png"
-                        alt="DimSum AI Labs Logo"
-                        width={24}
-                        height={24}
-                        className="rounded-sm"
-                      />
-                      <span className="ml-2 text-sm font-medium">
-                        DimSum AI
-                      </span>
-                    </div>
-                    <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                      <HamburgerMenuContent onNavClick={() => setMobileOpen(false)} />
-                    </nav>
-                  </div>
+                  <MobileSheetContent onClose={() => setMobileOpen(false)} />
                 </SheetContent>
               </Sheet>
             </div>
