@@ -26,6 +26,7 @@ export function useHotTerms(count = 6) {
       api
         .get<{ terms: string[] }>(`/api/public/hot-terms?count=${count}`)
         .then((r) => r.terms ?? []),
+    // Cache for 1 day — terms stay stable within a session; user can force-refresh via "试试手气"
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
