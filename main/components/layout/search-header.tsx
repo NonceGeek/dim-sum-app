@@ -337,8 +337,9 @@ function SearchInputField({
 
       {/* Suggestion / History Dropdown */}
       <AnimatePresence>
-        {showDropdown && (
+        {showDropdown && (mode === "history" ? history.length > 0 : suggestions.length > 0) && (
           <motion.div
+            key={mode}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
@@ -426,6 +427,7 @@ export function SearchHeader({
   searchPrompt,
   onSearchPromptChange,
   onSearch,
+  onSearchTerm,
   isPending,
   selectedDataset,
   onDatasetChange,
@@ -447,6 +449,12 @@ export function SearchHeader({
   const t = useTranslations("Nav");
   const tCommon = useTranslations("Common");
   const tSearch = useTranslations("Search");
+
+  const dropdown = useSearchDropdown({
+    query: searchPrompt,
+    selectedDataset,
+    onSearchTerm,
+  });
 
   const accountSubmenuItems = getAccountSubmenuItems(user?.role as Role);
 
@@ -496,9 +504,15 @@ export function SearchHeader({
 
   const showShadow = shadowActive !== undefined ? shadowActive : scrolled;
 
+  // Destructure wrapperRef separately; the rest is passed as dropdownState
+  const { wrapperRef, ...dropdownState } = dropdown;
+
   return (
     <>
-      <header className={cn("sticky top-0 z-50 bg-background transition-shadow duration-200", showShadow && "shadow-sm")}>
+      <header
+        ref={wrapperRef as React.RefObject<HTMLElement>}
+        className={cn("sticky top-0 z-50 bg-background transition-shadow duration-200", showShadow && "shadow-sm")}
+      >
         {/* Desktop & Tablet Layout - Single Row */}
         <div className="hidden sm:flex items-center gap-3 h-16 px-4">
           {/* Left: Logo - Fixed width */}
@@ -534,6 +548,7 @@ export function SearchHeader({
               activeDatasetCount={activeDatasetCount}
               toggleDataset={toggleDataset}
               tSearch={tSearch}
+              dropdownState={dropdownState}
             />
           </div>
 
@@ -543,7 +558,7 @@ export function SearchHeader({
             {/* Desktop: Dropdown hamburger (lg+) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hidden lg:flex h-8 w-8">
+                <Button variant="ghost" size="icon" className="hidden md:flex h-8 w-8">
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -555,7 +570,7 @@ export function SearchHeader({
             {/* Mobile/tablet: Sheet hamburger (below lg) */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8">
+                <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -737,6 +752,7 @@ export function SearchHeader({
               activeDatasetCount={activeDatasetCount}
               toggleDataset={toggleDataset}
               tSearch={tSearch}
+              dropdownState={dropdownState}
             />
           </div>
         </div>
