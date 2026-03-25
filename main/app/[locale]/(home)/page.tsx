@@ -88,7 +88,7 @@ export default function HomePage() {
     clearHistory,
   } = useSearchDropdown({ query, selectedDataset, onSearchTerm: navigateToSearch });
 
-  const { data: hotTerms, refetch: refetchHotTerms, isFetching: hotTermsFetching } = useHotTerms();
+  const { data: hotTerms, refetch: refetchHotTerms, isFetching: hotTermsFetching, isLoading: hotTermsLoading } = useHotTerms();
 
   const handleManualSearch = () => {
     if (!query.trim()) return;
@@ -405,20 +405,27 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          className="mt-6 flex flex-wrap items-center justify-center gap-2"
+          className="mt-6 flex w-full max-w-[720px] flex-wrap items-center justify-center gap-2"
         >
           <span className="mr-1 text-xs font-medium text-muted-foreground">
             {t("trending")}
           </span>
-          {(hotTerms ?? []).map((term) => (
-            <button
-              key={term}
-              onClick={() => navigateToSearch(term)}
-              className="rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-            >
-              {term}
-            </button>
-          ))}
+          {hotTermsLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-7 w-16 animate-pulse rounded-full border bg-muted"
+                />
+              ))
+            : (hotTerms ?? []).map((term) => (
+                <button
+                  key={term}
+                  onClick={() => navigateToSearch(term)}
+                  className="rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                >
+                  {term}
+                </button>
+              ))}
           <button
             onClick={() => refetchHotTerms()}
             disabled={hotTermsFetching}
