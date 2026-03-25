@@ -420,11 +420,11 @@ export default function HomePage() {
             </button>
           ))}
           <button
-            onClick={() => refetchHotTerms()}
+            onClick={refetchHotTerms}
             disabled={hotTermsFetching}
             className="flex items-center gap-1 rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
           >
-            <RefreshCw className={cn("h-3 w-3", hotTermsFetching && "animate-spin")} />
+            <RefreshCw aria-hidden="true" className={cn("h-3 w-3", hotTermsFetching && "animate-spin")} />
             {t("luckyButton")}
           </button>
         </motion.div>
