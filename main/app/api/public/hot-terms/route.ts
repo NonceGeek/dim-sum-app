@@ -7,7 +7,8 @@ import { Prisma } from "@prisma/client";
 export async function GET(req: NextRequest) {
   return publicApi(req, async () => {
     const { searchParams } = new URL(req.url);
-    const count = Math.min(parseInt(searchParams.get("count") ?? "6", 10), 20);
+    const raw = parseInt(searchParams.get("count") ?? "6", 10);
+    const count = Math.min(isNaN(raw) || raw < 1 ? 6 : raw, 20);
 
     const rows = await prisma.$queryRaw<Array<{ data: string }>>(
       Prisma.sql`SELECT data FROM cantonese_corpus_all ORDER BY RANDOM() LIMIT ${count}`
