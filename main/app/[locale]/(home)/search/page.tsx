@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { DictionaryNote } from "@/lib/types";
 import { useAllCategories } from "@/lib/api/category";
+import { useHotTerms } from "@/lib/api/public";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import SearchResultItem from "../_components/search-result-item";
@@ -45,6 +46,7 @@ export default function SearchPage() {
 
   // Fetch available categories
   const { data: categories, isLoading: categoriesLoading } = useAllCategories();
+  const { data: hotTerms, isLoading: hotTermsLoading } = useHotTerms();
   const fiter_not_in = [
     { id: "all", name: "all", nickname: th("globalSearch") },
     ...(categories || [])?.filter((cat) => cat.if_in_all_data),
@@ -313,34 +315,32 @@ export default function SearchPage() {
                   </motion.div>
                 </AnimatePresence>
 
-                {/* ── Related searches ──────────────────────────────────────── */}
+                {/* ── Hot searches ──────────────────────────────────────────── */}
                 <div className="mt-10">
                   <p className="text-sm text-muted-foreground mb-3">
-                    {t("relatedSearches")}
+                    {th("trending")}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      { title: t("exampleLyrics"), prompt: "落花流水" },
-                      { title: t("exampleWords"), prompt: "姐姐" },
-                      { title: t("exampleCharacter"), prompt: "行" },
-                      { title: t("exampleVideo"), prompt: "歡聚一堂" },
-                    ]
-                      .filter((e) => e.prompt !== searchPrompt)
-                      .map((example) => (
-                        <button
-                          key={example.prompt}
-                          onClick={() => {
-                            if (isPending) return;
-                            setResults(null);
-                            handleExampleSearch(example.prompt);
-                          }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
-                        >
-                          <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                          {/* {example.title}「{example.prompt}」 */}
-                          {example.prompt}
-                        </button>
-                      ))}
+                    {hotTermsLoading
+                      ? [20, 24, 16, 28, 20, 24].map((w, i) => (
+                          <Skeleton key={i} className={`h-9 w-${w} rounded-lg`} />
+                        ))
+                      : (hotTerms ?? [])
+                          .filter((term) => term !== searchPrompt)
+                          .map((term) => (
+                            <button
+                              key={term}
+                              onClick={() => {
+                                if (isPending) return;
+                                setResults(null);
+                                handleExampleSearch(term);
+                              }}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                            >
+                              <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                              {term}
+                            </button>
+                          ))}
                   </div>
                 </div>
 
@@ -437,33 +437,32 @@ export default function SearchPage() {
                 </motion.div>
               </AnimatePresence>
 
-              {/* ── Related searches ──────────────────────────────────────── */}
+              {/* ── Hot searches ──────────────────────────────────────────── */}
               <div className="mt-10">
                 <p className="text-sm text-muted-foreground mb-3">
-                  {t("relatedSearches")}
+                  {th("trending")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { title: t("exampleLyrics"), prompt: "落花流水" },
-                    { title: t("exampleWords"), prompt: "姐姐" },
-                    { title: t("exampleCharacter"), prompt: "行" },
-                    { title: t("exampleVideo"), prompt: "歡聚一堂" },
-                  ]
-                    .filter((e) => e.prompt !== searchPrompt)
-                    .map((example) => (
-                      <button
-                        key={example.prompt}
-                        onClick={() => {
-                          if (isPending) return;
-                          setResults(null);
-                          handleExampleSearch(example.prompt);
-                        }}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
-                      >
-                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                        {example.title}「{example.prompt}」
-                      </button>
-                    ))}
+                  {hotTermsLoading
+                    ? [20, 24, 16, 28, 20, 24].map((w, i) => (
+                        <Skeleton key={i} className={`h-9 w-${w} rounded-lg`} />
+                      ))
+                    : (hotTerms ?? [])
+                        .filter((term) => term !== searchPrompt)
+                        .map((term) => (
+                          <button
+                            key={term}
+                            onClick={() => {
+                              if (isPending) return;
+                              setResults(null);
+                              handleExampleSearch(term);
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                          >
+                            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                            {term}
+                          </button>
+                        ))}
                 </div>
               </div>
 
@@ -548,7 +547,7 @@ export default function SearchPage() {
                 </ul>
                 <div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    {t("relatedSearches")}
+                    {th("trending")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {[
@@ -596,30 +595,29 @@ export default function SearchPage() {
               </ul>
               <div>
                 <p className="text-sm text-muted-foreground mb-3">
-                  {t("relatedSearches")}
+                  {th("trending")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { title: t("exampleLyrics"), prompt: "落花流水" },
-                    { title: t("exampleWords"), prompt: "姐姐" },
-                    { title: t("exampleCharacter"), prompt: "行" },
-                    { title: t("exampleVideo"), prompt: "歡聚一堂" },
-                  ]
-                    .filter((e) => e.prompt !== searchPrompt)
-                    .map((example) => (
-                      <button
-                        key={example.prompt}
-                        onClick={() => {
-                          if (isPending) return;
-                          setResults(null);
-                          handleExampleSearch(example.prompt);
-                        }}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
-                      >
-                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                        {example.title}「{example.prompt}」
-                      </button>
-                    ))}
+                  {hotTermsLoading
+                    ? [20, 24, 16, 28, 20, 24].map((w, i) => (
+                        <Skeleton key={i} className={`h-9 w-${w} rounded-lg`} />
+                      ))
+                    : (hotTerms ?? [])
+                        .filter((term) => term !== searchPrompt)
+                        .map((term) => (
+                          <button
+                            key={term}
+                            onClick={() => {
+                              if (isPending) return;
+                              setResults(null);
+                              handleExampleSearch(term);
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                          >
+                            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                            {term}
+                          </button>
+                        ))}
                 </div>
               </div>
             </div>

@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, Clock, X, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
+import {
+  Search,
+  Clock,
+  X,
+  SlidersHorizontal,
+  ChevronDown,
+  Check,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { FloatingNav } from "@/components/layout/floating-nav";
 import { MinimalFooter } from "./_components/minimal-footer";
+import { Dice3D } from "./_components/dice-3d";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import BorderGlow from "@/components/ui/border-glow";
@@ -17,7 +25,11 @@ import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import { useAllCategories } from "@/lib/api/category";
 import { useHotTerms } from "@/lib/api/public";
 import GradientText from "@/components/ui/gradient-text";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Command,
   CommandGroup,
@@ -35,6 +47,7 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
   const [datasetInputValue, setDatasetInputValue] = useState("");
+  const [luckyHovered, setLuckyHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useAllCategories();
@@ -87,9 +100,24 @@ export default function HomePage() {
     addToHistory,
     removeHistory,
     clearHistory,
-  } = useSearchDropdown({ query, selectedDataset, onSearchTerm: navigateToSearch });
+  } = useSearchDropdown({
+    query,
+    selectedDataset,
+    onSearchTerm: navigateToSearch,
+  });
 
-  const { data: hotTerms, refetch: refetchHotTerms, isFetching: hotTermsFetching, isLoading: hotTermsLoading } = useHotTerms();
+  const {
+    data: hotTerms,
+    refetch: refetchHotTerms,
+    isFetching: hotTermsFetching,
+    isLoading: hotTermsLoading,
+  } = useHotTerms();
+
+  // Mobile: mouseenter fires on tap but mouseleave never fires after touch ends,
+  // so reset luckyHovered when fetching completes to ensure the dice disappears.
+  useEffect(() => {
+    if (!hotTermsFetching) setLuckyHovered(false);
+  }, [hotTermsFetching]);
 
   const handleManualSearch = () => {
     if (!query.trim()) return;
@@ -111,7 +139,9 @@ export default function HomePage() {
     dropdownKeyDown(e); // ↑↓ Escape
   };
 
-  const hasDropdown = showDropdown && (mode === "history" ? history.length > 0 : suggestions.length > 0);
+  const hasDropdown =
+    showDropdown &&
+    (mode === "history" ? history.length > 0 : suggestions.length > 0);
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -272,7 +302,10 @@ export default function HomePage() {
                               className="cursor-pointer"
                             >
                               <motion.div
-                                animate={{ scale: isGlobal ? 1 : 0.5, opacity: isGlobal ? 1 : 0 }}
+                                animate={{
+                                  scale: isGlobal ? 1 : 0.5,
+                                  opacity: isGlobal ? 1 : 0,
+                                }}
                                 transition={{ duration: 0.15 }}
                                 className="h-4 w-4 flex items-center justify-center shrink-0"
                               >
@@ -297,15 +330,23 @@ export default function HomePage() {
                                 >
                                   <motion.div
                                     animate={{
-                                      scale: selectedDataset.includes(cat.name) ? 1 : 0.5,
-                                      opacity: selectedDataset.includes(cat.name) ? 1 : 0,
+                                      scale: selectedDataset.includes(cat.name)
+                                        ? 1
+                                        : 0.5,
+                                      opacity: selectedDataset.includes(
+                                        cat.name,
+                                      )
+                                        ? 1
+                                        : 0,
                                     }}
                                     transition={{ duration: 0.15 }}
                                     className="h-4 w-4 flex items-center justify-center shrink-0"
                                   >
                                     <Check className="h-3.5 w-3.5 text-primary" />
                                   </motion.div>
-                                  <span className="truncate">{cat.nickname ?? cat.name}</span>
+                                  <span className="truncate">
+                                    {cat.nickname ?? cat.name}
+                                  </span>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -341,9 +382,14 @@ export default function HomePage() {
                   {mode === "history" ? (
                     <>
                       <div className="flex items-center justify-between px-4 pt-2 pb-1">
-                        <span className="text-xs font-medium text-muted-foreground">{tSearch("recentSearches")}</span>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {tSearch("recentSearches")}
+                        </span>
                         <button
-                          onMouseDown={(e) => { e.preventDefault(); clearHistory(); }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            clearHistory();
+                          }}
                           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {tSearch("clearHistory")}
@@ -355,19 +401,29 @@ export default function HomePage() {
                             key={term}
                             className={cn(
                               "flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors group",
-                              activeIndex === idx ? "bg-accent" : "hover:bg-accent/50",
+                              activeIndex === idx
+                                ? "bg-accent"
+                                : "hover:bg-accent/50",
                             )}
                           >
                             <button
                               className="flex flex-1 min-w-0 items-center gap-3 text-left"
-                              onMouseDown={(e) => { e.preventDefault(); selectItem(term); }}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                selectItem(term);
+                              }}
                             >
                               <Clock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                              <span className="flex-1 truncate text-foreground">{term}</span>
+                              <span className="flex-1 truncate text-foreground">
+                                {term}
+                              </span>
                             </button>
                             <button
                               className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0"
-                              onMouseDown={(e) => { e.preventDefault(); removeHistory(term); }}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                removeHistory(term);
+                              }}
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -380,14 +436,21 @@ export default function HomePage() {
                       {suggestions.map((item, idx) => (
                         <li
                           key={item.id}
-                          onMouseDown={(e) => { e.preventDefault(); selectItem(item.data); }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectItem(item.data);
+                          }}
                           className={cn(
                             "flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors",
-                            activeIndex === idx ? "bg-accent" : "hover:bg-accent/50",
+                            activeIndex === idx
+                              ? "bg-accent"
+                              : "hover:bg-accent/50",
                           )}
                         >
                           <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                          <span className="flex-1 truncate text-foreground">{item.data}</span>
+                          <span className="flex-1 truncate text-foreground">
+                            {item.data}
+                          </span>
                           <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                             {item.category}
                           </span>
@@ -422,34 +485,63 @@ export default function HomePage() {
             ))
           ) : (
             <>
-              {(hotTerms ?? []).map((term) => (
-                <button
+              {(hotTerms ?? []).map((term, i) => (
+                <motion.button
                   key={term}
                   title={term}
                   onClick={() => navigateToSearch(term)}
                   className="max-w-[14rem] truncate rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.04, ease: "easeOut" }}
                 >
                   {term}
-                </button>
+                </motion.button>
               ))}
-              <button
-                onClick={() => refetchHotTerms()}
-                disabled={hotTermsFetching}
-                className="ml-auto disabled:opacity-40"
+              <motion.div
+                className="relative"
+                onMouseEnter={() => setLuckyHovered(true)}
+                onMouseLeave={() => setLuckyHovered(false)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: (hotTerms?.length ?? 0) * 0.04, ease: "easeOut" }}
               >
-                <GradientText
-                  colors={["#3193ff", "#a855f7", "#ec4899"]}
-                  animationSpeed={4}
-                  className="text-xs font-medium"
+                <button
+                  onClick={() => refetchHotTerms()}
+                  disabled={hotTermsFetching}
+                  className="rounded-full px-3 py-1 text-sm transition-all disabled:opacity-40"
+                  style={{
+                    border: "1px solid transparent",
+                    backgroundImage: `linear-gradient(var(--background), var(--background)), linear-gradient(to right, #3193ff4d, #a855f74d, #ec48994d)`,
+                    backgroundOrigin: "padding-box, border-box",
+                    backgroundClip: "padding-box, border-box",
+                  }}
                 >
-                  {t("luckyButton")}
-                </GradientText>
-              </button>
+                  <GradientText
+                    colors={["#3193ff", "#a855f7", "#ec4899"]}
+                    animationSpeed={3.5}
+                    className="text-xs font-medium"
+                  >
+                    {t("luckyButton")}
+                  </GradientText>
+                </button>
+                <AnimatePresence>
+                  {(luckyHovered || hotTermsFetching) && (
+                    <motion.div
+                      className="absolute left-full top-1/2 -translate-y-1/2 ml-2.5"
+                      initial={{ opacity: 0, scale: 0.4 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.4 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                    >
+                      <Dice3D rolling={hotTermsFetching} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </>
           )}
         </motion.div>
-
-
       </main>
 
       {/* Footer */}

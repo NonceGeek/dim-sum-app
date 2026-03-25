@@ -323,7 +323,7 @@ function SearchInputField({
           <Button
             onClick={handleManualSearch}
             disabled={isPending}
-            className="relative bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full shrink-0 h-9 w-9 p-0 sm:h-10 sm:w-auto sm:px-4"
+            className="relative bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full shrink-0 h-9 w-9 p-0 sm:h-10 sm:w-20 sm:px-4"
           >
             <Loader2
               className={cn(
