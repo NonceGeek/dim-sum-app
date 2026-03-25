@@ -16,6 +16,7 @@ import TextType from "@/components/ui/text-type";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import { useAllCategories } from "@/lib/api/category";
 import { useHotTerms } from "@/lib/api/public";
+import GradientText from "@/components/ui/gradient-text";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -434,9 +435,15 @@ export default function HomePage() {
               <button
                 onClick={() => refetchHotTerms()}
                 disabled={hotTermsFetching}
-                className="ml-auto text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline disabled:opacity-40"
+                className="ml-auto disabled:opacity-40"
               >
-                {t("luckyButton")}
+                <GradientText
+                  colors={["#3193ff", "#007fff", "#5aa8ff"]}
+                  animationSpeed={6}
+                  className="text-xs font-medium"
+                >
+                  {t("luckyButton")}
+                </GradientText>
               </button>
             </>
           )}
