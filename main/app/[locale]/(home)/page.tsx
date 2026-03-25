@@ -411,7 +411,8 @@ export default function HomePage() {
             {t("trending")}
           </span>
           {hotTermsLoading ? (
-            [72, 48, 96, 56, 80, 40].map((w, i) => (
+            // Widths designed to naturally fill ~2 rows in a 720px container
+            [200, 120, 280, 160, 220, 140].map((w, i) => (
               <div
                 key={i}
                 className="skeleton-shimmer h-7 rounded-full"
@@ -432,7 +433,7 @@ export default function HomePage() {
               <button
                 onClick={() => refetchHotTerms()}
                 disabled={hotTermsFetching}
-                className="ml-auto text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground disabled:opacity-40"
+                className="ml-auto text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline disabled:opacity-40"
               >
                 {t("luckyButton")}
               </button>
