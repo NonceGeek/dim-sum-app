@@ -56,7 +56,7 @@
     "agreementAnd": "and"
   },
   "Home": {
-    "globalSearch": "Global Search",
+    "globalSearch": "Global",
     "trending": "Trending",
     "searchPlaceholder": "Search Cantonese content...",
     "subtitle": "Discover and explore Cantonese resources",
@@ -155,6 +155,7 @@
   },
   "Search": {
     "selectDataset": "Please select",
+    "orSelectSpecific": "Or select specific",
     "searchDatasetPlaceholder": "Search datasets",
     "searching": "Searching...",
     "tryOtherSearches": "Try other searches",
@@ -183,7 +184,9 @@
     "allCategories": "All",
     "relatedSearches": "Related searches",
     "noResultsTip1": "Check for typos or spelling errors",
-    "noResultsTip2": "Try a shorter or simpler keyword"
+    "noResultsTip2": "Try a shorter or simpler keyword",
+    "recentSearches": "Recent Searches",
+    "clearHistory": "Clear"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

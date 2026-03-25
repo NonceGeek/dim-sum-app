@@ -256,7 +256,10 @@ function SearchInputField({
                         className="cursor-pointer"
                       >
                         <motion.div
-                          animate={{ scale: isGlobal ? 1 : 0.5, opacity: isGlobal ? 1 : 0 }}
+                          animate={{
+                            scale: isGlobal ? 1 : 0.5,
+                            opacity: isGlobal ? 1 : 0,
+                          }}
                           transition={{ duration: 0.15, ease: "easeOut" }}
                           className="h-4 w-4 flex items-center justify-center shrink-0"
                         >
@@ -281,15 +284,21 @@ function SearchInputField({
                           >
                             <motion.div
                               animate={{
-                                scale: selectedDataset.includes(cat.name) ? 1 : 0.5,
-                                opacity: selectedDataset.includes(cat.name) ? 1 : 0,
+                                scale: selectedDataset.includes(cat.name)
+                                  ? 1
+                                  : 0.5,
+                                opacity: selectedDataset.includes(cat.name)
+                                  ? 1
+                                  : 0,
                               }}
                               transition={{ duration: 0.15, ease: "easeOut" }}
                               className="h-4 w-4 flex items-center justify-center shrink-0"
                             >
                               <Check className="h-3.5 w-3.5 text-primary" />
                             </motion.div>
-                            <span className="truncate">{cat.nickname ?? cat.name}</span>
+                            <span className="truncate">
+                              {cat.nickname ?? cat.name}
+                            </span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -319,16 +328,21 @@ function SearchInputField({
             <Loader2
               className={cn(
                 "absolute inset-0 m-auto h-4 w-4 animate-spin transition-opacity",
-                isPending ? "opacity-100" : "opacity-0"
+                isPending ? "opacity-100" : "opacity-0",
               )}
             />
             <Search
               className={cn(
                 "h-4 w-4 sm:hidden transition-opacity",
-                isPending ? "opacity-0" : "opacity-100"
+                isPending ? "opacity-0" : "opacity-100",
               )}
             />
-            <span className={cn("hidden sm:inline transition-opacity", isPending ? "opacity-0" : "opacity-100")}>
+            <span
+              className={cn(
+                "hidden sm:inline transition-opacity",
+                isPending ? "opacity-0" : "opacity-100",
+              )}
+            >
               {searchButtonLabel}
             </span>
           </Button>
@@ -337,67 +351,89 @@ function SearchInputField({
 
       {/* Suggestion / History Dropdown */}
       <AnimatePresence>
-        {showDropdown && (mode === "history" ? history.length > 0 : suggestions.length > 0) && (
-          <motion.div
-            key={mode}
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 mt-1.5 bg-background border border-border rounded-xl shadow-lg z-50 overflow-hidden"
-          >
-            {mode === "history" ? (
-              <>
-                <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
-                  <span className="text-xs font-medium text-muted-foreground">最近搜索</span>
-                  <button
-                    onMouseDown={(e) => { e.preventDefault(); clearHistory(); }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    清空
-                  </button>
-                </div>
-                {history.map((term, idx) => (
-                  <div
-                    key={term}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 group",
-                      activeIndex === idx ? "bg-accent" : "hover:bg-accent/50"
-                    )}
-                  >
+        {showDropdown &&
+          (mode === "history"
+            ? history.length > 0
+            : suggestions.length > 0) && (
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute top-full left-0 right-0 mt-1.5 bg-background border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+            >
+              {mode === "history" ? (
+                <>
+                  <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {tSearch("recentSearches")}
+                    </span>
                     <button
-                      className="flex items-center gap-2 flex-1 min-w-0 text-left text-sm"
-                      onMouseDown={(e) => { e.preventDefault(); selectItem(term); }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        clearHistory();
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="truncate">{term}</span>
-                    </button>
-                    <button
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0"
-                      onMouseDown={(e) => { e.preventDefault(); removeHistory(term); }}
-                    >
-                      <X className="h-3.5 w-3.5" />
+                      {tSearch("clearHistory")}
                     </button>
                   </div>
-                ))}
-              </>
-            ) : (
-              suggestions.map((result, idx) => (
-                <div
-                  key={`${result.id ?? idx}`}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer",
-                    activeIndex === idx ? "bg-accent" : "hover:bg-accent/50"
-                  )}
-                  onMouseDown={(e) => { e.preventDefault(); selectItem(result.data); }}
-                >
-                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="truncate">{result.data}</span>
-                </div>
-              ))
-            )}
-          </motion.div>
-        )}
+                  {history.map((term, idx) => (
+                    <div
+                      key={term}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 group",
+                        activeIndex === idx
+                          ? "bg-accent"
+                          : "hover:bg-accent/50",
+                      )}
+                    >
+                      <button
+                        className="flex items-center gap-2 flex-1 min-w-0 text-left text-sm"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selectItem(term);
+                        }}
+                      >
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <span className="truncate">{term}</span>
+                      </button>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          removeHistory(term);
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                suggestions.map((result, idx) => (
+                  <div
+                    key={`${result.id ?? idx}`}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer",
+                      activeIndex === idx ? "bg-accent" : "hover:bg-accent/50",
+                    )}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      selectItem(result.data);
+                    }}
+                  >
+                    <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="flex-1 truncate">{result.data}</span>
+                    <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {result.category}
+                    </span>
+                  </div>
+                ))
+              )}
+            </motion.div>
+          )}
       </AnimatePresence>
     </div>
   );
@@ -511,7 +547,10 @@ export function SearchHeader({
     <>
       <header
         ref={wrapperRef as React.RefObject<HTMLElement>}
-        className={cn("sticky top-0 z-50 bg-background transition-shadow duration-200", showShadow && "shadow-sm")}
+        className={cn(
+          "sticky top-0 z-50 bg-background transition-shadow duration-200",
+          showShadow && "shadow-sm",
+        )}
       >
         {/* Desktop & Tablet Layout - Single Row */}
         <div className="hidden sm:flex items-center gap-3 h-16 px-4">
@@ -554,11 +593,14 @@ export function SearchHeader({
 
           {/* Right: Hamburger + User */}
           <div className="flex items-center gap-2 shrink-0 ml-auto">
-
             {/* Desktop: Dropdown hamburger (lg+) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hidden md:flex h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden md:flex h-9 w-9"
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -570,7 +612,11 @@ export function SearchHeader({
             {/* Mobile/tablet: Sheet hamburger (below lg) */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-9 w-9"
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -585,7 +631,10 @@ export function SearchHeader({
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1.5">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={user?.avatar || ""} alt={user?.name || ""} />
+                      <AvatarImage
+                        src={user?.avatar || ""}
+                        alt={user?.name || ""}
+                      />
                       <AvatarFallback className="text-xs">
                         {user?.name?.[0] || "U"}
                       </AvatarFallback>
@@ -598,14 +647,20 @@ export function SearchHeader({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   {accountSubmenuItems.map((item) => (
-                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                    <DropdownMenuItem
+                      key={item.href}
+                      onClick={() => router.push(item.href)}
+                    >
                       <item.icon className="mr-2 h-4 w-4" />
                       {t(item.labelKey)}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
                   {workplaceSubmenuItems.map((item) => (
-                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                    <DropdownMenuItem
+                      key={item.href}
+                      onClick={() => router.push(item.href)}
+                    >
                       <item.icon className="mr-2 h-4 w-4" />
                       {t(item.labelKey)}
                     </DropdownMenuItem>
@@ -613,7 +668,9 @@ export function SearchHeader({
                   {session?.user?.isSystemAdmin && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => window.open("/admin", "_blank")}>
+                      <DropdownMenuItem
+                        onClick={() => window.open("/admin", "_blank")}
+                      >
                         <Settings className="mr-2 h-4 w-4" />
                         {t("admin")}
                       </DropdownMenuItem>
@@ -627,7 +684,11 @@ export function SearchHeader({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="default" size="sm" onClick={() => setShowRoleSelect(true)}>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowRoleSelect(true)}
+              >
                 {tCommon("signIn")}
               </Button>
             )}
@@ -642,7 +703,7 @@ export function SearchHeader({
             <div className="flex justify-start">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-10 w-10">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -658,11 +719,11 @@ export function SearchHeader({
                 <Image
                   src="/logo.png"
                   alt="DimSum AI Labs"
-                  width={24}
-                  height={24}
+                  width={28}
+                  height={28}
                   className="rounded-sm"
                 />
-                <span className="text-sm font-semibold">DimSum AI</span>
+                <span className="text-base font-semibold">DimSum</span>
               </Link>
             </div>
 
@@ -671,7 +732,7 @@ export function SearchHeader({
               {isAuthenticated ? (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-10 w-10">
                       <Avatar className="h-6 w-6">
                         <AvatarImage
                           src={user?.avatar || ""}

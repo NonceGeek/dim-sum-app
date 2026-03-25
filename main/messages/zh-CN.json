@@ -56,7 +56,7 @@
     "agreementAnd": "和"
   },
   "Home": {
-    "globalSearch": "全局搜索",
+    "globalSearch": "全局",
     "trending": "热搜",
     "searchPlaceholder": "搜索粤语内容...",
     "subtitle": "探索和发现粤语资源",
@@ -155,6 +155,7 @@
   },
   "Search": {
     "selectDataset": "请选择",
+    "orSelectSpecific": "或选择具体语料集",
     "searchDatasetPlaceholder": "搜索数据集",
     "searching": "搜索中...",
     "tryOtherSearches": "试试其他搜索",
@@ -183,7 +184,9 @@
     "allCategories": "全部",
     "relatedSearches": "相关搜索",
     "noResultsTip1": "检查输入是否有误",
-    "noResultsTip2": "尝试更简短的关键词"
+    "noResultsTip2": "尝试更简短的关键词",
+    "recentSearches": "最近搜索",
+    "clearHistory": "清空"
   },
   "Validation": {
     "enterCharacter": "请输入字符",

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,13 +28,6 @@ import { getAccountSubmenuItems, workplaceSubmenuItems } from "./sidebar/menu-co
 import { Role } from "@prisma/client";
 
 const navLinks = [
-  { labelKey: "library", href: "/library" },
-  { labelKey: "appStore", href: "/appStore" },
-  { labelKey: "docs", href: "/docs" },
-];
-
-const mobileNavLinks = [
-  { labelKey: "home", href: "/" },
   { labelKey: "library", href: "/library" },
   { labelKey: "appStore", href: "/appStore" },
   { labelKey: "docs", href: "/docs" },
@@ -79,9 +73,11 @@ export function FloatingNav() {
           ))}
         </div>
 
-        {/* Locale + Theme toggle */}
-        <LocaleSwitcher />
-        <ThemeToggle />
+        {/* Locale + Theme toggle — hidden on mobile, shown in hamburger drawer */}
+        <span className="hidden md:contents">
+          <LocaleSwitcher />
+          <ThemeToggle />
+        </span>
 
         {/* User menu / Sign In */}
         {isAuthenticated ? (
@@ -158,27 +154,7 @@ export function FloatingNav() {
                 <span className="ml-2 text-sm font-medium">DimSum AI</span>
               </div>
               <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                {mobileNavLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-                  >
-                    {t(link.labelKey)}
-                  </Link>
-                ))}
-                {session?.user?.isSystemAdmin && (
-                  <Link
-                    href="/admin"
-                    target="_blank"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    {t('admin')}
-                  </Link>
-                )}
+                <HamburgerMenuContent onNavClick={() => setMobileOpen(false)} />
               </nav>
             </div>
           </SheetContent>

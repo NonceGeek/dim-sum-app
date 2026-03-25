@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { useSearch, type SearchResult } from "@/lib/api/search";
-import { Search } from "lucide-react";
+import { Search, Clock, X, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
@@ -14,122 +13,103 @@ import { useTranslations } from "next-intl";
 import BorderGlow from "@/components/ui/border-glow";
 import SplitText from "@/components/ui/split-text";
 import TextType from "@/components/ui/text-type";
+import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
+import { useAllCategories } from "@/lib/api/category";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 const HOT_TERMS = ["落花流水", "唔听", "行", "姐姐", "歡聚一堂", "帆船"];
 
 export default function HomePage() {
   const router = useRouter();
-  const { mutate: search } = useSearch();
   const t = useTranslations("Home");
   const tc = useTranslations("Common");
+  const tSearch = useTranslations("Search");
 
-  // --- state ---
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [isFocused, setIsFocused] = useState(false);
-
-  // --- refs ---
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
+  const [datasetInputValue, setDatasetInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // --- navigate to search results page ---
+  const { data: categories } = useAllCategories();
+  const allCategories = [
+    { id: "all", name: "all", nickname: t("globalSearch") },
+    ...(categories || []).filter((cat) => cat.if_in_all_data),
+  ];
+  const allCategory = allCategories.find((cat) => cat.name === "all");
+  const specificCategories = allCategories.filter((cat) => cat.name !== "all");
+  const isGlobal = selectedDataset.includes("all");
+
+  const datasetLabel = allCategories
+    .filter((cat) => selectedDataset.includes(cat.name))
+    .map((cat) => cat.nickname ?? cat.name)
+    .join(", ");
+
+  const toggleDataset = (name: string) => {
+    if (name === "all") {
+      setSelectedDataset(["all"]);
+      return;
+    }
+    const next = selectedDataset.includes(name)
+      ? selectedDataset.filter((item) => item !== name)
+      : [...selectedDataset.filter((item) => item !== "all"), name];
+    setSelectedDataset(next.length ? next : ["all"]);
+  };
+
   const navigateToSearch = useCallback(
     (term: string) => {
       if (!term.trim()) return;
       const params = new URLSearchParams();
       params.set("q", term.trim());
-      params.set("dataset", t("globalSearch"));
+      params.set("dataset", selectedDataset.join(","));
       router.push(`/search?${params.toString()}`);
     },
-    [router],
+    [router, selectedDataset],
   );
 
-  // --- debounced suggestion fetch ---
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+  const {
+    showDropdown,
+    mode,
+    suggestions,
+    history,
+    activeIndex,
+    wrapperRef,
+    handleFocus,
+    handleKeyDown: dropdownKeyDown,
+    closeDropdown,
+    selectItem,
+    addToHistory,
+    removeHistory,
+    clearHistory,
+  } = useSearchDropdown({ query, selectedDataset, onSearchTerm: navigateToSearch });
 
-    if (!query.trim()) {
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
+  const handleManualSearch = () => {
+    if (!query.trim()) return;
+    addToHistory(query.trim());
+    navigateToSearch(query);
+    closeDropdown();
+  };
 
-    debounceRef.current = setTimeout(() => {
-      search(
-        { keyword: query.trim(), category: JSON.stringify(["all"]) },
-        {
-          onSuccess: (data) => {
-            setSuggestions(data.slice(0, 6));
-            setShowDropdown(data.length > 0);
-            setActiveIndex(-1);
-          },
-          onError: () => {
-            setSuggestions([]);
-            setShowDropdown(false);
-          },
-        },
-      );
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query, search]);
-
-  // --- click-outside to close dropdown ---
-  useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(e.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, []);
-
-  // --- keyboard navigation ---
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (activeIndex >= 0 && activeIndex < suggestions.length) {
-        navigateToSearch(suggestions[activeIndex].data);
+      if (showDropdown && activeIndex >= 0) {
+        dropdownKeyDown(e); // select from dropdown
       } else {
-        navigateToSearch(query);
+        handleManualSearch();
       }
-      setShowDropdown(false);
       return;
     }
-
-    if (e.key === "Escape") {
-      setShowDropdown(false);
-      setActiveIndex(-1);
-      return;
-    }
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((prev) =>
-        prev < suggestions.length - 1 ? prev + 1 : 0,
-      );
-      return;
-    }
-
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((prev) =>
-        prev > 0 ? prev - 1 : suggestions.length - 1,
-      );
-      return;
-    }
+    dropdownKeyDown(e); // ↑↓ Escape
   };
 
-  const hasSuggestions = showDropdown && suggestions.length > 0;
+  const hasDropdown = showDropdown && (mode === "history" ? history.length > 0 : suggestions.length > 0);
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -213,13 +193,13 @@ export default function HomePage() {
 
         {/* Search bar + dropdown wrapper */}
         <motion.div
-          ref={wrapperRef}
+          ref={wrapperRef as React.RefObject<HTMLDivElement>}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
           className="relative mt-6 w-full max-w-[720px]"
         >
-          {/* Search card with border glow */}
+          {/* Search card with border glow — dropdown is inside the same card */}
           <BorderGlow
             borderRadius={16}
             glowRadius={30}
@@ -242,76 +222,181 @@ export default function HomePage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onFocus={() => {
-                    setIsFocused(true);
-                    if (suggestions.length > 0 && query.trim()) {
-                      setShowDropdown(true);
-                    }
-                  }}
-                  onBlur={() => setIsFocused(false)}
+                  onFocus={handleFocus}
                   placeholder={t("searchPlaceholder")}
                   className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 />
               </div>
 
               {/* Button row */}
-              <div className="flex justify-end mt-2.5">
+              <div className="flex items-center justify-end gap-2 mt-2.5">
+                {/* Dataset selector */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground h-9 px-3 max-w-[200px]"
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={datasetLabel}
+                          initial={{ opacity: 0, y: 3 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -3 }}
+                          transition={{ duration: 0.12 }}
+                          className="truncate"
+                        >
+                          {datasetLabel || tSearch("selectDataset")}
+                        </motion.span>
+                      </AnimatePresence>
+                      <ChevronDown className="h-3 w-3 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-0" align="end">
+                    <Command className="bg-background!">
+                      <CommandInput
+                        placeholder={tSearch("searchDatasetPlaceholder")}
+                        value={datasetInputValue}
+                        onValueChange={setDatasetInputValue}
+                      />
+                      <CommandList>
+                        <CommandGroup>
+                          {allCategory && (
+                            <CommandItem
+                              value={allCategory.nickname ?? allCategory.name}
+                              onSelect={() => toggleDataset("all")}
+                              className="cursor-pointer"
+                            >
+                              <motion.div
+                                animate={{ scale: isGlobal ? 1 : 0.5, opacity: isGlobal ? 1 : 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="h-4 w-4 flex items-center justify-center shrink-0"
+                              >
+                                <Check className="h-3.5 w-3.5 text-primary" />
+                              </motion.div>
+                              {allCategory.nickname ?? allCategory.name}
+                            </CommandItem>
+                          )}
+                        </CommandGroup>
+                        {specificCategories.length > 0 && (
+                          <motion.div
+                            animate={{ opacity: isGlobal ? 0.45 : 1 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <CommandGroup heading={tSearch("orSelectSpecific")}>
+                              {specificCategories.map((cat) => (
+                                <CommandItem
+                                  key={cat.id}
+                                  value={cat.nickname ?? cat.name}
+                                  onSelect={() => toggleDataset(cat.name)}
+                                  className="cursor-pointer"
+                                >
+                                  <motion.div
+                                    animate={{
+                                      scale: selectedDataset.includes(cat.name) ? 1 : 0.5,
+                                      opacity: selectedDataset.includes(cat.name) ? 1 : 0,
+                                    }}
+                                    transition={{ duration: 0.15 }}
+                                    className="h-4 w-4 flex items-center justify-center shrink-0"
+                                  >
+                                    <Check className="h-3.5 w-3.5 text-primary" />
+                                  </motion.div>
+                                  <span className="truncate">{cat.nickname ?? cat.name}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </motion.div>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
                 <Button
-                  onClick={() => {
-                    navigateToSearch(query);
-                    setShowDropdown(false);
-                  }}
+                  onClick={handleManualSearch}
                   className="h-9 px-6 rounded-lg text-sm font-medium"
                 >
                   {t("searchButton")}
                 </Button>
               </div>
             </div>
+
+            {/* Dropdown — history or suggestions, inline within the same card */}
+            <AnimatePresence>
+              {hasDropdown && (
+                <motion.div
+                  key={mode}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mx-4 border-t" />
+
+                  {mode === "history" ? (
+                    <>
+                      <div className="flex items-center justify-between px-4 pt-2 pb-1">
+                        <span className="text-xs font-medium text-muted-foreground">{tSearch("recentSearches")}</span>
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); clearHistory(); }}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {tSearch("clearHistory")}
+                        </button>
+                      </div>
+                      <ul className="py-1">
+                        {history.map((term, idx) => (
+                          <li
+                            key={term}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors group",
+                              activeIndex === idx ? "bg-accent" : "hover:bg-accent/50",
+                            )}
+                          >
+                            <button
+                              className="flex flex-1 min-w-0 items-center gap-3 text-left"
+                              onMouseDown={(e) => { e.preventDefault(); selectItem(term); }}
+                            >
+                              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                              <span className="flex-1 truncate text-foreground">{term}</span>
+                            </button>
+                            <button
+                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0"
+                              onMouseDown={(e) => { e.preventDefault(); removeHistory(term); }}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <ul className="py-1">
+                      {suggestions.map((item, idx) => (
+                        <li
+                          key={item.id}
+                          onMouseDown={(e) => { e.preventDefault(); selectItem(item.data); }}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors",
+                            activeIndex === idx ? "bg-accent" : "hover:bg-accent/50",
+                          )}
+                        >
+                          <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                          <span className="flex-1 truncate text-foreground">{item.data}</span>
+                          <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            {item.category}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </BorderGlow>
-
-          {/* Dropdown suggestions */}
-          <AnimatePresence>
-            {hasSuggestions && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute left-0 right-0 top-full z-50 overflow-hidden rounded-b-2xl border border-t-0 bg-background shadow-md"
-              >
-                {/* Divider line */}
-                <div className="mx-4 border-t" />
-
-                <ul className="py-1">
-                  {suggestions.map((item, idx) => (
-                    <li
-                      key={item.id}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        navigateToSearch(item.data);
-                        setShowDropdown(false);
-                      }}
-                      onMouseEnter={() => setActiveIndex(idx)}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors",
-                        activeIndex === idx
-                          ? "bg-accent"
-                          : "hover:bg-accent/50",
-                      )}
-                    >
-                      <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                      <span className="flex-1 truncate text-foreground">
-                        {item.data}
-                      </span>
-                      <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {item.category}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
 
         {/* Hot search pills */}
