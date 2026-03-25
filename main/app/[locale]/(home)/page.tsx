@@ -405,19 +405,22 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          className="mt-6 flex w-full max-w-[720px] flex-wrap items-center justify-center gap-2"
+          className="mt-6 flex w-full max-w-[720px] flex-wrap items-center gap-2"
         >
-          <span className="mr-1 text-xs font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground">
             {t("trending")}
           </span>
-          {hotTermsLoading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-7 w-16 animate-pulse rounded-full border bg-muted"
-                />
-              ))
-            : (hotTerms ?? []).map((term) => (
+          {hotTermsLoading ? (
+            [72, 48, 96, 56, 80, 40].map((w, i) => (
+              <div
+                key={i}
+                className="skeleton-shimmer h-7 rounded-full"
+                style={{ width: w }}
+              />
+            ))
+          ) : (
+            <>
+              {(hotTerms ?? []).map((term) => (
                 <button
                   key={term}
                   onClick={() => navigateToSearch(term)}
@@ -426,14 +429,16 @@ export default function HomePage() {
                   {term}
                 </button>
               ))}
-          <button
-            onClick={() => refetchHotTerms()}
-            disabled={hotTermsFetching}
-            className="flex items-center gap-1 rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
-          >
-            <RefreshCw aria-hidden="true" className={cn("h-3 w-3", hotTermsFetching && "animate-spin")} />
-            {t("luckyButton")}
-          </button>
+              <button
+                onClick={() => refetchHotTerms()}
+                disabled={hotTermsFetching}
+                className="flex items-center gap-1 rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+              >
+                <RefreshCw aria-hidden="true" className={cn("h-3 w-3", hotTermsFetching && "animate-spin")} />
+                {t("luckyButton")}
+              </button>
+            </>
+          )}
         </motion.div>
 
 
