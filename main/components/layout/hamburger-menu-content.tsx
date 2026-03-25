@@ -9,7 +9,7 @@ const navLinks = [
   { labelKey: "library", href: "/library" },
   { labelKey: "appStore", href: "/appStore" },
   { labelKey: "docs", href: "/docs" },
-];
+] as const;
 
 interface HamburgerMenuContentProps {
   onNavClick?: () => void;

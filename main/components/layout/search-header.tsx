@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
@@ -12,10 +12,11 @@ import {
   ChevronDown,
   Settings,
   LogOut,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -23,10 +24,17 @@ import {
 } from "@/components/ui/popover";
 import {
   Command,
+  CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,15 +44,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
-import { LocaleSwitcher } from "@/components/locale-switcher";
+import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { LoginDialog } from "@/components/dialogs/login-dialog";
-import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
-import { getAccountSubmenuItems, workplaceSubmenuItems } from "@/components/layout/sidebar/menu-config";
+import {
+  RoleSelectDialog,
+  UserRole,
+} from "@/components/dialogs/role-select-dialog";
+import {
+  getAccountSubmenuItems,
+  workplaceSubmenuItems,
+} from "@/components/layout/sidebar/menu-config";
 import { Role } from "@prisma/client";
 
 interface Category {
@@ -64,20 +78,215 @@ interface SearchHeaderProps {
   searchPlaceholder: string;
   searchButtonLabel: string;
   searchingLabel: string;
+  shadowActive?: boolean;
 }
 
-const navLinks = [
-  { labelKey: "library", href: "/library" },
-  { labelKey: "appStore", href: "/appStore" },
-  { labelKey: "docs", href: "/docs" },
-];
+interface SearchInputProps {
+  searchPrompt: string;
+  onSearchPromptChange: (value: string) => void;
+  onSearch: () => void;
+  isPending: boolean;
+  selectedDataset: string[];
+  onDatasetChange: (dataset: string[]) => void;
+  categories: Category[];
+  searchPlaceholder: string;
+  searchButtonLabel: string;
+  searchingLabel: string;
+  inputValue: string;
+  setInputValue: (value: string) => void;
+  datasetLabel: string;
+  activeDatasetCount: number;
+  toggleDataset: (name: string) => void;
+  tSearch: (key: string) => string;
+}
 
-const mobileNavLinks = [
-  { labelKey: "home", href: "/" },
-  { labelKey: "library", href: "/library" },
-  { labelKey: "appStore", href: "/appStore" },
-  { labelKey: "docs", href: "/docs" },
-];
+function SearchInputField({
+  searchPrompt,
+  onSearchPromptChange,
+  onSearch,
+  isPending,
+  selectedDataset,
+  categories,
+  searchPlaceholder,
+  searchButtonLabel,
+  searchingLabel,
+  inputValue,
+  setInputValue,
+  datasetLabel,
+  activeDatasetCount,
+  toggleDataset,
+  tSearch,
+}: SearchInputProps) {
+  const isGlobal = selectedDataset.includes("all");
+  const allCategory = categories.find((cat) => cat.name === "all");
+  const specificCategories = categories.filter((cat) => cat.name !== "all");
+
+  return (
+    <div className="relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring">
+      {/* Search icon */}
+      <div className="pl-3 flex items-center pointer-events-none shrink-0">
+        <Search className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Text input */}
+      <input
+        type="text"
+        placeholder={searchPlaceholder}
+        value={searchPrompt}
+        onChange={(e) => onSearchPromptChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSearch();
+        }}
+        className="flex-1 min-w-0 h-12 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
+      />
+
+      {/* Divider + dataset selector + clear button */}
+      <div className="flex items-center shrink-0 pr-1">
+        <div className="w-px h-4 bg-border mx-1" />
+        <Popover>
+          <Tooltip>
+            <PopoverTrigger asChild>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:flex items-center overflow-hidden max-w-[80px]">
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={datasetLabel}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.12, ease: "easeInOut" }}
+                        className="truncate"
+                      >
+                        {datasetLabel || tSearch("selectDataset")}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                  <ChevronDown className="h-3 w-3 shrink-0" />
+                  {activeDatasetCount > 0 && (
+                    <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
+                      {activeDatasetCount}
+                    </Badge>
+                  )}
+                </Button>
+              </TooltipTrigger>
+            </PopoverTrigger>
+            {activeDatasetCount > 1 && (
+              <TooltipContent side="bottom" className="flex flex-col gap-0.5">
+                {categories
+                  .filter((cat) => selectedDataset.includes(cat.name))
+                  .map((cat) => (
+                    <span key={cat.name}>{cat.nickname ?? cat.name}</span>
+                  ))}
+              </TooltipContent>
+            )}
+          </Tooltip>
+          <PopoverContent className="w-[220px] p-0">
+            <Command className="bg-background!">
+              <CommandInput
+                placeholder={tSearch("searchDatasetPlaceholder")}
+                value={inputValue}
+                onValueChange={setInputValue}
+              />
+              <CommandList>
+                {/* Global / All item */}
+                <CommandGroup>
+                  {allCategory && (
+                    <CommandItem
+                      value={allCategory.nickname ?? allCategory.name}
+                      onSelect={() => toggleDataset("all")}
+                      className="cursor-pointer"
+                    >
+                      <motion.div
+                        animate={{ scale: isGlobal ? 1 : 0.5, opacity: isGlobal ? 1 : 0 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        className="h-4 w-4 flex items-center justify-center shrink-0"
+                      >
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                      </motion.div>
+                      {allCategory.nickname ?? allCategory.name}
+                    </CommandItem>
+                  )}
+                </CommandGroup>
+
+                {/* Specific datasets — dims when Global is active */}
+                {specificCategories.length > 0 && (
+                  <motion.div
+                    animate={{ opacity: isGlobal ? 0.45 : 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <CommandGroup heading={tSearch("orSelectSpecific")}>
+                      {specificCategories.map((cat) => (
+                        <CommandItem
+                          key={cat.id}
+                          value={cat.nickname ?? cat.name}
+                          onSelect={() => toggleDataset(cat.name)}
+                          className="cursor-pointer"
+                        >
+                          <motion.div
+                            animate={{
+                              scale: selectedDataset.includes(cat.name) ? 1 : 0.5,
+                              opacity: selectedDataset.includes(cat.name) ? 1 : 0,
+                            }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            className="h-4 w-4 flex items-center justify-center shrink-0"
+                          >
+                            <Check className="h-3.5 w-3.5 text-primary" />
+                          </motion.div>
+                          <span className="truncate">{cat.nickname ?? cat.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </motion.div>
+                )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {searchPrompt && (
+          <button
+            type="button"
+            onClick={() => onSearchPromptChange("")}
+            className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Search button — icon-only on mobile, text on sm+ */}
+        <Button
+          onClick={onSearch}
+          disabled={isPending}
+          className="relative bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full shrink-0 h-9 w-9 p-0 sm:h-10 sm:w-auto sm:px-4"
+        >
+          <Loader2
+            className={cn(
+              "absolute inset-0 m-auto h-4 w-4 animate-spin transition-opacity",
+              isPending ? "opacity-100" : "opacity-0"
+            )}
+          />
+          {/* Mobile: search icon */}
+          <Search
+            className={cn(
+              "h-4 w-4 sm:hidden transition-opacity",
+              isPending ? "opacity-0" : "opacity-100"
+            )}
+          />
+          {/* Desktop: text label */}
+          <span className={cn("hidden sm:inline transition-opacity", isPending ? "opacity-0" : "opacity-100")}>
+            {searchButtonLabel}
+          </span>
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function SearchHeader({
   searchPrompt,
@@ -90,6 +299,7 @@ export function SearchHeader({
   searchPlaceholder,
   searchButtonLabel,
   searchingLabel,
+  shadowActive,
 }: SearchHeaderProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -136,144 +346,79 @@ export function SearchHeader({
 
   const datasetLabel = categories
     .map((cat) =>
-      selectedDataset.includes(cat.name) ? cat.nickname ?? cat.name : null
+      selectedDataset.includes(cat.name) ? (cat.nickname ?? cat.name) : null,
     )
     .filter(Boolean)
     .join(", ");
 
-  // Reusable search input component
-  const SearchInput = () => (
-    <div className="relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring">
-      {/* Search icon */}
-      <div className="pl-3 flex items-center pointer-events-none shrink-0">
-        <Search className="h-4 w-4 text-muted-foreground" />
-      </div>
+  const [scrolled, setScrolled] = useState(false);
 
-      {/* Text input */}
-      <input
-        type="text"
-        placeholder={searchPlaceholder}
-        value={searchPrompt}
-        onChange={(e) => onSearchPromptChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") onSearch();
-        }}
-        className="flex-1 min-w-0 h-11 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
-      />
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 0);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-      {/* Divider + dataset selector + clear button */}
-      <div className="flex items-center shrink-0 pr-1">
-        <div className="w-px h-4 bg-border mx-1" />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2 relative"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline truncate max-w-[80px]">
-                {datasetLabel || tSearch("selectDataset")}
-              </span>
-              <ChevronDown className="h-3 w-3 shrink-0" />
-              {activeDatasetCount > 0 && (
-                <Badge className="sm:hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
-                  {activeDatasetCount}
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0">
-            <Command className="bg-background!">
-              <CommandInput
-                placeholder={tSearch("searchDatasetPlaceholder")}
-                value={inputValue}
-                onValueChange={setInputValue}
-              />
-              <CommandList>
-                {categories.map((cat) => (
-                  <CommandItem
-                    key={cat.id}
-                    value={cat.nickname ?? cat.name}
-                    onSelect={() => toggleDataset(cat.name)}
-                  >
-                    <Checkbox
-                      className="mr-2 dark:bg-accent-background"
-                      checked={selectedDataset.includes(cat.name)}
-                      onChange={() => toggleDataset(cat.name)}
-                      id={`dataset-${cat.id}`}
-                    />
-                    {cat.nickname ?? cat.name}
-                  </CommandItem>
-                ))}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {searchPrompt && (
-          <button
-            type="button"
-            onClick={() => onSearchPromptChange("")}
-            className="flex items-center justify-center h-7 w-7 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-
-        {/* Search button */}
-        <Button
-          onClick={onSearch}
-          disabled={isPending}
-          size="sm"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground ml-1 rounded-full"
-        >
-          {isPending ? searchingLabel : searchButtonLabel}
-        </Button>
-      </div>
-    </div>
-  );
+  const showShadow = shadowActive !== undefined ? shadowActive : scrolled;
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background">
+      <header className={cn("sticky top-0 z-50 bg-background transition-shadow duration-200", showShadow && "shadow-sm")}>
         {/* Desktop & Tablet Layout - Single Row */}
         <div className="hidden sm:flex items-center gap-3 h-16 px-4">
           {/* Left: Logo - Fixed width */}
           <div className="flex items-center gap-2 shrink-0">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 h-12">
               <Image
                 src="/logo.png"
                 alt="DimSum AI Labs"
-                width={28}
-                height={28}
+                width={32}
+                height={32}
                 className="rounded-sm"
               />
-              <span className="text-base font-semibold">DimSum AI</span>
+              <span className="text-3xl font-semibold">DimSum</span>
             </Link>
           </div>
 
           {/* Center: Search Bar - Flexible width with max limit */}
           <div className="min-w-0 max-w-3xl flex-1">
-            <SearchInput />
+            <SearchInputField
+              searchPrompt={searchPrompt}
+              onSearchPromptChange={onSearchPromptChange}
+              onSearch={onSearch}
+              isPending={isPending}
+              selectedDataset={selectedDataset}
+              onDatasetChange={onDatasetChange}
+              categories={categories}
+              searchPlaceholder={searchPlaceholder}
+              searchButtonLabel={searchButtonLabel}
+              searchingLabel={searchingLabel}
+              inputValue={inputValue}
+              setInputValue={setInputValue}
+              datasetLabel={datasetLabel}
+              activeDatasetCount={activeDatasetCount}
+              toggleDataset={toggleDataset}
+              tSearch={tSearch}
+            />
           </div>
 
-          {/* Right: Navigation - Push to far right */}
-          <div className="flex items-center gap-3 shrink-0 ml-auto">
-            {/* Desktop nav links - Hidden on smaller screens */}
-            <div className="hidden lg:flex items-center gap-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {t(link.labelKey)}
-                </Link>
-              ))}
-            </div>
+          {/* Right: Hamburger + User */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
 
-            {/* Hamburger menu - Shown when nav links are hidden */}
+            {/* Desktop: Dropdown hamburger (lg+) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="hidden lg:flex h-8 w-8">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 p-2">
+                <HamburgerMenuContent />
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile/tablet: Sheet hamburger (below lg) */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8">
@@ -293,46 +438,15 @@ export function SearchHeader({
                     <span className="ml-2 text-sm font-medium">DimSum AI</span>
                   </div>
                   <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                    {/* Navigation Links */}
-                    {mobileNavLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-                      >
-                        {t(link.labelKey)}
-                      </Link>
-                    ))}
-
-                    {/* Divider */}
-                    <div className="border-t border-border my-2" />
-
-                    {/* Language & Theme Settings */}
-                    <div className="px-3 py-2 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">{tCommon("language")}</span>
-                        <LocaleSwitcher />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">{tCommon("theme")}</span>
-                        <ThemeToggle />
-                      </div>
-                    </div>
+                    <HamburgerMenuContent onNavClick={() => setMobileOpen(false)} />
                   </nav>
                 </div>
               </SheetContent>
             </Sheet>
 
-            {/* Locale + Theme toggle - Hidden when hamburger menu is shown */}
-            <div className="hidden lg:flex items-center gap-3">
-              <LocaleSwitcher />
-              <ThemeToggle />
-            </div>
-
             {/* User menu / Sign In */}
             {isAuthenticated ? (
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1.5">
                     <Avatar className="h-6 w-6">
@@ -341,7 +455,9 @@ export function SearchHeader({
                         {user?.name?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="hidden md:inline text-sm">{user?.name || "User"}</span>
+                    <span className="hidden md:inline text-sm">
+                      {user?.name || "User"}
+                    </span>
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -376,11 +492,7 @@ export function SearchHeader({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setShowRoleSelect(true)}
-              >
+              <Button variant="default" size="sm" onClick={() => setShowRoleSelect(true)}>
                 {tCommon("signIn")}
               </Button>
             )}
@@ -409,35 +521,12 @@ export function SearchHeader({
                         height={24}
                         className="rounded-sm"
                       />
-                      <span className="ml-2 text-sm font-medium">DimSum AI</span>
+                      <span className="ml-2 text-sm font-medium">
+                        DimSum AI
+                      </span>
                     </div>
                     <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                      {/* Navigation Links */}
-                      {mobileNavLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-                        >
-                          {t(link.labelKey)}
-                        </Link>
-                      ))}
-
-                      {/* Divider */}
-                      <div className="border-t border-border my-2" />
-
-                      {/* Language & Theme Settings */}
-                      <div className="px-3 py-2 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">{tCommon("language")}</span>
-                          <LocaleSwitcher />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">{tCommon("theme")}</span>
-                          <ThemeToggle />
-                        </div>
-                      </div>
+                      <HamburgerMenuContent onNavClick={() => setMobileOpen(false)} />
                     </nav>
                   </div>
                 </SheetContent>
@@ -461,11 +550,14 @@ export function SearchHeader({
             {/* Right: User */}
             <div className="flex justify-end items-center gap-2">
               {isAuthenticated ? (
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={user?.avatar || ""} alt={user?.name || ""} />
+                        <AvatarImage
+                          src={user?.avatar || ""}
+                          alt={user?.name || ""}
+                        />
                         <AvatarFallback className="text-xs">
                           {user?.name?.[0] || "U"}
                         </AvatarFallback>
@@ -474,14 +566,20 @@ export function SearchHeader({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     {accountSubmenuItems.map((item) => (
-                      <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                      <DropdownMenuItem
+                        key={item.href}
+                        onClick={() => router.push(item.href)}
+                      >
                         <item.icon className="mr-2 h-4 w-4" />
                         {t(item.labelKey)}
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
                     {workplaceSubmenuItems.map((item) => (
-                      <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                      <DropdownMenuItem
+                        key={item.href}
+                        onClick={() => router.push(item.href)}
+                      >
                         <item.icon className="mr-2 h-4 w-4" />
                         {t(item.labelKey)}
                       </DropdownMenuItem>
@@ -489,7 +587,9 @@ export function SearchHeader({
                     {session?.user?.isSystemAdmin && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => window.open("/admin", "_blank")}>
+                        <DropdownMenuItem
+                          onClick={() => window.open("/admin", "_blank")}
+                        >
                           <Settings className="mr-2 h-4 w-4" />
                           {t("admin")}
                         </DropdownMenuItem>
@@ -516,7 +616,24 @@ export function SearchHeader({
 
           {/* Second Row: Search Bar */}
           <div className="px-4 pb-3">
-            <SearchInput />
+            <SearchInputField
+              searchPrompt={searchPrompt}
+              onSearchPromptChange={onSearchPromptChange}
+              onSearch={onSearch}
+              isPending={isPending}
+              selectedDataset={selectedDataset}
+              onDatasetChange={onDatasetChange}
+              categories={categories}
+              searchPlaceholder={searchPlaceholder}
+              searchButtonLabel={searchButtonLabel}
+              searchingLabel={searchingLabel}
+              inputValue={inputValue}
+              setInputValue={setInputValue}
+              datasetLabel={datasetLabel}
+              activeDatasetCount={activeDatasetCount}
+              toggleDataset={toggleDataset}
+              tSearch={tSearch}
+            />
           </div>
         </div>
       </header>
