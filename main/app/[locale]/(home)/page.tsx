@@ -438,8 +438,8 @@ export default function HomePage() {
                 className="ml-auto disabled:opacity-40"
               >
                 <GradientText
-                  colors={["#3193ff", "#007fff", "#5aa8ff"]}
-                  animationSpeed={6}
+                  colors={["#3193ff", "#a855f7", "#ec4899"]}
+                  animationSpeed={4}
                   className="text-xs font-medium"
                 >
                   {t("luckyButton")}
