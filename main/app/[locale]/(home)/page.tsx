@@ -150,7 +150,7 @@ export default function HomePage() {
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 40%, oklch(0.95 0.02 256 / 0.08), transparent 70%)",
+            "radial-gradient(ellipse at 50% 40%, oklch(0.95 0.04 256 / 0.14), transparent 70%)",
         }}
       />
       <div
