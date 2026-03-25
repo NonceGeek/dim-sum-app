@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, Clock, X, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
+import { Search, Clock, X, SlidersHorizontal, ChevronDown, Check, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
@@ -15,6 +15,7 @@ import SplitText from "@/components/ui/split-text";
 import TextType from "@/components/ui/text-type";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import { useAllCategories } from "@/lib/api/category";
+import { useHotTerms } from "@/lib/api/public";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -23,8 +24,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-
-const HOT_TERMS = ["落花流水", "唔听", "行", "姐姐", "歡聚一堂", "帆船"];
 
 export default function HomePage() {
   const router = useRouter();
@@ -88,6 +87,8 @@ export default function HomePage() {
     removeHistory,
     clearHistory,
   } = useSearchDropdown({ query, selectedDataset, onSearchTerm: navigateToSearch });
+
+  const { data: hotTerms, refetch: refetchHotTerms, isFetching: hotTermsFetching } = useHotTerms();
 
   const handleManualSearch = () => {
     if (!query.trim()) return;
@@ -409,7 +410,7 @@ export default function HomePage() {
           <span className="mr-1 text-xs font-medium text-muted-foreground">
             {t("trending")}
           </span>
-          {HOT_TERMS.map((term) => (
+          {(hotTerms ?? []).map((term) => (
             <button
               key={term}
               onClick={() => navigateToSearch(term)}
@@ -418,6 +419,14 @@ export default function HomePage() {
               {term}
             </button>
           ))}
+          <button
+            onClick={() => refetchHotTerms()}
+            disabled={hotTermsFetching}
+            className="flex items-center gap-1 rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+          >
+            <RefreshCw className={cn("h-3 w-3", hotTermsFetching && "animate-spin")} />
+            {t("luckyButton")}
+          </button>
         </motion.div>
 
 
