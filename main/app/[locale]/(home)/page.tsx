@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, Clock, X, SlidersHorizontal, ChevronDown, Check, RefreshCw } from "lucide-react";
+import { Search, Clock, X, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
@@ -432,9 +432,8 @@ export default function HomePage() {
               <button
                 onClick={() => refetchHotTerms()}
                 disabled={hotTermsFetching}
-                className="flex items-center gap-1 rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+                className="ml-auto text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground disabled:opacity-40"
               >
-                <RefreshCw aria-hidden="true" className={cn("h-3 w-3", hotTermsFetching && "animate-spin")} />
                 {t("luckyButton")}
               </button>
             </>
