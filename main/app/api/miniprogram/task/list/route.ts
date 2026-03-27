@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
   const assigneeRef = searchParams.get("assigneeRef") || undefined;
   const corpusName = searchParams.get("corpusName") || undefined;
   const violationType = searchParams.get("violationType") || undefined;
+  const q = searchParams.get("q") || undefined;
 
   return requireMiniprogramMarker(req, async (_req, user) => {
     if (!user.userId) {
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
         pageSize,
         corpusName,
         violationType,
+        q,
       });
 
       return NextResponse.json(data);

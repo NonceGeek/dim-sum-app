@@ -88,6 +88,7 @@ export interface AgentTaskQuery {
   violationType?: string;
   // assigneeRef: 要查看谁的任务列表，不传时默认查看 actorRef 自己的任务
   assigneeRef?: string;
+  q?: string;
 }
 
 export interface RuleRunPayload {
@@ -200,6 +201,7 @@ export async function fetchAgentTasks(query: AgentTaskQuery) {
       pageSize: query.pageSize,
       corpusName: query.corpusName,
       violationType: query.violationType,
+      q: query.q,
     },
   });
 }
