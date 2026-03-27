@@ -11,6 +11,7 @@ export interface AgentTaskContext {
   corpusUniqueId?: string;
   sentenceText?: string;
   problemChar?: string;
+  text?: string;
 }
 
 export type AgentSuggestionSource = "lexicon" | "llm";
