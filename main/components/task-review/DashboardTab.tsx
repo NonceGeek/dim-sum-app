@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,54 @@ import { useTranslations } from "next-intl";
 import { useTaskStats } from "@/lib/hooks/useTaskReview";
 import { StatsCard, getRateColor, formatPercent } from "./StatsCard";
 import { UserTasksDialog } from "./UserTasksDialog";
-import type { TaskStatsAssignee } from "@/lib/types/task-review";
+import type { TaskStatsItemWithUser } from "@/lib/types/task-review";
 
 interface DashboardTabProps {
   datasets?: { label: string; value: string }[];
+}
+
+/** Aggregate per-user stats across all corpora for a single user. */
+interface AggregatedUserStats {
+  assigneeRef: string;
+  name: string | null;
+  avatar: string | null;
+  totalCount: number;
+  processedCount: number;
+  unprocessedCount: number;
+  completionRate: number;
+}
+
+function aggregateByUser(items: TaskStatsItemWithUser[]): AggregatedUserStats[] {
+  const map = new Map<string, AggregatedUserStats>();
+
+  for (const item of items) {
+    const existing = map.get(item.assigneeRef);
+    if (existing) {
+      existing.totalCount += item.totalCount;
+      existing.processedCount += item.processedCount;
+      existing.unprocessedCount += item.unprocessedCount;
+    } else {
+      map.set(item.assigneeRef, {
+        assigneeRef: item.assigneeRef,
+        name: item.name,
+        avatar: item.avatar,
+        totalCount: item.totalCount,
+        processedCount: item.processedCount,
+        unprocessedCount: item.unprocessedCount,
+        completionRate: 0,
+      });
+    }
+  }
+
+  // Compute completion rate
+  for (const user of map.values()) {
+    user.completionRate =
+      user.totalCount > 0 ? user.processedCount / user.totalCount : 0;
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) => b.completionRate - a.completionRate
+  );
 }
 
 export function DashboardTab({ datasets }: DashboardTabProps) {
@@ -40,12 +84,17 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
     corpusName ? { corpusName } : null
   );
 
-  const assignees = stats?.assignees ?? [];
-  const filteredAssignees = userSearch
-    ? assignees.filter((a) =>
-        a.name?.toLowerCase().includes(userSearch.toLowerCase())
+  // Aggregate per-user items from backend
+  const userRows = useMemo(
+    () => aggregateByUser(stats?.items ?? []),
+    [stats?.items]
+  );
+
+  const filteredRows = userSearch
+    ? userRows.filter((r) =>
+        r.name?.toLowerCase().includes(userSearch.toLowerCase())
       )
-    : assignees;
+    : userRows;
 
   return (
     <div className="space-y-4">
@@ -104,7 +153,7 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
       ) : null}
 
       {/* Per-User Table */}
-      {!isLoading && filteredAssignees.length > 0 && (
+      {!isLoading && filteredRows.length > 0 && (
         <Card className="overflow-hidden">
           <Table>
             <TableHeader>
@@ -118,51 +167,54 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAssignees.map((assignee: TaskStatsAssignee) => {
-                // We show per-assignee stats from the summary (the current API
-                // returns aggregate stats; per-user stats would require individual calls).
-                // For now, display the assignee info with a link to view their tasks.
-                return (
-                  <TableRow key={assignee.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {assignee.avatar ? (
-                          <img
-                            src={assignee.avatar}
-                            alt=""
-                            className="w-6 h-6 rounded-full"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                            {(assignee.name || "?")[0]}
-                          </div>
-                        )}
-                        <span className="text-sm">{assignee.name || "—"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">—</TableCell>
-                    <TableCell className="text-center">—</TableCell>
-                    <TableCell className="text-center">—</TableCell>
-                    <TableCell className="text-center">
-                      <span className={getRateColor(0)}>—</span>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setSelectedUser({
-                            id: assignee.id,
-                            name: assignee.name || "—",
-                          })
-                        }
-                      >
-                        {t("viewUserTasks")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {filteredRows.map((row) => (
+                <TableRow key={row.assigneeRef}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {row.avatar ? (
+                        <img
+                          src={row.avatar}
+                          alt=""
+                          className="w-6 h-6 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
+                          {(row.name || "?")[0]}
+                        </div>
+                      )}
+                      <span className="text-sm">{row.name || "—"}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {row.totalCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {row.processedCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {row.unprocessedCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className={getRateColor(row.completionRate)}>
+                      {formatPercent(row.completionRate)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setSelectedUser({
+                          id: row.assigneeRef,
+                          name: row.name || "—",
+                        })
+                      }
+                    >
+                      {t("viewUserTasks")}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </Card>

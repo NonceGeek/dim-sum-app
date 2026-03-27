@@ -82,8 +82,14 @@ export interface TaskStatsAssignee {
   avatar: string | null;
 }
 
+export interface TaskStatsItemWithUser extends TaskStatsItem {
+  name: string | null;
+  avatar: string | null;
+}
+
 export interface TaskStatsWithAssignees extends AgentTaskStatsResponse {
   assignees: TaskStatsAssignee[];
+  items: TaskStatsItemWithUser[];
 }
 
 export interface PublicUser {
@@ -140,6 +146,38 @@ export const INTENSITY_LEVELS = [
 
 export type EmotionCategory = (typeof EMOTION_CATEGORIES)[number];
 export type IntensityLevel = (typeof INTENSITY_LEVELS)[number];
+
+// ---- User Permission Types ----
+
+export interface UserTaskPermissions {
+  role: string | null;
+  isSystemAdmin: boolean;
+  writeCorpora: string[];
+}
+
+/**
+ * Per-suggestion auth result, matching mini-program getAuthCorpus logic.
+ * canEdit: list of corpus source names the user may edit
+ * canAdd: whether user may add new suggestions
+ * canDelete: whether user may delete suggestions
+ */
+export interface SuggestionAuth {
+  canEdit: string[];
+  canAdd: boolean;
+  canDelete: boolean;
+}
+
+// ---- Per-User Stats (from agent /tasks/stats items) ----
+
+export interface TaskStatsItem {
+  assigneeRef: string;
+  corpusId: string;
+  totalCount: number;
+  processedCount: number;
+  unprocessedCount: number;
+  totalCorpusCount: number | null;
+  completionRate: number;
+}
 
 // ---- Dataset / Corpus Types ----
 

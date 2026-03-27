@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useTask, useCompleteTask, useSkipTask, useViewTask } from "@/lib/hooks/useTaskReview";
+import { useTask, useCompleteTask, useSkipTask, useViewTask, useUserTaskPermissions } from "@/lib/hooks/useTaskReview";
 import { useCategoryStore } from "@/lib/stores/category-store";
 import { SuggestionCard } from "./SuggestionCard";
 import type {
@@ -37,6 +37,8 @@ import type {
   TaskSuggestion,
   CantonesePronunciationRecord,
   ContentBlock,
+  UserTaskPermissions,
+  SuggestionAuth,
 } from "@/lib/types/task-review";
 
 interface TaskDetailDialogProps {
@@ -45,28 +47,110 @@ interface TaskDetailDialogProps {
   onClose: () => void;
 }
 
+const SOURCE_NAME_DEFAULT = "llm";
+
+/**
+ * Get the corpus source key for a suggestion, matching mini-program getSourceInfo.
+ */
+function getSourceKey(
+  suggestion: TaskSuggestion,
+  corpusName: string | undefined
+): string {
+  if (suggestion.kind === "llm") return SOURCE_NAME_DEFAULT;
+  if (suggestion.kind === "baseline") return suggestion.lexiconBaseCorpusName || "";
+  return corpusName || "";
+}
+
+/**
+ * Compute per-suggestion auth permissions, matching mini-program getAuthCorpus.
+ */
+function getAuthCorpus(
+  suggestions: TaskSuggestion[],
+  corpusName: string | undefined,
+  permissions: UserTaskPermissions | undefined
+): SuggestionAuth {
+  if (!permissions) {
+    return { canEdit: [], canAdd: false, canDelete: false };
+  }
+
+  const corpusFromData = suggestions.map((s) => getSourceKey(s, corpusName));
+
+  const { role, isSystemAdmin, writeCorpora } = permissions;
+
+  if (isSystemAdmin) {
+    return { canEdit: corpusFromData, canAdd: true, canDelete: true };
+  }
+  if (role === "RESEARCHER") {
+    return { canEdit: corpusFromData, canAdd: true, canDelete: false };
+  }
+  if (role === "TAGGER_PARTNER" || role === "TAGGER_OUTSOURCING") {
+    const corpusSet = new Set(corpusFromData);
+    return {
+      canEdit: [
+        ...writeCorpora.filter((w) => corpusSet.has(w)),
+        SOURCE_NAME_DEFAULT,
+      ],
+      canAdd: false,
+      canDelete: false,
+    };
+  }
+  return { canEdit: [SOURCE_NAME_DEFAULT], canAdd: false, canDelete: false };
+}
+
 function buildSuggestionsFromTask(detail: TaskDetail): TaskSuggestion[] {
-  // The agent API returns suggestions in AgentSuggestion format;
-  // we adapt them to the mini-program's richer structure.
-  // If the detail already has a `suggestions` array with records, use it directly.
   if (detail.suggestions && detail.suggestions.length > 0) {
-    // Check if it's already the rich format
     const first = detail.suggestions[0] as unknown as Record<string, unknown>;
     if (first.record) {
-      return detail.suggestions as unknown as TaskSuggestion[];
+      const rich = detail.suggestions as unknown as TaskSuggestion[];
+      // phonetic_mismatch: ensure cantonesePronunciations is populated
+      if (detail.violationType === "phonetic_mismatch") {
+        return rich.map((s) => {
+          if (s.record.data.length === 0 && s.value) {
+            return {
+              ...s,
+              record: {
+                ...s.record,
+                text: s.record.text || detail.context.sentenceText || "",
+                data: [{ jyutping: s.value, blocks: [] }],
+              },
+            };
+          }
+          return s;
+        });
+      }
+      return rich;
     }
   }
 
-  // Fallback: return raw suggestions wrapped
-  return (detail.suggestions || []).map((s) => ({
-    kind: (s as unknown as { kind?: string }).kind || "llm",
-    value: (s as unknown as { value?: string }).value,
-    lexiconBaseCorpusName: (s as unknown as { lexiconBaseCorpusName?: string }).lexiconBaseCorpusName,
-    record: {
-      text: detail.context.sentenceText || "",
-      data: [],
-    },
-  })) as TaskSuggestion[];
+  // Fallback: build from raw suggestions
+  return (detail.suggestions || []).map((s) => {
+    const raw = s as unknown as { kind?: string; value?: string; lexiconBaseCorpusName?: string };
+    const kind = (raw.kind || "llm") as TaskSuggestion["kind"];
+    const value = raw.value;
+
+    // phonetic_mismatch: wrap value into cantonesePronunciations
+    if (detail.violationType === "phonetic_mismatch" && value) {
+      return {
+        kind,
+        value,
+        lexiconBaseCorpusName: raw.lexiconBaseCorpusName,
+        record: {
+          text: detail.context.sentenceText || "",
+          data: [{ jyutping: value, blocks: [] }],
+        },
+      };
+    }
+
+    return {
+      kind,
+      value,
+      lexiconBaseCorpusName: raw.lexiconBaseCorpusName,
+      record: {
+        text: detail.context.sentenceText || "",
+        data: [],
+      },
+    };
+  }) as TaskSuggestion[];
 }
 
 function getSourceName(
@@ -116,24 +200,41 @@ function cleanBlocksForSubmit(blocks: ContentBlock[]): ContentBlock[] {
     .map(({ new: _, ...rest }) => rest);
 }
 
+/**
+ * Check if a suggestion has been modified from its initial state.
+ */
+function hasUnsavedChanges(
+  current: TaskSuggestion | undefined,
+  initial: TaskSuggestion | undefined
+): boolean {
+  if (!current || !initial) return false;
+  return JSON.stringify(current.record) !== JSON.stringify(initial.record);
+}
+
 export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps) {
   const t = useTranslations("TaskReview");
   const { data: taskDetail, isLoading } = useTask(task?.id ?? null);
+  const { data: permissions } = useUserTaskPermissions();
   const completeMutation = useCompleteTask();
   const skipMutation = useSkipTask();
   const viewMutation = useViewTask();
   const { fetchCategories, getNickname } = useCategoryStore();
 
   const [suggestions, setSuggestions] = useState<TaskSuggestion[]>([]);
+  const [initialSuggestions, setInitialSuggestions] = useState<TaskSuggestion[]>([]);
   const [selectedTab, setSelectedTab] = useState("0");
-  const [confirmAction, setConfirmAction] = useState<"skip" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"skip" | "switch" | null>(null);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
 
   const isCompleted = task?.status === "completed";
-  const canEdit = !isCompleted;
-  const canDelete = !isCompleted;
-
   const currentIndex = parseInt(selectedTab, 10) || 0;
   const canSubmit = suggestions.length > 0 && checkCanSubmit(suggestions, currentIndex);
+
+  // Compute per-suggestion auth based on role and corpus permissions
+  const auth = useMemo(
+    () => getAuthCorpus(suggestions, task?.context.corpusName, permissions),
+    [suggestions, task?.context.corpusName, permissions]
+  );
 
   // Ref for stable access in keyboard handler
   const submitRef = useRef<() => void>(undefined);
@@ -148,6 +249,7 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
     if (taskDetail) {
       const built = buildSuggestionsFromTask(taskDetail as unknown as TaskDetail);
       setSuggestions(built);
+      setInitialSuggestions(JSON.parse(JSON.stringify(built)));
       setSelectedTab("0");
     }
   }, [taskDetail]);
@@ -243,6 +345,51 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
     setConfirmAction(null);
   };
 
+  // Tab switching with unsaved changes detection
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      if (isCompleted) {
+        setSelectedTab(newTab);
+        return;
+      }
+      const idx = parseInt(selectedTab, 10) || 0;
+      if (hasUnsavedChanges(suggestions[idx], initialSuggestions[idx])) {
+        setPendingTab(newTab);
+        setConfirmAction("switch");
+      } else {
+        setSelectedTab(newTab);
+      }
+    },
+    [selectedTab, suggestions, initialSuggestions, isCompleted]
+  );
+
+  const handleConfirmSwitch = async () => {
+    // Submit current changes, then switch
+    await handleSubmit();
+    if (pendingTab !== null) {
+      setSelectedTab(pendingTab);
+    }
+    setConfirmAction(null);
+    setPendingTab(null);
+  };
+
+  const handleDiscardSwitch = () => {
+    // Discard changes: revert current suggestion to initial state
+    const idx = parseInt(selectedTab, 10) || 0;
+    setSuggestions((prev) => {
+      const next = [...prev];
+      if (initialSuggestions[idx]) {
+        next[idx] = JSON.parse(JSON.stringify(initialSuggestions[idx]));
+      }
+      return next;
+    });
+    if (pendingTab !== null) {
+      setSelectedTab(pendingTab);
+    }
+    setConfirmAction(null);
+    setPendingTab(null);
+  };
+
   // Keyboard shortcut: Cmd/Ctrl+Enter → submit
   useEffect(() => {
     if (!open) return;
@@ -257,6 +404,24 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
+
+  /**
+   * Compute canEdit/canDelete for a specific suggestion index.
+   * When completed, nothing is editable.
+   * Otherwise, check if the suggestion's source key is in auth.canEdit.
+   */
+  const getSuggestionPerms = useCallback(
+    (idx: number) => {
+      if (isCompleted) return { canEdit: false, canDelete: false };
+      const suggestion = suggestions[idx];
+      if (!suggestion) return { canEdit: false, canDelete: false };
+      const sourceKey = getSourceKey(suggestion, task?.context.corpusName);
+      const canEdit = auth.canEdit.includes(sourceKey);
+      const canDelete = auth.canDelete;
+      return { canEdit, canDelete };
+    },
+    [isCompleted, suggestions, task?.context.corpusName, auth]
+  );
 
   return (
     <>
@@ -276,9 +441,6 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
             </DialogHeader>
 
             <div className="flex items-center gap-3 mt-3">
-              <span className="text-3xl font-bold bg-linear-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
-                {task?.context.problemChar || "—"}
-              </span>
               {task?.context.sentenceText && (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {task.context.sentenceText}
@@ -299,18 +461,23 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
                 {t("noTasks")}
               </div>
             ) : suggestions.length === 1 ? (
-              <SuggestionCard
-                index={0}
-                sourceName={getSourceName(suggestions[0], task?.context.corpusName, getNickname)}
-                record={suggestions[0].record}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                taskId={task?.id}
-                onChange={(record) => handleSuggestionChange(0, record)}
-                onAddPronunciation={() => handleAddPronunciation(0)}
-              />
+              (() => {
+                const perms = getSuggestionPerms(0);
+                return (
+                  <SuggestionCard
+                    index={0}
+                    sourceName={getSourceName(suggestions[0], task?.context.corpusName, getNickname)}
+                    record={suggestions[0].record}
+                    canEdit={perms.canEdit}
+                    canDelete={perms.canDelete}
+                    taskId={task?.id}
+                    onChange={(record) => handleSuggestionChange(0, record)}
+                    onAddPronunciation={() => handleAddPronunciation(0)}
+                  />
+                );
+              })()
             ) : (
-              <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+              <Tabs value={selectedTab} onValueChange={handleTabChange}>
                 <TabsList
                   className="w-full grid mb-4"
                   style={{ gridTemplateColumns: `repeat(${suggestions.length}, 1fr)` }}
@@ -322,21 +489,24 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
                   ))}
                 </TabsList>
 
-                {suggestions.map((suggestion, idx) => (
-                  <TabsContent key={idx} value={String(idx)}>
-                    <SuggestionCard
-                      index={idx}
-                      sourceName={getSourceName(suggestion, task?.context.corpusName, getNickname)}
-                      record={suggestion.record}
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      taskId={task?.id}
-                      showHeader={false}
-                      onChange={(record) => handleSuggestionChange(idx, record)}
-                      onAddPronunciation={() => handleAddPronunciation(idx)}
-                    />
-                  </TabsContent>
-                ))}
+                {suggestions.map((suggestion, idx) => {
+                  const perms = getSuggestionPerms(idx);
+                  return (
+                    <TabsContent key={idx} value={String(idx)}>
+                      <SuggestionCard
+                        index={idx}
+                        sourceName={getSourceName(suggestion, task?.context.corpusName, getNickname)}
+                        record={suggestion.record}
+                        canEdit={perms.canEdit}
+                        canDelete={perms.canDelete}
+                        taskId={task?.id}
+                        showHeader={false}
+                        onChange={(record) => handleSuggestionChange(idx, record)}
+                        onAddPronunciation={() => handleAddPronunciation(idx)}
+                      />
+                    </TabsContent>
+                  );
+                })}
               </Tabs>
             )}
           </div>
@@ -371,7 +541,7 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Dialog — Skip only */}
+      {/* Confirm Dialog — Skip */}
       <AlertDialog open={confirmAction === "skip"} onOpenChange={() => setConfirmAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -385,6 +555,35 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
               )}
               确认
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Dialog — Unsaved changes on tab switch */}
+      <AlertDialog
+        open={confirmAction === "switch"}
+        onOpenChange={() => {
+          setConfirmAction(null);
+          setPendingTab(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>提示</AlertDialogTitle>
+            <AlertDialogDescription>
+              是否保存并提交当前编辑内容？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDiscardSwitch}>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSwitch}>
+              {completeMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              )}
+              确定
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

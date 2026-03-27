@@ -14,12 +14,6 @@ import { useTranslations } from "next-intl";
 import { useCategoryStore } from "@/lib/stores/category-store";
 import type { AgentTask } from "@/lib/types/task-review";
 
-const VIOLATION_TYPE_KEY: Record<string, string> = {
-  phonetic_mismatch: "phoneticMismatch",
-  grammar_violation: "grammarViolation",
-  llm_generic_violation: "llmGenericViolation",
-};
-
 interface TaskTableProps {
   tasks: AgentTask[];
   onTaskClick: (task: AgentTask) => void;
@@ -36,8 +30,7 @@ export function TaskTable({ tasks, onTaskClick }: TaskTableProps) {
           <TableRow className="bg-muted/40 hover:bg-muted/40">
             <TableHead className="pl-4">{t("bodyText")}</TableHead>
             <TableHead className="w-36">{t("source")}</TableHead>
-            <TableHead className="w-32">{t("violationType")}</TableHead>
-            <TableHead className="w-24 text-center">{t("status")}</TableHead>
+<TableHead className="w-24 text-center">{t("status")}</TableHead>
             <TableHead className="w-36 pr-4">{t("createdAt")}</TableHead>
           </TableRow>
         </TableHeader>
@@ -60,16 +53,7 @@ export function TaskTable({ tasks, onTaskClick }: TaskTableProps) {
                     : "—"}
                 </span>
               </TableCell>
-              <TableCell>
-                {task.violationType ? (
-                  <Badge variant="outline" className="font-normal text-xs">
-                    {t(VIOLATION_TYPE_KEY[task.violationType] || task.violationType)}
-                  </Badge>
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
+<TableCell className="text-center">
                 {task.status === "completed" ? (
                   <Badge
                     variant="secondary"

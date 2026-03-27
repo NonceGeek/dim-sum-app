@@ -296,6 +296,16 @@ export interface AgentTaskStatsQuery {
   assigneeRef?: string;
 }
 
+export interface AgentTaskStatsItem {
+  assigneeRef: string;
+  corpusId: string;
+  totalCount: number;
+  processedCount: number;
+  unprocessedCount: number;
+  totalCorpusCount: number | null;
+  completionRate: number;
+}
+
 export interface AgentTaskStatsResponse {
   filters: {
     corpusIds: string[];
@@ -308,6 +318,7 @@ export interface AgentTaskStatsResponse {
     totalCorpusCount: number | null;
     completionRate: number;
   };
+  items?: AgentTaskStatsItem[];
 }
 
 export async function fetchAgentTaskStats(query: AgentTaskStatsQuery) {

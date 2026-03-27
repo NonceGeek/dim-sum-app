@@ -40,9 +40,15 @@ export function TaskListTab() {
 
   const { data, isLoading, isFetching } = useTasks(params);
 
-  const tasks = data?.items ?? [];
+  // Filter out "reassigning" tasks on the client side (matching mini-program behavior)
+  const allTasks = data?.items ?? [];
+  const tasks = allTasks.filter((t) => t.status !== "reassigning");
+  const reassigningCount = allTasks.length - tasks.length;
   const totalPages = data?.pagination
-    ? Math.ceil(data.pagination.total / (data.pagination.pageSize || 10))
+    ? Math.ceil(
+        (data.pagination.total - reassigningCount) /
+          (data.pagination.pageSize || 10)
+      )
     : 1;
 
   const handleTabChange = (value: string) => {

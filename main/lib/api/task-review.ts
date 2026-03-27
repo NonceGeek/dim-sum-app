@@ -6,6 +6,7 @@ import type {
   TaskListParams,
   TaskStatsParams,
   PublicUser,
+  UserTaskPermissions,
 } from "@/lib/types/task-review";
 
 const BASE = "/api/data-annotation/tasks";
@@ -65,5 +66,9 @@ export const taskReviewApi = {
     return api.get<{ users: PublicUser[]; total: number }>(
       `${BASE}/users${query}`
     );
+  },
+
+  getUserPermissions() {
+    return api.get<UserTaskPermissions>(`${BASE}/user-permissions`);
   },
 };

@@ -43,8 +43,16 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      // Enrich per-user items with names/avatars
+      const items = (data.items ?? []).map((item) => ({
+        ...item,
+        name: userMap[item.assigneeRef]?.name ?? null,
+        avatar: userMap[item.assigneeRef]?.avatar ?? null,
+      }));
+
       return NextResponse.json({
         ...data,
+        items,
         assignees: userIds.map((id) => ({
           id,
           name: userMap[id]?.name ?? null,

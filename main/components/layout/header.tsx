@@ -124,14 +124,14 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   {accountSubmenuItems.map((item) => (
-                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                    <DropdownMenuItem key={item.href} onSelect={() => router.push(item.href)}>
                       <item.icon className="mr-2 h-4 w-4" />
                       {t(item.labelKey)}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
                   {workplaceSubmenuItems.map((item) => (
-                    <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                    <DropdownMenuItem key={item.href} onSelect={() => router.push(item.href)}>
                       <item.icon className="mr-2 h-4 w-4" />
                       {t(item.labelKey)}
                     </DropdownMenuItem>

@@ -82,3 +82,11 @@ export function useUploadAudio() {
     },
   });
 }
+
+export function useUserTaskPermissions() {
+  return useQuery({
+    queryKey: ["userTaskPermissions"],
+    queryFn: () => taskReviewApi.getUserPermissions(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
