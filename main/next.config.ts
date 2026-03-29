@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['ali-oss'],
   images: {
     remotePatterns: [
       {
@@ -13,6 +15,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  turbopack: {
+    rules: {
+      '*.md': {
+        loaders: ['raw-loader'],
+        as: '*.js',
+      },
+    },
+  },
   webpack: (config) => {
     config.module.rules.push({
       test: /\.md$/,
@@ -22,4 +32,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin();
+export default withNextIntl(nextConfig);

@@ -1,0 +1,204 @@
+"use client";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Users,
+  Database,
+  CheckCircle,
+  ListChecks,
+  FolderOpen,
+  Shield,
+  FileText,
+} from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { useQuery } from "@tanstack/react-query";
+
+interface DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalCorpusEntries: number;
+}
+
+export default function AdminDashboardPage() {
+  const { data: stats, isLoading: loading } = useQuery<DashboardStats>({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/stats");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch statistics");
+      }
+
+      return response.json();
+    },
+  });
+
+  const statCards = [
+    {
+      title: "Total Users",
+      value: stats?.totalUsers?.toLocaleString() || "0",
+      icon: Users,
+      description: "Registered users",
+      href: "/admin/users",
+    },
+    {
+      title: "Corpus Entries",
+      value: stats?.totalCorpusEntries?.toLocaleString() || "0",
+      icon: Database,
+      description: "Total corpus data entries",
+      href: "/admin/corpus",
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: "Manage Users",
+      description: "View and manage user accounts",
+      href: "/admin/users",
+      icon: Users,
+    },
+    {
+      title: "Categories",
+      description: "Manage corpus categories and visibility",
+      href: "/admin/categories",
+      icon: FolderOpen,
+    },
+    {
+      title: "Permissions",
+      description: "Manage user-corpus access bindings",
+      href: "/admin/permissions",
+      icon: Shield,
+    },
+    {
+      title: "Corpus Data",
+      description: "Manage language corpus entries",
+      href: "/admin/corpus",
+      icon: Database,
+    },
+    {
+      title: "Audit Logs",
+      description: "View permission change history",
+      href: "/admin/audit-logs",
+      icon: FileText,
+    },
+    {
+      title: "Rule Ops",
+      description: "Compile rules and trigger Agent runs",
+      href: "/admin/rules",
+      icon: ListChecks,
+    },
+    {
+      title: "System Settings",
+      description: "Configure system parameters",
+      href: "/admin/settings",
+      icon: CheckCircle,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} className="bg-card border-border">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-4 bg-muted rounded animate-pulse" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-muted rounded animate-pulse mb-1" />
+                <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+          Dashboard
+        </h2>
+        <p className="text-muted-foreground mt-2">
+          Welcome to the admin panel. Here's an overview of your system.
+        </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Card
+              key={card.title}
+              className="bg-card border-border hover:bg-accent transition-colors cursor-pointer"
+            >
+              <Link href={card.href}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-card-foreground">
+                    {card.title}
+                  </CardTitle>
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">
+                    {card.value}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{card.description}</p>
+                </CardContent>
+              </Link>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Quick Actions */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h3>
+        <div className="grid gap-4 md:grid-cols-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Card
+                key={action.title}
+                className="bg-card border-border hover:bg-accent transition-colors"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base text-foreground">
+                      {action.title}
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-sm text-muted-foreground">
+                    {action.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="w-full bg-primary hover:bg-primary/90"
+                  >
+                    <Link href={action.href}>Open</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

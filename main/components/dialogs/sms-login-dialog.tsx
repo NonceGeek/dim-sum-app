@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Phone, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { signIn } from "next-auth/react";
 import {
   Dialog,

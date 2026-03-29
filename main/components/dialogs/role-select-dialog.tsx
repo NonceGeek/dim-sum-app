@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export type UserRole = 'learner' | 'tagger' | 'researcher';
 
@@ -20,6 +21,8 @@ interface RoleSelectDialogProps {
 }
 
 export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialogProps) {
+  const t = useTranslations("Auth");
+  const tc = useTranslations("Common");
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
   const handleConfirm = () => {
@@ -33,9 +36,9 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md w-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">Select Your Role</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-center">{t("selectRole")}</DialogTitle>
           <DialogDescription className="text-center">
-            Please choose your role to continue
+            {t("selectRoleDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -50,10 +53,10 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               <Label
                 htmlFor="learner"
                 className={cn(
-                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
+                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
                 )}
               >
-                Learner
+                {t("learner")}
               </Label>
             </div>
 
@@ -62,10 +65,10 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               <Label
                 htmlFor="tagger"
                 className={cn(
-                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
+                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
                 )}
               >
-                Tagger
+                {t("tagger")}
               </Label>
             </div>
 
@@ -74,10 +77,10 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               <Label
                 htmlFor="researcher"
                 className={cn(
-                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
+                  "flex h-10 w-full items-center justify-center rounded-md border-2 border-border bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary",
                 )}
               >
-                Researcher
+                {t("researcher")}
               </Label>
             </div>
           </RadioGroup>
@@ -87,13 +90,13 @@ export function RoleSelectDialog({ isOpen, onClose, onConfirm }: RoleSelectDialo
               variant="outline"
               onClick={onClose}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button
               onClick={handleConfirm}
               disabled={!selectedRole}
             >
-              Confirm
+              {tc("confirm")}
             </Button>
           </div>
         </div>

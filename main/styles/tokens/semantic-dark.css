@@ -1,0 +1,114 @@
+/*
+ * ============================================================================
+ * Semantic Tokens — Dark Mode
+ * Maps primitive tokens to purpose-driven names for dark theme.
+ * ============================================================================
+ *
+ * Layer 2 of the 3-layer token architecture:
+ *   1. Primitives  (primitives.css)  — raw color/spacing/type values
+ *   2. Semantic     (this file)      — contextual aliases (dark variant)
+ *   3. Component    — component-specific overrides
+ *
+ * Variable names (--primary, --background, etc.) match shadcn/ui conventions.
+ * DO NOT rename them — components depend on these exact names.
+ * All values MUST reference primitive tokens — no hex values, no hardcoded oklch.
+ *
+ * Dark mode adjustments:
+ *   - Surfaces use dark neutrals (900, 950)
+ *   - Foregrounds use light neutrals (50, 100)
+ *   - Brand/functional colors use 400 shade (lighter for contrast on dark bg)
+ *   - Boundaries use 700 shade (subtle on dark surfaces)
+ */
+
+.dark {
+  /* ==========================================================================
+   * SURFACES
+   * ========================================================================== */
+
+  --background:         var(--ds-color-dark-bg);
+  --foreground:         var(--ds-color-neutral-100);
+
+  --card:               var(--ds-color-dark-surface);
+  --card-foreground:    var(--ds-color-neutral-100);
+
+  --popover:            var(--ds-color-dark-surface);
+  --popover-foreground: var(--ds-color-neutral-100);
+
+  /* ==========================================================================
+   * BRAND
+   * ========================================================================== */
+
+  --primary:              var(--ds-color-brand-400);
+  --primary-foreground:   var(--ds-color-neutral-950);
+
+  --secondary:            var(--ds-color-neutral-800);
+  --secondary-foreground: var(--ds-color-neutral-50);
+
+  /* ==========================================================================
+   * UTILITY
+   * ========================================================================== */
+
+  --muted:              var(--ds-color-neutral-800);
+  --muted-foreground:   var(--ds-color-neutral-400);
+
+  --accent:             var(--ds-color-neutral-800);
+  --accent-foreground:  var(--ds-color-neutral-50);
+  --accent-background:  var(--ds-color-neutral-900);
+
+  --destructive:        var(--ds-color-red-400);
+
+  /* ==========================================================================
+   * BOUNDARIES
+   * ========================================================================== */
+
+  --border: var(--ds-color-dark-border);
+  --input:  var(--ds-color-dark-border);
+  --ring:   var(--ds-color-brand-400);
+
+  /* ==========================================================================
+   * FUNCTIONAL COLORS
+   * Semantic status indicators — not present in the legacy codebase.
+   * ========================================================================== */
+
+  --success:            var(--ds-color-green-400);
+  --success-foreground: var(--ds-color-neutral-950);
+
+  --warning:            var(--ds-color-amber-400);
+  --warning-foreground: var(--ds-color-neutral-950);
+
+  --info:               var(--ds-color-blue-400);
+  --info-foreground:    var(--ds-color-neutral-950);
+
+  --error:              var(--ds-color-red-400);
+  --error-foreground:   var(--ds-color-neutral-950);
+
+  /* ==========================================================================
+   * CHART COLORS
+   * ========================================================================== */
+
+  --chart-1: var(--ds-color-brand-400);
+  --chart-2: var(--ds-color-green-400);
+  --chart-3: var(--ds-color-amber-400);
+  --chart-4: var(--ds-color-blue-400);
+  --chart-5: var(--ds-color-red-400);
+
+  /* ==========================================================================
+   * SIDEBAR
+   * ========================================================================== */
+
+  --sidebar:                    var(--ds-color-neutral-950);
+  --sidebar-foreground:         var(--ds-color-neutral-50);
+  --sidebar-primary:            var(--ds-color-brand-400);
+  --sidebar-primary-foreground: var(--ds-color-neutral-950);
+  --sidebar-primary-background: var(--ds-color-neutral-900);
+  --sidebar-accent:             var(--ds-color-neutral-800);
+  --sidebar-accent-foreground:  var(--ds-color-neutral-50);
+  --sidebar-accent-background:  var(--ds-color-neutral-900);
+  --sidebar-border:             var(--ds-color-neutral-700);
+  --sidebar-ring:               var(--ds-color-brand-400);
+
+  /* ==========================================================================
+   * RADIUS
+   * Inherited from :root — no override needed.
+   * ========================================================================== */
+}

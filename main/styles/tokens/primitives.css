@@ -1,0 +1,222 @@
+/*
+ * ============================================================================
+ * Primitive Tokens — Raw design values.
+ * DO NOT reference these directly in components. Use semantic tokens instead.
+ * ============================================================================
+ *
+ * Layer 1 of the 3-layer token architecture:
+ *   1. Primitives  (this file)  — raw color/spacing/type values
+ *   2. Semantic     — contextual aliases (e.g. --ds-color-bg-primary)
+ *   3. Component    — component-specific overrides
+ *
+ * Brand colors use hex for precision. Other palettes use OKLCH:
+ *   oklch(lightness chroma hue)
+ *   - Lightness: 0 (black) to 1 (white)
+ *   - Chroma: 0 (gray) to ~0.4 (most vivid)
+ *   - Hue: 0-360 degrees
+ */
+
+:root {
+  /* ==========================================================================
+   * COLOR PALETTE
+   * ========================================================================== */
+
+  /* --------------------------------------------------------------------------
+   * Brand (azure blue — #007fff)
+   * Hex values for precision. brand-600 = #007fff (primary).
+   * ------------------------------------------------------------------------ */
+  --ds-color-brand-50:  #f1f6fc;
+  --ds-color-brand-100: #dbe9fc;
+  --ds-color-brand-200: #b2d7ff;
+  --ds-color-brand-300: #80c0ff;
+  --ds-color-brand-400: #5aa8ff;
+  --ds-color-brand-500: #3193ff;
+  --ds-color-brand-600: #007fff;
+  --ds-color-brand-700: #005fc6;
+  --ds-color-brand-800: #004591;
+  --ds-color-brand-900: #052f61;
+  --ds-color-brand-950: #051f3f;
+
+  /* --------------------------------------------------------------------------
+   * Neutral (hue 256, very low chroma ~0.005 — tinted gray)
+   * Full range from white (0) through near-black (950)
+   * ------------------------------------------------------------------------ */
+  --ds-color-neutral-0:   oklch(1.00 0.000 256);
+  --ds-color-neutral-50:  oklch(0.98 0.003 256);
+  --ds-color-neutral-100: oklch(0.94 0.005 256);
+  --ds-color-neutral-200: oklch(0.88 0.005 256);
+  --ds-color-neutral-300: oklch(0.80 0.005 256);
+  --ds-color-neutral-400: oklch(0.70 0.005 256);
+  --ds-color-neutral-500: oklch(0.58 0.005 256);
+  --ds-color-neutral-600: oklch(0.48 0.005 256);
+  --ds-color-neutral-700: oklch(0.39 0.005 256);
+  --ds-color-neutral-800: oklch(0.30 0.005 256);
+  --ds-color-neutral-900: oklch(0.22 0.005 256);
+  --ds-color-neutral-950: oklch(0.15 0.005 256);
+
+  /* --------------------------------------------------------------------------
+   * Red / Destructive (hue 25 — warm red-orange)
+   * ------------------------------------------------------------------------ */
+  --ds-color-red-50:  oklch(0.97 0.01 25);
+  --ds-color-red-100: oklch(0.93 0.04 25);
+  --ds-color-red-200: oklch(0.87 0.08 25);
+  --ds-color-red-300: oklch(0.78 0.14 25);
+  --ds-color-red-400: oklch(0.68 0.18 25);
+  --ds-color-red-500: oklch(0.58 0.20 25);
+  --ds-color-red-600: oklch(0.50 0.18 25);
+  --ds-color-red-700: oklch(0.42 0.15 25);
+  --ds-color-red-800: oklch(0.35 0.11 25);
+  --ds-color-red-900: oklch(0.28 0.08 25);
+
+  /* --------------------------------------------------------------------------
+   * Green / Success (hue 155 — teal-green)
+   * ------------------------------------------------------------------------ */
+  --ds-color-green-50:  oklch(0.97 0.01 155);
+  --ds-color-green-100: oklch(0.93 0.04 155);
+  --ds-color-green-200: oklch(0.87 0.08 155);
+  --ds-color-green-300: oklch(0.78 0.13 155);
+  --ds-color-green-400: oklch(0.68 0.16 155);
+  --ds-color-green-500: oklch(0.58 0.14 155);
+  --ds-color-green-600: oklch(0.50 0.12 155);
+  --ds-color-green-700: oklch(0.42 0.10 155);
+  --ds-color-green-800: oklch(0.35 0.08 155);
+  --ds-color-green-900: oklch(0.28 0.06 155);
+
+  /* --------------------------------------------------------------------------
+   * Amber / Warning (hue 85 — yellow-green / amber)
+   * ------------------------------------------------------------------------ */
+  --ds-color-amber-50:  oklch(0.97 0.01 85);
+  --ds-color-amber-100: oklch(0.93 0.04 85);
+  --ds-color-amber-200: oklch(0.88 0.09 85);
+  --ds-color-amber-300: oklch(0.82 0.15 85);
+  --ds-color-amber-400: oklch(0.75 0.17 85);
+  --ds-color-amber-500: oklch(0.68 0.16 85);
+  --ds-color-amber-600: oklch(0.58 0.14 85);
+  --ds-color-amber-700: oklch(0.48 0.11 85);
+  --ds-color-amber-800: oklch(0.40 0.08 85);
+  --ds-color-amber-900: oklch(0.32 0.06 85);
+
+  /* --------------------------------------------------------------------------
+   * Blue / Info (hue 240 — pure blue)
+   * ------------------------------------------------------------------------ */
+  --ds-color-blue-50:  oklch(0.97 0.01 240);
+  --ds-color-blue-100: oklch(0.93 0.03 240);
+  --ds-color-blue-200: oklch(0.87 0.07 240);
+  --ds-color-blue-300: oklch(0.78 0.12 240);
+  --ds-color-blue-400: oklch(0.68 0.16 240);
+  --ds-color-blue-500: oklch(0.58 0.19 240);
+  --ds-color-blue-600: oklch(0.50 0.18 240);
+  --ds-color-blue-700: oklch(0.42 0.15 240);
+  --ds-color-blue-800: oklch(0.35 0.12 240);
+  --ds-color-blue-900: oklch(0.28 0.09 240);
+
+  /* --------------------------------------------------------------------------
+   * Dark mode specific deep-blue backgrounds
+   * ------------------------------------------------------------------------ */
+  --ds-color-dark-bg:      oklch(0.13 0.02 256);  /* ~#0c0f1a */
+  --ds-color-dark-surface:  oklch(0.18 0.02 256);  /* ~#1a1f35 */
+  --ds-color-dark-border:   oklch(0.25 0.02 256);  /* ~#2d3555 */
+
+  /* ==========================================================================
+   * SPACING
+   * Base unit: 4px
+   * ========================================================================== */
+
+  --ds-spacing-0:    0px;
+  --ds-spacing-0-5:  2px;    /* 0.5 * 4px */
+  --ds-spacing-1:    4px;    /* 1   * 4px */
+  --ds-spacing-1-5:  6px;    /* 1.5 * 4px */
+  --ds-spacing-2:    8px;    /* 2   * 4px */
+  --ds-spacing-3:    12px;   /* 3   * 4px */
+  --ds-spacing-4:    16px;   /* 4   * 4px */
+  --ds-spacing-5:    20px;   /* 5   * 4px */
+  --ds-spacing-6:    24px;   /* 6   * 4px */
+  --ds-spacing-8:    32px;   /* 8   * 4px */
+  --ds-spacing-10:   40px;   /* 10  * 4px */
+  --ds-spacing-12:   48px;   /* 12  * 4px */
+  --ds-spacing-16:   64px;   /* 16  * 4px */
+  --ds-spacing-20:   80px;   /* 20  * 4px */
+  --ds-spacing-24:   96px;   /* 24  * 4px */
+
+  /* ==========================================================================
+   * TYPOGRAPHY
+   * ========================================================================== */
+
+  /* Font sizes (rem-based for accessibility) */
+  --ds-font-size-xs:  0.75rem;   /* 12px */
+  --ds-font-size-sm:  0.875rem;  /* 14px */
+  --ds-font-size-md:  1rem;      /* 16px */
+  --ds-font-size-lg:  1.125rem;  /* 18px */
+  --ds-font-size-xl:  1.25rem;   /* 20px */
+  --ds-font-size-2xl: 1.5rem;    /* 24px */
+  --ds-font-size-3xl: 1.875rem;  /* 30px */
+  --ds-font-size-4xl: 2.25rem;   /* 36px */
+
+  /* Line heights (unitless ratios) */
+  --ds-line-height-tight:  1.25;
+  --ds-line-height-normal: 1.5;
+  --ds-line-height-loose:  1.75;
+
+  /* Font weights */
+  --ds-font-weight-normal:   400;
+  --ds-font-weight-medium:   500;
+  --ds-font-weight-semibold: 600;
+  --ds-font-weight-bold:     700;
+
+  /* ==========================================================================
+   * BORDER RADIUS
+   * ========================================================================== */
+
+  --ds-radius-none: 0px;
+  --ds-radius-sm:   4px;
+  --ds-radius-md:   6px;
+  --ds-radius-lg:   8px;
+  --ds-radius-xl:   12px;
+  --ds-radius-2xl:  16px;
+  --ds-radius-full: 9999px;
+
+  /* ==========================================================================
+   * SHADOWS
+   * Using oklch for shadow colors so they blend naturally in any color space.
+   * Base shadow color: neutral-900 at varying opacities.
+   * ========================================================================== */
+
+  --ds-shadow-xs:
+    0 1px 2px 0 oklch(0.22 0.005 256 / 0.05);
+
+  --ds-shadow-sm:
+    0 1px 3px 0 oklch(0.22 0.005 256 / 0.10),
+    0 1px 2px -1px oklch(0.22 0.005 256 / 0.10);
+
+  --ds-shadow-md:
+    0 4px 6px -1px oklch(0.22 0.005 256 / 0.10),
+    0 2px 4px -2px oklch(0.22 0.005 256 / 0.10);
+
+  --ds-shadow-lg:
+    0 10px 15px -3px oklch(0.22 0.005 256 / 0.10),
+    0 4px 6px -4px oklch(0.22 0.005 256 / 0.10);
+
+  --ds-shadow-xl:
+    0 20px 25px -5px oklch(0.22 0.005 256 / 0.10),
+    0 8px 10px -6px oklch(0.22 0.005 256 / 0.10);
+
+  --ds-shadow-2xl:
+    0 25px 50px -12px oklch(0.22 0.005 256 / 0.25);
+
+  /* ==========================================================================
+   * MOTION
+   * ========================================================================== */
+
+  /* Durations */
+  --ds-duration-fast:   100ms;
+  --ds-duration-normal: 200ms;
+  --ds-duration-slow:   300ms;
+  --ds-duration-slower: 500ms;
+
+  /* Easings */
+  --ds-ease-default:  cubic-bezier(0.25, 0.10, 0.25, 1.00);
+  --ds-ease-in:       cubic-bezier(0.42, 0.00, 1.00, 1.00);
+  --ds-ease-out:      cubic-bezier(0.00, 0.00, 0.58, 1.00);
+  --ds-ease-in-out:   cubic-bezier(0.42, 0.00, 0.58, 1.00);
+  --ds-ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1.00);
+}

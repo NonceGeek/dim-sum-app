@@ -1,6 +1,5 @@
 "use client";
 
-// import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
@@ -12,7 +11,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import { useAuthStore } from "@/lib/store/useAuthStore";

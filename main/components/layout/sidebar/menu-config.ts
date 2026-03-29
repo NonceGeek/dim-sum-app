@@ -18,41 +18,41 @@ import { Role } from "@prisma/client";
 
 interface MenuItemWithRoles {
   icon: any;
-  label: string;
+  labelKey: string;
   href: string;
   roles?: Role[];
-  children?: Array<{ icon: any; label: string; href: string }>;
+  children?: Array<{ icon: any; labelKey: string; href: string }>;
 }
 
 export const menuItems = [
-  { icon: Home, label: "Home", href: "/" },
-  { icon: LibraryBig, label: "Library", href: "/library" },
+  { icon: Home, labelKey: "home", href: "/" },
+  { icon: LibraryBig, labelKey: "library", href: "/library" },
   {
     icon: AppWindow,
-    label: "App Store",
+    labelKey: "appStore",
     href: "/appStore",
     children: [
-      { icon: BookOpen, label: "Learning", href: "/appStore?category=Learning" },
-      { icon: Gamepad2, label: "Gaming", href: "/appStore?category=Gaming" },
-      { icon: Bot, label: "AI", href: "/appStore?category=AI" },
-      { icon: MoreHorizontal, label: "Others", href: "/appStore?category=Others" },
+      { icon: BookOpen, labelKey: "learning", href: "/appStore?category=Learning" },
+      { icon: Gamepad2, labelKey: "gaming", href: "/appStore?category=Gaming" },
+      { icon: Bot, labelKey: "ai", href: "/appStore?category=AI" },
+      { icon: MoreHorizontal, labelKey: "others", href: "/appStore?category=Others" },
     ],
   },
   // TODO: impl in the future.
-  // { icon: Compass, label: "Discover", href: "/discover" },
-  { icon: FileCode2, label: "Docs", href: "/docs" },
+  // { icon: Compass, labelKey: "discover", href: "/discover" },
+  { icon: FileCode2, labelKey: "docs", href: "/docs" },
 ];
 
 const baseAccountSubmenuItems: MenuItemWithRoles[] = [
-  { icon: UserCircle, label: "My Account", href: "/account/profile" },
-  { icon: History, label: "My Record", href: "/account/my-record" },
-  // { icon: Settings, label: "Preferences", href: "/account/preferences" },
-  // { icon: CreditCard, label: "Purchases", href: "/account/purchases" },
-  { icon: FileCode2, label: "Data Annotation", href: "/account/data-annotation", roles: [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING] },
+  { icon: UserCircle, labelKey: "myAccount", href: "/account/profile" },
+  { icon: History, labelKey: "myRecord", href: "/account/my-record" },
+  // { icon: Settings, labelKey: "settings", href: "/account/preferences" },
+  // { icon: CreditCard, labelKey: "purchases", href: "/account/purchases" },
+  { icon: FileCode2, labelKey: "dataAnnotation", href: "/account/data-annotation", roles: [Role.TAGGER_PARTNER, Role.TAGGER_OUTSOURCING] },
 ];
 
 export const getAccountSubmenuItems = (userRole?: Role) => {
-  return baseAccountSubmenuItems.filter(item => 
+  return baseAccountSubmenuItems.filter(item =>
     !item.roles || (userRole && item.roles.includes(userRole))
   );
 };
@@ -61,5 +61,5 @@ export const getAccountSubmenuItems = (userRole?: Role) => {
 export const accountSubmenuItems = baseAccountSubmenuItems.filter(item => !item.roles);
 
 export const workplaceSubmenuItems = [
-  { icon: Key, label: "API", href: "/workplace/api" },
-]; 
+  { icon: Key, labelKey: "api", href: "/workplace/api" },
+];

@@ -2,18 +2,20 @@
 
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ChevronRight } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface MainMenuProps {
-  menuItems: Array<{ icon: any; label: string; href: string; children?: Array<{ icon: any; label: string; href: string }> }>;
+  menuItems: Array<{ icon: any; labelKey: string; href: string; children?: Array<{ icon: any; labelKey: string; href: string }> }>;
   pathname: string;
 }
 
 export function MainMenu({ menuItems, pathname }: MainMenuProps) {
   const searchParams = useSearchParams();
+  const t = useTranslations('Nav');
 
   // Check if a child href matches the current pathname and search params
   const isChildActive = useMemo(() => {
@@ -96,7 +98,7 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
                         )}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
-                        <span className="flex-1">{item.label}</span>
+                        <span className="flex-1">{t(item.labelKey)}</span>
                         <ChevronRight
                           className={cn(
                             "h-4 w-4 shrink-0 transition-transform",
@@ -120,7 +122,7 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
                                 )}
                               >
                                 <child.icon className="h-4 w-4 shrink-0" />
-                                <span>{child.label}</span>
+                                <span>{t(child.labelKey)}</span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -140,7 +142,7 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
                       )}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      <span>{item.label}</span>
+                      <span>{t(item.labelKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 )}
@@ -151,4 +153,4 @@ export function MainMenu({ menuItems, pathname }: MainMenuProps) {
       </SidebarGroupContent>
     </SidebarGroup>
   );
-} 
+}

@@ -17,4 +17,18 @@ export function useBasicInfo() {
     queryKey: ["basicInfo"],
     queryFn: () => api.get<BasicInfo>("/api/public/basic-info"),
   });
+}
+
+export function useHotTerms(count = 6) {
+  return useQuery<string[]>({
+    queryKey: ["hotTerms", count],
+    queryFn: () =>
+      api
+        .get<{ terms: string[] }>(`/api/public/hot-terms?count=${count}`)
+        .then((r) => r.terms ?? []),
+    // Cache for 1 day — terms stay stable within a session; user can force-refresh via "试试手气"
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 } 

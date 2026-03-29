@@ -6,11 +6,12 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 interface SubMenuProps {
-  accountSubmenuItems: Array<{ icon: any; label: string; href: string }>;
-  workplaceSubmenuItems: Array<{ icon: any; label: string; href: string }>;
+  accountSubmenuItems: Array<{ icon: any; labelKey: string; href: string }>;
+  workplaceSubmenuItems: Array<{ icon: any; labelKey: string; href: string }>;
   pathname: string;
   open: boolean;
 }
@@ -21,6 +22,8 @@ export function SubMenu({
   pathname,
   open,
 }: SubMenuProps) {
+  const t = useTranslations('Nav');
+
   return (
     <SidebarGroup>
       <SidebarGroupContent>
@@ -29,7 +32,7 @@ export function SubMenu({
             <>
               <div className="px-3 py-2">
                 <div className="text-sm font-medium text-muted-foreground mb-2">
-                  Account
+                  {t('account')}
                 </div>
                 <SidebarMenu>
                   {accountSubmenuItems.map((item) => (
@@ -45,7 +48,7 @@ export function SubMenu({
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
-                          <span>{item.label}</span>
+                          <span>{t(item.labelKey)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -54,7 +57,7 @@ export function SubMenu({
               </div>
               <div className="px-3 py-2">
                 <div className="text-sm font-medium text-muted-foreground mb-2">
-                  Workplace
+                  {t('workplace')}
                 </div>
                 <SidebarMenu>
                   {workplaceSubmenuItems.map((item) => (
@@ -70,7 +73,7 @@ export function SubMenu({
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
-                          <span>{item.label}</span>
+                          <span>{t(item.labelKey)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -95,7 +98,7 @@ export function SubMenu({
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
-                          <span className="sr-only">{item.label}</span>
+                          <span className="sr-only">{t(item.labelKey)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -117,7 +120,7 @@ export function SubMenu({
                           )}
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
-                          <span className="sr-only">{item.label}</span>
+                          <span className="sr-only">{t(item.labelKey)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
