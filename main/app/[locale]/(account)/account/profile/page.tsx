@@ -72,8 +72,8 @@ export default function ProfilePage() {
   return (
     <>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">{t("title")}</h1>
         </div>
 
         {loading && (
@@ -86,7 +86,7 @@ export default function ProfilePage() {
                   <Skeleton className="h-4 w-32" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-4 w-24" />
               </div>
@@ -106,7 +106,7 @@ export default function ProfilePage() {
         {profile && !loading && (
           <div className="grid gap-6">
             <Card className="p-6 bg-card transition-all duration-200 hover:shadow-lg">
-              <div className="flex items-center space-x-6">
+              <div className="flex flex-col items-center sm:flex-row sm:items-center sm:space-x-6">
                 <div className="relative">
                   {profile.image || profile.wechatAvatar ? (
                     <Image
@@ -114,42 +114,44 @@ export default function ProfilePage() {
                       alt={profile.name}
                       width={96}
                       height={96}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-lg"
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-background shadow-lg"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
                       <span className="text-3xl font-bold">
                         {profile.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <h2 className="text-2xl font-bold">{profile.name}</h2>
-                    <Badge variant="secondary" className="text-sm">
-                      {formatRole(profile.role)}
-                    </Badge>
-                    {profile.isSystemAdmin && (
-                      <Badge variant="destructive" className="text-sm">
-                        {t("systemAdmin")}
+                <div className="flex-1 text-center sm:text-left mt-4 sm:mt-0">
+                  <div className="flex flex-col items-center sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <h2 className="text-xl sm:text-2xl font-bold">{profile.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-sm">
+                        {formatRole(profile.role)}
                       </Badge>
-                    )}
-                    {profile && (
-                      <EditProfileDialog
-                        profile={profile}
-                        onProfileUpdate={handleProfileUpdate}
-                      />
-                    )}
+                      {profile.isSystemAdmin && (
+                        <Badge variant="destructive" className="text-sm">
+                          {t("systemAdmin")}
+                        </Badge>
+                      )}
+                      {profile && (
+                        <EditProfileDialog
+                          profile={profile}
+                          onProfileUpdate={handleProfileUpdate}
+                        />
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-2 space-y-2">
-                    <div className="flex items-center text-muted-foreground">
-                      <Mail className="w-4 h-4 mr-2" />
-                      <span>{profile.email || t("notSet")}</span>
+                    <div className="flex items-center justify-center sm:justify-start text-muted-foreground">
+                      <Mail className="w-4 h-4 mr-2 shrink-0" />
+                      <span className="truncate">{profile.email || t("notSet")}</span>
                     </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <Phone className="w-4 h-4 mr-2" />
+                    <div className="flex items-center justify-center sm:justify-start flex-wrap text-muted-foreground">
+                      <Phone className="w-4 h-4 mr-2 shrink-0" />
                       <span>{profile.phoneNumber || t("notSet")}</span>
                       {profile.phoneNumber ? (
                         <Button
@@ -173,9 +175,9 @@ export default function ProfilePage() {
                         </Button>
                       )}
                     </div>
-                    <div className="flex items-center justify-start text-muted-foreground">
-                      <div className="flex items-center">
-                        <Wallet className="w-4 h-4 mr-2" />
+                    <div className="flex items-center justify-center sm:justify-start flex-wrap gap-y-1 text-muted-foreground">
+                      <div className="flex items-center min-w-0">
+                        <Wallet className="w-4 h-4 mr-2 shrink-0" />
                         {profile.ethAddress ? (
                           <TooltipProvider>
                             <div className="flex items-center space-x-2">
