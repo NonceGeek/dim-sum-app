@@ -9,6 +9,7 @@ import {
   X,
   SlidersHorizontal,
   Menu,
+  EllipsisVertical,
   ChevronDown,
   Settings,
   LogOut,
@@ -139,6 +140,7 @@ function SearchInputField({
   tSearch,
   dropdownState,
 }: SearchInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
   const isGlobal = selectedDataset.includes("all");
   const allCategory = categories.find((cat) => cat.name === "all");
   const specificCategories = categories.filter((cat) => cat.name !== "all");
@@ -167,7 +169,11 @@ function SearchInputField({
   return (
     <div className="relative">
       {/* Pill input bar */}
-      <div className="relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring">
+      <div className={cn(
+        "relative flex items-center rounded-full bg-muted/50 border border-border shadow-sm transition-all hover:bg-muted focus-within:bg-muted focus-within:ring-1 focus-within:ring-ring",
+        "sm:transform-none transition-transform duration-200 origin-top",
+        isFocused && "max-sm:scale-[1.03]"
+      )}>
         {/* Search icon */}
         <div className="pl-3 flex items-center pointer-events-none shrink-0">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -179,7 +185,6 @@ function SearchInputField({
           placeholder={searchPlaceholder}
           value={searchPrompt}
           onChange={(e) => onSearchPromptChange(e.target.value)}
-          onFocus={handleFocus}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               if (showDropdown && activeIndex >= 0) {
@@ -191,7 +196,12 @@ function SearchInputField({
             }
             handleKeyDown(e); // ↑↓ Escape
           }}
-          className="flex-1 min-w-0 h-12 px-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
+          onFocus={(e) => {
+            handleFocus();
+            setIsFocused(true);
+          }}
+          onBlur={() => setIsFocused(false)}
+          className="flex-1 min-w-0 h-12 px-2 bg-transparent text-base outline-none placeholder:text-muted-foreground dark:text-accent-foreground dark:placeholder:text-accent-foreground"
         />
 
         {/* Divider + dataset selector + clear button */}
@@ -591,40 +601,8 @@ export function SearchHeader({
             />
           </div>
 
-          {/* Right: Hamburger + User */}
+          {/* Right: User + More */}
           <div className="flex items-center gap-2 shrink-0 ml-auto">
-            {/* Desktop: Dropdown hamburger (lg+) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:flex h-9 w-9"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <HamburgerDropdownContent />
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Mobile/tablet: Sheet hamburger (below lg) */}
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden h-9 w-9"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-64 p-0">
-                <MobileSheetContent onClose={() => setMobileOpen(false)} />
-              </SheetContent>
-            </Sheet>
-
             {/* User menu / Sign In */}
             {isAuthenticated ? (
               <DropdownMenu modal={false}>
@@ -692,6 +670,38 @@ export function SearchHeader({
                 {tCommon("signIn")}
               </Button>
             )}
+
+            {/* Desktop: More options dropdown (⋮) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden md:flex h-9 w-9"
+                >
+                  <EllipsisVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <HamburgerDropdownContent />
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Tablet: Sheet hamburger (below md) */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-9 w-9"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64 p-0">
+                <MobileSheetContent onClose={() => setMobileOpen(false)} />
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
 

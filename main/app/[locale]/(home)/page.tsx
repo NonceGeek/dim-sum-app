@@ -48,6 +48,7 @@ export default function HomePage() {
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
   const [datasetInputValue, setDatasetInputValue] = useState("");
   const [luckyHovered, setLuckyHovered] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useAllCategories();
@@ -229,7 +230,11 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="relative mt-6 w-full max-w-[720px]"
+          className={cn(
+            "relative mt-6 w-full max-w-[720px]",
+            "transition-transform duration-200 origin-top",
+            searchFocused && "max-sm:scale-[1.06]"
+          )}
         >
           {/* Search card with border glow — dropdown is inside the same card */}
           <BorderGlow
@@ -254,9 +259,13 @@ export default function HomePage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onFocus={handleFocus}
+                  onFocus={() => {
+                    handleFocus();
+                    setSearchFocused(true);
+                  }}
+                  onBlur={() => setSearchFocused(false)}
                   placeholder={t("searchPlaceholder")}
-                  className="flex-1 h-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  className="flex-1 h-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
                 />
               </div>
 
