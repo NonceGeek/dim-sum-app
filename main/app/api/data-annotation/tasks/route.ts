@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
+import { getAuthSession } from "@/lib/auth";
 import { fetchAgentTasks } from "@/lib/services/agent";
 import { handleAgentApiError } from "@/lib/services/agent-error";
+import { Role } from "@prisma/client";
 
 function parseNumber(value: string | null, fallback: number) {
   if (!value) return fallback;
@@ -10,6 +11,28 @@ function parseNumber(value: string | null, fallback: number) {
 }
 
 export async function GET(req: NextRequest) {
+  const session = await getAuthSession();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  const { role, isSystemAdmin } = session.user;
+  if (
+    !isSystemAdmin &&
+    role !== Role.RESEARCHER &&
+    role !== Role.TAGGER_PARTNER &&
+    role !== Role.TAGGER_OUTSOURCING
+  ) {
+    return NextResponse.json(
+      { error: "Permission denied" },
+      { status: 403 }
+    );
+  }
+
   const searchParams = new URL(req.url).searchParams;
   const status = searchParams.get("status") || undefined;
   const page = parseNumber(searchParams.get("page"), 1);
@@ -19,29 +42,20 @@ export async function GET(req: NextRequest) {
   const violationType = searchParams.get("violationType") || undefined;
   const q = searchParams.get("q") || undefined;
 
-  return requireMiniprogramMarker(req, async (_req, user) => {
-    if (!user.userId) {
-      return NextResponse.json(
-        { error: "Missing user identifier" },
-        { status: 400 }
-      );
-    }
+  try {
+    const data = await fetchAgentTasks({
+      actorRef: session.user.id,
+      assigneeRef,
+      status,
+      page,
+      pageSize,
+      corpusName,
+      violationType,
+      q,
+    });
 
-    try {
-      const data = await fetchAgentTasks({
-        actorRef: user.userId,
-        assigneeRef,
-        status,
-        page,
-        pageSize,
-        corpusName,
-        violationType,
-        q,
-      });
-
-      return NextResponse.json(data);
-    } catch (error) {
-      return handleAgentApiError(error, "Failed to load tasks");
-    }
-  });
+    return NextResponse.json(data);
+  } catch (error) {
+    return handleAgentApiError(error, "Failed to load tasks");
+  }
 }

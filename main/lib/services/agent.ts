@@ -11,6 +11,7 @@ export interface AgentTaskContext {
   corpusUniqueId?: string;
   sentenceText?: string;
   problemChar?: string;
+  text?: string;
 }
 
 export type AgentSuggestionSource = "lexicon" | "llm";
@@ -88,6 +89,7 @@ export interface AgentTaskQuery {
   violationType?: string;
   // assigneeRef: 要查看谁的任务列表，不传时默认查看 actorRef 自己的任务
   assigneeRef?: string;
+  q?: string;
 }
 
 export interface RuleRunPayload {
@@ -200,6 +202,7 @@ export async function fetchAgentTasks(query: AgentTaskQuery) {
       pageSize: query.pageSize,
       corpusName: query.corpusName,
       violationType: query.violationType,
+      q: query.q,
     },
   });
 }
@@ -293,6 +296,16 @@ export interface AgentTaskStatsQuery {
   assigneeRef?: string;
 }
 
+export interface AgentTaskStatsItem {
+  assigneeRef: string;
+  corpusId: string;
+  totalCount: number;
+  processedCount: number;
+  unprocessedCount: number;
+  totalCorpusCount: number | null;
+  completionRate: number;
+}
+
 export interface AgentTaskStatsResponse {
   filters: {
     corpusIds: string[];
@@ -305,6 +318,7 @@ export interface AgentTaskStatsResponse {
     totalCorpusCount: number | null;
     completionRate: number;
   };
+  items?: AgentTaskStatsItem[];
 }
 
 export async function fetchAgentTaskStats(query: AgentTaskStatsQuery) {
