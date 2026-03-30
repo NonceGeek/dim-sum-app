@@ -120,6 +120,54 @@ async function getUserByIdOrEmail(id?: string, email?: string): Promise<any> {
   };
 }
 
+// Get users by Ids function
+async function getUsersByIds(ids: string[]): Promise<any[]> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  );
+
+  // Build query based on id or email
+  let query = supabase.from("User").select("*");
+
+  if (ids.length) {
+    query = query.in("id", ids);
+  } else {
+    return []; // No ids provided
+  }
+
+  const { data: userData, error: selectError } = await query;
+  const userDataIds = userData.map((user) => user.id);
+  if (selectError || !userData) {
+    console.error("Error selecting user:", selectError);
+    return [];
+  }
+
+  // Get Account items by userId and append to userData
+  const { data: accountData, error: accountError } = await supabase
+    .from("Account")
+    .select("*")
+    .in("userId", userDataIds);
+
+  const userMap = userData.map(user => {
+    const userId = user.id;
+    return {
+      ...user,
+      accounts: accountData.filter(account=> account.userId === userId),
+    }
+  })
+
+  if (accountError) {
+    console.error("Error fetching accounts:", accountError);
+    // Return user without accounts if account fetch fails
+    return {
+      ...userData,
+    };
+  }
+  // Return user data with accounts appended
+  return userMap;
+}
+
 // Supabase insert function
 async function insertCorpusItem(
   data: string,
@@ -1268,23 +1316,23 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
       }
 
       // Get taggers array from category data
-      const taggers = categoryData.taggers || [];
+      const { data: taggers, error: taggersError } = await supabase.from("user_corpus_permissions").select("user_id, category_name, permission").eq("category_name", name);
       console.log("taggers", taggers);
-      // Query user info for each user_id in taggers array
-      const taggersInfo: any[] = [];
-      for (const tagger of taggers) {
-        console.log("tagger", tagger);
-        const userInfo = await getUserByIdOrEmail(tagger.user_id);
-        if (userInfo) {
-          taggersInfo.push(userInfo);
-        }
+      const user_ids = taggers.map((tagger) => tagger.user_id);
+      if (taggersError) {
+        context.response.status = 404;
+        context.response.body = { error: "Corpus taggers not found" };
+        console.error("Error fetching taggers:", taggersError);
+        return;
       }
+      // Query user info for each user_id in taggers array
+      const userInfo = await getUsersByIds(user_ids);
 
       // Return corpus info with tagger user info
       context.response.status = 200;
       context.response.body = {
         ...categoryData,
-        taggers: taggersInfo
+        taggers: userInfo
       };
 
     } catch (error) {
