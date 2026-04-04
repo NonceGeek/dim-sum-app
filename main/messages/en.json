@@ -35,7 +35,9 @@
     "gaming": "Gaming",
     "ai": "AI",
     "others": "Others",
-    "tool": "Tool"
+    "tool": "Tool",
+    "AI": "AI",
+    "TAG": "Tag"
   },
   "Auth": {
     "selectRole": "Select Your Role",
