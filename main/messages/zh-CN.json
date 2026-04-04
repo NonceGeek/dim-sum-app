@@ -34,8 +34,11 @@
     "learning": "学习",
     "gaming": "游戏",
     "ai": "AI",
+    
     "others": "其他",
-    "tool": "工具"
+    "tool": "工具",
+    "AI": "AI",
+    "TAG": "标注"
   },
   "Auth": {
     "selectRole": "选择你的角色",
