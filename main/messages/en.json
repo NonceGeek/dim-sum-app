@@ -81,7 +81,8 @@
     "pinned": "Pinned",
     "viewOriginal": "View original data",
     "all": "All",
-    "noItemsFound": "No items found"
+    "noItemsFound": "No items found",
+    "cantharm": "Cantonese harmful speech dataset and benchmark with packaged metadata and speaker-level audio downloads."
   },
   "AppStore": {
     "launch": "Launch App",

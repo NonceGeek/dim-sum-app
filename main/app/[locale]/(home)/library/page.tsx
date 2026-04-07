@@ -187,7 +187,9 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
               br: () => <br />,
             }}
           >
-            {corpus.description.replace(/\n/g, '  \n')}
+            {corpus.name === "cantharm"
+              ? t(corpus.name)
+              : corpus.description.replace(/\n/g, "  \n")}
           </ReactMarkdown>
         </div>
         {(corpus.tags && corpus.tags.length > 0) || (corpus.size !== null && corpus.size !== undefined) ? (
