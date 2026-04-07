@@ -35,83 +35,6 @@ function getPathnameWithoutLocale(pathname: string): string {
 
 export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const referer = request.headers.get('referer') || '';
-
-  // Check if this is a library/cantharm request or library assets
-  const isCantharmPath = pathname.startsWith('/library/cantharm');
-  const isLibraryAsset = pathname.startsWith('/library/assets/') || pathname.startsWith('/library/');
-  const isFromCantharm = referer.includes('/library/cantharm');
-  // Match static files by extension
-  const isStaticResource = pathname.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map|json|webp|html|htm|xml|pdf|zip|tar|gz)$/i);
-
-  // Also proxy static resources if they don't look like Next.js assets
-  const isNextJsAsset = pathname.startsWith('/_next/') || pathname.startsWith('/static/');
-  const shouldProxy = isCantharmPath || isLibraryAsset || (isStaticResource && !isNextJsAsset && (isFromCantharm || !referer));
-
-  // console.log('[proxy] Debug:', { pathname, referer: referer || 'empty', isCantharmPath, isFromCantharm, isStaticResource: !!isStaticResource, shouldProxy });
-
-  if (shouldProxy) {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    if (!backendUrl) {
-      return new NextResponse('Backend URL not configured', { status: 500 });
-    }
-
-    // Handle cantharm paths - everything maps to /library/cantharm/ on backend
-    let targetPath = pathname;
-
-    // Ensure /library/cantharm has trailing slash
-    if (pathname === '/library/cantharm') {
-      targetPath = '/library/cantharm/';
-    }
-    // For /library/assets/* paths, rewrite to /library/cantharm/assets/*
-    else if (pathname.startsWith('/library/assets/')) {
-      const relativePath = pathname.replace('/library/assets/', '');
-      targetPath = `/library/cantharm/assets/${relativePath}`;
-    }
-    // For other library/* paths, rewrite to /library/cantharm/*
-    else if (pathname.startsWith('/library/') && !pathname.startsWith('/library/cantharm/')) {
-      const relativePath = pathname.replace('/library/', '');
-      targetPath = `/library/cantharm/${relativePath}`;
-    }
-
-    const targetUrl = `${backendUrl}${targetPath}`;
-    console.log('[proxy] Forwarding:', pathname, '->', targetUrl);
-
-    try {
-      const response = await fetch(targetUrl, {
-        headers: {
-          ...Object.fromEntries(request.headers.entries()),
-          host: new URL(backendUrl).host,
-        },
-      });
-
-      // console.log('[proxy] Response status:', response.status, response.statusText);
-      // console.log('[proxy] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      // Handle 304 Not Modified - can't manually construct 304 response
-      if (response.status === 304) {
-        return new NextResponse(null, {
-          status: 304,
-          headers: response.headers,
-        });
-      }
-
-      // Copy response headers and body
-      const responseHeaders = new Headers();
-      response.headers.forEach((value, key) => {
-        responseHeaders.set(key, value);
-      });
-
-      const body = await response.arrayBuffer();
-      return new NextResponse(body, {
-        status: response.status,
-        headers: responseHeaders,
-      });
-    } catch (error) {
-      console.error('[proxy] Error:', error);
-      return new NextResponse('Proxy error', { status: 502 });
-    }
-  }
 
   // Skip i18n for API routes and static files
   if (
@@ -169,10 +92,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    // Handle library paths explicitly
-    { source: '/library/:path*' },
-    // Handle all other paths
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: "/((?!_next|_vercel|.*\\..*).*)",
 };
