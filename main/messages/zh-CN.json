@@ -82,7 +82,8 @@
     "pinned": "置顶",
     "viewOriginal": "查看原始数据",
     "all": "全部",
-    "noItemsFound": "未找到匹配项"
+    "noItemsFound": "未找到匹配项",
+    "cantharm": "粤语有害语音数据集和基准测试，包含打包元数据和说话人级别的音频下载。"
   },
   "AppStore": {
     "launch": "启动应用",
