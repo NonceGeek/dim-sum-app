@@ -1143,8 +1143,16 @@ curl -X POST http://localhost:8000/dev/get_update_history \
       .from("cantonese_corpus_update_history")
       .select("*")
       .eq("unique_id", unique_id)
+      .eq("status", "PENDING")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single();
     if (updateHistoryError) {
+      if (updateHistoryError.code === "PGRST116") {
+        context.response.status = 404;
+        context.response.body = { error: "No pending update history found for this unique_id" };
+        return;
+      }
       context.response.status = 500;
       context.response.body = { error: "Failed to get update history" };
       console.error("Error getting update history:", updateHistoryError);
