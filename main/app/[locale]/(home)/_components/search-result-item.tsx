@@ -504,7 +504,7 @@ export default function SearchResultItem({
           {result.data}
         </h3>
         <div className="flex items-center gap-1 shrink-0">
-          {(isRichMedia || related) && (
+          {(isRichMedia || related?.apps?.length > 0 || related?.links?.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
