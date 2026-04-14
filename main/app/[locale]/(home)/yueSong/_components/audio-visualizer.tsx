@@ -6,7 +6,7 @@ export default function AudioVisualizer({ isPlaying }: { isPlaying: boolean }) {
       {[...Array(20)].map((_, i) => (
         <div
           key={i}
-          className={`w-1 bg-white ${isPlaying ? "animate-wave" : ""}`}
+          className={`w-1 bg-foreground ${isPlaying ? "animate-wave" : ""}`}
           style={{
             height: isPlaying ? undefined : "40%",
             animationDelay: `${i * 0.1}s`,
