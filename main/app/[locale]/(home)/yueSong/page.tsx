@@ -147,6 +147,7 @@ function YueSong() {
     setVolume(val);
   };
   const handleSeek = (val) => {
+    if (!isSeeking) setIsSeeking(true);
     setProgress(Number(val));
   };
 
