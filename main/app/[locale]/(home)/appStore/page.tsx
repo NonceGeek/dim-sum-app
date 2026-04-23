@@ -192,7 +192,7 @@ function AppCard({ app }: { app: App }) {
           href={app.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="group text-xl font-semibold text-foreground relative pb-1
+          className="group text-xl font-semibold text-(--ds-color-neutral-900) relative pb-1
   inline-block"
         >
           <h3 className="text-xl font-semibold">{app.name}</h3>
