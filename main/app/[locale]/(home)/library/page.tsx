@@ -293,7 +293,7 @@ export default function LibraryPage() {
         );
         const data = await response.json();
         // Sort the data: first by pinned (true first), then by sorting (larger numbers first)
-        const sortedData = data.sort((a, b) => {
+        const sortedData = data.filter(item => item.is_public).sort((a, b) => {
           // First sort by pinned: true comes before false
           if (a.pinned && !b.pinned) return -1;
           if (!a.pinned && b.pinned) return 1;
