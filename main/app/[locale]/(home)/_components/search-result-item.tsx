@@ -504,27 +504,25 @@ export default function SearchResultItem({
           {result.data}
         </h3>
         <div className="flex items-center gap-1 shrink-0">
-          {(isRichMedia || related?.apps?.length > 0 || related?.links?.length > 0) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-expanded={expanded}
-              onClick={() => setExpanded((v) => !v)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {expanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  {t("collapseContent")}
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  {t("expandContent")}
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((v) => !v)}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-1" />
+                {t("collapseContent")}
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-1" />
+                {t("expandContent")}
+              </>
+            )}
+          </Button>
           {canEdit && (
             <Button
               variant="ghost"

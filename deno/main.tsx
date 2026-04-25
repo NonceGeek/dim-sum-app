@@ -14,12 +14,27 @@ import { aliOSSRouter } from "./ali-oss.tsx";
 console.log("Hello from AI Dimsum Devs API!");
 
 // Admin password verification function
+// ADMIN_PWD_HASH should be the SHA-256 hex digest of the actual admin password
+// how could I generate the ADMIN_PWD_HASH? echo -n "your_actual_password" | shasum -a 256
 async function verifyAdminPassword(
   context: any,
   password: string
 ): Promise<boolean> {
-  const adminPwd = Deno.env.get("ADMIN_PWD");
-  if (!password || password !== adminPwd) {
+  const adminPwdHash = Deno.env.get("ADMIN_PWD_HASH");
+  if (!password || !adminPwdHash) {
+    context.response.status = 401;
+    context.response.body = { error: "Unauthorized: Invalid password" };
+    return false;
+  }
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(password)
+  );
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  if (hashHex !== adminPwdHash) {
     context.response.status = 401;
     context.response.body = { error: "Unauthorized: Invalid password" };
     return false;
@@ -267,6 +282,11 @@ async function textSearchV2Handler(context: any) {
         (item: any) => tableName.includes(item.category)
       );
     }
+
+    // Exclude test data — any item whose category contains "test"
+    mergedData = mergedData.filter(
+      (item: any) => !item.category?.includes("test")
+    );
 
     console.log("data", mergedData);
     context.response.status = 200;
@@ -1349,6 +1369,13 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
       context.response.status = 500;
       context.response.body = { error: "Internal server error" };
     }
+  })
+  .post("/dev/verify_admin_password", async (context) => {
+    let body = await context.request.body({ type: "json" });
+    const content = await body.value;
+    const { password } = content;
+    const ifPasswordCorrect = await verifyAdminPassword(context, password);
+    context.response.body = { ifPasswordCorrect };
   })
   /* ↓↓↓ APIs for apps ↓↓↓ */
   .get("/app/meme_pic_links", async (context) => {
