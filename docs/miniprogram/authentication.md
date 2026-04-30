@@ -37,9 +37,17 @@
 # NextAuth (Web 和小程序共用)
 NEXTAUTH_SECRET="your-secret-key"
 
-# 微信小程序配置
-WECHAT_MINIPROGRAM_APPID="your-miniprogram-appid"
-WECHAT_MINIPROGRAM_SECRET="your-miniprogram-secret"
+# 微信小程序配置 - review-app（默认）
+WECHAT_MINIPROGRAM_APPID="your-review-app-appid"
+WECHAT_MINIPROGRAM_SECRET="your-review-app-secret"
+
+# 微信小程序配置 - yue-cube-game
+WECHAT_MINIPROGRAM_YUE_CUBE_GAME_APPID="your-yue-cube-game-appid"
+WECHAT_MINIPROGRAM_YUE_CUBE_GAME_SECRET="your-yue-cube-game-secret"
+
+# 微信小程序配置 - corpus-collection-app
+WECHAT_MINIPROGRAM_CORPUS_COLLECTION_APPID="your-corpus-collection-app-appid"
+WECHAT_MINIPROGRAM_CORPUS_COLLECTION_SECRET="your-corpus-collection-app-secret"
 ```
 
 ### 2. 获取小程序 AppID 和 Secret
@@ -47,6 +55,16 @@ WECHAT_MINIPROGRAM_SECRET="your-miniprogram-secret"
 1. 登录 [微信公众平台](https://mp.weixin.qq.com/)
 2. 进入"开发" > "开发管理" > "开发设置"
 3. 获取 AppID（小程序 ID）和 AppSecret
+
+### 3. 小程序枚举
+
+登录接口通过 `miniprogramApp` 区分不同小程序。不传时默认使用 `review-app`，兼容历史调用。
+
+| 枚举值 | 小程序 | 环境变量 |
+|--------|--------|----------|
+| `review-app` | Review App 标注审核小程序 | `WECHAT_MINIPROGRAM_APPID` / `WECHAT_MINIPROGRAM_SECRET` |
+| `yue-cube-game` | 粤方块小游戏 | `WECHAT_MINIPROGRAM_YUE_CUBE_GAME_APPID` / `WECHAT_MINIPROGRAM_YUE_CUBE_GAME_SECRET` |
+| `corpus-collection-app` | 语料采集小程序 | `WECHAT_MINIPROGRAM_CORPUS_COLLECTION_APPID` / `WECHAT_MINIPROGRAM_CORPUS_COLLECTION_SECRET` |
 
 ## 认证流程
 
@@ -67,7 +85,8 @@ wx.login({
           url: 'https://your-domain.com/api/miniprogram/auth/login',
           method: 'POST',
           data: {
-            code: res.code
+            code: res.code,
+            miniprogramApp: 'review-app'
           }
         });
 
@@ -104,9 +123,12 @@ wx.login({
 **请求体**:
 ```json
 {
-  "code": "wx_login_code_from_wx.login()"
+  "code": "wx_login_code_from_wx.login()",
+  "miniprogramApp": "review-app"
 }
 ```
+
+`miniprogramApp` 为可选字段，允许值为 `review-app`、`yue-cube-game`、`corpus-collection-app`。不传时默认 `review-app`。
 
 **成功响应** (200):
 ```json
@@ -130,6 +152,18 @@ wx.login({
   {
     "error": "Failed to authenticate with WeChat",
     "details": "invalid code"
+  }
+  ```
+
+- **400** - 小程序枚举值无效
+  ```json
+  {
+    "error": "Invalid miniprogramApp",
+    "allowedValues": [
+      "review-app",
+      "yue-cube-game",
+      "corpus-collection-app"
+    ]
   }
   ```
 
@@ -622,6 +656,15 @@ Token 刷新失败通常意味着 refresh token 也过期了（30 天）。此�
 - 方案2：维护一个黑名单（Redis）存储已失效的 token ID
 - 方案3：缩短 token 有效期（如 1 小时）
 
+### Q6: 新增小程序时如何接入同一个登录接口？
+
+1. 在服务端枚举中新增一个 `miniprogramApp` 值
+2. 为新小程序添加独立的 AppID 和 AppSecret 环境变量
+3. 在登录接口配置映射中把枚举值关联到对应环境变量
+4. 小程序端登录请求传入新的 `miniprogramApp`
+
+不要从小程序端传 `appSecret`，端侧只传枚举值，密钥始终保存在服务端。
+
 ## 相关文件
 
 ### 核心文件
@@ -637,4 +680,5 @@ Token 刷新失败通常意味着 refresh token 也过期了（30 天）。此�
 
 ## 更新日志
 
+- **2026-04-30**: 支持 `review-app`、`yue-cube-game`、`corpus-collection-app` 多小程序登录枚举
 - **2024-10-27**: 初始版本，支持基于 JWT 的小程序认证

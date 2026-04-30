@@ -15,6 +15,43 @@ interface WeChatAuthResponse {
   errmsg?: string;
 }
 
+enum MiniprogramApp {
+  ReviewApp = "review-app",
+  YueCubeGame = "yue-cube-game",
+  CorpusCollectionApp = "corpus-collection-app",
+}
+
+const DEFAULT_MINIPROGRAM_APP = MiniprogramApp.ReviewApp;
+
+const MINIPROGRAM_CONFIGS: Record<
+  MiniprogramApp,
+  { appId: string | undefined; appSecret: string | undefined }
+> = {
+  [MiniprogramApp.ReviewApp]: {
+    appId: process.env.WECHAT_MINIPROGRAM_APPID,
+    appSecret: process.env.WECHAT_MINIPROGRAM_SECRET,
+  },
+  [MiniprogramApp.YueCubeGame]: {
+    appId: process.env.WECHAT_MINIPROGRAM_YUE_CUBE_GAME_APPID,
+    appSecret: process.env.WECHAT_MINIPROGRAM_YUE_CUBE_GAME_SECRET,
+  },
+  [MiniprogramApp.CorpusCollectionApp]: {
+    appId: process.env.WECHAT_MINIPROGRAM_CORPUS_COLLECTION_APPID,
+    appSecret: process.env.WECHAT_MINIPROGRAM_CORPUS_COLLECTION_SECRET,
+  },
+};
+
+function isMiniprogramApp(value: unknown): value is MiniprogramApp {
+  return (
+    typeof value === "string" &&
+    Object.values(MiniprogramApp).includes(value as MiniprogramApp)
+  );
+}
+
+function getMiniprogramConfig(miniprogramApp: MiniprogramApp) {
+  return MINIPROGRAM_CONFIGS[miniprogramApp];
+}
+
 /**
  * Miniprogram login endpoint
  * POST /api/miniprogram/auth/login
@@ -22,6 +59,7 @@ interface WeChatAuthResponse {
  * Supports two login methods:
  * 1. WeChat login:
  *    - code: WeChat login code from wx.login()
+ *    - miniprogramApp: optional app enum, defaults to "review-app"
  *
  * 2. Phone login:
  *    - phoneNumber: User's phone number
@@ -36,6 +74,17 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { code, phoneNumber, verificationCode } = body;
+    const miniprogramApp = body.miniprogramApp ?? DEFAULT_MINIPROGRAM_APP;
+
+    if (!isMiniprogramApp(miniprogramApp)) {
+      return NextResponse.json(
+        {
+          error: "Invalid miniprogramApp",
+          allowedValues: Object.values(MiniprogramApp),
+        },
+        { status: 400 },
+      );
+    }
 
     // Determine login method
     if (phoneNumber && verificationCode) {
@@ -43,10 +92,13 @@ export async function POST(req: NextRequest) {
       return await handlePhoneLogin(phoneNumber, verificationCode);
     } else if (code) {
       // WeChat code login
-      return await handleWeChatLogin(code);
+      return await handleWeChatLogin(code, miniprogramApp);
     } else {
       return NextResponse.json(
-        { error: "Missing required parameters. Provide either 'code' for WeChat login, or 'phoneNumber' and 'verificationCode' for phone login." },
+        {
+          error:
+            "Missing required parameters. Provide either 'code' for WeChat login, or 'phoneNumber' and 'verificationCode' for phone login.",
+        },
         { status: 400 },
       );
     }
@@ -152,13 +204,18 @@ async function handlePhoneLogin(phoneNumber: string, verificationCode: string) {
 /**
  * Handle WeChat code login (existing flow)
  */
-async function handleWeChatLogin(code: string) {
+async function handleWeChatLogin(
+  code: string,
+  miniprogramApp: MiniprogramApp,
+) {
   // Exchange code for openid and session_key from WeChat
-  const appId = process.env.WECHAT_MINIPROGRAM_APPID;
-  const appSecret = process.env.WECHAT_MINIPROGRAM_SECRET;
+  const { appId, appSecret } = getMiniprogramConfig(miniprogramApp);
 
   if (!appId || !appSecret) {
-    console.error("Missing WeChat miniprogram configuration");
+    console.error(
+      "Missing WeChat miniprogram configuration:",
+      miniprogramApp,
+    );
     return NextResponse.json(
       { error: "Server configuration error" },
       { status: 500 },
@@ -257,4 +314,3 @@ async function handleWeChatLogin(code: string) {
     allowedCorpora: allowedCorpora,
   });
 }
-
