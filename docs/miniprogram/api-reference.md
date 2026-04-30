@@ -5,8 +5,8 @@
 本文档为微信小程序前端开发者提供**通用基础接口**说明（认证、用户、文件上传、错误处理等）。所有接口基于 HTTPS 协议,使用 JSON 格式进行数据交互。
 
 > 业务专属接口请参见 [`business/`](./business/) 目录下的对应文档:
-> - [标注小程序业务接口](./business/biaozhu.md)
-> - [粤方块小游戏接口](./business/yue-cube-game.md)
+> - [Review App 标注审核小程序接口](./business/review-app/api.md)
+> - [粤方块小游戏接口](./business/yue-cube-game/api.md)
 
 ### 基础信息
 
