@@ -6,22 +6,10 @@ the api for agent-market.
 // This enables autocomplete, go to definition, etc.
 import { Router } from "oak";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAdminPassword } from "./main.tsx";
 
 console.log("Hello from Ali OSS API!");
 
-// Admin password verification function
-async function verifyAdminPassword(
-  context: any,
-  password: string
-): Promise<boolean> {
-  const adminPwd = Deno.env.get("ADMIN_PWD");
-  if (!password || password !== adminPwd) {
-    context.response.status = 401;
-    context.response.body = { error: "Unauthorized: Invalid password" };
-    return false;
-  }
-  return true;
-}
 
 // API key verification function
 async function verifyAPIKey(context: any, api_key: string): Promise<any> {
