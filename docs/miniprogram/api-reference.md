@@ -16,6 +16,16 @@
 - **字符编码**: UTF-8
 - **认证方式**: JWT Bearer Token
 
+### 小程序枚举
+
+微信登录支持多个小程序共用同一个登录接口。请求体可通过 `miniprogramApp` 指定当前小程序；不传时默认使用 `review-app`。
+
+| 枚举值 | 小程序 | 说明 |
+|--------|--------|------|
+| `review-app` | Review App 标注审核小程序 | 默认值，使用 `WECHAT_MINIPROGRAM_APPID` / `WECHAT_MINIPROGRAM_SECRET` |
+| `yue-cube-game` | 粤方块小游戏 | 使用 `WECHAT_MINIPROGRAM_YUE_CUBE_GAME_APPID` / `WECHAT_MINIPROGRAM_YUE_CUBE_GAME_SECRET` |
+| `corpus-collection-app` | 语料采集小程序 | 使用 `WECHAT_MINIPROGRAM_CORPUS_COLLECTION_APPID` / `WECHAT_MINIPROGRAM_CORPUS_COLLECTION_SECRET` |
+
 ### 接口地址
 
 **生产环境**: `https://search.aidimsum.com/api`
@@ -45,9 +55,15 @@
 
 ```json
 {
-  "code": "string, 必填, 微信登录凭证 (通过 wx.login() 获取)"
+  "code": "string, 必填, 微信登录凭证 (通过 wx.login() 获取)",
+  "miniprogramApp": "string, 可选, 小程序枚举值，默认 review-app"
 }
 ```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `code` | string | 是 | 通过 `wx.login()` 获取的微信登录凭证 |
+| `miniprogramApp` | string | 否 | 小程序枚举值，可选 `review-app`、`yue-cube-game`、`corpus-collection-app`；默认 `review-app` |
 
 #### 请求参数 - 手机号登录
 
@@ -69,7 +85,8 @@ wx.login({
         url: 'https://search.aidimsum.com/api/miniprogram/auth/login',
         method: 'POST',
         data: {
-          code: res.code
+          code: res.code,
+          miniprogramApp: 'review-app'
         }
       });
 
@@ -140,6 +157,19 @@ wx.setStorageSync('userInfo', user);
 ```json
 {
   "error": "Missing required parameters. Provide either 'code' for WeChat login, or 'phoneNumber' and 'verificationCode' for phone login."
+}
+```
+
+**400 Bad Request** - 小程序枚举值无效
+
+```json
+{
+  "error": "Invalid miniprogramApp",
+  "allowedValues": [
+    "review-app",
+    "yue-cube-game",
+    "corpus-collection-app"
+  ]
 }
 ```
 
