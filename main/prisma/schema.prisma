@@ -55,10 +55,12 @@ model User {
   walletNonces                    WalletNonce[]
   api_key                         api_key[]
   cantonese_corpus_update_history cantonese_corpus_update_history[]
-  corpusInteractions              user_corpus_interactions[]
-  corpusPermissions               user_corpus_permissions[]
+  gameAnswerRecords               game_answer_records[]
+  gamePlayerProgress              game_player_progress?
   auditLogsAsOperator             permission_audit_logs[]           @relation("AuditOperator")
   auditLogsAsTarget               permission_audit_logs[]           @relation("AuditTarget")
+  corpusInteractions              user_corpus_interactions[]
+  corpusPermissions               user_corpus_permissions[]
 }
 
 model Session {
@@ -103,14 +105,15 @@ model cantonese_categories {
   link                 String?
   tags                 Json?
   pinned               Boolean                   @default(false)
-  editable_level       BigInt                    @default(0) // @deprecated - use user_corpus_permissions
+  editable_level       BigInt                    @default(0)
   if_in_all_data       Boolean                   @default(false)
   related              Json                      @default("{\"apps\": [], \"links\": []}")
   size                 Float?                    @db.Real
-  taggers              Json                      @default("[]") // @deprecated - use user_corpus_permissions
+  taggers              Json                      @default("[]")
   sorting              BigInt                    @default(0)
-  status               CategoryStatus?           @default(RAW)
+  status               CategoryStatus            @default(RAW)
   is_public            Boolean                   @default(true)
+  recommend_words      Json                      @default("[]")
   cantonese_corpus_all cantonese_corpus_all[]
   userPermissions      user_corpus_permissions[]
 
@@ -130,6 +133,8 @@ model cantonese_corpus_all {
   bookmark_num         BigInt                     @default(0)
   view_num             BigInt                     @default(0)
   updated_at           DateTime                   @default(now()) @db.Timestamptz(6)
+  lifecycle_stage      String                     @default("draft")
+  structured_note      Json?
   cantonese_categories cantonese_categories       @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
   corpus_zyzdv2        corpus_zyzdv2[]
   userInteractions     user_corpus_interactions[]
@@ -147,7 +152,6 @@ model cantonese_corpus_apps {
   url              String?
   homepage_url     String?
   github_url       String?
-  intro_video      String?
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @db.Timestamp(6)
   likes            BigInt    @default(0)
@@ -178,20 +182,23 @@ model cantonese_corpus_dict_yin {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cantonese_corpus_update_history {
-  id               BigInt        @default(autoincrement())
-  unique_id        String        @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  note             Json
-  status           Status        @default(PENDING)
-  updated_at       DateTime?     @default(now()) @db.Timestamp(6)
-  created_at       DateTime      @default(now()) @db.Timestamptz(6)
-  user_id          String
-  approver_user_id String?
-  last_note        Json          @default("{}")
-  operation_type   OperationType @default(UPDATE)
-  data             String?
-  tags             Json?         @default("[]")
-  category         String?
-  User             User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   BigInt        @default(autoincrement())
+  unique_id            String        @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  note                 Json
+  status               Status        @default(PENDING)
+  updated_at           DateTime?     @default(now()) @db.Timestamp(6)
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+  user_id              String
+  approver_user_id     String?
+  last_note            Json          @default("{}")
+  operation_type       OperationType @default(UPDATE)
+  data                 String?
+  tags                 Json?         @default("[]")
+  category             String?
+  last_structured_note Json?
+  structured_note      Json?
+  last_data            String?
+  User                 User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([id, unique_id])
 }
@@ -304,6 +311,7 @@ model micro_ai_saas {
   coupon                String?
   signature             String?
   stared                Boolean                @default(false)
+  spent_time            Float                  @default(0) @db.Real
   micro_ai_saas_coupons micro_ai_saas_coupons? @relation(fields: [coupon], references: [addr], onDelete: NoAction, onUpdate: NoAction)
   asset_units           asset_units?           @relation(fields: [fee_unit], references: [unit], onDelete: NoAction, onUpdate: NoAction)
   micro_ai_saas_agents  micro_ai_saas_agents?  @relation(fields: [solver], references: [unique_id], onDelete: NoAction, onUpdate: NoAction)
@@ -389,6 +397,172 @@ model vocabulary_difficulty_levels {
   @@index([level_4], map: "vocabulary_difficulty_levels_level_4_pgroonga_idx")
 }
 
+/// 用户-语料库权限绑定表
+model user_corpus_permissions {
+  id            BigInt               @id @default(autoincrement())
+  user_id       String
+  category_name String
+  permission    CorpusPermission     @default(READ)
+  created_at    DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by    String?
+  category      cantonese_categories @relation(fields: [category_name], references: [name], onDelete: Cascade)
+  user          User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, category_name])
+  @@index([user_id])
+  @@index([category_name])
+}
+
+/// 权限变更审计日志
+model permission_audit_logs {
+  id             BigInt           @id @default(autoincrement())
+  operator_id    String
+  target_user_id String
+  category_name  String?
+  action         PermissionAction
+  old_value      Json?
+  new_value      Json?
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  operator       User             @relation("AuditOperator", fields: [operator_id], references: [id])
+  target_user    User             @relation("AuditTarget", fields: [target_user_id], references: [id])
+
+  @@index([operator_id])
+  @@index([target_user_id])
+  @@index([created_at])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model agent_lib_cert_master {
+  id         BigInt   @id @default(autoincrement())
+  owner      String
+  cert_id    String?  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  cert_name  String
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model agent_lib_psy {
+  id              BigInt                 @id @default(autoincrement())
+  question        String?
+  answer          String?
+  created_at      DateTime               @default(now()) @db.Timestamptz(6)
+  embedding_input String?                @default(dbgenerated("((COALESCE(question, ''::text) || '\n'::text) || COALESCE(answer, ''::text))"))
+  embedding       Unsupported("vector")?
+  source_name     String                 @default("")
+
+  @@index([embedding_input], map: "agent_lib_psy_embedding_input_pgroonga_idx")
+  @@index([question], map: "agent_lib_psy_question_pgroonga_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dataset_licences {
+  id                      BigInt   @id @default(autoincrement())
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+  context                 String?
+  unique_id               String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cantonese_categories_id BigInt?
+  nft_id                  BigInt?
+  name                    String?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_tssbs {
+  id              BigInt  @id
+  data            String?
+  structured_note Json?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_wlxfbdl {
+  id              BigInt @id
+  note            Json?
+  structured_note Json?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_xzpq_with_jyutping {
+  id              BigInt @id
+  note            Json?
+  structured_note Json?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_yycygsj {
+  id              BigInt  @id
+  data            String?
+  note            Json?
+  structured_note Json?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_yydh {
+  id              BigInt @id
+  note            Json?
+  structured_note Json?
+}
+
+/// 粤方块小游戏 - 语境填空离线题库
+model game_cloze_questions {
+  id                      BigInt   @id @default(autoincrement())
+  external_id             String   @unique
+  scene                   String
+  source_corpus_unique_id String
+  payload                 Json
+  status                  String   @default("active")
+  batch_tag               String?
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// 粤方块小游戏 - 用户答题与 AI 评分记录
+model game_answer_records {
+  id                 BigInt    @id @default(autoincrement())
+  user_id            String
+  mode               String
+  question_id        String?
+  scene              String?
+  selected_answer    String?
+  selected_index     Int?
+  is_correct         Boolean?
+  time_spent_seconds Int?
+  audio_url          String?
+  image_url          String?
+  score              Int?
+  agent_result       Json?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user               User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, mode, created_at])
+  @@index([question_id])
+  @@index([created_at])
+}
+
+/// 粤方块小游戏 - 用户进度汇总快照
+model game_player_progress {
+  user_id              String   @id
+  total_time_seconds   Int      @default(0)
+  completed_questions  Int      @default(0)
+  correct_questions    Int      @default(0)
+  graded_questions     Int      @default(0)
+  accuracy             Float    @default(0)
+  level                String   @default("beginner")
+  current_streak_days  Int      @default(0)
+  last_played_date     DateTime? @db.Date
+  context_completed    Int      @default(0)
+  sound_completed      Int      @default(0)
+  image_completed      Int      @default(0)
+  context_correct      Int      @default(0)
+  sound_correct        Int      @default(0)
+  image_correct        Int      @default(0)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
 enum Role {
   LEARNER
   TAGGER_PARTNER
@@ -438,53 +612,16 @@ enum CategoryStatus {
 
 /// 语料库访问权限级别
 enum CorpusPermission {
-  READ // 仅查看
-  WRITE // 可修改词条
-  CREATE // 可新增词条+修改
-  FULL // 全部操作
+  READ
+  WRITE
+  CREATE
+  FULL
 }
 
 /// 权限变更操作类型
 enum PermissionAction {
-  GRANT // 授予权限
-  REVOKE // 撤销权限
-  MODIFY // 修改权限级别
-  ROLE_CHANGE // 角色变更
-}
-
-/// 用户-语料库权限绑定表
-model user_corpus_permissions {
-  id            BigInt           @id @default(autoincrement())
-  user_id       String
-  category_name String
-  permission    CorpusPermission @default(READ)
-  created_at    DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
-  created_by    String?
-
-  user     User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  category cantonese_categories @relation(fields: [category_name], references: [name], onDelete: Cascade)
-
-  @@unique([user_id, category_name])
-  @@index([user_id])
-  @@index([category_name])
-}
-
-/// 权限变更审计日志
-model permission_audit_logs {
-  id             BigInt           @id @default(autoincrement())
-  operator_id    String
-  target_user_id String
-  category_name  String?
-  action         PermissionAction
-  old_value      Json?
-  new_value      Json?
-  created_at     DateTime         @default(now()) @db.Timestamptz(6)
-
-  operator    User @relation("AuditOperator", fields: [operator_id], references: [id])
-  target_user User @relation("AuditTarget", fields: [target_user_id], references: [id])
-
-  @@index([operator_id])
-  @@index([target_user_id])
-  @@index([created_at])
+  GRANT
+  REVOKE
+  MODIFY
+  ROLE_CHANGE
 }

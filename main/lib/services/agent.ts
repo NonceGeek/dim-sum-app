@@ -80,6 +80,59 @@ export interface AgentDescriptor {
   name: string;
 }
 
+export interface AudioRateScorePayload {
+  scene: string;
+  text: string;
+  jyutping: string;
+  userAudioUrl: string;
+  referenceAudioUrl: string;
+}
+
+export interface AudioRateScoreResponse {
+  score: number;
+  comment: string;
+}
+
+export interface ImageModerationResponse {
+  pass: boolean;
+  moderation: {
+    pass: boolean;
+    labels: string[];
+  };
+  clarity: {
+    pass: boolean;
+    score: number;
+  };
+  comment: string;
+}
+
+export interface PicvoiceReviewPayload {
+  scene: string;
+  imageUrl: string;
+  audioUrl: string;
+}
+
+export interface PicvoiceReviewResponse {
+  overallPass: boolean;
+  dimensions: {
+    audioActive: {
+      pass: boolean;
+      reason: string;
+    };
+    isCantonese: {
+      pass: boolean;
+      confidence?: number;
+      reason: string;
+    };
+    imageAudioMatch: {
+      pass: boolean;
+      score?: number;
+      reason: string;
+    };
+  };
+  comment: string;
+}
+
 export interface AgentTaskQuery {
   actorRef: string;
   status?: string;
@@ -327,5 +380,26 @@ export async function fetchAgentTaskStats(query: AgentTaskStatsQuery) {
       corpusName: query.corpusName,
       assigneeRef: query.assigneeRef,
     },
+  });
+}
+
+export async function scoreGameAudio(payload: AudioRateScorePayload) {
+  return agentFetch<AudioRateScoreResponse>("/games/audio-rate/score", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function moderateGameImage(imageUrl: string) {
+  return agentFetch<ImageModerationResponse>("/moderation/image", {
+    method: "POST",
+    body: { imageUrl },
+  });
+}
+
+export async function reviewPicvoiceGame(payload: PicvoiceReviewPayload) {
+  return agentFetch<PicvoiceReviewResponse>("/games/picvoice/review", {
+    method: "POST",
+    body: payload,
   });
 }
