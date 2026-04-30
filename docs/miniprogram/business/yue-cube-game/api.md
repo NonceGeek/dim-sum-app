@@ -4,8 +4,9 @@
 
 本文档描述**粤方块小游戏**小程序业务接口。普通登录用户即可调用。
 
-> 通用基础接口（认证、用户信息、上传、错误处理等）请参见: [`../api-reference.md`](../api-reference.md)
-> 认证流程与中间件说明请参见: [`../authentication.md`](../authentication.md)
+> 通用基础接口（认证、用户信息、上传、错误处理等）请参见: [`../../api-reference.md`](../../api-reference.md)
+> 认证流程与中间件说明请参见: [`../../authentication.md`](../../authentication.md)
+> 业务流程、数据写入和进度规则请参见: [`./business-logic.md`](./business-logic.md)
 
 ### 基础信息
 

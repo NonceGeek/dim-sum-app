@@ -61,6 +61,12 @@ model User {
   auditLogsAsTarget               permission_audit_logs[]           @relation("AuditTarget")
   corpusInteractions              user_corpus_interactions[]
   corpusPermissions               user_corpus_permissions[]
+  corpusCollectionActivities       corpus_collection_activities[]
+  corpusCollectionSubmissions      corpus_collection_submissions[]
+  corpusCollectionComments         corpus_collection_comments[]
+  corpusCollectionLikes            corpus_collection_likes[]
+  corpusCollectionReviewBatches    corpus_collection_review_batches[]
+  corpusCollectionReviewedItems    corpus_collection_submissions[]    @relation("CorpusCollectionReviewer")
 }
 
 model Session {
@@ -561,6 +567,185 @@ model game_player_progress {
   created_at           DateTime @default(now()) @db.Timestamptz(6)
   updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
   user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+/// 语料采集 - 活动
+model corpus_collection_activities {
+  id                 BigInt                              @id @default(autoincrement())
+  title              String
+  slug               String?                             @unique
+  description        String?
+  rules              String?
+  reward_config      Json                                @default("{}")
+  media_requirements Json                                @default("{}")
+  banner_url         String?
+  status             String                              @default("draft")
+  starts_at          DateTime?                           @db.Timestamptz(6)
+  ends_at            DateTime?                           @db.Timestamptz(6)
+  created_by         String?
+  created_at         DateTime                            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                            @default(now()) @updatedAt @db.Timestamptz(6)
+  creator            User?                               @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  submissions        corpus_collection_submissions[]
+  review_batches     corpus_collection_review_batches[]
+
+  @@index([status, starts_at, ends_at])
+  @@index([created_at])
+}
+
+/// 语料采集 - 分类标签
+model corpus_collection_categories {
+  id         BigInt   @id @default(autoincrement())
+  name       String
+  type       String   @default("tag")
+  status     String   @default("active")
+  sort_order Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@unique([name, type])
+  @@index([status, sort_order])
+}
+
+/// 语料采集 - 投稿
+model corpus_collection_submissions {
+  id              BigInt                               @id @default(autoincrement())
+  user_id         String
+  activity_id     BigInt?
+  submission_type String
+  title           String
+  intro           String
+  tags            Json                                 @default("[]")
+  review_status   String                               @default("pending_review")
+  precheck_result Json?
+  ai_review_result Json?
+  review_reason   String?
+  is_featured     Boolean                              @default(false)
+  show_on_home    Boolean                              @default(false)
+  visibility      String                               @default("private")
+  like_count      Int                                  @default(0)
+  comment_count   Int                                  @default(0)
+  share_count     Int                                  @default(0)
+  reviewed_by     String?
+  reviewed_at     DateTime?                            @db.Timestamptz(6)
+  created_at      DateTime                             @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime                             @default(now()) @updatedAt @db.Timestamptz(6)
+  activity        corpus_collection_activities?         @relation(fields: [activity_id], references: [id], onDelete: SetNull)
+  user            User                                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer        User?                                @relation("CorpusCollectionReviewer", fields: [reviewed_by], references: [id], onDelete: SetNull)
+  media           corpus_collection_submission_media[]
+  comments        corpus_collection_comments[]
+  likes           corpus_collection_likes[]
+  review_items    corpus_collection_review_batch_items[]
+
+  @@index([user_id, created_at])
+  @@index([activity_id, review_status])
+  @@index([review_status, created_at])
+  @@index([is_featured, show_on_home])
+}
+
+/// 语料采集 - 投稿媒体
+model corpus_collection_submission_media {
+  id               BigInt                         @id @default(autoincrement())
+  submission_id    BigInt
+  media_type       String
+  url              String
+  duration_seconds Int?
+  sort_order       Int                            @default(0)
+  metadata         Json                           @default("{}")
+  created_at       DateTime                       @default(now()) @db.Timestamptz(6)
+  submission       corpus_collection_submissions  @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  @@index([submission_id, sort_order])
+}
+
+/// 语料采集 - 点赞
+model corpus_collection_likes {
+  id            BigInt                        @id @default(autoincrement())
+  submission_id BigInt
+  user_id       String
+  created_at    DateTime                      @default(now()) @db.Timestamptz(6)
+  submission    corpus_collection_submissions @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+  user          User                          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([submission_id, user_id])
+  @@index([user_id])
+}
+
+/// 语料采集 - 评论
+model corpus_collection_comments {
+  id            BigInt                        @id @default(autoincrement())
+  submission_id BigInt
+  user_id       String
+  content       String
+  status        String                        @default("pending_review")
+  created_at    DateTime                      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime                      @default(now()) @updatedAt @db.Timestamptz(6)
+  submission    corpus_collection_submissions @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+  user          User                          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([submission_id, status, created_at])
+  @@index([user_id])
+}
+
+/// 语料采集 - AI 审核批次
+model corpus_collection_review_batches {
+  id                BigInt                                  @id @default(autoincrement())
+  batch_external_id String                                  @unique
+  agent_batch_id    String?
+  activity_id       BigInt?
+  status            String                                  @default("queued")
+  context           Json                                    @default("{}")
+  submission_count  Int                                     @default(0)
+  progress          Json                                    @default("{}")
+  failure_reason    String?
+  created_by        String?
+  created_at        DateTime                                @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime                                @default(now()) @updatedAt @db.Timestamptz(6)
+  started_at        DateTime?                               @db.Timestamptz(6)
+  finished_at       DateTime?                               @db.Timestamptz(6)
+  activity          corpus_collection_activities?            @relation(fields: [activity_id], references: [id], onDelete: SetNull)
+  creator           User?                                   @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  items             corpus_collection_review_batch_items[]
+  events            corpus_collection_review_events[]
+
+  @@index([status, created_at])
+  @@index([agent_batch_id])
+}
+
+/// 语料采集 - AI 审核批次投稿项
+model corpus_collection_review_batch_items {
+  id                     BigInt                             @id @default(autoincrement())
+  batch_id               BigInt
+  submission_id          BigInt
+  submission_external_id String
+  ordinal                Int                                @default(0)
+  status                 String                             @default("queued")
+  result                 Json?
+  created_at             DateTime                           @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
+  batch                  corpus_collection_review_batches    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  submission             corpus_collection_submissions       @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  @@unique([batch_id, submission_external_id])
+  @@unique([batch_id, submission_id])
+  @@index([submission_id])
+  @@index([status])
+}
+
+/// 语料采集 - AI 审核 webhook 事件
+model corpus_collection_review_events {
+  id            BigInt                            @id @default(autoincrement())
+  event_id      String                            @unique
+  batch_id      BigInt?
+  submission_id BigInt?
+  event         String
+  payload       Json
+  created_at    DateTime                          @default(now()) @db.Timestamptz(6)
+  batch         corpus_collection_review_batches?  @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+
+  @@index([batch_id, created_at])
+  @@index([submission_id])
 }
 
 enum Role {

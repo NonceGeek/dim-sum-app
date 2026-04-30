@@ -1,11 +1,12 @@
-# 标注小程序业务接口
+# Review App 标注审核小程序接口
 
 ## 概述
 
-本文档描述**标注小程序**专属的业务接口（任务相关），仅限标注员 (`TAGGER_PARTNER`、`TAGGER_OUTSOURCING`) 和研究员 (`RESEARCHER`) 调用。
+本文档描述 **Review App 标注审核小程序**专属的业务接口（任务相关），仅限标注员 (`TAGGER_PARTNER`、`TAGGER_OUTSOURCING`) 和研究员 (`RESEARCHER`) 调用。
 
-> 通用基础接口（认证、用户信息、上传、错误处理等）请参见: [`../api-reference.md`](../api-reference.md)
-> 认证流程与中间件说明请参见: [`../authentication.md`](../authentication.md)
+> 通用基础接口（认证、用户信息、上传、错误处理等）请参见: [`../../api-reference.md`](../../api-reference.md)
+> 认证流程与中间件说明请参见: [`../../authentication.md`](../../authentication.md)
+> 业务流程、任务状态流转和权限规则请参见: [`./business-logic.md`](./business-logic.md)
 
 ### 基础信息
 

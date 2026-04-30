@@ -16,6 +16,7 @@ import {
   FolderOpen,
   Shield,
   FileText,
+  ClipboardList,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -81,6 +82,12 @@ export default function AdminDashboardPage() {
       description: "Manage language corpus entries",
       href: "/admin/corpus",
       icon: Database,
+    },
+    {
+      title: "Corpus Collection",
+      description: "Manage collection activities, submissions, and AI review",
+      href: "/admin/corpus-collection",
+      icon: ClipboardList,
     },
     {
       title: "Audit Logs",
@@ -191,7 +198,7 @@ export default function AdminDashboardPage() {
                     size="sm"
                     className="w-full bg-primary hover:bg-primary/90"
                   >
-                    <Link href={action.href}>Open</Link>
+                    <Link href={action.href}>Manage</Link>
                   </Button>
                 </CardContent>
               </Card>
