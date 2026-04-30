@@ -55,6 +55,8 @@ model User {
   walletNonces                    WalletNonce[]
   api_key                         api_key[]
   cantonese_corpus_update_history cantonese_corpus_update_history[]
+  gameAnswerRecords               game_answer_records[]
+  gamePlayerProgress              game_player_progress?
   auditLogsAsOperator             permission_audit_logs[]           @relation("AuditOperator")
   auditLogsAsTarget               permission_audit_logs[]           @relation("AuditTarget")
   corpusInteractions              user_corpus_interactions[]
@@ -501,6 +503,64 @@ model tmp_yydh {
   id              BigInt @id
   note            Json?
   structured_note Json?
+}
+
+/// 粤方块小游戏 - 语境填空离线题库
+model game_cloze_questions {
+  id                      BigInt   @id @default(autoincrement())
+  external_id             String   @unique
+  scene                   String
+  source_corpus_unique_id String
+  payload                 Json
+  status                  String   @default("active")
+  batch_tag               String?
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// 粤方块小游戏 - 用户答题与 AI 评分记录
+model game_answer_records {
+  id                 BigInt    @id @default(autoincrement())
+  user_id            String
+  mode               String
+  question_id        String?
+  scene              String?
+  selected_answer    String?
+  selected_index     Int?
+  is_correct         Boolean?
+  time_spent_seconds Int?
+  audio_url          String?
+  image_url          String?
+  score              Int?
+  agent_result       Json?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user               User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, mode, created_at])
+  @@index([question_id])
+  @@index([created_at])
+}
+
+/// 粤方块小游戏 - 用户进度汇总快照
+model game_player_progress {
+  user_id              String   @id
+  total_time_seconds   Int      @default(0)
+  completed_questions  Int      @default(0)
+  correct_questions    Int      @default(0)
+  graded_questions     Int      @default(0)
+  accuracy             Float    @default(0)
+  level                String   @default("beginner")
+  current_streak_days  Int      @default(0)
+  last_played_date     DateTime? @db.Date
+  context_completed    Int      @default(0)
+  sound_completed      Int      @default(0)
+  image_completed      Int      @default(0)
+  context_correct      Int      @default(0)
+  sound_correct        Int      @default(0)
+  image_correct        Int      @default(0)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 enum Role {

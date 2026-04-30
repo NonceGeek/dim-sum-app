@@ -6,6 +6,7 @@
 
 > 业务专属接口请参见 [`business/`](./business/) 目录下的对应文档:
 > - [标注小程序业务接口](./business/biaozhu.md)
+> - [粤方块小游戏接口](./business/yue-cube-game.md)
 
 ### 基础信息
 
