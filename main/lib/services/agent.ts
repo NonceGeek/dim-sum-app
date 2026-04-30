@@ -133,6 +133,62 @@ export interface PicvoiceReviewResponse {
   comment: string;
 }
 
+export interface SubmissionPrecheckPayload {
+  title: string;
+  intro: string;
+  images: string[];
+}
+
+export interface SubmissionPrecheckResponse {
+  verdict: "pass" | "reject";
+  details: {
+    text?: {
+      verdict: string;
+      riskLevel?: string;
+      labels?: string[];
+    };
+    images?: Array<{
+      index: number;
+      verdict: string;
+      riskLevel?: string;
+      labels?: string[];
+    }>;
+  };
+}
+
+export interface SubmissionReviewBatchPayload {
+  batchExternalId: string;
+  callbackUrl: string;
+  context?: {
+    theme?: string;
+    guidelines?: string;
+  };
+  submissions: Array<{
+    submissionExternalId: string;
+    title: string;
+    intro: string;
+    images: string[];
+    audio?: string;
+    video?: string;
+  }>;
+}
+
+export interface SubmissionReviewBatchResponse {
+  batchId: string;
+  status: string;
+  submissionCount: number;
+}
+
+export interface CoverGenerationResponse {
+  generationId: string;
+  images: Array<{
+    index: number;
+    url: string;
+    expiresAt: string;
+  }>;
+  size: string;
+}
+
 export interface AgentTaskQuery {
   actorRef: string;
   status?: string;
@@ -401,5 +457,28 @@ export async function reviewPicvoiceGame(payload: PicvoiceReviewPayload) {
   return agentFetch<PicvoiceReviewResponse>("/games/picvoice/review", {
     method: "POST",
     body: payload,
+  });
+}
+
+export async function precheckCorpusSubmission(payload: SubmissionPrecheckPayload) {
+  return agentFetch<SubmissionPrecheckResponse>("/precheck/submissions", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function createSubmissionReviewBatch(
+  payload: SubmissionReviewBatchPayload
+) {
+  return agentFetch<SubmissionReviewBatchResponse>("/reviews/batches", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function generateCorpusCollectionCovers(prompt: string) {
+  return agentFetch<CoverGenerationResponse>("/covers/generations", {
+    method: "POST",
+    body: { prompt },
   });
 }

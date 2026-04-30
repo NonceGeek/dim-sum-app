@@ -7,6 +7,7 @@
 > 业务专属接口请参见 [`business/`](./business/) 目录下的对应文档:
 > - [Review App 标注审核小程序接口](./business/review-app/api.md)
 > - [粤方块小游戏接口](./business/yue-cube-game/api.md)
+> - [语料采集小程序接口](./business/corpus-collection-app/api.md)
 
 ### 基础信息
 

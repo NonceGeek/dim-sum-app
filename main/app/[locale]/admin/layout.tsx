@@ -15,6 +15,8 @@ import {
   FolderOpen,
   Shield,
   FileText,
+  ClipboardList,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -49,6 +51,19 @@ const adminNavItems = [
     icon: Database,
   },
   {
+    title: "Corpus Collection",
+    href: "/admin/corpus-collection",
+    icon: ClipboardList,
+    children: [
+      { title: "Overview", href: "/admin/corpus-collection" },
+      { title: "Activities", href: "/admin/corpus-collection/activities" },
+      { title: "Submissions", href: "/admin/corpus-collection/submissions" },
+      { title: "Categories", href: "/admin/corpus-collection/categories" },
+      { title: "AI Review Batches", href: "/admin/corpus-collection/review-batches" },
+      { title: "Analytics", href: "/admin/corpus-collection/analytics" },
+    ],
+  },
+  {
     title: "Audit Logs",
     href: "/admin/audit-logs",
     icon: FileText,
@@ -74,6 +89,9 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    "/admin/corpus-collection": true,
+  });
 
   useEffect(() => {
     if (status === "loading") return;
@@ -124,6 +142,66 @@ export default function AdminLayout({
 
         <nav className="flex-1 px-4 py-6 space-y-2">
           {adminNavItems.map((item) => {
+            const isSectionActive =
+              pathname === item.href ||
+              (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
+            const isExpanded = expandedMenus[item.href] || isSectionActive;
+
+            if (item.children) {
+              return (
+                <div key={item.href} className="space-y-1">
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex w-full items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                      isSectionActive
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    )}
+                    onClick={() =>
+                      setExpandedMenus((prev) => ({
+                        ...prev,
+                        [item.href]: !isExpanded,
+                      }))
+                    }
+                  >
+                    <span className="flex items-center space-x-3">
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.title}</span>
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        isExpanded && "rotate-180",
+                      )}
+                    />
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-8 space-y-1">
+                      {item.children.map((child) => {
+                        const isChildActive = pathname === child.href;
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={cn(
+                              "block rounded-md px-3 py-2 text-sm transition-colors",
+                              isChildActive
+                                ? "bg-accent text-foreground"
+                                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            )}
+                            onClick={() => setSidebarOpen(false)}
+                          >
+                            {child.title}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             const isActive = pathname === item.href;
             return (
               <Link
