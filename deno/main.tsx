@@ -16,7 +16,7 @@ console.log("Hello from AI Dimsum Devs API!");
 // Admin password verification function
 // ADMIN_PWD_HASH should be the SHA-256 hex digest of the actual admin password
 // how could I generate the ADMIN_PWD_HASH? echo -n "your_actual_password" | shasum -a 256
-async function verifyAdminPassword(
+export async function verifyAdminPassword(
   context: any,
   password: string
 ): Promise<boolean> {
