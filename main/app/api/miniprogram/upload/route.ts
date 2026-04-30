@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Call upstream API
-      const response = await fetch("https://dim-sum-prod.deno.dev/admin/oss/upload", {
+      const response = await fetch(`${process.env.BACKEND_URL}/admin/oss/upload`, {
         method: "POST",
         body: upstreamFormData,
         // duplicate-headers are usually handled automatically by fetch with FormData
