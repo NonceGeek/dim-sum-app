@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
+import { requireAuth } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
-  return requireMiniprogramMarker(req, async (_req, user) => {
+  return requireAuth(req, async (_req, user) => {
     try {
       const formData = await req.formData();
       const file = formData.get("file");
