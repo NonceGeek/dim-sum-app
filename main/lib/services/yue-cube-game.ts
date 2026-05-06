@@ -52,6 +52,15 @@ interface RawContextQuestion {
 }
 
 function asObject(value: unknown): JsonObject {
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return asObject(parsed);
+    } catch {
+      return {};
+    }
+  }
+
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonObject)
     : {};
@@ -119,23 +128,43 @@ function normalizeSoundQuestion(row: RawSoundQuestion) {
 
   return {
     id: row.unique_id || row.id.toString(),
-    scene_id: firstString(context.scene, structuredContext.scene, row.category),
-    question: row.data,
+    scene_id: firstString(
+      context["场景"],
+      context.scene,
+      structuredContext["场景"],
+      structuredContext.scene,
+      row.category
+    ),
+    question: firstString(
+      context["粤语原文"],
+      context.original,
+      context.text,
+      structuredContext["粤语原文"],
+      structuredContext.original,
+      structuredContext.text,
+      row.data
+    ),
     meaning: firstString(
+      context["普通话翻译"],
       context.meaning,
       context.translation,
       context.meanings,
       note.meaning,
+      structuredContext["普通话翻译"],
       structuredContext.meaning,
-      structuredNote.meaning
+      structuredNote.meaning,
+      structuredNote["普通话翻译"]
     ),
     jyutping: firstString(
+      context["粤语拼音"],
       context.jyutping,
       context.pinyin,
       context.yuepin,
       note.jyutping,
+      structuredContext["粤语拼音"],
       structuredContext.jyutping,
-      structuredNote.jyutping
+      structuredNote.jyutping,
+      structuredNote["粤语拼音"]
     ),
     audio: firstString(
       context.audio,
