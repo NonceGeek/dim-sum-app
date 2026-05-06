@@ -43,6 +43,13 @@ interface RawSoundQuestion {
   category: string;
 }
 
+interface RawContextQuestion {
+  id: bigint;
+  scene: string;
+  scene_name: string | null;
+  payload: Prisma.JsonValue;
+}
+
 function asObject(value: unknown): JsonObject {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonObject)
@@ -67,6 +74,7 @@ function firstString(...values: unknown[]) {
 function normalizeContextQuestion(question: {
   id: bigint;
   scene: string;
+  scene_name?: string | null;
   payload: Prisma.JsonValue;
 }) {
   const payload = asObject(question.payload) as ContextQuestionPayload;
@@ -97,7 +105,7 @@ function normalizeContextQuestion(question: {
     })),
     answer,
     answerIndex,
-    scenario: payload.scenario ?? question.scene,
+    scenario: payload.scenario ?? question.scene_name ?? question.scene,
     explanation: payload.explanation,
   };
 }
@@ -315,17 +323,24 @@ export async function getPlayerProgress(userId: string) {
 
 export async function getQuestionScenes(mode: YueCubeGameMode) {
   if (mode === "context") {
-    const scenes = await prisma.game_cloze_questions.groupBy({
-      by: ["scene"],
-      where: { status: "active" },
-      _count: { _all: true },
-      orderBy: { scene: "asc" },
-    });
+    const scenes = await prisma.$queryRaw<
+      Array<{ code: string; name: string; total: number | bigint }>
+    >`
+      SELECT s.code, s.name, COUNT(q.id)::int AS total
+        FROM game_scenes s
+        LEFT JOIN game_cloze_questions q
+          ON q.scene = s.code
+         AND q.status = 'active'
+       WHERE s.game_type = 'cloze'
+         AND s.status = 'active'
+       GROUP BY s.code, s.name, s.sort_order
+       ORDER BY s.sort_order ASC, s.name ASC, s.code ASC
+    `;
 
     return scenes.map((scene) => ({
-      id: scene.scene,
-      scene: scene.scene,
-      total: scene._count._all,
+      id: scene.code,
+      scene: scene.name,
+      total: Number(scene.total),
     }));
   }
 
@@ -352,21 +367,26 @@ export async function getQuestionScenes(mode: YueCubeGameMode) {
 
 export async function getContextQuestions(scene: string | null, limit: number) {
   const rows = scene
-    ? await prisma.$queryRaw<
-        Array<{ id: bigint; scene: string; payload: Prisma.JsonValue }>
-      >`
-        SELECT id, scene, payload
-          FROM game_cloze_questions
-         WHERE status = 'active' AND scene = ${scene}
+    ? await prisma.$queryRaw<RawContextQuestion[]>`
+        SELECT q.id, q.scene, s.name AS scene_name, q.payload
+          FROM game_cloze_questions q
+          JOIN game_scenes s
+            ON s.game_type = 'cloze'
+           AND s.code = q.scene
+           AND s.status = 'active'
+         WHERE q.status = 'active'
+           AND q.scene = ${scene}
          ORDER BY random()
          LIMIT ${limit}
       `
-    : await prisma.$queryRaw<
-        Array<{ id: bigint; scene: string; payload: Prisma.JsonValue }>
-      >`
-        SELECT id, scene, payload
-          FROM game_cloze_questions
-         WHERE status = 'active'
+    : await prisma.$queryRaw<RawContextQuestion[]>`
+        SELECT q.id, q.scene, s.name AS scene_name, q.payload
+          FROM game_cloze_questions q
+          JOIN game_scenes s
+            ON s.game_type = 'cloze'
+           AND s.code = q.scene
+           AND s.status = 'active'
+         WHERE q.status = 'active'
          ORDER BY random()
          LIMIT ${limit}
       `;
@@ -390,12 +410,19 @@ export async function findContextQuestion(questionId: string) {
   if (!/^\d+$/.test(questionId)) return null;
 
   const id = BigInt(questionId);
-  const question = await prisma.game_cloze_questions.findFirst({
-    where: { id, status: "active" },
-    select: { id: true, scene: true, payload: true },
-  });
+  const rows = await prisma.$queryRaw<RawContextQuestion[]>`
+    SELECT q.id, q.scene, s.name AS scene_name, q.payload
+      FROM game_cloze_questions q
+      JOIN game_scenes s
+        ON s.game_type = 'cloze'
+       AND s.code = q.scene
+       AND s.status = 'active'
+     WHERE q.id = ${id}
+       AND q.status = 'active'
+     LIMIT 1
+  `;
 
-  return question ? normalizeContextQuestion(question) : null;
+  return rows[0] ? normalizeContextQuestion(rows[0]) : null;
 }
 
 export async function findSoundQuestion(questionId: string) {
