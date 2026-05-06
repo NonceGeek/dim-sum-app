@@ -169,7 +169,7 @@ const response = await wx.request({
 ```json
 [
   {
-    "id": "饮食",
+    "id": "food",
     "scene": "饮食",
     "total": 10
   }
@@ -218,14 +218,14 @@ const response = await wx.request({
 
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |-------|------|-----|-------|------|
-| `scene_id` | string | 否 | - | 场景 ID，不传则从全部 active 题目随机抽取 |
+| `scene_id` | string | 否 | - | 场景 ID，对应 `game_scenes.code`；不传则从全部 active 场景下的 active 题目随机抽取 |
 | `limit` | number | 否 | `10` | 返回题目数，最大 `50` |
 
 #### 请求示例
 
 ```javascript
 const response = await wx.request({
-  url: 'https://search.aidimsum.com/api/miniprogram/yue_cube_game/question_context?scene_id=饮食&limit=10',
+  url: 'https://search.aidimsum.com/api/miniprogram/yue_cube_game/question_context?scene_id=food&limit=10',
   method: 'GET',
   header: {
     'Authorization': `Bearer ${accessToken}`
@@ -239,7 +239,7 @@ const response = await wx.request({
 [
   {
     "id": "1",
-    "scene_id": "饮食",
+    "scene_id": "food",
     "question": [{ "role": "题目", "content": "我想要一份____" }],
     "stemPre": "我想要一份",
     "stemPost": "",

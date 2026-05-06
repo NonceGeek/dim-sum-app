@@ -32,13 +32,16 @@
 
 语境填空题库由 yue-lint-agent 离线生成，再导入平台数据库。
 
-数据库表：`game_cloze_questions`
+数据库表：
+
+- `game_scenes`：场景配置，语境填空使用 `game_type = 'cloze'`
+- `game_cloze_questions`：语境填空离线题库，`scene` 存 `game_scenes.code`
 
 业务读取规则：
 
 - 只读取 `status = active` 的题目
-- 场景列表按 `scene` 聚合并返回题数
-- 抽题时按 `scene_id` 过滤，没有传 `scene_id` 时从所有 active 题中随机抽取
+- 场景列表读取 `game_scenes` 中 `game_type = 'cloze'` 且 `status = active` 的记录，并按 active 题数返回 `total`
+- 抽题时按 `scene_id` 过滤，`scene_id` 对应 `game_scenes.code`；没有传 `scene_id` 时从所有 active 场景下的 active 题中随机抽取
 
 题目 payload 核心结构：
 
