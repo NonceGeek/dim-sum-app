@@ -112,7 +112,7 @@ const response = await wx.request({
   "total_time": 360,
   "completed_questions": 24,
   "accuracy": 0.75,
-  "level": "beginner"
+  "level": "A"
 }
 ```
 
@@ -698,7 +698,7 @@ const response = await wx.request({
 | `completed_questions` | 累计完成题数 |
 | `correct_questions` / `graded_questions` | 正确题数 / 已判分题数 |
 | `accuracy` | 正确率 |
-| `level` | 当前等级 |
+| `level` | 当前等级，`A` 粤语青铜、`B` 粤语铂金、`C` 粤语钻石、`D` 粤语王者、`none` 无等级 |
 | `current_streak_days` / `last_played_date` | 连续打卡天数 / 最近游戏日期 |
 | `context_completed` / `sound_completed` / `image_completed` | 分题型完成数 |
 | `context_correct` / `sound_correct` / `image_correct` | 分题型正确数 |

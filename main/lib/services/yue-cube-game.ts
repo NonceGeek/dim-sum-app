@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 const SOUND_CORPUS_CATEGORY = "yywj2";
 const DEFAULT_DAILY_TARGET = 10;
+const LEVEL_NONE = "none";
 
 type JsonObject = Record<string, unknown>;
 
@@ -171,10 +172,21 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function levelForCompletedQuestions(completedQuestions: number) {
-  if (completedQuestions >= 200) return "advanced";
-  if (completedQuestions >= 50) return "intermediate";
-  return "beginner";
+function levelForProgress(
+  streakDays: number,
+  completedQuestions: number,
+  lastPlayedDate: Date | null,
+  today = startOfToday()
+) {
+  if (!lastPlayedDate || diffDays(lastPlayedDate, today) >= 30) {
+    return LEVEL_NONE;
+  }
+
+  if (streakDays >= 60 && completedQuestions >= 40) return "D";
+  if (streakDays >= 45 && completedQuestions >= 30) return "C";
+  if (streakDays >= 30 && completedQuestions >= 20) return "B";
+  if (streakDays >= 7 && completedQuestions >= 5) return "A";
+  return LEVEL_NONE;
 }
 
 function modeCompletedField(mode: YueCubeGameMode) {
@@ -221,7 +233,7 @@ async function updatePlayerProgress(
     correct_questions: correctQuestions,
     graded_questions: gradedQuestions,
     accuracy,
-    level: levelForCompletedQuestions(completedQuestions),
+    level: levelForProgress(streakDays, completedQuestions, today, today),
     current_streak_days: streakDays,
     last_played_date: today,
     context_completed:
@@ -313,11 +325,20 @@ export async function getPlayerProgress(userId: string) {
     where: { user_id: userId },
   });
 
+  const today = startOfToday();
+
   return {
     total_time: progress?.total_time_seconds ?? 0,
     completed_questions: progress?.completed_questions ?? 0,
     accuracy: progress?.accuracy ?? 0,
-    level: progress?.level ?? "beginner",
+    level: progress
+      ? levelForProgress(
+          progress.current_streak_days,
+          progress.completed_questions,
+          progress.last_played_date,
+          today
+        )
+      : LEVEL_NONE,
   };
 }
 
