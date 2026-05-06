@@ -286,19 +286,22 @@ overallPass = audioActive.pass && isCantonese.pass && imageAudioMatch.pass
   "total_time": 0,
   "completed_questions": 0,
   "accuracy": 0,
-  "level": "beginner"
+  "level": "none"
 }
 ```
 
 ### 6.3 等级规则
 
-当前按累计完成题数计算：
+等级由连续活跃天数和累计完成题数共同决定。当前小游戏服务没有单独记录登录流水，因此后端以 `game_player_progress.current_streak_days` 作为连续登录/活跃天数。
 
-| 条件 | level |
-|------|-------|
-| `< 50` | `beginner` |
-| `50 ~ 199` | `intermediate` |
-| `>= 200` | `advanced` |
+| 条件 | 展示等级 | 后端 `level` |
+|------|----------|---------------|
+| 连续 7 天活跃且累计完成 5 题 | 粤语青铜 | `A` |
+| 连续 30 天活跃且累计完成 20 题 | 粤语铂金 | `B` |
+| 连续 45 天活跃且累计完成 30 题 | 粤语钻石 | `C` |
+| 连续 60 天活跃且累计完成 40 题 | 粤语王者 | `D` |
+
+计算时按最高满足条件返回。若用户没有达到任何等级，或距离 `last_played_date` 已经连续 30 天未活跃，则等级归零，返回 `level = "none"`。
 
 ---
 
