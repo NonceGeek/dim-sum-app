@@ -3,6 +3,13 @@ import { AgentApiError } from "@/lib/services/agent";
 
 export function handleAgentApiError(error: unknown, fallbackMessage = "Agent service request failed") {
   if (error instanceof AgentApiError) {
+    if (error.status === 401) {
+      return NextResponse.json(
+        { error: "Agent service authentication failed" },
+        { status: 502 }
+      );
+    }
+
     if (error.payload && typeof error.payload === "object") {
       return NextResponse.json(error.payload as Record<string, unknown>, {
         status: error.status,
@@ -21,4 +28,3 @@ export function handleAgentApiError(error: unknown, fallbackMessage = "Agent ser
     { status: 500 }
   );
 }
-
