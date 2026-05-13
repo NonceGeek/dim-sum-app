@@ -17,28 +17,46 @@ import type { AgentTask, TaskListParams } from "@/lib/types/task-review";
 const UNCOMPLETED_STATUS = "created,notified,in_progress";
 const COMPLETED_STATUS = "completed";
 
-export function TaskListTab() {
+interface TaskListTabProps {
+  datasets?: { label: string; value: string }[];
+}
+
+export function TaskListTab({ datasets }: TaskListTabProps) {
   const t = useTranslations("TaskReview");
   const { fetchCategories, categories } = useCategoryStore();
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const [taskTab, setTaskTab] = useState("uncompleted");
-  const [corpusName, setCorpusName] = useState<string>("");
+  const [corpusName, setCorpusName] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const statusFilter = taskTab === "uncompleted" ? UNCOMPLETED_STATUS : COMPLETED_STATUS;
+  const datasetOptions =
+    datasets && datasets.length > 0
+      ? datasets
+      : categories.map((cat) => ({
+          label: cat.nickname || cat.name,
+          value: cat.name,
+        }));
+  const selectedCorpusName =
+    corpusName === "all"
+      ? datasetOptions.map((dataset) => dataset.value).join(",")
+      : corpusName;
 
   const params: TaskListParams = {
     status: statusFilter,
     page,
     pageSize: 10,
-    corpusName: corpusName || undefined,
+    corpusName: selectedCorpusName || undefined,
   };
 
-  const { data, isLoading, isFetching } = useTasks(params);
+  const { data, isLoading, isFetching } = useTasks(
+    params,
+    corpusName !== "all" || datasetOptions.length > 0
+  );
 
   // Filter out "reassigning" tasks on the client side (matching mini-program behavior)
   const allTasks = data?.items ?? [];
@@ -80,16 +98,16 @@ export function TaskListTab() {
         <div className="flex items-center gap-2">
           <Select
             value={corpusName}
-            onValueChange={(v) => { setCorpusName(v === "all" ? "" : v); setPage(1); }}
+            onValueChange={(v) => { setCorpusName(v); setPage(1); }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("allDatasets")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("allDatasets")}</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.name} value={cat.name}>
-                  {cat.nickname || cat.name}
+              {datasetOptions.map((dataset) => (
+                <SelectItem key={dataset.value} value={dataset.value}>
+                  {dataset.label}
                 </SelectItem>
               ))}
             </SelectContent>

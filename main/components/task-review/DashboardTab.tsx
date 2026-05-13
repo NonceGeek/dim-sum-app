@@ -71,18 +71,30 @@ function aggregateByUser(items: TaskStatsItemWithUser[]): AggregatedUserStats[] 
 
 export function DashboardTab({ datasets }: DashboardTabProps) {
   const t = useTranslations("TaskReview");
-  const [corpusName, setCorpusName] = useState<string>(
-    datasets?.[0]?.value || ""
-  );
+  const [corpusName, setCorpusName] = useState<string>("all");
+  const [userValue, setUserValue] = useState<string>("all");
   const [userSearch, setUserSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<{
     id: string;
     name: string;
   } | null>(null);
+  const selectedCorpusName =
+    corpusName === "all" && datasets?.length
+      ? datasets.map((dataset) => dataset.value).join(",")
+      : corpusName === "all"
+        ? ""
+        : corpusName;
 
   const { data: stats, isLoading } = useTaskStats(
-    corpusName ? { corpusName } : null
+    selectedCorpusName ? { corpusName: selectedCorpusName } : null
   );
+  const currentDatasetLabel =
+    corpusName === "all"
+      ? datasets?.length
+        ? `${t("allDatasets")} (${datasets.map((dataset) => dataset.label).join(", ")})`
+        : t("allDatasets")
+      : datasets?.find((dataset) => dataset.value === corpusName)?.label ||
+        corpusName;
 
   // Aggregate per-user items from backend
   const userRows = useMemo(
@@ -90,11 +102,16 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
     [stats?.items]
   );
 
-  const filteredRows = userSearch
-    ? userRows.filter((r) =>
-        r.name?.toLowerCase().includes(userSearch.toLowerCase())
-      )
-    : userRows;
+  const filteredRows = userRows.filter((row) => {
+    const matchesSelectedUser =
+      userValue === "all" || row.assigneeRef === userValue;
+    const matchesSearch =
+      !userSearch ||
+      (row.name || "")
+        .toLowerCase()
+        .includes(userSearch.toLowerCase());
+    return matchesSelectedUser && matchesSearch;
+  });
 
   return (
     <div className="space-y-4">
@@ -106,6 +123,7 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
               <SelectValue placeholder={t("allDatasets")} />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">{t("allDatasets")}</SelectItem>
               {datasets.map((ds) => (
                 <SelectItem key={ds.value} value={ds.value}>
                   {ds.label}
@@ -118,11 +136,25 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
         {!datasets?.length && (
           <Input
             value={corpusName}
-            onChange={(e) => setCorpusName(e.target.value)}
+            onChange={(e) => setCorpusName(e.target.value || "all")}
             placeholder={t("dataset")}
             className="w-[200px]"
           />
         )}
+
+        <Select value={userValue} onValueChange={setUserValue}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t("user")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("all")}</SelectItem>
+            {userRows.map((user) => (
+              <SelectItem key={user.assigneeRef} value={user.assigneeRef}>
+                {user.name || user.assigneeRef}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="flex items-center gap-2 border rounded-md px-2">
           <Search className="w-4 h-4 text-muted-foreground" />
@@ -133,6 +165,13 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
             className="border-0 w-[160px] focus-visible:ring-0"
           />
         </div>
+      </div>
+
+      <div className="text-sm text-muted-foreground">
+        {t("dataset")}:{" "}
+        <span className="font-medium text-foreground">
+          {currentDatasetLabel}
+        </span>
       </div>
 
       {/* Summary Stats */}
@@ -227,7 +266,7 @@ export function DashboardTab({ datasets }: DashboardTabProps) {
           onClose={() => setSelectedUser(null)}
           userId={selectedUser.id}
           userName={selectedUser.name}
-          corpusName={corpusName}
+          corpusName={selectedCorpusName}
         />
       )}
     </div>
