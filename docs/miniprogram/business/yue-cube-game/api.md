@@ -112,7 +112,7 @@ const response = await wx.request({
   "total_time": 360,
   "completed_questions": 24,
   "accuracy": 0.75,
-  "level": "beginner"
+  "level": "A"
 }
 ```
 
@@ -169,7 +169,7 @@ const response = await wx.request({
 ```json
 [
   {
-    "id": "饮食",
+    "id": "food",
     "scene": "饮食",
     "total": 10
   }
@@ -218,14 +218,14 @@ const response = await wx.request({
 
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |-------|------|-----|-------|------|
-| `scene_id` | string | 否 | - | 场景 ID，不传则从全部 active 题目随机抽取 |
+| `scene_id` | string | 否 | - | 场景 ID，对应 `game_scenes.code`；不传则从全部 active 场景下的 active 题目随机抽取 |
 | `limit` | number | 否 | `10` | 返回题目数，最大 `50` |
 
 #### 请求示例
 
 ```javascript
 const response = await wx.request({
-  url: 'https://search.aidimsum.com/api/miniprogram/yue_cube_game/question_context?scene_id=饮食&limit=10',
+  url: 'https://search.aidimsum.com/api/miniprogram/yue_cube_game/question_context?scene_id=food&limit=10',
   method: 'GET',
   header: {
     'Authorization': `Bearer ${accessToken}`
@@ -239,7 +239,7 @@ const response = await wx.request({
 [
   {
     "id": "1",
-    "scene_id": "饮食",
+    "scene_id": "food",
     "question": [{ "role": "题目", "content": "我想要一份____" }],
     "stemPre": "我想要一份",
     "stemPost": "",
@@ -698,7 +698,7 @@ const response = await wx.request({
 | `completed_questions` | 累计完成题数 |
 | `correct_questions` / `graded_questions` | 正确题数 / 已判分题数 |
 | `accuracy` | 正确率 |
-| `level` | 当前等级 |
+| `level` | 当前等级，`A` 粤语青铜、`B` 粤语铂金、`C` 粤语钻石、`D` 粤语王者、`none` 无等级 |
 | `current_streak_days` / `last_played_date` | 连续打卡天数 / 最近游戏日期 |
 | `context_completed` / `sound_completed` / `image_completed` | 分题型完成数 |
 | `context_correct` / `sound_correct` / `image_correct` | 分题型正确数 |

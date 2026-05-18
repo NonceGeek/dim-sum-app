@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 const SOUND_CORPUS_CATEGORY = "yywj2";
 const DEFAULT_DAILY_TARGET = 10;
+const LEVEL_NONE = "none";
 
 type JsonObject = Record<string, unknown>;
 
@@ -43,7 +44,23 @@ interface RawSoundQuestion {
   category: string;
 }
 
+interface RawContextQuestion {
+  id: bigint;
+  scene: string;
+  scene_name: string | null;
+  payload: Prisma.JsonValue;
+}
+
 function asObject(value: unknown): JsonObject {
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return asObject(parsed);
+    } catch {
+      return {};
+    }
+  }
+
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonObject)
     : {};
@@ -67,6 +84,7 @@ function firstString(...values: unknown[]) {
 function normalizeContextQuestion(question: {
   id: bigint;
   scene: string;
+  scene_name?: string | null;
   payload: Prisma.JsonValue;
 }) {
   const payload = asObject(question.payload) as ContextQuestionPayload;
@@ -97,7 +115,7 @@ function normalizeContextQuestion(question: {
     })),
     answer,
     answerIndex,
-    scenario: payload.scenario ?? question.scene,
+    scenario: payload.scenario ?? question.scene_name ?? question.scene,
     explanation: payload.explanation,
   };
 }
@@ -110,23 +128,43 @@ function normalizeSoundQuestion(row: RawSoundQuestion) {
 
   return {
     id: row.unique_id || row.id.toString(),
-    scene_id: firstString(context.scene, structuredContext.scene, row.category),
-    question: row.data,
+    scene_id: firstString(
+      context["场景"],
+      context.scene,
+      structuredContext["场景"],
+      structuredContext.scene,
+      row.category
+    ),
+    question: firstString(
+      context["粤语原文"],
+      context.original,
+      context.text,
+      structuredContext["粤语原文"],
+      structuredContext.original,
+      structuredContext.text,
+      row.data
+    ),
     meaning: firstString(
+      context["普通话翻译"],
       context.meaning,
       context.translation,
       context.meanings,
       note.meaning,
+      structuredContext["普通话翻译"],
       structuredContext.meaning,
-      structuredNote.meaning
+      structuredNote.meaning,
+      structuredNote["普通话翻译"]
     ),
     jyutping: firstString(
+      context["粤语拼音"],
       context.jyutping,
       context.pinyin,
       context.yuepin,
       note.jyutping,
+      structuredContext["粤语拼音"],
       structuredContext.jyutping,
-      structuredNote.jyutping
+      structuredNote.jyutping,
+      structuredNote["粤语拼音"]
     ),
     audio: firstString(
       context.audio,
@@ -163,10 +201,21 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function levelForCompletedQuestions(completedQuestions: number) {
-  if (completedQuestions >= 200) return "advanced";
-  if (completedQuestions >= 50) return "intermediate";
-  return "beginner";
+function levelForProgress(
+  streakDays: number,
+  completedQuestions: number,
+  lastPlayedDate: Date | null,
+  today = startOfToday()
+) {
+  if (!lastPlayedDate || diffDays(lastPlayedDate, today) >= 30) {
+    return LEVEL_NONE;
+  }
+
+  if (streakDays >= 60 && completedQuestions >= 40) return "D";
+  if (streakDays >= 45 && completedQuestions >= 30) return "C";
+  if (streakDays >= 30 && completedQuestions >= 20) return "B";
+  if (streakDays >= 7 && completedQuestions >= 5) return "A";
+  return LEVEL_NONE;
 }
 
 function modeCompletedField(mode: YueCubeGameMode) {
@@ -213,7 +262,7 @@ async function updatePlayerProgress(
     correct_questions: correctQuestions,
     graded_questions: gradedQuestions,
     accuracy,
-    level: levelForCompletedQuestions(completedQuestions),
+    level: levelForProgress(streakDays, completedQuestions, today, today),
     current_streak_days: streakDays,
     last_played_date: today,
     context_completed:
@@ -305,27 +354,43 @@ export async function getPlayerProgress(userId: string) {
     where: { user_id: userId },
   });
 
+  const today = startOfToday();
+
   return {
     total_time: progress?.total_time_seconds ?? 0,
     completed_questions: progress?.completed_questions ?? 0,
     accuracy: progress?.accuracy ?? 0,
-    level: progress?.level ?? "beginner",
+    level: progress
+      ? levelForProgress(
+          progress.current_streak_days,
+          progress.completed_questions,
+          progress.last_played_date,
+          today
+        )
+      : LEVEL_NONE,
   };
 }
 
 export async function getQuestionScenes(mode: YueCubeGameMode) {
   if (mode === "context") {
-    const scenes = await prisma.game_cloze_questions.groupBy({
-      by: ["scene"],
-      where: { status: "active" },
-      _count: { _all: true },
-      orderBy: { scene: "asc" },
-    });
+    const scenes = await prisma.$queryRaw<
+      Array<{ code: string; name: string; total: number | bigint }>
+    >`
+      SELECT s.code, s.name, COUNT(q.id)::int AS total
+        FROM game_scenes s
+        LEFT JOIN game_cloze_questions q
+          ON q.scene = s.code
+         AND q.status = 'active'
+       WHERE s.game_type = 'cloze'
+         AND s.status = 'active'
+       GROUP BY s.code, s.name, s.sort_order
+       ORDER BY s.sort_order ASC, s.name ASC, s.code ASC
+    `;
 
     return scenes.map((scene) => ({
-      id: scene.scene,
-      scene: scene.scene,
-      total: scene._count._all,
+      id: scene.code,
+      scene: scene.name,
+      total: Number(scene.total),
     }));
   }
 
@@ -352,21 +417,26 @@ export async function getQuestionScenes(mode: YueCubeGameMode) {
 
 export async function getContextQuestions(scene: string | null, limit: number) {
   const rows = scene
-    ? await prisma.$queryRaw<
-        Array<{ id: bigint; scene: string; payload: Prisma.JsonValue }>
-      >`
-        SELECT id, scene, payload
-          FROM game_cloze_questions
-         WHERE status = 'active' AND scene = ${scene}
+    ? await prisma.$queryRaw<RawContextQuestion[]>`
+        SELECT q.id, q.scene, s.name AS scene_name, q.payload
+          FROM game_cloze_questions q
+          JOIN game_scenes s
+            ON s.game_type = 'cloze'
+           AND s.code = q.scene
+           AND s.status = 'active'
+         WHERE q.status = 'active'
+           AND q.scene = ${scene}
          ORDER BY random()
          LIMIT ${limit}
       `
-    : await prisma.$queryRaw<
-        Array<{ id: bigint; scene: string; payload: Prisma.JsonValue }>
-      >`
-        SELECT id, scene, payload
-          FROM game_cloze_questions
-         WHERE status = 'active'
+    : await prisma.$queryRaw<RawContextQuestion[]>`
+        SELECT q.id, q.scene, s.name AS scene_name, q.payload
+          FROM game_cloze_questions q
+          JOIN game_scenes s
+            ON s.game_type = 'cloze'
+           AND s.code = q.scene
+           AND s.status = 'active'
+         WHERE q.status = 'active'
          ORDER BY random()
          LIMIT ${limit}
       `;
@@ -390,12 +460,19 @@ export async function findContextQuestion(questionId: string) {
   if (!/^\d+$/.test(questionId)) return null;
 
   const id = BigInt(questionId);
-  const question = await prisma.game_cloze_questions.findFirst({
-    where: { id, status: "active" },
-    select: { id: true, scene: true, payload: true },
-  });
+  const rows = await prisma.$queryRaw<RawContextQuestion[]>`
+    SELECT q.id, q.scene, s.name AS scene_name, q.payload
+      FROM game_cloze_questions q
+      JOIN game_scenes s
+        ON s.game_type = 'cloze'
+       AND s.code = q.scene
+       AND s.status = 'active'
+     WHERE q.id = ${id}
+       AND q.status = 'active'
+     LIMIT 1
+  `;
 
-  return question ? normalizeContextQuestion(question) : null;
+  return rows[0] ? normalizeContextQuestion(rows[0]) : null;
 }
 
 export async function findSoundQuestion(questionId: string) {

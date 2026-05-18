@@ -23,8 +23,11 @@ export async function GET(req: NextRequest) {
         assigneeRef: assigneeRef || undefined,
       });
 
-      // Enrich with user names and avatars
-      const userIds = data.filters.assigneeRefs ?? [];
+      // Match the mini-program flow: build the public user lookup from
+      // assigneeRefs present in stats items, not only from filters metadata.
+      const userIds = Array.from(
+        new Set((data.items ?? []).map((item) => item.assigneeRef).filter(Boolean))
+      );
       const userMap: Record<
         string,
         { name: string | null; avatar: string | null }
@@ -32,7 +35,10 @@ export async function GET(req: NextRequest) {
 
       if (userIds.length > 0) {
         const users = await prisma.user.findMany({
-          where: { id: { in: userIds } },
+          where: {
+            id: { in: userIds },
+            status: "ACTIVE",
+          },
           select: { id: true, name: true, image: true, wechatAvatar: true },
         });
         for (const u of users) {

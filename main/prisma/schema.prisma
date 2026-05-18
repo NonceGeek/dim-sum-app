@@ -36,14 +36,23 @@ model Account {
 /// 存储用户的基本信息
 model User {
   id                              String                             @id @default(cuid())
+  id                              String                             @id @default(cuid())
   name                            String?
+  email                           String?                            @unique
   email                           String?                            @unique
   emailVerified                   DateTime?
   image                           String?
   phoneNumber                     String?
   wechatAvatar                    String?
   role                            Role                               @default(LEARNER)
+  role                            Role                               @default(LEARNER)
   bio                             String?
+  isSystemAdmin                   Boolean                            @default(false)
+  ethAddress                      String?                            @unique
+  createdAt                       DateTime                           @default(now()) @db.Timestamptz(6)
+  updatedAt                       DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
+  deletionRequestedAt             DateTime?                          @db.Timestamptz(6)
+  status                          UserStatus                         @default(ACTIVE)
   isSystemAdmin                   Boolean                            @default(false)
   ethAddress                      String?                            @unique
   createdAt                       DateTime                           @default(now()) @db.Timestamptz(6)
@@ -61,8 +70,16 @@ model User {
   corpusCollectionReviewBatches   corpus_collection_review_batches[]
   corpusCollectionReviewedItems   corpus_collection_submissions[]    @relation("CorpusCollectionReviewer")
   corpusCollectionSubmissions     corpus_collection_submissions[]
+  corpusCollectionActivities      corpus_collection_activities[]
+  corpusCollectionComments        corpus_collection_comments[]
+  corpusCollectionLikes           corpus_collection_likes[]
+  corpusCollectionReviewBatches   corpus_collection_review_batches[]
+  corpusCollectionReviewedItems   corpus_collection_submissions[]    @relation("CorpusCollectionReviewer")
+  corpusCollectionSubmissions     corpus_collection_submissions[]
   gameAnswerRecords               game_answer_records[]
   gamePlayerProgress              game_player_progress?
+  auditLogsAsOperator             permission_audit_logs[]            @relation("AuditOperator")
+  auditLogsAsTarget               permission_audit_logs[]            @relation("AuditTarget")
   auditLogsAsOperator             permission_audit_logs[]            @relation("AuditOperator")
   auditLogsAsTarget               permission_audit_logs[]            @relation("AuditTarget")
   corpusInteractions              user_corpus_interactions[]
@@ -526,6 +543,7 @@ model game_cloze_questions {
 /// 粤方块小游戏 - 用户答题与 AI 评分记录
 model game_answer_records {
   id                 BigInt   @id @default(autoincrement())
+  id                 BigInt   @id @default(autoincrement())
   user_id            String
   mode               String
   question_id        String?
@@ -538,6 +556,9 @@ model game_answer_records {
   image_url          String?
   score              Int?
   agent_result       Json?
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   created_at         DateTime @default(now()) @db.Timestamptz(6)
   updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz(6)
   user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -567,18 +588,43 @@ model game_player_progress {
   created_at          DateTime  @default(now()) @db.Timestamptz(6)
   updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
   user                User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id             String    @id
+  total_time_seconds  Int       @default(0)
+  completed_questions Int       @default(0)
+  correct_questions   Int       @default(0)
+  graded_questions    Int       @default(0)
+  accuracy            Float     @default(0)
+  level               String    @default("beginner")
+  current_streak_days Int       @default(0)
+  last_played_date    DateTime? @db.Date
+  context_completed   Int       @default(0)
+  sound_completed     Int       @default(0)
+  image_completed     Int       @default(0)
+  context_correct     Int       @default(0)
+  sound_correct       Int       @default(0)
+  image_correct       Int       @default(0)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user                User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 /// 语料采集 - 活动
 model corpus_collection_activities {
   id                 BigInt                             @id @default(autoincrement())
+  id                 BigInt                             @id @default(autoincrement())
   title              String
+  slug               String?                            @unique
   slug               String?                            @unique
   description        String?
   rules              String?
   reward_config      Json                               @default("{}")
   media_requirements Json                               @default("{}")
+  reward_config      Json                               @default("{}")
+  media_requirements Json                               @default("{}")
   banner_url         String?
+  status             String                             @default("draft")
+  starts_at          DateTime?                          @db.Timestamptz(6)
+  ends_at            DateTime?                          @db.Timestamptz(6)
   status             String                             @default("draft")
   starts_at          DateTime?                          @db.Timestamptz(6)
   ends_at            DateTime?                          @db.Timestamptz(6)
@@ -586,7 +632,11 @@ model corpus_collection_activities {
   created_at         DateTime                           @default(now()) @db.Timestamptz(6)
   updated_at         DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
   creator            User?                              @relation(fields: [created_by], references: [id])
+  created_at         DateTime                           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
+  creator            User?                              @relation(fields: [created_by], references: [id])
   review_batches     corpus_collection_review_batches[]
+  submissions        corpus_collection_submissions[]
   submissions        corpus_collection_submissions[]
 
   @@index([status, starts_at, ends_at])
@@ -618,7 +668,34 @@ model corpus_collection_submissions {
   tags             Json                                   @default("[]")
   review_status    String                                 @default("pending_review")
   precheck_result  Json?
+  id               BigInt                                 @id @default(autoincrement())
+  user_id          String
+  activity_id      BigInt?
+  submission_type  String
+  title            String
+  intro            String
+  tags             Json                                   @default("[]")
+  review_status    String                                 @default("pending_review")
+  precheck_result  Json?
   ai_review_result Json?
+  review_reason    String?
+  is_featured      Boolean                                @default(false)
+  show_on_home     Boolean                                @default(false)
+  visibility       String                                 @default("private")
+  like_count       Int                                    @default(0)
+  comment_count    Int                                    @default(0)
+  share_count      Int                                    @default(0)
+  reviewed_by      String?
+  reviewed_at      DateTime?                              @db.Timestamptz(6)
+  created_at       DateTime                               @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime                               @default(now()) @updatedAt @db.Timestamptz(6)
+  comments         corpus_collection_comments[]
+  likes            corpus_collection_likes[]
+  review_items     corpus_collection_review_batch_items[]
+  media            corpus_collection_submission_media[]
+  activity         corpus_collection_activities?          @relation(fields: [activity_id], references: [id])
+  reviewer         User?                                  @relation("CorpusCollectionReviewer", fields: [reviewed_by], references: [id])
+  user             User                                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   review_reason    String?
   is_featured      Boolean                                @default(false)
   show_on_home     Boolean                                @default(false)
@@ -647,10 +724,15 @@ model corpus_collection_submissions {
 /// 语料采集 - 投稿媒体
 model corpus_collection_submission_media {
   id               BigInt                        @id @default(autoincrement())
+  id               BigInt                        @id @default(autoincrement())
   submission_id    BigInt
   media_type       String
   url              String
   duration_seconds Int?
+  sort_order       Int                           @default(0)
+  metadata         Json                          @default("{}")
+  created_at       DateTime                      @default(now()) @db.Timestamptz(6)
+  submission       corpus_collection_submissions @relation(fields: [submission_id], references: [id], onDelete: Cascade)
   sort_order       Int                           @default(0)
   metadata         Json                          @default("{}")
   created_at       DateTime                      @default(now()) @db.Timestamptz(6)
@@ -692,8 +774,14 @@ model corpus_collection_comments {
 model corpus_collection_review_batches {
   id                BigInt                                 @id @default(autoincrement())
   batch_external_id String                                 @unique
+  id                BigInt                                 @id @default(autoincrement())
+  batch_external_id String                                 @unique
   agent_batch_id    String?
   activity_id       BigInt?
+  status            String                                 @default("queued")
+  context           Json                                   @default("{}")
+  submission_count  Int                                    @default(0)
+  progress          Json                                   @default("{}")
   status            String                                 @default("queued")
   context           Json                                   @default("{}")
   submission_count  Int                                    @default(0)
@@ -704,7 +792,13 @@ model corpus_collection_review_batches {
   updated_at        DateTime                               @default(now()) @updatedAt @db.Timestamptz(6)
   started_at        DateTime?                              @db.Timestamptz(6)
   finished_at       DateTime?                              @db.Timestamptz(6)
+  created_at        DateTime                               @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime                               @default(now()) @updatedAt @db.Timestamptz(6)
+  started_at        DateTime?                              @db.Timestamptz(6)
+  finished_at       DateTime?                              @db.Timestamptz(6)
   items             corpus_collection_review_batch_items[]
+  activity          corpus_collection_activities?          @relation(fields: [activity_id], references: [id])
+  creator           User?                                  @relation(fields: [created_by], references: [id])
   activity          corpus_collection_activities?          @relation(fields: [activity_id], references: [id])
   creator           User?                                  @relation(fields: [created_by], references: [id])
   events            corpus_collection_review_events[]
@@ -716,12 +810,19 @@ model corpus_collection_review_batches {
 /// 语料采集 - AI 审核批次投稿项
 model corpus_collection_review_batch_items {
   id                     BigInt                           @id @default(autoincrement())
+  id                     BigInt                           @id @default(autoincrement())
   batch_id               BigInt
   submission_id          BigInt
   submission_external_id String
   ordinal                Int                              @default(0)
   status                 String                           @default("queued")
+  ordinal                Int                              @default(0)
+  status                 String                           @default("queued")
   result                 Json?
+  created_at             DateTime                         @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                         @default(now()) @updatedAt @db.Timestamptz(6)
+  batch                  corpus_collection_review_batches @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  submission             corpus_collection_submissions    @relation(fields: [submission_id], references: [id], onDelete: Cascade)
   created_at             DateTime                         @default(now()) @db.Timestamptz(6)
   updated_at             DateTime                         @default(now()) @updatedAt @db.Timestamptz(6)
   batch                  corpus_collection_review_batches @relation(fields: [batch_id], references: [id], onDelete: Cascade)
@@ -742,6 +843,7 @@ model corpus_collection_review_events {
   event         String
   payload       Json
   created_at    DateTime                          @default(now()) @db.Timestamptz(6)
+  batch         corpus_collection_review_batches? @relation(fields: [batch_id], references: [id])
   batch         corpus_collection_review_batches? @relation(fields: [batch_id], references: [id])
 
   @@index([batch_id, created_at])

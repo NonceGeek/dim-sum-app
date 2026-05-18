@@ -32,13 +32,16 @@
 
 语境填空题库由 yue-lint-agent 离线生成，再导入平台数据库。
 
-数据库表：`game_cloze_questions`
+数据库表：
+
+- `game_scenes`：场景配置，语境填空使用 `game_type = 'cloze'`
+- `game_cloze_questions`：语境填空离线题库，`scene` 存 `game_scenes.code`
 
 业务读取规则：
 
 - 只读取 `status = active` 的题目
-- 场景列表按 `scene` 聚合并返回题数
-- 抽题时按 `scene_id` 过滤，没有传 `scene_id` 时从所有 active 题中随机抽取
+- 场景列表读取 `game_scenes` 中 `game_type = 'cloze'` 且 `status = active` 的记录，并按 active 题数返回 `total`
+- 抽题时按 `scene_id` 过滤，`scene_id` 对应 `game_scenes.code`；没有传 `scene_id` 时从所有 active 场景下的 active 题中随机抽取
 
 题目 payload 核心结构：
 
@@ -283,19 +286,22 @@ overallPass = audioActive.pass && isCantonese.pass && imageAudioMatch.pass
   "total_time": 0,
   "completed_questions": 0,
   "accuracy": 0,
-  "level": "beginner"
+  "level": "none"
 }
 ```
 
 ### 6.3 等级规则
 
-当前按累计完成题数计算：
+等级由连续活跃天数和累计完成题数共同决定。当前小游戏服务没有单独记录登录流水，因此后端以 `game_player_progress.current_streak_days` 作为连续登录/活跃天数。
 
-| 条件 | level |
-|------|-------|
-| `< 50` | `beginner` |
-| `50 ~ 199` | `intermediate` |
-| `>= 200` | `advanced` |
+| 条件 | 展示等级 | 后端 `level` |
+|------|----------|---------------|
+| 连续 7 天活跃且累计完成 5 题 | 粤语青铜 | `A` |
+| 连续 30 天活跃且累计完成 20 题 | 粤语铂金 | `B` |
+| 连续 45 天活跃且累计完成 30 题 | 粤语钻石 | `C` |
+| 连续 60 天活跃且累计完成 40 题 | 粤语王者 | `D` |
+
+计算时按最高满足条件返回。若用户没有达到任何等级，或距离 `last_played_date` 已经连续 30 天未活跃，则等级归零，返回 `level = "none"`。
 
 ---
 
