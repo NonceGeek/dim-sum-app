@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
-    const [total, approved, pending, rejected, activities] = await Promise.all([
+    const [total, approved, pending, rejected, activities, unreadNotifications] = await Promise.all([
       prisma.corpus_collection_submissions.count({ where: { user_id: user.userId } }),
       prisma.corpus_collection_submissions.count({
         where: { user_id: user.userId, review_status: "approved" },
@@ -20,6 +20,9 @@ export async function GET(req: NextRequest) {
         select: { activity_id: true },
         distinct: ["activity_id"],
       }),
+      prisma.corpus_collection_messages.count({
+        where: { user_id: user.userId, is_read: false },
+      }),
     ]);
 
     return NextResponse.json({
@@ -29,7 +32,7 @@ export async function GET(req: NextRequest) {
       rejectedCount: rejected,
       activityCount: activities.length,
       points: approved * 10,
-      unreadNotificationCount: 0,
+      unreadNotificationCount: unreadNotifications,
     });
   });
 }

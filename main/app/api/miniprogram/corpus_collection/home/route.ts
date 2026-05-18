@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import {
   listPublicSubmissions,
   serializeActivity,
+  serializeHomeSubmission,
 } from "@/lib/services/corpus-collection";
 
 export async function GET(req: NextRequest) {
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
           take: 5,
           include: { _count: { select: { submissions: true } } },
         }),
-        listPublicSubmissions({ page: 1, pageSize: 10 }),
+        listPublicSubmissions({ page: 1, pageSize: 10, includeRaw: true }),
         listPublicSubmissions({
           page: 1,
           pageSize: 10,
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
           { key: "featured", title: "精选内容" },
         ],
         activities: activities.map(serializeActivity),
-        latestSubmissions: latest.items,
+        latestSubmissions: latest.rawItems.map(serializeHomeSubmission),
         featuredSubmissions: featured.items,
       });
     } catch (error) {
