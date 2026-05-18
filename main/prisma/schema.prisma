@@ -760,6 +760,33 @@ model game_scenes {
   @@id([game_type, code])
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_debug_data {
+  task_corpus_id String?
+  unique_id      String? @db.Uuid
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_yydh_remap_in {
+  task_id   String?
+  unique_id String? @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_yydh_split_check {
+  task_corpus_id String?
+  unique_id      String? @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@ignore
+}
+
 enum Role {
   LEARNER
   TAGGER_PARTNER

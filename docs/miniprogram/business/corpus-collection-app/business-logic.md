@@ -341,7 +341,10 @@ is_featured = true
 | `is_featured` | 是否精选 |
 | `show_on_home` | 是否首页展示 |
 | `visibility` | `private` / `public` |
-| `like_count` / `comment_count` / `share_count` | 互动计数 |
+| `like_count` / `comment_count` / `share_count` / `view_count` | 互动计数 |
+| `is_awarded` | 是否中奖 |
+| `award_status` | 中奖状态，默认 `none` |
+| `award_info` | 中奖信息 JSON |
 | `created_at` / `updated_at` | 时间戳 |
 
 ### 7.4 媒体表 `corpus_collection_submission_media`
@@ -365,7 +368,20 @@ is_featured = true
 
 评论字段需包含审核状态。
 
-### 7.6 AI 审核批次表
+### 7.6 消息表 `corpus_collection_messages`
+
+| 字段 | 说明 |
+|------|------|
+| `id` | 主键 |
+| `user_id` | 接收用户 |
+| `submission_id` | 关联作品，可为空 |
+| `title` | 消息标题 |
+| `content` | 消息内容 |
+| `type` | `系统提示` / `活动通知` / `中奖信息` / `审核信息` |
+| `is_read` | 是否已读 |
+| `created_at` | 创建时间 |
+
+### 7.7 AI 审核批次表
 
 建议拆分：
 

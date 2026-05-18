@@ -304,6 +304,8 @@ POST   /api/admin/corpus-collection/submissions/{id}/mark-review-needed
 PATCH  /api/admin/corpus-collection/submissions/{id}/display
 ```
 
+审核通过和驳回会同步写入用户端消息表，供小程序 `/api/miniprogram/corpus_collection/message` 读取。
+
 ### 5.3 批量 AI 审核
 
 ```text
@@ -428,6 +430,6 @@ POST /covers/generations
 - 草稿箱
 - 排行榜
 - 奖励积分
-- 消息通知完整系统
+- 消息通知已读、批量推送与模板订阅
 - 用户管理细粒度权限
 - Web 端荔湾文化知识库和搜索

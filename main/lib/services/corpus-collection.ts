@@ -22,6 +22,13 @@ export function jsonInput(value: unknown): Prisma.InputJsonValue | undefined {
   return value as Prisma.InputJsonValue;
 }
 
+export function formatCompactCount(value: number | null | undefined) {
+  const count = Number(value ?? 0);
+  if (count >= 10000) return `${(count / 10000).toFixed(count >= 100000 ? 0 : 1)}万`;
+  if (count >= 1000) return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1)}k`;
+  return count.toString();
+}
+
 function serializeUser(user?: {
   id: string;
   name: string | null;
@@ -34,6 +41,12 @@ function serializeUser(user?: {
     name: user.name,
     avatar: user.wechatAvatar || user.image || null,
   };
+}
+
+function getSubmissionImages(submission: any) {
+  return (submission.media ?? [])
+    .filter((item: any) => item.media_type === "image")
+    .map((item: any) => item.url);
 }
 
 export function serializeActivity(activity: any) {
@@ -50,12 +63,16 @@ export function serializeActivity(activity: any) {
     startsAt: activity.starts_at?.toISOString?.() ?? null,
     endsAt: activity.ends_at?.toISOString?.() ?? null,
     submissionCount: activity._count?.submissions ?? activity.submissionCount ?? undefined,
+    works: activity.submissions
+      ? activity.submissions.map((item: any) => serializeSubmission(item))
+      : undefined,
     createdAt: activity.created_at?.toISOString?.() ?? undefined,
     updatedAt: activity.updated_at?.toISOString?.() ?? undefined,
   };
 }
 
 export function serializeSubmission(submission: any, viewerLiked?: boolean) {
+  const imageUrls = getSubmissionImages(submission);
   return {
     id: submission.id.toString(),
     title: submission.title,
@@ -70,6 +87,13 @@ export function serializeSubmission(submission: any, viewerLiked?: boolean) {
     likeCount: submission.like_count,
     commentCount: submission.comment_count,
     shareCount: submission.share_count,
+    viewCount: submission.view_count,
+    views: formatCompactCount(submission.view_count),
+    isAwarded: submission.is_awarded,
+    awardStatus: submission.award_status,
+    awardInfo: submission.award_info,
+    coverUrl: imageUrls[0] ?? null,
+    imageUrls,
     liked: viewerLiked,
     activity: submission.activity
       ? {
@@ -93,6 +117,18 @@ export function serializeSubmission(submission: any, viewerLiked?: boolean) {
   };
 }
 
+export function serializeHomeSubmission(submission: any) {
+  const author = serializeUser(submission.user);
+  const imageUrls = getSubmissionImages(submission);
+  return {
+    id: submission.id.toString(),
+    imageUrl: imageUrls[0] ?? "",
+    author: author?.name ?? "用户昵称",
+    avatar: author?.avatar ?? "",
+    views: formatCompactCount(submission.view_count),
+  };
+}
+
 export const submissionInclude = {
   activity: { select: { id: true, title: true } },
   user: { select: { id: true, name: true, image: true, wechatAvatar: true } },
@@ -107,6 +143,7 @@ export async function listPublicSubmissions(options: {
   page: number;
   pageSize: number;
   sort?: "latest" | "likes";
+  includeRaw?: boolean;
 }) {
   const where: Prisma.corpus_collection_submissionsWhereInput = {
     ...PUBLIC_SUBMISSION_WHERE,
@@ -131,6 +168,7 @@ export async function listPublicSubmissions(options: {
 
   return {
     items: items.map((item) => serializeSubmission(item)),
+    ...(options.includeRaw ? { rawItems: items } : {}),
     pagination: { page: options.page, pageSize: options.pageSize, total },
   };
 }

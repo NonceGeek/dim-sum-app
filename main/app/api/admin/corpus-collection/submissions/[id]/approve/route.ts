@@ -9,17 +9,32 @@ export async function POST(req: NextRequest, context: AppRouteContext) {
   return requireAdmin(req, async (_req, userId) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!id) return NextResponse.json({ error: "Invalid submission id" }, { status: 400 });
-    const submission = await prisma.corpus_collection_submissions.update({
-      where: { id },
-      data: {
-        review_status: "approved",
-        visibility: "public",
-        reviewed_by: userId,
-        reviewed_at: new Date(),
-        review_reason: null,
-      },
-      include: submissionInclude,
+    const submission = await prisma.$transaction(async (tx) => {
+      const updated = await tx.corpus_collection_submissions.update({
+        where: { id },
+        data: {
+          review_status: "approved",
+          visibility: "public",
+          reviewed_by: userId,
+          reviewed_at: new Date(),
+          review_reason: null,
+        },
+        include: submissionInclude,
+      });
+
+      await tx.corpus_collection_messages.create({
+        data: {
+          user_id: updated.user_id,
+          submission_id: updated.id,
+          title: "审核通过",
+          content: `你的作品「${updated.title}」已通过审核。`,
+          type: "审核信息",
+        },
+      });
+
+      return updated;
     });
+
     return NextResponse.json(serializeSubmission(submission));
   });
 }
