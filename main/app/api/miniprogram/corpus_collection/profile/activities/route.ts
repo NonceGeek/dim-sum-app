@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
     const submissions = await prisma.corpus_collection_submissions.groupBy({
-      by: ["activity_id", "review_status"],
+      by: ["activity_id", "review_status", "award_status"],
       where: { user_id: user.userId, activity_id: { not: null } },
       _count: { _all: true },
     });
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
           approvedCount: rows
             .filter((item) => item.review_status === "approved")
             .reduce((sum, item) => sum + item._count._all, 0),
-          awardStatus: "none",
+          awardStatus: rows.find((item) => item.award_status !== "none")?.award_status ?? "none",
         };
       }),
     });

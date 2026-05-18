@@ -556,7 +556,26 @@ const response = await wx.request({
 }
 ```
 
-### 5.3 获取评论列表
+### 5.3 新增分享数
+
+用户分享作品时调用。后端会校验作品是否对当前用户可见，然后将分享数加 1。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/works/{id}/share`
+- **方法**: `POST`
+- **认证**: 需要 Bearer Token
+
+#### 成功响应 (200)
+
+```json
+{
+  "id": "sub_001",
+  "shareCount": 6
+}
+```
+
+### 5.4 获取评论列表
 
 #### 接口信息
 
@@ -588,7 +607,7 @@ const response = await wx.request({
 }
 ```
 
-### 5.4 发表评论
+### 5.5 发表评论
 
 #### 接口信息
 

@@ -302,9 +302,20 @@ POST   /api/admin/corpus-collection/submissions/{id}/approve
 POST   /api/admin/corpus-collection/submissions/{id}/reject
 POST   /api/admin/corpus-collection/submissions/{id}/mark-review-needed
 PATCH  /api/admin/corpus-collection/submissions/{id}/display
+PATCH  /api/admin/corpus-collection/submissions/{id}/award
 ```
 
 审核通过和驳回会同步写入用户端消息表，供小程序 `/api/miniprogram/corpus_collection/message` 读取。
+
+### 5.2.1 评论审核
+
+```text
+GET    /api/admin/corpus-collection/comments
+POST   /api/admin/corpus-collection/comments/{id}/approve
+POST   /api/admin/corpus-collection/comments/{id}/reject
+```
+
+评论通过或驳回后会重新计算作品 `comment_count`。
 
 ### 5.3 批量 AI 审核
 
