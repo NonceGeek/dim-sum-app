@@ -140,6 +140,7 @@ export async function listPublicSubmissions(options: {
   featured?: boolean;
   showOnHome?: boolean;
   type?: string | null;
+  tag?: string | null;
   page: number;
   pageSize: number;
   sort?: "latest" | "likes";
@@ -151,6 +152,7 @@ export async function listPublicSubmissions(options: {
     is_featured: options.featured ? true : undefined,
     show_on_home: options.showOnHome ? true : undefined,
     submission_type: options.type || undefined,
+    tags: options.tag ? { array_contains: options.tag } : undefined,
   };
   const [items, total] = await Promise.all([
     prisma.corpus_collection_submissions.findMany({
