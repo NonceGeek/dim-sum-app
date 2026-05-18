@@ -58,6 +58,7 @@ model User {
   corpusCollectionActivities      corpus_collection_activities[]
   corpusCollectionComments        corpus_collection_comments[]
   corpusCollectionLikes           corpus_collection_likes[]
+  corpusCollectionMessages        corpus_collection_messages[]
   corpusCollectionReviewBatches   corpus_collection_review_batches[]
   corpusCollectionReviewedItems   corpus_collection_submissions[]    @relation("CorpusCollectionReviewer")
   corpusCollectionSubmissions     corpus_collection_submissions[]
@@ -626,12 +627,17 @@ model corpus_collection_submissions {
   like_count       Int                                    @default(0)
   comment_count    Int                                    @default(0)
   share_count      Int                                    @default(0)
+  view_count       Int                                    @default(0)
+  is_awarded       Boolean                                @default(false)
+  award_status     String                                 @default("none")
+  award_info       Json                                   @default("{}")
   reviewed_by      String?
   reviewed_at      DateTime?                              @db.Timestamptz(6)
   created_at       DateTime                               @default(now()) @db.Timestamptz(6)
   updated_at       DateTime                               @default(now()) @updatedAt @db.Timestamptz(6)
   comments         corpus_collection_comments[]
   likes            corpus_collection_likes[]
+  messages         corpus_collection_messages[]
   review_items     corpus_collection_review_batch_items[]
   media            corpus_collection_submission_media[]
   activity         corpus_collection_activities?          @relation(fields: [activity_id], references: [id])
@@ -642,6 +648,7 @@ model corpus_collection_submissions {
   @@index([activity_id, review_status])
   @@index([review_status, created_at])
   @@index([is_featured, show_on_home])
+  @@index([is_awarded, award_status])
 }
 
 /// 语料采集 - 投稿媒体
@@ -686,6 +693,23 @@ model corpus_collection_comments {
 
   @@index([submission_id, status, created_at])
   @@index([user_id])
+}
+
+/// 语料采集 - 用户消息
+model corpus_collection_messages {
+  id            BigInt                         @id @default(autoincrement())
+  user_id       String
+  submission_id BigInt?
+  title         String
+  content       String
+  type          String
+  is_read       Boolean                        @default(false)
+  created_at    DateTime                       @default(now()) @db.Timestamptz(6)
+  submission    corpus_collection_submissions? @relation(fields: [submission_id], references: [id], onDelete: SetNull)
+  user          User                           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read, created_at])
+  @@index([submission_id])
 }
 
 /// 语料采集 - AI 审核批次
