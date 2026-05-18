@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const page = parsePositiveInt(searchParams.get("page"), 1);
   const pageSize = parsePositiveInt(searchParams.get("pageSize"), 10, 50);
   const type = searchParams.get("type");
+  const tag = searchParams.get("tag");
 
   return requireMiniprogramAuth(req, async () => {
     return NextResponse.json(
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
         page,
         pageSize,
         type,
+        tag,
         featured: true,
       })
     );

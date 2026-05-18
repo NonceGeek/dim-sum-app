@@ -150,6 +150,23 @@ export default function CorpusCollectionActivitiesPage() {
     onError: () => toast.error("Failed to generate cover candidates"),
   });
 
+  const selectCoverMutation = useMutation({
+    mutationFn: async (url: string) => {
+      const response = await fetch("/api/admin/corpus-collection/covers/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      if (!response.ok) throw new Error("Failed to select cover");
+      return response.json() as Promise<{ url: string }>;
+    },
+    onSuccess: (result) => {
+      setForm((current) => ({ ...current, bannerUrl: result.url }));
+      toast.success("Cover saved to OSS and added to the banner field");
+    },
+    onError: () => toast.error("Failed to save cover"),
+  });
+
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.title.trim()) {
@@ -232,10 +249,8 @@ export default function CorpusCollectionActivitiesPage() {
                     key={image.index}
                     type="button"
                     className="overflow-hidden rounded-md border text-left"
-                    onClick={() => {
-                      setForm({ ...form, bannerUrl: image.url });
-                      toast.success("Candidate URL copied into the banner field");
-                    }}
+                    onClick={() => selectCoverMutation.mutate(image.url)}
+                    disabled={selectCoverMutation.isPending}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image.url} alt={`Candidate ${image.index}`} className="aspect-video w-full object-cover" />

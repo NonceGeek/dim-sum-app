@@ -2,7 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Activity, CheckCircle2, Clock, Heart, MessageCircle, Radio, XCircle } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Summary = {
   totalSubmissions: number;
@@ -15,12 +18,56 @@ type Summary = {
   totalComments: number;
 };
 
+type Trends = {
+  items: Array<{ period: string; total: number; approved: number; rejected: number; pending: number }>;
+};
+
+type Breakdown = {
+  types: Array<{ submissionType: string; total: number; approved: number; rejected: number }>;
+  tags: Array<{ tag: string; total: number }>;
+};
+
+type ActivityDetail = {
+  activity: { id: string; title: string; submissionCount?: number };
+  statusBreakdown: Array<{ status: string; total: number }>;
+  interactions: { likes: number; comments: number; shares: number; views: number };
+};
+
 export default function CorpusCollectionAnalyticsPage() {
+  const [activityId, setActivityId] = useState("");
   const { data } = useQuery<Summary>({
     queryKey: ["corpus-collection-analytics-summary"],
     queryFn: async () => {
       const response = await fetch("/api/admin/corpus-collection/analytics/summary");
       if (!response.ok) throw new Error("Failed to load summary");
+      return response.json();
+    },
+  });
+
+  const { data: trends } = useQuery<Trends>({
+    queryKey: ["corpus-collection-analytics-trends"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/corpus-collection/analytics/submission-trends?days=30");
+      if (!response.ok) throw new Error("Failed to load trends");
+      return response.json();
+    },
+  });
+
+  const { data: breakdown } = useQuery<Breakdown>({
+    queryKey: ["corpus-collection-analytics-breakdown"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/corpus-collection/analytics/category-breakdown");
+      if (!response.ok) throw new Error("Failed to load category breakdown");
+      return response.json();
+    },
+  });
+
+  const { data: activityDetail } = useQuery<ActivityDetail>({
+    queryKey: ["corpus-collection-analytics-activity", activityId],
+    enabled: /^\d+$/.test(activityId),
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/corpus-collection/analytics/activity/${activityId}`);
+      if (!response.ok) throw new Error("Failed to load activity analytics");
       return response.json();
     },
   });
@@ -84,6 +131,107 @@ export default function CorpusCollectionAnalyticsPage() {
               <div className="mt-2 text-3xl font-bold">{(data?.totalLikes ?? 0) + (data?.totalComments ?? 0)}</div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle>Submission Trends</CardTitle>
+            <CardDescription>Daily review state movement over the last 30 days.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Approved</TableHead>
+                  <TableHead>Pending</TableHead>
+                  <TableHead>Rejected</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trends?.items.slice(-10).map((row) => (
+                  <TableRow key={row.period}>
+                    <TableCell>{new Date(row.period).toLocaleDateString()}</TableCell>
+                    <TableCell>{row.total}</TableCell>
+                    <TableCell>{row.approved}</TableCell>
+                    <TableCell>{row.pending}</TableCell>
+                    <TableCell>{row.rejected}</TableCell>
+                  </TableRow>
+                )) ?? <TableRow><TableCell colSpan={5}>No trend data.</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle>Category Breakdown</CardTitle>
+            <CardDescription>Submission volume by type and top tags.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-2">
+            <div>
+              <div className="mb-2 text-sm font-medium">Types</div>
+              <div className="space-y-2">
+                {breakdown?.types.map((row) => (
+                  <div key={row.submissionType} className="rounded-md border p-3">
+                    <div className="flex justify-between text-sm">
+                      <span>{row.submissionType}</span>
+                      <span className="font-medium">{row.total}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      approved {row.approved} · rejected {row.rejected}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-sm font-medium">Top Tags</div>
+              <div className="space-y-2">
+                {breakdown?.tags.slice(0, 8).map((row) => (
+                  <div key={row.tag} className="flex justify-between rounded-md border px-3 py-2 text-sm">
+                    <span>{row.tag}</span>
+                    <span className="font-medium">{row.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle>Activity Detail</CardTitle>
+          <CardDescription>Enter an activity ID to inspect activity-level interactions and review state.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input className="max-w-xs" placeholder="Activity ID" value={activityId} onChange={(e) => setActivityId(e.target.value)} />
+          {activityDetail && (
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="rounded-lg border p-4">
+                <div className="text-sm text-muted-foreground">Activity</div>
+                <div className="mt-2 font-semibold">{activityDetail.activity.title}</div>
+              </div>
+              <div className="rounded-lg border p-4">
+                <div className="text-sm text-muted-foreground">Views</div>
+                <div className="mt-2 text-2xl font-bold">{activityDetail.interactions.views}</div>
+              </div>
+              <div className="rounded-lg border p-4">
+                <div className="text-sm text-muted-foreground">Shares</div>
+                <div className="mt-2 text-2xl font-bold">{activityDetail.interactions.shares}</div>
+              </div>
+              <div className="rounded-lg border p-4">
+                <div className="text-sm text-muted-foreground">Review States</div>
+                <div className="mt-2 text-sm">
+                  {activityDetail.statusBreakdown.map((row) => `${row.status}: ${row.total}`).join(" · ")}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

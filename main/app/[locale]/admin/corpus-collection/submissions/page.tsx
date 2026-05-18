@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Bot, Check, Eye, Search, Star, X } from "lucide-react";
+import { Award, Bot, Check, Eye, Search, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ type Submission = {
   visibility: string;
   likeCount: number;
   commentCount: number;
+  isAwarded: boolean;
+  awardStatus: string;
   activity?: { id: string; title: string } | null;
   author?: { id: string; name?: string | null; avatar?: string | null } | null;
   media: Array<{ type: string; url: string; durationSec?: number | null }>;
@@ -89,6 +91,26 @@ export default function CorpusCollectionSubmissionsPage() {
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Action failed"),
+  });
+
+  const awardMutation = useMutation({
+    mutationFn: async ({ id, isAwarded, awardStatus }: { id: string; isAwarded: boolean; awardStatus: string }) => {
+      const response = await fetch(`/api/admin/corpus-collection/submissions/${id}/award`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isAwarded, awardStatus }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to update award status");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success("Award status updated");
+      queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to update award status"),
   });
 
   const batchMutation = useMutation({
@@ -205,6 +227,7 @@ export default function CorpusCollectionSubmissionsPage() {
                       <div className="mt-1 flex flex-wrap gap-1">
                         <Badge variant="outline">{submission.submissionType}</Badge>
                         {submission.activity && <Badge variant="outline">{submission.activity.title}</Badge>}
+                        {submission.isAwarded && <Badge className="bg-success text-success-foreground">{submission.awardStatus}</Badge>}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {submission.author?.name || "Unknown"} · {format(new Date(submission.createdAt), "MMM d, yyyy")}
@@ -257,6 +280,19 @@ export default function CorpusCollectionSubmissionsPage() {
                         </Button>
                         <Button size="icon" variant="outline" onClick={() => markReviewNeeded(submission.id)}>
                           <Star className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          onClick={() =>
+                            awardMutation.mutate({
+                              id: submission.id,
+                              isAwarded: !submission.isAwarded,
+                              awardStatus: submission.isAwarded ? "none" : "awarded",
+                            })
+                          }
+                        >
+                          <Award className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

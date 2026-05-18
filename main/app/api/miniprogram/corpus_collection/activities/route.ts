@@ -20,10 +20,7 @@ export async function GET(req: NextRequest) {
   return requireMiniprogramAuth(req, async () => {
     try {
       const now = new Date();
-      const and: Prisma.corpus_collection_activitiesWhereInput[] = [
-        { status },
-        { submissions: { some: PUBLIC_SUBMISSION_WHERE } },
-      ];
+      const and: Prisma.corpus_collection_activitiesWhereInput[] = [{ status }];
 
       if (!includeExpired) {
         and.push({ OR: [{ ends_at: null }, { ends_at: { gte: now } }] });

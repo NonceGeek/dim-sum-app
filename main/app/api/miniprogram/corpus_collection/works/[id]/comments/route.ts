@@ -3,7 +3,11 @@ import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
-import { parseBigIntId, parsePositiveInt } from "@/lib/services/corpus-collection";
+import {
+  PUBLIC_SUBMISSION_WHERE,
+  parseBigIntId,
+  parsePositiveInt,
+} from "@/lib/services/corpus-collection";
 
 function serializeComment(comment: any) {
   return {
@@ -28,6 +32,14 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!id) return NextResponse.json({ error: "Invalid work id" }, { status: 400 });
 
+    const submission = await prisma.corpus_collection_submissions.findFirst({
+      where: { id, ...PUBLIC_SUBMISSION_WHERE },
+      select: { id: true },
+    });
+    if (!submission) {
+      return NextResponse.json({ error: "Work not found" }, { status: 404 });
+    }
+
     const where = { submission_id: id, status: "approved" };
     const [items, total] = await Promise.all([
       prisma.corpus_collection_comments.findMany({
@@ -51,6 +63,17 @@ export async function POST(req: NextRequest, context: AppRouteContext) {
   return requireMiniprogramAuth(req, async (_req, user) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!id) return NextResponse.json({ error: "Invalid work id" }, { status: 400 });
+
+    const submission = await prisma.corpus_collection_submissions.findFirst({
+      where: {
+        id,
+        OR: [{ user_id: user.userId }, PUBLIC_SUBMISSION_WHERE],
+      },
+      select: { id: true },
+    });
+    if (!submission) {
+      return NextResponse.json({ error: "Work not found" }, { status: 404 });
+    }
 
     const body = await req.json().catch(() => ({}));
     if (!body.content || typeof body.content !== "string") {
