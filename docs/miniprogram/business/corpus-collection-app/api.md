@@ -67,7 +67,8 @@ const response = await wx.request({
       "imageUrl": "https://oss/1.jpg",
       "author": "用户昵称",
       "avatar": "https://wx.qlogo.cn/...",
-      "views": "123"
+      "viewCount": 123,
+      "isFeatured": false
     }
   ],
   "featuredSubmissions": []
@@ -146,7 +147,7 @@ const response = await wx.request({
           "commentCount": 3,
           "shareCount": 5,
           "viewCount": 123,
-          "views": "123",
+          "isFeatured": true,
           "isAwarded": false,
           "awardStatus": "none",
           "createdAt": "2026-05-01T10:00:00.000Z"
@@ -178,6 +179,13 @@ const response = await wx.request({
   "title": "粤语诗歌朗诵赛",
   "description": "征集粤语诗歌朗诵作品",
   "rules": "上传 1 分钟以内朗诵音频",
+  "status": "published",
+  "timeStatus": "ongoing",
+  "startsAt": "2026-05-01T00:00:00.000Z",
+  "endsAt": "2026-05-31T23:59:59.000Z",
+  "category": "诗歌朗诵",
+  "tags": ["粤语", "童谣", "荔湾"],
+  "submissionTypes": ["诗歌"],
   "rewardConfig": {
     "enabled": true,
     "description": "优秀作品可获得纪念奖品"
@@ -188,9 +196,12 @@ const response = await wx.request({
     "video": { "required": false, "maxDurationSec": 30 }
   },
   "bannerUrl": "https://oss/banner.jpg",
+  "canSubmit": true,
   "canShare": true
 }
 ```
+
+`timeStatus` 由后端根据当前时间和活动时间计算，可选值：`not_started`、`ongoing`、`ended`。`canSubmit` 由后端根据活动状态、开始结束时间和当前用户权限计算。
 
 #### 错误响应
 
@@ -214,6 +225,10 @@ const response = await wx.request({
 
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |-------|------|-----|-------|------|
+| `submissionType` | string | 否 | - | 投稿类型 |
+| `tag` | string | 否 | - | 分类标签 |
+| `isFeatured` | boolean | 否 | - | 是否精选 |
+| `awardStatus` | string | 否 | - | 中奖或奖励状态 |
 | `sort` | string | 否 | `latest` | `latest` 最新、`likes` 点赞量 |
 | `page` | number | 否 | `1` | 页码 |
 | `pageSize` | number | 否 | `10` | 每页数量 |
@@ -242,7 +257,7 @@ const response = await wx.request({
       "commentCount": 3,
       "shareCount": 5,
       "viewCount": 123,
-      "views": "123",
+      "isFeatured": true,
       "isAwarded": false,
       "awardStatus": "none",
       "createdAt": "2026-05-01T10:00:00.000Z"
@@ -397,7 +412,8 @@ const response = await wx.request({
 
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |-------|------|-----|-------|------|
-| `reviewStatus` | string | 否 | - | 审核状态 |
+| `reviewStatus` | string | 否 | - | 审核状态，仅包含 `draft`、`pending_review`、`ai_reviewing`、`review_needed`、`approved`、`rejected` |
+| `awardStatus` | string | 否 | - | 中奖或奖励状态，不包含在 `reviewStatus` 中 |
 | `activityId` | string | 否 | - | 活动 ID |
 | `page` | number | 否 | `1` | 页码 |
 | `pageSize` | number | 否 | `10` | 每页数量 |
@@ -421,12 +437,16 @@ const response = await wx.request({
         { "type": "image", "url": "https://oss/1.jpg" },
         { "type": "audio", "url": "https://oss/a.mp3", "durationSec": 58 }
       ],
+      "isFeatured": true,
+      "showOnHome": false,
       "isAwarded": false,
       "awardStatus": "none",
       "activity": {
         "id": "act_001",
         "title": "粤语诗歌朗诵赛"
       },
+      "canEdit": true,
+      "editableUntil": "2026-05-02T10:00:00.000Z",
       "createdAt": "2026-05-01T10:00:00.000Z"
     }
   ],
@@ -446,6 +466,8 @@ const response = await wx.request({
 - **方法**: `GET`
 - **认证**: 需要 Bearer Token
 
+作者本人可以查看自己的全部投稿状态；非作者只能查看 `reviewStatus = approved` 且 `visibility = public` 的投稿。
+
 #### 成功响应 (200)
 
 ```json
@@ -456,6 +478,18 @@ const response = await wx.request({
   "submissionType": "诗歌",
   "tags": ["童谣", "荔湾"],
   "reviewStatus": "approved",
+  "reviewReason": null,
+  "author": {
+    "id": "user_001",
+    "name": "用户昵称",
+    "avatar": "https://wx.qlogo.cn/..."
+  },
+  "activity": {
+    "id": "act_001",
+    "title": "粤语诗歌朗诵赛",
+    "startsAt": "2026-05-01T00:00:00.000Z",
+    "endsAt": "2026-05-31T23:59:59.000Z"
+  },
   "media": [
     { "type": "image", "url": "https://oss/1.jpg" },
     { "type": "audio", "url": "https://oss/a.mp3", "durationSec": 58 }
@@ -464,12 +498,79 @@ const response = await wx.request({
   "commentCount": 3,
   "shareCount": 5,
   "viewCount": 123,
-  "views": "123",
   "coverUrl": "https://oss/1.jpg",
   "imageUrls": ["https://oss/1.jpg"],
+  "isFeatured": true,
   "isAwarded": false,
   "awardStatus": "none",
+  "canEdit": false,
+  "editableUntil": null,
   "createdAt": "2026-05-01T10:00:00.000Z"
+}
+```
+
+### 3.5 编辑投稿
+
+活动投稿在活动截止前可由作者编辑，截止后不可编辑。普通投稿在创建后 24 小时内可由作者编辑，超过 24 小时不可编辑。投稿不开放删除。
+
+编辑成功后投稿重新进入审核，建议后端设置：
+
+```text
+reviewStatus = pending_review
+visibility = private
+```
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/submissions/{id}`
+- **方法**: `PATCH`
+- **认证**: 需要 Bearer Token
+
+#### 请求参数
+
+```json
+{
+  "submissionType": "诗歌",
+  "title": "月光光",
+  "intro": "粤语童谣经典作品修改版",
+  "tags": ["童谣", "荔湾"],
+  "media": [
+    { "type": "image", "url": "https://oss/1.jpg", "sortOrder": 0 },
+    { "type": "audio", "url": "https://oss/a.mp3", "durationSec": 58 }
+  ],
+  "precheckResult": {
+    "verdict": "pass"
+  }
+}
+```
+
+#### 成功响应 (200)
+
+```json
+{
+  "id": "sub_001",
+  "reviewStatus": "pending_review",
+  "canEdit": true,
+  "editableUntil": "2026-05-02T10:00:00.000Z",
+  "message": "修改已提交，等待审核"
+}
+```
+
+#### 错误响应
+
+**403 Forbidden** - 不允许编辑
+
+```json
+{
+  "error": "submission_edit_not_allowed"
+}
+```
+
+**405 Method Not Allowed** - 不允许删除投稿
+
+```json
+{
+  "error": "submission_delete_not_allowed"
 }
 ```
 
@@ -498,11 +599,35 @@ const response = await wx.request({
 
 ```json
 {
-  "items": [],
+  "items": [
+    {
+      "id": "sub_001",
+      "title": "月光光",
+      "intro": "粤语童谣经典作品",
+      "submissionType": "诗歌",
+      "tags": ["童谣", "荔湾"],
+      "coverUrl": "https://oss/1.jpg",
+      "imageUrls": ["https://oss/1.jpg"],
+      "author": {
+        "id": "user_001",
+        "name": "用户昵称",
+        "avatar": "https://wx.qlogo.cn/..."
+      },
+      "likeCount": 20,
+      "commentCount": 3,
+      "shareCount": 5,
+      "viewCount": 123,
+      "isFeatured": true,
+      "showOnHome": true,
+      "isAwarded": false,
+      "awardStatus": "none",
+      "createdAt": "2026-05-01T10:00:00.000Z"
+    }
+  ],
   "pagination": {
     "page": 1,
     "pageSize": 10,
-    "total": 0
+    "total": 1
   }
 }
 ```
@@ -551,8 +676,7 @@ const response = await wx.request({
 ```json
 {
   "id": "sub_001",
-  "viewCount": 124,
-  "views": "124"
+  "viewCount": 124
 }
 ```
 
@@ -676,7 +800,44 @@ const response = await wx.request({
 }
 ```
 
-消息类型建议使用：`系统提示`、`活动通知`、`中奖信息`、`审核信息`。当消息关联作品时返回 `workId`。
+消息类型建议使用：`系统提示`、`活动通知`、`中奖信息`、`审核信息`。当消息关联作品时返回 `workId`。接口命名建议后续统一为 `/messages`，兼容期可保留 `/message`。
+
+### 6.2 标记单条消息已读
+
+用户点击未读消息后调用，将该消息标记为已读。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/messages/{id}/read`
+- **方法**: `PATCH`
+- **认证**: 需要 Bearer Token
+
+#### 成功响应 (200)
+
+```json
+{
+  "id": "msg_001",
+  "isRead": true,
+  "unreadNotificationCount": 0
+}
+```
+
+### 6.3 标记全部消息已读
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/messages/read-all`
+- **方法**: `PATCH`
+- **认证**: 需要 Bearer Token
+
+#### 成功响应 (200)
+
+```json
+{
+  "updatedCount": 3,
+  "unreadNotificationCount": 0
+}
+```
 
 ## 七、个人中心接口
 

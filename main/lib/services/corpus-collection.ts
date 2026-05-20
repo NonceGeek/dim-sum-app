@@ -29,6 +29,26 @@ export function formatCompactCount(value: number | null | undefined) {
   return count.toString();
 }
 
+function getActivityTimeStatus(activity: {
+  starts_at?: Date | null;
+  ends_at?: Date | null;
+}) {
+  const now = Date.now();
+  const startsAt = activity.starts_at?.getTime?.();
+  const endsAt = activity.ends_at?.getTime?.();
+  if (startsAt && startsAt > now) return "not_started";
+  if (endsAt && endsAt < now) return "ended";
+  return "ongoing";
+}
+
+function canSubmitToActivity(activity: {
+  status?: string | null;
+  starts_at?: Date | null;
+  ends_at?: Date | null;
+}) {
+  return activity.status === "published" && getActivityTimeStatus(activity) === "ongoing";
+}
+
 function serializeUser(user?: {
   id: string;
   name: string | null;
@@ -56,12 +76,17 @@ export function serializeActivity(activity: any) {
     slug: activity.slug,
     description: activity.description,
     rules: activity.rules,
+    category: activity.category ?? null,
+    tags: activity.tags ?? [],
+    submissionTypes: activity.submission_types ?? [],
     rewardConfig: activity.reward_config,
     mediaRequirements: activity.media_requirements,
     bannerUrl: activity.banner_url,
     status: activity.status,
+    timeStatus: getActivityTimeStatus(activity),
     startsAt: activity.starts_at?.toISOString?.() ?? null,
     endsAt: activity.ends_at?.toISOString?.() ?? null,
+    canSubmit: canSubmitToActivity(activity),
     submissionCount: activity._count?.submissions ?? activity.submissionCount ?? undefined,
     works: activity.submissions
       ? activity.submissions.map((item: any) => serializeSubmission(item))
@@ -71,8 +96,37 @@ export function serializeActivity(activity: any) {
   };
 }
 
-export function serializeSubmission(submission: any, viewerLiked?: boolean) {
+export function getSubmissionEditState(submission: any, viewerId?: string) {
+  if (!viewerId || submission.user_id !== viewerId || submission.is_locked) {
+    return { canEdit: false, editableUntil: null as string | null };
+  }
+
+  if (submission.is_awarded || submission.award_status === "awarded") {
+    return { canEdit: false, editableUntil: null as string | null };
+  }
+
+  const editableUntilDate = submission.activity_id
+    ? submission.activity?.ends_at ?? null
+    : new Date(submission.created_at.getTime() + 24 * 60 * 60 * 1000);
+  const editableUntil = editableUntilDate?.toISOString?.() ?? null;
+
+  if (!editableUntilDate) {
+    return { canEdit: true, editableUntil };
+  }
+
+  return {
+    canEdit: editableUntilDate.getTime() > Date.now(),
+    editableUntil,
+  };
+}
+
+export function serializeSubmission(
+  submission: any,
+  viewerLiked?: boolean,
+  viewerId?: string
+) {
   const imageUrls = getSubmissionImages(submission);
+  const editState = getSubmissionEditState(submission, viewerId);
   return {
     id: submission.id.toString(),
     title: submission.title,
@@ -88,7 +142,6 @@ export function serializeSubmission(submission: any, viewerLiked?: boolean) {
     commentCount: submission.comment_count,
     shareCount: submission.share_count,
     viewCount: submission.view_count,
-    views: formatCompactCount(submission.view_count),
     isAwarded: submission.is_awarded,
     awardStatus: submission.award_status,
     awardInfo: submission.award_info,
@@ -99,6 +152,8 @@ export function serializeSubmission(submission: any, viewerLiked?: boolean) {
       ? {
           id: submission.activity.id.toString(),
           title: submission.activity.title,
+          startsAt: submission.activity.starts_at?.toISOString?.() ?? null,
+          endsAt: submission.activity.ends_at?.toISOString?.() ?? null,
         }
       : null,
     author: serializeUser(submission.user),
@@ -112,6 +167,7 @@ export function serializeSubmission(submission: any, viewerLiked?: boolean) {
     })),
     precheckResult: submission.precheck_result,
     aiReviewResult: submission.ai_review_result,
+    ...editState,
     createdAt: submission.created_at?.toISOString?.() ?? undefined,
     updatedAt: submission.updated_at?.toISOString?.() ?? undefined,
   };
@@ -125,12 +181,14 @@ export function serializeHomeSubmission(submission: any) {
     imageUrl: imageUrls[0] ?? "",
     author: author?.name ?? "用户昵称",
     avatar: author?.avatar ?? "",
-    views: formatCompactCount(submission.view_count),
+    viewCount: submission.view_count,
+    isFeatured: submission.is_featured,
+    showOnHome: submission.show_on_home,
   };
 }
 
 export const submissionInclude = {
-  activity: { select: { id: true, title: true } },
+  activity: { select: { id: true, title: true, starts_at: true, ends_at: true } },
   user: { select: { id: true, name: true, image: true, wechatAvatar: true } },
   media: { orderBy: { sort_order: "asc" } },
 } satisfies Prisma.corpus_collection_submissionsInclude;
@@ -141,6 +199,7 @@ export async function listPublicSubmissions(options: {
   showOnHome?: boolean;
   type?: string | null;
   tag?: string | null;
+  awardStatus?: string | null;
   page: number;
   pageSize: number;
   sort?: "latest" | "likes";
@@ -149,9 +208,10 @@ export async function listPublicSubmissions(options: {
   const where: Prisma.corpus_collection_submissionsWhereInput = {
     ...PUBLIC_SUBMISSION_WHERE,
     activity_id: options.activityId ?? undefined,
-    is_featured: options.featured ? true : undefined,
-    show_on_home: options.showOnHome ? true : undefined,
+    is_featured: options.featured === undefined ? undefined : options.featured,
+    show_on_home: options.showOnHome === undefined ? undefined : options.showOnHome,
     submission_type: options.type || undefined,
+    award_status: options.awardStatus || undefined,
     tags: options.tag ? { array_contains: options.tag } : undefined,
   };
   const [items, total] = await Promise.all([
@@ -228,6 +288,68 @@ export async function createCorpusSubmission(userId: string, body: any) {
       },
     },
     include: submissionInclude,
+  });
+}
+
+export async function updateCorpusSubmission(userId: string, id: bigint, body: any) {
+  const media = Array.isArray(body.media) ? body.media : [];
+  if (
+    !body.submissionType ||
+    !body.title ||
+    !body.intro ||
+    !Array.isArray(body.tags) ||
+    body.tags.length === 0
+  ) {
+    throw new Error("Missing required fields");
+  }
+
+  if (!validateSubmissionMedia(media)) {
+    throw new Error("Invalid media requirements");
+  }
+
+  const existing = await prisma.corpus_collection_submissions.findFirst({
+    where: { id, user_id: userId },
+    include: submissionInclude,
+  });
+
+  if (!existing) {
+    throw new Error("Submission not found");
+  }
+
+  const editState = getSubmissionEditState(existing, userId);
+  if (!editState.canEdit) {
+    throw new Error("submission_edit_not_allowed");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.corpus_collection_submission_media.deleteMany({
+      where: { submission_id: id },
+    });
+
+    return tx.corpus_collection_submissions.update({
+      where: { id },
+      data: {
+        submission_type: body.submissionType,
+        title: body.title,
+        intro: body.intro,
+        tags: body.tags as Prisma.InputJsonValue,
+        precheck_result: jsonInput(body.precheckResult),
+        review_status: "pending_review",
+        review_reason: null,
+        visibility: "private",
+        media: {
+          create: media.map((item: any, index: number) => ({
+            media_type: item.type,
+            url: item.url,
+            duration_seconds:
+              typeof item.durationSec === "number" ? Math.floor(item.durationSec) : null,
+            sort_order: typeof item.sortOrder === "number" ? item.sortOrder : index,
+            metadata: (item.metadata ?? {}) as Prisma.InputJsonValue,
+          })),
+        },
+      },
+      include: submissionInclude,
+    });
   });
 }
 
