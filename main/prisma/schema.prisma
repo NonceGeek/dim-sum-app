@@ -627,14 +627,14 @@ model corpus_collection_submissions {
   like_count       Int                                    @default(0)
   comment_count    Int                                    @default(0)
   share_count      Int                                    @default(0)
-  view_count       Int                                    @default(0)
-  is_awarded       Boolean                                @default(false)
-  award_status     String                                 @default("none")
-  award_info       Json                                   @default("{}")
   reviewed_by      String?
   reviewed_at      DateTime?                              @db.Timestamptz(6)
   created_at       DateTime                               @default(now()) @db.Timestamptz(6)
   updated_at       DateTime                               @default(now()) @updatedAt @db.Timestamptz(6)
+  award_info       Json                                   @default("{}")
+  award_status     String                                 @default("none")
+  is_awarded       Boolean                                @default(false)
+  view_count       Int                                    @default(0)
   comments         corpus_collection_comments[]
   likes            corpus_collection_likes[]
   messages         corpus_collection_messages[]
@@ -705,7 +705,7 @@ model corpus_collection_messages {
   type          String
   is_read       Boolean                        @default(false)
   created_at    DateTime                       @default(now()) @db.Timestamptz(6)
-  submission    corpus_collection_submissions? @relation(fields: [submission_id], references: [id], onDelete: SetNull)
+  submission    corpus_collection_submissions? @relation(fields: [submission_id], references: [id])
   user          User                           @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, is_read, created_at])

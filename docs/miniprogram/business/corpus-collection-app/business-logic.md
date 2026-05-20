@@ -129,6 +129,40 @@ agent API 详细定义见：`docs/archive/submission-service-api.md`。
 
 投稿前安全检查只检查文本和图片。音频、视频在后续 AI 审核或人工审核阶段处理。
 
+### 5.2.1 投稿编辑规则
+
+小程序端允许作者在有限窗口内编辑投稿，但不开放删除投稿。
+
+活动投稿编辑规则：
+
+```text
+当前用户必须是作者
+活动未截止
+投稿未中奖
+投稿未被后台锁定
+截止日期前可编辑
+截止日期后不可编辑
+不能删除
+```
+
+普通投稿编辑规则：
+
+```text
+当前用户必须是作者
+创建后 24 小时内可编辑
+超过 24 小时不可编辑
+不能删除
+```
+
+编辑成功后投稿需重新进入审核，避免已公开内容被修改后绕过审核：
+
+```text
+review_status = pending_review
+visibility = private
+```
+
+小程序接口返回 `canEdit` 和 `editableUntil`，由后端统一计算编辑能力，前端不自行推导。
+
 ### 5.3 活动投稿流程
 
 ```text
@@ -204,6 +238,21 @@ is_featured = true
 | `review_needed` | 需要人工复核 |
 | `approved` | 已通过 |
 | `rejected` | 已驳回 |
+
+`review_status` 只表示审核状态，不包含中奖状态。中奖或奖励信息通过独立字段表达：
+
+```text
+is_awarded
+award_status
+award_info
+```
+
+精选展示通过独立字段表达：
+
+```text
+is_featured
+show_on_home
+```
 
 ---
 
@@ -305,6 +354,9 @@ is_featured = true
 | `slug` | 活动短标识 |
 | `description` | 活动介绍 |
 | `rules` | 规则说明 |
+| `category` | 活动分类 |
+| `tags` | 活动标签 JSON |
+| `submission_types` | 活动允许的投稿类型 JSON |
 | `reward_config` | 奖励配置 JSON |
 | `media_requirements` | 允许媒体类型与限制 JSON |
 | `banner_url` | 正式 Banner URL |
@@ -345,6 +397,7 @@ is_featured = true
 | `is_awarded` | 是否中奖 |
 | `award_status` | 中奖状态，默认 `none` |
 | `award_info` | 中奖信息 JSON |
+| `is_locked` | 是否被后台锁定，锁定后小程序不可编辑 |
 | `created_at` / `updated_at` | 时间戳 |
 
 ### 7.4 媒体表 `corpus_collection_submission_media`

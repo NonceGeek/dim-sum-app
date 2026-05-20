@@ -13,6 +13,10 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
   const page = parsePositiveInt(searchParams.get("page"), 1);
   const pageSize = parsePositiveInt(searchParams.get("pageSize"), 10, 50);
   const sort = searchParams.get("sort") === "likes" ? "likes" : "latest";
+  const submissionType = searchParams.get("submissionType");
+  const tag = searchParams.get("tag");
+  const isFeatured = searchParams.get("isFeatured");
+  const awardStatus = searchParams.get("awardStatus");
 
   return requireMiniprogramAuth(req, async () => {
     const activityId = parseBigIntId(await getStringRouteParam(context, "id"));
@@ -21,7 +25,16 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
     }
 
     return NextResponse.json(
-      await listPublicSubmissions({ activityId, page, pageSize, sort })
+      await listPublicSubmissions({
+        activityId,
+        page,
+        pageSize,
+        sort,
+        type: submissionType,
+        tag,
+        featured: isFeatured === null ? undefined : isFeatured === "true",
+        awardStatus,
+      })
     );
   });
 }

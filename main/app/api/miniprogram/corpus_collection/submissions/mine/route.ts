@@ -13,12 +13,14 @@ export async function GET(req: NextRequest) {
   const page = parsePositiveInt(searchParams.get("page"), 1);
   const pageSize = parsePositiveInt(searchParams.get("pageSize"), 10, 50);
   const reviewStatus = searchParams.get("reviewStatus");
+  const awardStatus = searchParams.get("awardStatus");
   const activityId = parseBigIntId(searchParams.get("activityId"));
 
   return requireMiniprogramAuth(req, async (_req, user) => {
     const where = {
       user_id: user.userId,
       review_status: reviewStatus || undefined,
+      award_status: awardStatus || undefined,
       activity_id: activityId ?? undefined,
     };
     const [items, total] = await Promise.all([
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      items: items.map((item) => serializeSubmission(item)),
+      items: items.map((item) => serializeSubmission(item, undefined, user.userId)),
       pagination: { page, pageSize, total },
     });
   });

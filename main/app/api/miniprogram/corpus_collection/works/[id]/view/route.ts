@@ -5,7 +5,6 @@ import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
 import {
   PUBLIC_SUBMISSION_WHERE,
-  formatCompactCount,
   parseBigIntId,
 } from "@/lib/services/corpus-collection";
 
@@ -37,7 +36,6 @@ export async function POST(req: NextRequest, context: AppRouteContext) {
     return NextResponse.json({
       id: submission.id.toString(),
       viewCount: submission.view_count,
-      views: formatCompactCount(submission.view_count),
     });
   });
 }

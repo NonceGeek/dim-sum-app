@@ -8,6 +8,7 @@ import {
   parseBigIntId,
   serializeSubmission,
   submissionInclude,
+  updateCorpusSubmission,
 } from "@/lib/services/corpus-collection";
 
 export async function GET(req: NextRequest, context: AppRouteContext) {
@@ -32,6 +33,46 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
       select: { id: true },
     });
 
-    return NextResponse.json(serializeSubmission(submission, Boolean(like)));
+    return NextResponse.json(serializeSubmission(submission, Boolean(like), user.userId));
   });
+}
+
+export async function PATCH(req: NextRequest, context: AppRouteContext) {
+  return requireMiniprogramAuth(req, async (_req, user) => {
+    const id = parseBigIntId(await getStringRouteParam(context, "id"));
+    if (!id) return NextResponse.json({ error: "Invalid submission id" }, { status: 400 });
+
+    try {
+      const body = await req.json();
+      const submission = await updateCorpusSubmission(user.userId, id, body);
+      const editState = serializeSubmission(submission, undefined, user.userId);
+
+      return NextResponse.json({
+        id: submission.id.toString(),
+        reviewStatus: submission.review_status,
+        canEdit: editState.canEdit,
+        editableUntil: editState.editableUntil,
+        message: "修改已提交，等待审核",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update submission";
+      if (message === "Submission not found") {
+        return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+      }
+      if (message === "submission_edit_not_allowed") {
+        return NextResponse.json({ error: "submission_edit_not_allowed" }, { status: 403 });
+      }
+      if (message === "Invalid media requirements") {
+        return NextResponse.json({ error: "Invalid media requirements" }, { status: 422 });
+      }
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  });
+}
+
+export async function DELETE() {
+  return NextResponse.json(
+    { error: "submission_delete_not_allowed" },
+    { status: 405 }
+  );
 }
