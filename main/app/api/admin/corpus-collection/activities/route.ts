@@ -44,24 +44,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "title is required" }, { status: 400 });
     }
 
-    const activity = await prisma.corpus_collection_activities.create({
-      data: {
-        title: body.title,
-        slug: body.slug || undefined,
-        description: body.description,
-        rules: body.rules,
-        category: body.category,
-        tags: (body.tags ?? []) as Prisma.InputJsonValue,
-        submission_types: (body.submissionTypes ?? []) as Prisma.InputJsonValue,
-        reward_config: (body.rewardConfig ?? {}) as Prisma.InputJsonValue,
-        media_requirements: (body.mediaRequirements ?? {}) as Prisma.InputJsonValue,
-        banner_url: body.bannerUrl,
-        status: body.status || "draft",
-        starts_at: body.startsAt ? new Date(body.startsAt) : null,
-        ends_at: body.endsAt ? new Date(body.endsAt) : null,
-        created_by: userId,
-      },
-    });
+    const data = {
+      title: body.title,
+      slug: body.slug || undefined,
+      description: body.description,
+      rules: body.rules,
+      category: body.category,
+      tags: (body.tags ?? []) as Prisma.InputJsonValue,
+      submission_types: (body.submissionTypes ?? []) as Prisma.InputJsonValue,
+      reward_config: (body.rewardConfig ?? {}) as Prisma.InputJsonValue,
+      media_requirements: (body.mediaRequirements ?? {}) as Prisma.InputJsonValue,
+      banner_url: body.bannerUrl,
+      status: body.status || "draft",
+      starts_at: body.startsAt ? new Date(body.startsAt) : null,
+      ends_at: body.endsAt ? new Date(body.endsAt) : null,
+      created_by: userId,
+    } as Prisma.corpus_collection_activitiesUncheckedCreateInput;
+
+    const activity = await prisma.corpus_collection_activities.create({ data });
 
     return NextResponse.json(serializeActivity(activity), { status: 201 });
   });

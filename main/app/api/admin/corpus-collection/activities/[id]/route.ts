@@ -26,23 +26,25 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
 
     const body = await req.json();
+    const data = {
+      title: body.title,
+      slug: body.slug,
+      description: body.description,
+      rules: body.rules,
+      category: body.category,
+      tags: body.tags as Prisma.InputJsonValue | undefined,
+      submission_types: body.submissionTypes as Prisma.InputJsonValue | undefined,
+      reward_config: body.rewardConfig as Prisma.InputJsonValue | undefined,
+      media_requirements: body.mediaRequirements as Prisma.InputJsonValue | undefined,
+      banner_url: body.bannerUrl,
+      status: body.status,
+      starts_at: body.startsAt ? new Date(body.startsAt) : undefined,
+      ends_at: body.endsAt ? new Date(body.endsAt) : undefined,
+    } as Prisma.corpus_collection_activitiesUncheckedUpdateInput;
+
     const activity = await prisma.corpus_collection_activities.update({
       where: { id },
-      data: {
-        title: body.title,
-        slug: body.slug,
-        description: body.description,
-        rules: body.rules,
-        category: body.category,
-        tags: body.tags as Prisma.InputJsonValue | undefined,
-        submission_types: body.submissionTypes as Prisma.InputJsonValue | undefined,
-        reward_config: body.rewardConfig as Prisma.InputJsonValue | undefined,
-        media_requirements: body.mediaRequirements as Prisma.InputJsonValue | undefined,
-        banner_url: body.bannerUrl,
-        status: body.status,
-        starts_at: body.startsAt ? new Date(body.startsAt) : undefined,
-        ends_at: body.endsAt ? new Date(body.endsAt) : undefined,
-      },
+      data,
     });
     return NextResponse.json(serializeActivity(activity));
   });
