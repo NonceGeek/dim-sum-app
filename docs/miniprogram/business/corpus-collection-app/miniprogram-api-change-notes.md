@@ -415,3 +415,71 @@ GET /api/miniprogram/corpus_collection/submissions/{id}
 10. 不做投稿删除入口。
 11. 精选角标使用 `isFeatured`。
 
+## 十、首页投稿流分页接口
+
+原需求：
+
+```text
+首页投稿需要小红书式流式展示，投稿列表要单独分页加载。
+```
+
+已新增接口：
+
+```text
+GET /api/miniprogram/corpus_collection/home/submissions
+```
+
+支持参数：
+
+| 参数名 | 类型 | 说明 |
+|-------|------|------|
+| `page` | number | 页码，默认 1 |
+| `pageSize` | number | 每页数量，默认 20，最大 30 |
+| `sort` | string | `latest`、`likes`、`views` |
+| `type` / `submissionType` | string | 投稿类型 |
+| `tag` | string | 分类标签 |
+| `activityId` | string | 活动 ID |
+| `isFeatured` | boolean | 是否只看精选 |
+| `showOnHome` | boolean | 是否只看后台标记首页展示的投稿 |
+
+成功响应包含：
+
+```json
+{
+  "items": [
+    {
+      "id": "sub_001",
+      "title": "月光光",
+      "coverUrl": "https://oss/1.jpg",
+      "coverAspectRatio": 0.75,
+      "author": {
+        "id": "user_001",
+        "name": "用户昵称",
+        "avatar": "https://wx.qlogo.cn/..."
+      },
+      "likeCount": 20,
+      "commentCount": 3,
+      "viewCount": 123,
+      "isFeatured": true,
+      "showOnHome": false,
+      "liked": false
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 120,
+    "hasMore": true
+  }
+}
+```
+
+小程序首页建议：
+
+```text
+首屏进入：GET /home 获取 Banner、活动、快捷入口
+投稿瀑布流：GET /home/submissions?page=1&pageSize=20
+继续加载：hasMore=true 时 page + 1
+```
+
+默认返回所有已通过且公开的投稿；如果产品需要只展示运营挑选内容，调用时传 `showOnHome=true`。

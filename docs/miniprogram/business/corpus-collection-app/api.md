@@ -87,6 +87,107 @@ const response = await wx.request({
 }
 ```
 
+### 1.2 获取首页投稿流
+
+首页投稿流用于小红书式瀑布流/无限滚动展示。该接口只返回已审核通过且公开的投稿，和 `GET /home` 分离，前端首屏可先调用 `/home` 获取 Banner、活动和快捷入口，再按页调用本接口加载投稿卡片。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/home/submissions`
+- **方法**: `GET`
+- **认证**: 需要 Bearer Token
+
+#### 请求参数 (Query String)
+
+| 参数名 | 类型 | 必填 | 默认值 | 说明 |
+|-------|------|-----|-------|------|
+| `page` | number | 否 | `1` | 页码，从 1 开始 |
+| `pageSize` | number | 否 | `20` | 每页数量，最大 30 |
+| `sort` | string | 否 | `latest` | `latest` 最新、`likes` 点赞量、`views` 浏览量 |
+| `type` / `submissionType` | string | 否 | - | 投稿类型 |
+| `tag` | string | 否 | - | 分类标签 |
+| `activityId` | string | 否 | - | 活动 ID |
+| `isFeatured` | boolean | 否 | - | 是否只看精选 |
+| `showOnHome` | boolean | 否 | - | 是否只看后台标记为首页展示的投稿 |
+
+默认不强制 `showOnHome=true`，避免首页流内容不足；如果产品需要完全由后台运营控制首页流，前端传 `showOnHome=true`。
+
+#### 请求示例
+
+```javascript
+const response = await wx.request({
+  url: 'https://search.aidimsum.com/api/miniprogram/corpus_collection/home/submissions?page=1&pageSize=20&sort=latest',
+  method: 'GET',
+  header: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+```
+
+#### 成功响应 (200)
+
+```json
+{
+  "items": [
+    {
+      "id": "sub_001",
+      "title": "月光光",
+      "intro": "粤语童谣朗诵",
+      "submissionType": "诗歌",
+      "tags": ["童谣"],
+      "coverUrl": "https://oss/1.jpg",
+      "imageUrls": ["https://oss/1.jpg"],
+      "coverWidth": 1080,
+      "coverHeight": 1440,
+      "coverAspectRatio": 0.75,
+      "author": {
+        "id": "user_001",
+        "name": "用户昵称",
+        "avatar": "https://wx.qlogo.cn/..."
+      },
+      "activity": {
+        "id": "act_001",
+        "title": "粤语诗歌朗诵赛"
+      },
+      "likeCount": 20,
+      "commentCount": 3,
+      "shareCount": 5,
+      "viewCount": 123,
+      "isFeatured": true,
+      "showOnHome": false,
+      "liked": false,
+      "createdAt": "2026-05-01T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 120,
+    "hasMore": true
+  }
+}
+```
+
+字段说明：
+
+| 字段 | 说明 |
+|------|------|
+| `coverUrl` | 瀑布流卡片主图，优先取第一张图片 |
+| `coverWidth` / `coverHeight` | 上传媒体元数据中存在宽高时返回，否则为 `null` |
+| `coverAspectRatio` | `coverWidth / coverHeight`，前端可用于预占瀑布流高度 |
+| `liked` | 当前登录用户是否已点赞 |
+| `hasMore` | 是否还有下一页，适合 `onReachBottom` 或虚拟列表继续加载 |
+
+#### 错误响应
+
+**401 Unauthorized**
+
+```json
+{
+  "error": "Invalid or expired token"
+}
+```
+
 ---
 
 ## 二、活动接口

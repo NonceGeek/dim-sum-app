@@ -69,6 +69,19 @@ function getSubmissionImages(submission: any) {
     .map((item: any) => item.url);
 }
 
+function getCoverMetadata(submission: any) {
+  const cover = (submission.media ?? []).find((item: any) => item.media_type === "image");
+  const metadata = cover?.metadata;
+  const width = Number(metadata?.width);
+  const height = Number(metadata?.height);
+
+  return {
+    coverUrl: cover?.url ?? null,
+    coverWidth: Number.isFinite(width) && width > 0 ? width : null,
+    coverHeight: Number.isFinite(height) && height > 0 ? height : null,
+  };
+}
+
 export function serializeActivity(activity: any) {
   return {
     id: activity.id.toString(),
@@ -187,11 +200,90 @@ export function serializeHomeSubmission(submission: any) {
   };
 }
 
+export function serializeHomeFeedSubmission(submission: any, viewerLiked?: boolean) {
+  const author = serializeUser(submission.user);
+  const imageUrls = getSubmissionImages(submission);
+  const cover = getCoverMetadata(submission);
+  const coverAspectRatio =
+    cover.coverWidth && cover.coverHeight ? cover.coverWidth / cover.coverHeight : null;
+
+  return {
+    id: submission.id.toString(),
+    title: submission.title,
+    intro: submission.intro,
+    submissionType: submission.submission_type,
+    tags: submission.tags,
+    coverUrl: cover.coverUrl ?? imageUrls[0] ?? "",
+    imageUrls,
+    coverWidth: cover.coverWidth,
+    coverHeight: cover.coverHeight,
+    coverAspectRatio,
+    author: {
+      id: author?.id ?? "",
+      name: author?.name ?? "用户昵称",
+      avatar: author?.avatar ?? "",
+    },
+    activity: submission.activity
+      ? {
+          id: submission.activity.id.toString(),
+          title: submission.activity.title,
+        }
+      : null,
+    likeCount: submission.like_count,
+    commentCount: submission.comment_count,
+    shareCount: submission.share_count,
+    viewCount: submission.view_count,
+    isFeatured: submission.is_featured,
+    showOnHome: submission.show_on_home,
+    liked: viewerLiked,
+    createdAt: submission.created_at?.toISOString?.() ?? undefined,
+  };
+}
+
 export const submissionInclude = {
   activity: { select: { id: true, title: true, starts_at: true, ends_at: true } },
   user: { select: { id: true, name: true, image: true, wechatAvatar: true } },
   media: { orderBy: { sort_order: "asc" } },
 } satisfies Prisma.corpus_collection_submissionsInclude;
+
+export function buildPublicSubmissionWhere(options: {
+  activityId?: bigint | null;
+  featured?: boolean;
+  showOnHome?: boolean;
+  type?: string | null;
+  tag?: string | null;
+  awardStatus?: string | null;
+}) {
+  return {
+    ...PUBLIC_SUBMISSION_WHERE,
+    activity_id: options.activityId ?? undefined,
+    is_featured: options.featured === undefined ? undefined : options.featured,
+    show_on_home: options.showOnHome === undefined ? undefined : options.showOnHome,
+    submission_type: options.type || undefined,
+    award_status: options.awardStatus || undefined,
+    tags: options.tag ? { array_contains: options.tag } : undefined,
+  } satisfies Prisma.corpus_collection_submissionsWhereInput;
+}
+
+export function getPublicSubmissionOrderBy(sort?: "latest" | "likes" | "views") {
+  if (sort === "likes") {
+    return [
+      { like_count: "desc" },
+      { created_at: "desc" },
+    ] satisfies Prisma.corpus_collection_submissionsOrderByWithRelationInput[];
+  }
+
+  if (sort === "views") {
+    return [
+      { view_count: "desc" },
+      { created_at: "desc" },
+    ] satisfies Prisma.corpus_collection_submissionsOrderByWithRelationInput[];
+  }
+
+  return {
+    created_at: "desc",
+  } satisfies Prisma.corpus_collection_submissionsOrderByWithRelationInput;
+}
 
 export async function listPublicSubmissions(options: {
   activityId?: bigint | null;
@@ -202,26 +294,15 @@ export async function listPublicSubmissions(options: {
   awardStatus?: string | null;
   page: number;
   pageSize: number;
-  sort?: "latest" | "likes";
+  sort?: "latest" | "likes" | "views";
   includeRaw?: boolean;
 }) {
-  const where: Prisma.corpus_collection_submissionsWhereInput = {
-    ...PUBLIC_SUBMISSION_WHERE,
-    activity_id: options.activityId ?? undefined,
-    is_featured: options.featured === undefined ? undefined : options.featured,
-    show_on_home: options.showOnHome === undefined ? undefined : options.showOnHome,
-    submission_type: options.type || undefined,
-    award_status: options.awardStatus || undefined,
-    tags: options.tag ? { array_contains: options.tag } : undefined,
-  };
+  const where = buildPublicSubmissionWhere(options);
   const [items, total] = await Promise.all([
     prisma.corpus_collection_submissions.findMany({
       where,
       include: submissionInclude,
-      orderBy:
-        options.sort === "likes"
-          ? [{ like_count: "desc" }, { created_at: "desc" }]
-          : { created_at: "desc" },
+      orderBy: getPublicSubmissionOrderBy(options.sort),
       skip: (options.page - 1) * options.pageSize,
       take: options.pageSize,
     }),
@@ -232,6 +313,54 @@ export async function listPublicSubmissions(options: {
     items: items.map((item) => serializeSubmission(item)),
     ...(options.includeRaw ? { rawItems: items } : {}),
     pagination: { page: options.page, pageSize: options.pageSize, total },
+  };
+}
+
+export async function listHomeFeedSubmissions(options: {
+  activityId?: bigint | null;
+  featured?: boolean;
+  showOnHome?: boolean;
+  type?: string | null;
+  tag?: string | null;
+  page: number;
+  pageSize: number;
+  sort?: "latest" | "likes" | "views";
+  viewerId?: string;
+}) {
+  const where = buildPublicSubmissionWhere(options);
+  const [items, total] = await Promise.all([
+    prisma.corpus_collection_submissions.findMany({
+      where,
+      include: submissionInclude,
+      orderBy: getPublicSubmissionOrderBy(options.sort),
+      skip: (options.page - 1) * options.pageSize,
+      take: options.pageSize,
+    }),
+    prisma.corpus_collection_submissions.count({ where }),
+  ]);
+
+  const likedSubmissionIds = new Set<bigint>();
+  if (options.viewerId && items.length > 0) {
+    const likes = await prisma.corpus_collection_likes.findMany({
+      where: {
+        user_id: options.viewerId,
+        submission_id: { in: items.map((item) => item.id) },
+      },
+      select: { submission_id: true },
+    });
+    likes.forEach((like) => likedSubmissionIds.add(like.submission_id));
+  }
+
+  return {
+    items: items.map((item) =>
+      serializeHomeFeedSubmission(item, likedSubmissionIds.has(item.id))
+    ),
+    pagination: {
+      page: options.page,
+      pageSize: options.pageSize,
+      total,
+      hasMore: options.page * options.pageSize < total,
+    },
   };
 }
 

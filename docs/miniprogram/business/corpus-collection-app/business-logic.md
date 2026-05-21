@@ -91,7 +91,7 @@ agent API 详细定义见：`docs/archive/submission-service-api.md`。
   -> 获取首页数据
   -> 展示当前活动 Banner
   -> 展示快捷入口
-  -> 展示最新审核通过投稿
+  -> 分页加载首页投稿流
   -> 展示精选内容
 ```
 
@@ -99,9 +99,34 @@ agent API 详细定义见：`docs/archive/submission-service-api.md`。
 
 - 当前进行中活动
 - Banner 图片
-- 最新审核通过投稿
+- 首屏少量最新审核通过投稿
 - 精选投稿
 - 快捷入口配置
+
+首页投稿流需单独分页加载，不再依赖首页聚合接口一次性返回全部内容：
+
+```text
+GET /api/miniprogram/corpus_collection/home
+  -> 首屏聚合数据，适合 Banner、活动、快捷入口
+
+GET /api/miniprogram/corpus_collection/home/submissions?page=1&pageSize=20
+  -> 首页投稿瀑布流，适合小红书式双列卡片、无限滚动
+```
+
+首页投稿流展示规则：
+
+```text
+review_status = approved
+visibility = public
+```
+
+若运营希望完全控制首页出现的作品，可让前端传：
+
+```text
+showOnHome = true
+```
+
+投稿流排序默认按最新发布倒序，也支持按点赞数或浏览数排序。接口返回 `hasMore`，小程序端滚动到底部时继续请求下一页。
 
 ### 5.2 用户投稿流程
 
