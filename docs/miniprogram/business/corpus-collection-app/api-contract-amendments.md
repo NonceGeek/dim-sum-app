@@ -402,10 +402,64 @@ main/prisma/schema.prisma
 main/prisma/migrations/20260520090000_extend_corpus_collection_contract/migration.sql
 ```
 
-## 八、已实施接口清单
+## 八、首页投稿流分页接口已实施
+
+新增小红书式首页投稿瀑布流接口：
+
+```text
+GET /api/miniprogram/corpus_collection/home/submissions
+```
+
+用途：
+
+```text
+GET /home
+  -> 获取 Banner、活动、快捷入口和首屏聚合信息
+
+GET /home/submissions?page=1&pageSize=20
+  -> 分页获取首页投稿卡片，用于无限滚动
+```
+
+已支持参数：
+
+| 参数名 | 类型 | 必填 | 默认值 | 说明 |
+|-------|------|-----|-------|------|
+| `page` | number | 否 | `1` | 页码 |
+| `pageSize` | number | 否 | `20` | 每页数量，最大 30 |
+| `sort` | string | 否 | `latest` | `latest`、`likes`、`views` |
+| `type` / `submissionType` | string | 否 | - | 投稿类型 |
+| `tag` | string | 否 | - | 分类标签 |
+| `activityId` | string | 否 | - | 活动 ID |
+| `isFeatured` | boolean | 否 | - | 是否只看精选 |
+| `showOnHome` | boolean | 否 | - | 是否只看后台标记首页展示的投稿 |
+
+响应卡片已包含瀑布流所需字段：
+
+```json
+{
+  "coverUrl": "https://oss/1.jpg",
+  "coverWidth": 1080,
+  "coverHeight": 1440,
+  "coverAspectRatio": 0.75,
+  "liked": false,
+  "pagination": {
+    "hasMore": true
+  }
+}
+```
+
+已实施位置：
+
+```text
+main/app/api/miniprogram/corpus_collection/home/submissions/route.ts
+main/lib/services/corpus-collection.ts
+```
+
+## 九、已实施接口清单
 
 ```text
 GET    /api/miniprogram/corpus_collection/home
+GET    /api/miniprogram/corpus_collection/home/submissions
 GET    /api/miniprogram/corpus_collection/activities/{id}
 GET    /api/miniprogram/corpus_collection/activities/{id}/works
 GET    /api/miniprogram/corpus_collection/submissions/mine
@@ -418,7 +472,7 @@ PATCH  /api/miniprogram/corpus_collection/messages/{id}/read
 PATCH  /api/miniprogram/corpus_collection/messages/read-all
 ```
 
-## 九、验证结果
+## 十、验证结果
 
 已执行并通过：
 
@@ -426,4 +480,3 @@ PATCH  /api/miniprogram/corpus_collection/messages/read-all
 pnpm exec prisma generate
 pnpm exec tsc --noEmit
 ```
-
