@@ -577,6 +577,9 @@ model corpus_collection_activities {
   slug               String?                            @unique
   description        String?
   rules              String?
+  category           String?
+  tags               Json                               @default("[]")
+  submission_types   Json                               @default("[]")
   reward_config      Json                               @default("{}")
   media_requirements Json                               @default("{}")
   banner_url         String?
@@ -591,6 +594,7 @@ model corpus_collection_activities {
   submissions        corpus_collection_submissions[]
 
   @@index([status, starts_at, ends_at])
+  @@index([category])
   @@index([created_at])
 }
 
@@ -634,6 +638,7 @@ model corpus_collection_submissions {
   award_info       Json                                   @default("{}")
   award_status     String                                 @default("none")
   is_awarded       Boolean                                @default(false)
+  is_locked        Boolean                                @default(false)
   view_count       Int                                    @default(0)
   comments         corpus_collection_comments[]
   likes            corpus_collection_likes[]
@@ -649,6 +654,7 @@ model corpus_collection_submissions {
   @@index([review_status, created_at])
   @@index([is_featured, show_on_home])
   @@index([is_awarded, award_status])
+  @@index([is_locked])
 }
 
 /// 语料采集 - 投稿媒体
