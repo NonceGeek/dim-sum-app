@@ -516,8 +516,15 @@ const response = await wx.request({
 | `reviewStatus` | string | 否 | - | 审核状态，仅包含 `draft`、`pending_review`、`ai_reviewing`、`review_needed`、`approved`、`rejected` |
 | `awardStatus` | string | 否 | - | 中奖或奖励状态，不包含在 `reviewStatus` 中 |
 | `activityId` | string | 否 | - | 活动 ID |
+| `withoutActivity` | boolean | 否 | `false` | 是否只返回未关联活动的投稿。传 `true` 时查询 `activity_id` 为空的数据；若同时传入有效 `activityId`，优先按 `activityId` 筛选 |
 | `page` | number | 否 | `1` | 页码 |
 | `pageSize` | number | 否 | `10` | 每页数量 |
+
+未关联活动投稿示例：
+
+```text
+GET /api/miniprogram/corpus_collection/submissions/mine?withoutActivity=true
+```
 
 #### 成功响应 (200)
 

@@ -145,6 +145,7 @@ GET /api/miniprogram/corpus_collection/submissions/mine?reviewStatus=approved&aw
 | `reviewStatus` | string | 否 | 审核状态 |
 | `awardStatus` | string | 否 | 中奖或奖励状态 |
 | `activityId` | string | 否 | 活动 ID |
+| `withoutActivity` | boolean | 否 | 是否只返回未关联活动的投稿 |
 | `page` | number | 否 | 页码 |
 | `pageSize` | number | 否 | 每页数量 |
 

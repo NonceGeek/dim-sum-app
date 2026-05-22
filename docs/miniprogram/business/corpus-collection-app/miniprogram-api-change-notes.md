@@ -111,6 +111,7 @@ GET /api/miniprogram/corpus_collection/submissions/mine
 | `reviewStatus` | string | 审核状态 |
 | `awardStatus` | string | 中奖或奖励状态 |
 | `activityId` | string | 活动 ID |
+| `withoutActivity` | boolean | 是否只返回未关联活动的投稿 |
 | `page` | number | 页码 |
 | `pageSize` | number | 每页数量 |
 
@@ -118,6 +119,7 @@ GET /api/miniprogram/corpus_collection/submissions/mine
 
 ```text
 GET /api/miniprogram/corpus_collection/submissions/mine?reviewStatus=approved&awardStatus=awarded
+GET /api/miniprogram/corpus_collection/submissions/mine?withoutActivity=true
 ```
 
 `reviewStatus` 可用值：
