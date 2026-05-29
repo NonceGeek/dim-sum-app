@@ -205,12 +205,21 @@ const response = await wx.request({
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |-------|------|-----|-------|------|
 | `status` | string | 否 | `published` | 活动状态 |
+| `timeStatus` | string | 否 | - | 活动时间状态：`not_started` 未开始、`ongoing` 进行中、`ended` 已结束 |
 | `keyword` / `q` | string | 否 | - | 活动标题、介绍模糊搜索关键词 |
 | `includeExpired` | boolean | 否 | `false` | 是否包含已过期活动；默认仅返回未过期活动 |
 | `page` | number | 否 | `1` | 页码 |
 | `pageSize` | number | 否 | `10` | 每页数量 |
 
-排序规则：默认返回未过期活动，按活动热度和时间倒序；当 `includeExpired=true` 时，过期活动排在未过期活动之后。
+排序规则：默认返回未过期活动，按活动热度和时间倒序；当 `includeExpired=true` 时，过期活动排在未过期活动之后。传入 `timeStatus` 时，由 `timeStatus` 接管时间筛选，不再叠加 `includeExpired=false` 的默认未过期过滤。
+
+筛选当前可投稿活动列表时，可使用：
+
+```text
+GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
+```
+
+由于 `status` 默认值为 `published`，上述请求会返回已发布且时间进行中的活动。
 
 #### 成功响应 (200)
 
@@ -223,6 +232,8 @@ const response = await wx.request({
       "description": "征集粤语诗歌朗诵作品",
       "bannerUrl": "https://oss/banner.jpg",
       "status": "published",
+      "timeStatus": "ongoing",
+      "canSubmit": true,
       "startsAt": "2026-05-01T00:00:00.000Z",
       "endsAt": "2026-05-31T23:59:59.000Z",
       "submissionCount": 120,
