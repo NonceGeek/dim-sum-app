@@ -12,6 +12,7 @@ import {
 export async function GET(req: NextRequest) {
   const searchParams = new URL(req.url).searchParams;
   const status = searchParams.get("status") || "published";
+  const timeStatus = searchParams.get("timeStatus");
   const keyword = searchParams.get("keyword") || searchParams.get("q");
   const includeExpired = searchParams.get("includeExpired") === "true";
   const page = parsePositiveInt(searchParams.get("page"), 1);
@@ -22,7 +23,18 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       const and: Prisma.corpus_collection_activitiesWhereInput[] = [{ status }];
 
-      if (!includeExpired) {
+      if (timeStatus === "not_started") {
+        and.push({ starts_at: { gt: now } });
+      } else if (timeStatus === "ongoing") {
+        and.push({
+          AND: [
+            { OR: [{ starts_at: null }, { starts_at: { lte: now } }] },
+            { OR: [{ ends_at: null }, { ends_at: { gte: now } }] },
+          ],
+        });
+      } else if (timeStatus === "ended") {
+        and.push({ ends_at: { lt: now } });
+      } else if (!includeExpired) {
         and.push({ OR: [{ ends_at: null }, { ends_at: { gte: now } }] });
       }
 
