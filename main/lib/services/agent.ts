@@ -189,6 +189,23 @@ export interface CoverGenerationResponse {
   size: string;
 }
 
+export type TranscriptionPayload =
+  | {
+      audioUrl: string;
+      audioBase64?: never;
+      format?: string;
+    }
+  | {
+      audioUrl?: never;
+      audioBase64: string;
+      format: string;
+    };
+
+export interface TranscriptionResponse {
+  text: string;
+  language?: string;
+}
+
 export interface AgentTaskQuery {
   actorRef: string;
   status?: string;
@@ -480,5 +497,14 @@ export async function generateCorpusCollectionCovers(prompt: string) {
   return agentFetch<CoverGenerationResponse>("/covers/generations", {
     method: "POST",
     body: { prompt },
+  });
+}
+
+export async function transcribeCorpusCollectionAudio(
+  payload: TranscriptionPayload
+) {
+  return agentFetch<TranscriptionResponse>("/transcriptions", {
+    method: "POST",
+    body: payload,
   });
 }
