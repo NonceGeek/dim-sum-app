@@ -445,7 +445,79 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
 }
 ```
 
-### 3.2 创建投稿
+### 3.2 语音转文字
+
+用户上传或录制音频后，可调用该接口将粤语音频转写成汉字文本。平台会转调 AI agent `POST /transcriptions`。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/transcriptions`
+- **方法**: `POST`
+- **认证**: 需要 Bearer Token
+
+#### 请求参数
+
+`audioUrl` 与 `audioBase64` 二选一。使用 `audioBase64` 时必须传 `format`。
+
+URL 形态：
+
+```json
+{
+  "audioUrl": "https://oss/a.mp3"
+}
+```
+
+Base64 形态：
+
+```json
+{
+  "audioBase64": "base64-content",
+  "format": "mp3"
+}
+```
+
+| 参数名 | 类型 | 必填 | 说明 |
+|-------|------|-----|------|
+| `audioUrl` | string | 与 `audioBase64` 二选一 | HTTPS 公网音频 URL |
+| `audioBase64` | string | 与 `audioUrl` 二选一 | 音频 base64，可为裸 base64 或 data URI |
+| `format` | string | base64 时必填 | 音频格式：`mp3` / `wav` / `m4a` / `aac` / `ogg` / `flac` |
+
+#### 成功响应 (200)
+
+```json
+{
+  "text": "我哋今日去边度玩",
+  "language": "yue"
+}
+```
+
+#### 错误响应
+
+**400 Bad Request**
+
+```json
+{
+  "error": "invalid_payload"
+}
+```
+
+**400 Bad Request**
+
+```json
+{
+  "error": "invalid_media_url"
+}
+```
+
+**400 Bad Request**
+
+```json
+{
+  "error": "audio_too_large"
+}
+```
+
+### 3.3 创建投稿
 
 创建投稿并进入审核队列。建议前端先调用安全检查，通过后再创建投稿。
 
@@ -512,7 +584,7 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
 }
 ```
 
-### 3.3 获取我的投稿
+### 3.4 获取我的投稿
 
 #### 接口信息
 
@@ -577,7 +649,7 @@ GET /api/miniprogram/corpus_collection/submissions/mine?withoutActivity=true
 }
 ```
 
-### 3.4 获取投稿详情
+### 3.5 获取投稿详情
 
 #### 接口信息
 
@@ -628,7 +700,7 @@ GET /api/miniprogram/corpus_collection/submissions/mine?withoutActivity=true
 }
 ```
 
-### 3.5 编辑投稿
+### 3.6 编辑投稿
 
 活动投稿在活动截止前可由作者编辑，截止后不可编辑。普通投稿在创建后 24 小时内可由作者编辑，超过 24 小时不可编辑。投稿不开放删除。
 
