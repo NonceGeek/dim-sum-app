@@ -273,7 +273,9 @@
     "noResultsTip1": "检查输入是否有误",
     "noResultsTip2": "尝试更简短的关键词",
     "recentSearches": "最近搜索",
-    "clearHistory": "清空"
+    "clearHistory": "清空",
+    "copyUniqueId": "复制 ID",
+    "uniqueIdCopied": "已复制 ID"
   },
   "Validation": {
     "enterCharacter": "请输入字符",

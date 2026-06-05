@@ -7,7 +7,7 @@ import { type DictionaryNote } from "@/lib/types";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { CirclePlay, Share2, ChevronDown, ChevronUp } from "lucide-react";
+import { CirclePlay, Share2, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import { corpusInteractApi } from "@/lib/api/corpus-interact";
@@ -119,6 +119,50 @@ function useCanEdit(result: SearchResult, user: any): boolean {
     );
   }
   return true;
+}
+
+function formatUniqueId(uniqueId: string): string {
+  if (uniqueId.length <= 12) return uniqueId;
+  return `${uniqueId.slice(0, 8)}…${uniqueId.slice(-4)}`;
+}
+
+function CopyableUniqueId({ uniqueId }: { uniqueId: string }) {
+  const t = useTranslations("Search");
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(uniqueId);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = uniqueId;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    toast(t("uniqueIdCopied"));
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium font-mono border border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer shrink-0"
+            aria-label={t("copyUniqueId")}
+          >
+            {formatUniqueId(uniqueId)}
+            <Copy className="h-3 w-3" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="font-mono text-xs">{uniqueId}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 // ─── Related links ────────────────────────────────────────────────────────────
@@ -422,9 +466,12 @@ export default function SearchResultItem({
     };
     return (
       <div className="py-5 border-b border-border last:border-0">
+        <div className="flex justify-between items-center gap-2 mb-0.5">
+          <p className="text-xs text-muted-foreground truncate">{result.category}</p>
+          <CopyableUniqueId uniqueId={result.unique_id} />
+        </div>
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground mb-0.5">{result.category}</p>
             <h3 className="text-lg font-semibold text-primary leading-snug">
               {songNote.context.song_name}
             </h3>
@@ -497,7 +544,10 @@ export default function SearchResultItem({
   return (
     <div className="py-5 border-b border-border last:border-0">
       {/* Breadcrumb */}
-      <p className="text-xs text-muted-foreground mb-0.5">{result.category}</p>
+      <div className="flex justify-between items-center gap-2 mb-0.5">
+        <p className="text-xs text-muted-foreground truncate">{result.category}</p>
+        <CopyableUniqueId uniqueId={result.unique_id} />
+      </div>
 
       <div className="flex justify-between items-start gap-4">
         <h3 className="text-lg font-semibold text-primary leading-snug flex-1 min-w-0">
