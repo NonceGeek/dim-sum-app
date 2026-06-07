@@ -238,7 +238,7 @@ export default function CorpusCollectionSubmissionsPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-10"
-                placeholder={qMode === "activityUuid" ? "Exact activity UUID" : "Search title or intro"}
+                placeholder={qMode === "activityUuid" ? "Activity UUID fragment" : "Search title or intro"}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />

@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarDays, Image, Loader2, Plus, Search } from "lucide-react";
+import { CalendarDays, Eye, Image, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,8 @@ const statusColor: Record<string, string> = {
 
 export default function CorpusCollectionActivitiesPage() {
   const queryClient = useQueryClient();
+  const params = useParams<{ locale: string }>();
+  const locale = Array.isArray(params.locale) ? params.locale[0] : params.locale;
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
   const [qMode, setQMode] = useState("title");
@@ -278,7 +281,7 @@ export default function CorpusCollectionActivitiesPage() {
                 className="pl-10"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder={qMode === "activityUuid" ? "Exact activity UUID" : "Search activity title"}
+                placeholder={qMode === "activityUuid" ? "Activity UUID fragment" : "Search activity title"}
               />
             </div>
             <Select value={qMode} onValueChange={setQMode}>
@@ -340,6 +343,14 @@ export default function CorpusCollectionActivitiesPage() {
                     <TableCell>{activity.submissionCount ?? 0}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`/${locale}/admin/corpus-collection/activities/${activity.id}/preview`, "_blank")}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Preview
+                        </Button>
                         <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "publish" })}>Publish</Button>
                         <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "offline" })}>Offline</Button>
                       </div>

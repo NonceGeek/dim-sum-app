@@ -9,12 +9,19 @@ import {
   submissionInclude,
 } from "@/lib/services/corpus-collection";
 
-const NIL_UUID = "00000000-0000-0000-0000-000000000000";
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PREFIX_PATTERN = /^[0-9a-f-]{1,36}$/i;
 
-function normalizeUuid(value: string | null) {
+async function findActivityIdsByUuidFragment(value: string | null) {
   const trimmed = value?.trim();
-  return trimmed && UUID_PATTERN.test(trimmed) ? trimmed : NIL_UUID;
+  if (!trimmed) return undefined;
+  if (!UUID_PREFIX_PATTERN.test(trimmed)) return [];
+
+  const rows = await prisma.$queryRaw<Array<{ id: bigint }>>`
+    SELECT id
+    FROM corpus_collection_activities
+    WHERE display_uuid::text LIKE ${`%${trimmed.toLowerCase()}%`}
+  `;
+  return rows.map((row) => row.id);
 }
 
 export async function GET(req: NextRequest) {
@@ -29,9 +36,22 @@ export async function GET(req: NextRequest) {
   const qMode = searchParams.get("qMode");
 
   return requireAdmin(req, async () => {
+    const activityUuidIds =
+      q && qMode === "activityUuid" ? await findActivityIdsByUuidFragment(q) : undefined;
+    const activityIdFilter = activityId
+      ? activityUuidIds
+        ? { in: activityUuidIds.filter((id) => id === activityId) }
+        : activityId
+      : withoutActivity
+        ? activityUuidIds
+          ? { in: [] }
+          : null
+        : activityUuidIds
+          ? { in: activityUuidIds }
+          : undefined;
+
     const where: Prisma.corpus_collection_submissionsWhereInput = {
-      activity_id: activityId ?? (withoutActivity ? null : undefined),
-      activity: q && qMode === "activityUuid" ? { display_uuid: normalizeUuid(q) } : undefined,
+      activity_id: activityIdFilter,
       review_status: reviewStatus || undefined,
       submission_type: submissionType || undefined,
       OR: q && qMode !== "activityUuid"
