@@ -44,7 +44,7 @@ type Submission = {
   awardInfo?: unknown;
   coverUrl?: string | null;
   imageUrls: string[];
-  activity?: { id: string; title: string; startsAt?: string | null; endsAt?: string | null } | null;
+  activity?: { id: string; displayUuid: string; title: string; startsAt?: string | null; endsAt?: string | null } | null;
   author?: { id: string; name?: string | null; avatar?: string | null } | null;
   media: Array<{
     id: string;
@@ -271,7 +271,17 @@ export default function CorpusCollectionSubmissionDetailPage() {
                 </div>
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-muted-foreground">Activity</span>
-                  <span className="max-w-48 text-right">{data.activity?.title || "-"}</span>
+                  <span className="max-w-48 text-right">
+                    {data.activity ? (
+                      <>
+                        {data.activity.title}
+                        <br />
+                        <code className="text-xs text-muted-foreground">{data.activity.displayUuid}</code>
+                      </>
+                    ) : (
+                      "-"
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Created</span>

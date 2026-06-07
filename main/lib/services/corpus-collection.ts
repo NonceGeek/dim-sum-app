@@ -85,6 +85,7 @@ function getCoverMetadata(submission: any) {
 export function serializeActivity(activity: any) {
   return {
     id: activity.id.toString(),
+    displayUuid: activity.display_uuid,
     title: activity.title,
     slug: activity.slug,
     description: activity.description,
@@ -164,6 +165,7 @@ export function serializeSubmission(
     activity: submission.activity
       ? {
           id: submission.activity.id.toString(),
+          displayUuid: submission.activity.display_uuid,
           title: submission.activity.title,
           startsAt: submission.activity.starts_at?.toISOString?.() ?? null,
           endsAt: submission.activity.ends_at?.toISOString?.() ?? null,
@@ -226,6 +228,7 @@ export function serializeHomeFeedSubmission(submission: any, viewerLiked?: boole
     activity: submission.activity
       ? {
           id: submission.activity.id.toString(),
+          displayUuid: submission.activity.display_uuid,
           title: submission.activity.title,
         }
       : null,
@@ -241,7 +244,7 @@ export function serializeHomeFeedSubmission(submission: any, viewerLiked?: boole
 }
 
 export const submissionInclude = {
-  activity: { select: { id: true, title: true, starts_at: true, ends_at: true } },
+  activity: { select: { id: true, display_uuid: true, title: true, starts_at: true, ends_at: true } },
   user: { select: { id: true, name: true, image: true, wechatAvatar: true } },
   media: { orderBy: { sort_order: "asc" } },
 } satisfies Prisma.corpus_collection_submissionsInclude;

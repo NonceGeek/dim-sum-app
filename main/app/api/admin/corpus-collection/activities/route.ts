@@ -7,17 +7,27 @@ import {
   serializeActivity,
 } from "@/lib/services/corpus-collection";
 
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizeUuid(value: string | null) {
+  const trimmed = value?.trim();
+  return trimmed && UUID_PATTERN.test(trimmed) ? trimmed : NIL_UUID;
+}
+
 export async function GET(req: NextRequest) {
   const searchParams = new URL(req.url).searchParams;
   const page = parsePositiveInt(searchParams.get("page"), 1);
   const pageSize = parsePositiveInt(searchParams.get("pageSize"), 20, 100);
   const status = searchParams.get("status");
   const q = searchParams.get("q");
+  const qMode = searchParams.get("qMode");
 
   return requireAdmin(req, async () => {
     const where: Prisma.corpus_collection_activitiesWhereInput = {
       status: status || undefined,
-      title: q ? { contains: q, mode: "insensitive" } : undefined,
+      display_uuid: q && qMode === "activityUuid" ? normalizeUuid(q) : undefined,
+      title: q && qMode !== "activityUuid" ? { contains: q, mode: "insensitive" } : undefined,
     };
     const [items, total] = await Promise.all([
       prisma.corpus_collection_activities.findMany({
