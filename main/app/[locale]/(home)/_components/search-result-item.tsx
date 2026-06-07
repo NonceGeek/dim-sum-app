@@ -468,7 +468,7 @@ export default function SearchResultItem({
       <div className="py-5 border-b border-border last:border-0">
         <div className="flex justify-between items-center gap-2 mb-0.5">
           <p className="text-xs text-muted-foreground truncate">{result.category}</p>
-          <CopyableUniqueId uniqueId={result.unique_id} />
+          {/* <CopyableUniqueId uniqueId={result.unique_id} /> */}
         </div>
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
@@ -546,7 +546,7 @@ export default function SearchResultItem({
       {/* Breadcrumb */}
       <div className="flex justify-between items-center gap-2 mb-0.5">
         <p className="text-xs text-muted-foreground truncate">{result.category}</p>
-        <CopyableUniqueId uniqueId={result.unique_id} />
+        {/* <CopyableUniqueId uniqueId={result.unique_id} /> */}
       </div>
 
       <div className="flex justify-between items-start gap-4">
