@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 type Activity = {
   id: string;
+  displayUuid: string;
   title: string;
   description?: string | null;
   rules?: string | null;
@@ -67,6 +68,7 @@ export default function CorpusCollectionActivitiesPage() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
+  const [qMode, setQMode] = useState("title");
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -79,11 +81,12 @@ export default function CorpusCollectionActivitiesPage() {
   const [covers, setCovers] = useState<CoverResponse | null>(null);
 
   const { data, isLoading } = useQuery<ActivitiesResponse>({
-    queryKey: ["corpus-collection-activities", status, q],
+    queryKey: ["corpus-collection-activities", status, q, qMode],
     queryFn: async () => {
       const params = new URLSearchParams({ pageSize: "50" });
       if (status !== "all") params.set("status", status);
       if (q) params.set("q", q);
+      if (q) params.set("qMode", qMode);
       const response = await fetch(`/api/admin/corpus-collection/activities?${params}`);
       if (!response.ok) throw new Error("Failed to load activities");
       return response.json();
@@ -271,8 +274,22 @@ export default function CorpusCollectionActivitiesPage() {
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search activities" />
+              <Input
+                className="pl-10"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={qMode === "activityUuid" ? "Exact activity UUID" : "Search activity title"}
+              />
             </div>
+            <Select value={qMode} onValueChange={setQMode}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="title">Title contains</SelectItem>
+                <SelectItem value="activityUuid">Activity UUID</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-44">
                 <SelectValue />
@@ -291,6 +308,7 @@ export default function CorpusCollectionActivitiesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
+                <TableHead>UUID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Window</TableHead>
                 <TableHead>Submissions</TableHead>
@@ -299,13 +317,16 @@ export default function CorpusCollectionActivitiesPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
               ) : data?.items.length ? (
                 data.items.map((activity) => (
                   <TableRow key={activity.id}>
                     <TableCell>
                       <div className="font-medium text-foreground">{activity.title}</div>
                       <div className="text-sm text-muted-foreground line-clamp-1">{activity.description || "-"}</div>
+                    </TableCell>
+                    <TableCell>
+                      <code className="text-xs text-muted-foreground">{activity.displayUuid}</code>
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColor[activity.status] ?? "bg-secondary"}>{activity.status}</Badge>
@@ -326,7 +347,7 @@ export default function CorpusCollectionActivitiesPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={5}>No activities found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6}>No activities found.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
