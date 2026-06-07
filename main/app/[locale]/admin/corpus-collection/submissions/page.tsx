@@ -1,6 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Award, Bot, Check, Eye, Search, Star, X } from "lucide-react";
@@ -13,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Submission = {
   id: string;
@@ -40,6 +43,16 @@ type SubmissionsResponse = {
   pagination: { page: number; pageSize: number; total: number };
 };
 
+type Activity = {
+  id: string;
+  title: string;
+};
+
+type ActivitiesResponse = {
+  items: Activity[];
+  pagination: { page: number; pageSize: number; total: number };
+};
+
 const reviewStatuses = ["pending_review", "ai_reviewing", "review_needed", "approved", "rejected"];
 
 const statusColor: Record<string, string> = {
@@ -52,16 +65,33 @@ const statusColor: Record<string, string> = {
 
 export default function CorpusCollectionSubmissionsPage() {
   const queryClient = useQueryClient();
+  const params = useParams<{ locale: string }>();
+  const locale = Array.isArray(params.locale) ? params.locale[0] : params.locale;
   const [q, setQ] = useState("");
   const [reviewStatus, setReviewStatus] = useState("all");
+  const [activityFilter, setActivityFilter] = useState("all");
   const [selected, setSelected] = useState<string[]>([]);
 
+  const { data: activitiesData } = useQuery<ActivitiesResponse>({
+    queryKey: ["corpus-collection-activities-for-submission-filter"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/corpus-collection/activities?pageSize=100");
+      if (!response.ok) throw new Error("Failed to load activities");
+      return response.json();
+    },
+  });
+
   const { data, isLoading } = useQuery<SubmissionsResponse>({
-    queryKey: ["corpus-collection-submissions", q, reviewStatus],
+    queryKey: ["corpus-collection-submissions", q, reviewStatus, activityFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ pageSize: "50" });
       if (q) params.set("q", q);
       if (reviewStatus !== "all") params.set("reviewStatus", reviewStatus);
+      if (activityFilter === "none") {
+        params.set("withoutActivity", "true");
+      } else if (activityFilter !== "all") {
+        params.set("activityId", activityFilter);
+      }
       const response = await fetch(`/api/admin/corpus-collection/submissions?${params}`);
       if (!response.ok) throw new Error("Failed to load submissions");
       return response.json();
@@ -155,6 +185,21 @@ export default function CorpusCollectionSubmissionsPage() {
     actionMutation.mutate({ id, action: "mark-review-needed", body: { reason } });
   };
 
+  const renderActionButton = (
+    label: string,
+    icon: ReactNode,
+    onClick: () => void
+  ) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button size="icon" variant="outline" onClick={onClick} aria-label={label}>
+          {icon}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+
   return (
     <div className="space-y-8">
       <div>
@@ -180,6 +225,16 @@ export default function CorpusCollectionSubmissionsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={activityFilter} onValueChange={setActivityFilter}>
+              <SelectTrigger className="w-full lg:w-64"><SelectValue placeholder="Activity" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Activities</SelectItem>
+                <SelectItem value="none">Without Activity</SelectItem>
+                {activitiesData?.items.map((activity) => (
+                  <SelectItem key={activity.id} value={activity.id}>{activity.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button disabled={selected.length === 0 || batchMutation.isPending} onClick={() => batchMutation.mutate()}>
               <Bot className="mr-2 h-4 w-4" />
               Send AI Review ({selected.length})
@@ -201,6 +256,7 @@ export default function CorpusCollectionSubmissionsPage() {
               <TableRow>
                 <TableHead className="w-10" />
                 <TableHead>Submission</TableHead>
+                <TableHead>Activity</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Media</TableHead>
                 <TableHead>Display</TableHead>
@@ -210,7 +266,7 @@ export default function CorpusCollectionSubmissionsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}>Loading...</TableCell></TableRow>
               ) : data?.items.length ? (
                 data.items.map((submission) => (
                   <TableRow key={submission.id}>
@@ -226,12 +282,14 @@ export default function CorpusCollectionSubmissionsPage() {
                       <div className="text-sm text-muted-foreground line-clamp-1">{submission.intro}</div>
                       <div className="mt-1 flex flex-wrap gap-1">
                         <Badge variant="outline">{submission.submissionType}</Badge>
-                        {submission.activity && <Badge variant="outline">{submission.activity.title}</Badge>}
                         {submission.isAwarded && <Badge className="bg-success text-success-foreground">{submission.awardStatus}</Badge>}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {submission.author?.name || "Unknown"} · {format(new Date(submission.createdAt), "MMM d, yyyy")}
                       </div>
+                    </TableCell>
+                    <TableCell className="max-w-48 text-sm text-muted-foreground">
+                      <span className="line-clamp-2">{submission.activity?.title || "-"}</span>
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColor[submission.reviewStatus] ?? "bg-secondary"}>{submission.reviewStatus}</Badge>
@@ -269,37 +327,42 @@ export default function CorpusCollectionSubmissionsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="icon" variant="outline" onClick={() => window.open(`/api/admin/corpus-collection/submissions/${submission.id}`, "_blank")}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="outline" onClick={() => actionMutation.mutate({ id: submission.id, action: "approve" })}>
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="outline" onClick={() => reject(submission.id)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="outline" onClick={() => markReviewNeeded(submission.id)}>
-                          <Star className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() =>
+                        {renderActionButton(
+                          "View details",
+                          <Eye className="h-4 w-4" />,
+                          () => window.open(`/${locale}/admin/corpus-collection/submissions/${submission.id}`, "_blank")
+                        )}
+                        {renderActionButton(
+                          "Approve",
+                          <Check className="h-4 w-4" />,
+                          () => actionMutation.mutate({ id: submission.id, action: "approve" })
+                        )}
+                        {renderActionButton(
+                          "Reject",
+                          <X className="h-4 w-4" />,
+                          () => reject(submission.id)
+                        )}
+                        {renderActionButton(
+                          "Mark review needed",
+                          <Star className="h-4 w-4" />,
+                          () => markReviewNeeded(submission.id)
+                        )}
+                        {renderActionButton(
+                          submission.isAwarded ? "Remove award" : "Mark awarded",
+                          <Award className="h-4 w-4" />,
+                          () =>
                             awardMutation.mutate({
                               id: submission.id,
                               isAwarded: !submission.isAwarded,
                               awardStatus: submission.isAwarded ? "none" : "awarded",
                             })
-                          }
-                        >
-                          <Award className="h-4 w-4" />
-                        </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={7}>No submissions found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}>No submissions found.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

@@ -1,0 +1,357 @@
+"use client";
+
+import { useMemo } from "react";
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import {
+  ArrowLeft,
+  CalendarDays,
+  ExternalLink,
+  Eye,
+  Heart,
+  ImageIcon,
+  MessageCircle,
+  Music,
+  Share2,
+  User,
+  Video,
+} from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+
+type Submission = {
+  id: string;
+  title: string;
+  intro: string;
+  submissionType: string;
+  tags: string[];
+  reviewStatus: string;
+  reviewReason?: string | null;
+  isFeatured: boolean;
+  showOnHome: boolean;
+  visibility: string;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  viewCount: number;
+  isAwarded: boolean;
+  awardStatus: string;
+  awardInfo?: unknown;
+  coverUrl?: string | null;
+  imageUrls: string[];
+  activity?: { id: string; title: string; startsAt?: string | null; endsAt?: string | null } | null;
+  author?: { id: string; name?: string | null; avatar?: string | null } | null;
+  media: Array<{
+    id: string;
+    type: string;
+    url: string;
+    durationSec?: number | null;
+    sortOrder?: number | null;
+    metadata?: unknown;
+  }>;
+  precheckResult?: unknown;
+  aiReviewResult?: unknown;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+const statusColor: Record<string, string> = {
+  pending_review: "bg-warning text-warning-foreground",
+  ai_reviewing: "bg-info text-info-foreground",
+  review_needed: "bg-primary text-primary-foreground",
+  approved: "bg-success text-success-foreground",
+  rejected: "bg-destructive text-destructive-foreground",
+};
+
+function formatDate(value?: string | null) {
+  if (!value) return "-";
+  return format(new Date(value), "MMM d, yyyy HH:mm");
+}
+
+function JsonBlock({ value }: { value: unknown }) {
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0)
+  ) {
+    return <div className="text-sm text-muted-foreground">No data</div>;
+  }
+
+  return (
+    <pre className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+      {JSON.stringify(value, null, 2)}
+    </pre>
+  );
+}
+
+function MediaPreview({ item }: { item: Submission["media"][number] }) {
+  if (item.type === "image") {
+    return (
+      <a href={item.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md border bg-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.url} alt="" className="aspect-video w-full object-cover" />
+      </a>
+    );
+  }
+
+  if (item.type === "audio") {
+    return (
+      <div className="rounded-md border bg-muted/30 p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+          <Music className="h-4 w-4" />
+          Audio {item.durationSec ? `· ${item.durationSec}s` : ""}
+        </div>
+        <audio controls className="w-full" src={item.url} />
+      </div>
+    );
+  }
+
+  if (item.type === "video") {
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted">
+        <video controls className="aspect-video w-full" src={item.url} />
+      </div>
+    );
+  }
+
+  return (
+    <a href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-md border p-3 text-sm">
+      <span>{item.type}</span>
+      <ExternalLink className="h-4 w-4" />
+    </a>
+  );
+}
+
+export default function CorpusCollectionSubmissionDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const { data, isLoading, error } = useQuery<Submission>({
+    queryKey: ["corpus-collection-submission", id],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/corpus-collection/submissions/${id}`);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to load submission");
+      }
+      return response.json();
+    },
+    enabled: Boolean(id),
+  });
+
+  const mediaGroups = useMemo(() => {
+    const items = data?.media ?? [];
+    return {
+      image: items.filter((item) => item.type === "image"),
+      audio: items.filter((item) => item.type === "audio"),
+      video: items.filter((item) => item.type === "video"),
+      other: items.filter((item) => !["image", "audio", "video"].includes(item.type)),
+    };
+  }, [data?.media]);
+
+  if (isLoading) {
+    return <div className="text-sm text-muted-foreground">Loading submission...</div>;
+  }
+
+  if (error || !data) {
+    return (
+      <div className="space-y-4">
+        <Button asChild variant="outline">
+          <Link href="/admin/corpus-collection/submissions">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Link>
+        </Button>
+        <Card>
+          <CardContent className="pt-6 text-sm text-destructive">
+            {error instanceof Error ? error.message : "Submission not found"}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-3">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/corpus-collection/submissions">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to submissions
+            </Link>
+          </Button>
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Badge className={statusColor[data.reviewStatus] ?? "bg-secondary"}>{data.reviewStatus}</Badge>
+              <Badge variant="outline">{data.visibility}</Badge>
+              {data.isFeatured && <Badge variant="outline">Featured</Badge>}
+              {data.showOnHome && <Badge variant="outline">Home</Badge>}
+              {data.isAwarded && <Badge className="bg-success text-success-foreground">{data.awardStatus}</Badge>}
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">{data.title}</h2>
+            <p className="mt-2 max-w-3xl text-muted-foreground">{data.intro}</p>
+          </div>
+        </div>
+        <Button asChild variant="outline">
+          <a href={`/api/admin/corpus-collection/submissions/${data.id}`} target="_blank" rel="noreferrer">
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open JSON
+          </a>
+        </Button>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Media</CardTitle>
+              <CardDescription>
+                {data.media.length} uploaded file{data.media.length === 1 ? "" : "s"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {mediaGroups.image.length > 0 && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {mediaGroups.image.map((item) => <MediaPreview key={item.id} item={item} />)}
+                </div>
+              )}
+              {mediaGroups.audio.map((item) => <MediaPreview key={item.id} item={item} />)}
+              {mediaGroups.video.map((item) => <MediaPreview key={item.id} item={item} />)}
+              {mediaGroups.other.map((item) => <MediaPreview key={item.id} item={item} />)}
+              {data.media.length === 0 && <div className="text-sm text-muted-foreground">No media uploaded.</div>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Data</CardTitle>
+              <CardDescription>Automated checks and AI review results.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Precheck Result</div>
+                <JsonBlock value={data.precheckResult} />
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-medium">AI Review Result</div>
+                <JsonBlock value={data.aiReviewResult} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Submission</CardTitle>
+              <CardDescription>ID {data.id}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={data.author?.avatar ?? undefined} />
+                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="text-sm font-medium">{data.author?.name || "Unknown"}</div>
+                  <div className="text-xs text-muted-foreground">{data.author?.id || "-"}</div>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid gap-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Type</span>
+                  <Badge variant="outline">{data.submissionType}</Badge>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-muted-foreground">Activity</span>
+                  <span className="max-w-48 text-right">{data.activity?.title || "-"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Created</span>
+                  <span>{formatDate(data.createdAt)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Updated</span>
+                  <span>{formatDate(data.updatedAt)}</span>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex flex-wrap gap-2">
+                {data.tags?.length ? data.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>) : <span className="text-sm text-muted-foreground">No tags</span>}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Stats</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-md border p-3">
+                <Heart className="mb-2 h-4 w-4 text-muted-foreground" />
+                <div className="font-medium">{data.likeCount}</div>
+                <div className="text-muted-foreground">Likes</div>
+              </div>
+              <div className="rounded-md border p-3">
+                <MessageCircle className="mb-2 h-4 w-4 text-muted-foreground" />
+                <div className="font-medium">{data.commentCount}</div>
+                <div className="text-muted-foreground">Comments</div>
+              </div>
+              <div className="rounded-md border p-3">
+                <Share2 className="mb-2 h-4 w-4 text-muted-foreground" />
+                <div className="font-medium">{data.shareCount}</div>
+                <div className="text-muted-foreground">Shares</div>
+              </div>
+              <div className="rounded-md border p-3">
+                <Eye className="mb-2 h-4 w-4 text-muted-foreground" />
+                <div className="font-medium">{data.viewCount}</div>
+                <div className="text-muted-foreground">Views</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Files</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><ImageIcon className="h-4 w-4" /> Images</span>
+                <span>{mediaGroups.image.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Music className="h-4 w-4" /> Audio</span>
+                <span>{mediaGroups.audio.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-muted-foreground"><Video className="h-4 w-4" /> Video</span>
+                <span>{mediaGroups.video.length}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {data.activity && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Activity Window</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <span>{formatDate(data.activity.startsAt)} - {formatDate(data.activity.endsAt)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
