@@ -14,13 +14,14 @@ export async function GET(req: NextRequest) {
   const page = parsePositiveInt(searchParams.get("page"), 1);
   const pageSize = parsePositiveInt(searchParams.get("pageSize"), 20, 100);
   const activityId = parseBigIntId(searchParams.get("activityId"));
+  const withoutActivity = searchParams.get("withoutActivity") === "true";
   const reviewStatus = searchParams.get("reviewStatus");
   const submissionType = searchParams.get("submissionType");
   const q = searchParams.get("q");
 
   return requireAdmin(req, async () => {
     const where: Prisma.corpus_collection_submissionsWhereInput = {
-      activity_id: activityId ?? undefined,
+      activity_id: activityId ?? (withoutActivity ? null : undefined),
       review_status: reviewStatus || undefined,
       submission_type: submissionType || undefined,
       OR: q

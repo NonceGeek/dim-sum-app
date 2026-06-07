@@ -45,7 +45,7 @@ type TooltipContentProps = TooltipContentPrimitiveProps;
 
 function TooltipContent({
   className,
-  sideOffset,
+  sideOffset = 6,
   children,
   ...props
 }: TooltipContentProps) {
@@ -54,13 +54,13 @@ function TooltipContent({
       <TooltipContentPrimitive
         sideOffset={sideOffset}
         className={cn(
-          'bg-primary text-primary-foreground z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance',
+          'bg-popover text-popover-foreground border-border z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md border px-2.5 py-1.5 text-xs text-balance shadow-md',
           className,
         )}
         {...props}
       >
         {children}
-        <TooltipArrowPrimitive className="bg-[var(--color-neutral-200)] fill-[var(--color-neutral-200)] z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+        <TooltipArrowPrimitive className="fill-popover z-50 size-2.5 translate-y-[calc(-50%_-_2px)]" />
       </TooltipContentPrimitive>
     </TooltipPortalPrimitive>
   );

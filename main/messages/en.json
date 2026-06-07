@@ -272,7 +272,9 @@
     "noResultsTip1": "Check for typos or spelling errors",
     "noResultsTip2": "Try a shorter or simpler keyword",
     "recentSearches": "Recent Searches",
-    "clearHistory": "Clear"
+    "clearHistory": "Clear",
+    "copyUniqueId": "Copy ID",
+    "uniqueIdCopied": "ID copied"
   },
   "Validation": {
     "enterCharacter": "Please enter a character",
