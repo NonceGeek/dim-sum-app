@@ -97,6 +97,7 @@ export default function HomePage() {
     handleFocus,
     handleKeyDown: dropdownKeyDown,
     closeDropdown,
+    abortSuggestions,
     selectItem,
     addToHistory,
     removeHistory,
@@ -123,6 +124,7 @@ export default function HomePage() {
   const handleManualSearch = () => {
     if (!query.trim()) return;
     addToHistory(query.trim());
+    abortSuggestions(); // 立即中止 autocomplete 请求，释放连接，让导航请求优先
     navigateToSearch(query);
     closeDropdown();
   };

@@ -1,31 +1,9 @@
-import { create } from "zustand";
-import type { CategoryInfo } from "@/lib/api/category";
-import { fetchAllCategories } from "@/lib/api/category";
-
-interface CategoryStore {
-  categories: CategoryInfo[];
-  loaded: boolean;
-  fetchCategories: () => Promise<void>;
-  /** 根据 corpus name 获取中文 nickname，找不到则返回原始 name */
-  getNickname: (name: string) => string;
-}
-
-export const useCategoryStore = create<CategoryStore>((set, get) => ({
-  categories: [],
-  loaded: false,
-
-  fetchCategories: async () => {
-    if (get().loaded) return;
-    try {
-      const categories = await fetchAllCategories();
-      set({ categories, loaded: true });
-    } catch (err) {
-      console.error("Failed to fetch categories:", err);
-    }
-  },
-
-  getNickname: (name: string) => {
-    const cat = get().categories.find((c) => c.name === name);
-    return cat?.nickname || name;
-  },
-}));
+/**
+ * category-store.ts
+ *
+ * 原先用 Zustand 独立 fetch categories，现已统一改为 useAllCategories (TanStack Query)。
+ * 保留此文件仅为向后兼容旧的导入路径，实际逻辑已迁移至 lib/api/category.ts。
+ *
+ * @deprecated 请直接使用 useAllCategories + getCategoryNickname
+ */
+export { useAllCategories, getCategoryNickname } from "@/lib/api/category";

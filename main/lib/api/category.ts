@@ -17,6 +17,8 @@ export interface CategoryInfo {
   editable_level: number;
   linked_apps?: any;
   if_in_all_data?: boolean;
+  is_public?: boolean;
+  sorting?: number;
 }
 
 export function useCategoryEditableLevel(categoryName: string | null) {
@@ -36,6 +38,12 @@ export function useCategoryEditableLevel(categoryName: string | null) {
   });
 }
 
+/** 根据 corpus name 获取中文 nickname，找不到则返回原始 name */
+export function getCategoryNickname(categories: CategoryInfo[], name: string): string {
+  const cat = categories.find((c) => c.name === name);
+  return cat?.nickname || name;
+}
+
 // 获取全量分类信息
 export async function fetchAllCategories(): Promise<CategoryInfo[]> {
   const response = await fetch(
@@ -51,6 +59,7 @@ export function useAllCategories() {
   return useQuery<CategoryInfo[]>({
     queryKey: ['allCategories'],
     queryFn: fetchAllCategories,
-    staleTime: 5 * 60 * 1000, // 5分钟缓存
+    staleTime: Infinity, // 会话内永不重新请求（分类数据基本不变）
+    gcTime: Infinity,    // tab 关闭前始终保留在内存，不主动 GC
   });
 }

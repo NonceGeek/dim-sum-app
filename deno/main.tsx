@@ -13,6 +13,12 @@ import { aliOSSRouter } from "./ali-oss.tsx";
 
 console.log("Hello from AI Dimsum Devs API!");
 
+// 模块级单例 — 复用连接，避免每次请求重建 SSL 握手导致 3s 延迟
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
+
 // Admin password verification function
 // ADMIN_PWD_HASH should be the SHA-256 hex digest of the actual admin password
 // how could I generate the ADMIN_PWD_HASH? echo -n "your_actual_password" | shasum -a 256
@@ -50,11 +56,6 @@ async function verifyAPIKey(context: any, api_key: string): Promise<any> {
     formattedApiKey = "\\x" + api_key.slice(2);
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
   // Get user_id and status by api key in table api_key
   const { data: apiKeyData, error: apiKeyError } = await supabase
     .from("api_key")
@@ -90,11 +91,6 @@ async function verifyAPIKey(context: any, api_key: string): Promise<any> {
 
 // Get user by id or email function
 async function getUserByIdOrEmail(id?: string, email?: string): Promise<any> {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
   // Build query based on id or email
   let query = supabase.from("User").select("*");
 
@@ -137,11 +133,6 @@ async function getUserByIdOrEmail(id?: string, email?: string): Promise<any> {
 
 // Get users by Ids function
 async function getUsersByIds(ids: string[]): Promise<any[]> {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-  );
-
   // Build query based on id or email
   let query = supabase.from("User").select("*");
 
@@ -191,11 +182,6 @@ async function insertCorpusItem(
   category: string,
   tags: string[]
 ) {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-
   const result = await supabase
     .from("cantonese_corpus_all")
     .insert({ data, note, category, tags });
@@ -209,10 +195,6 @@ async function updateCorpusItem(
   category: string,
   tags: string[]
 ) {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
   const result = await supabase
     .from("cantonese_corpus_all")
     .update({ note, category, tags })
@@ -236,11 +218,11 @@ async function textSearchV2Handler(context: any) {
   const limit = limitStr ? parseInt(limitStr, 10) : undefined;
   const supabase_url =
     queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
-  const supabase = createClient(
-    supabase_url,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-  console.log("supabase_url", supabase_url);
+  // 使用模块级单例（避免每次重建连接），仅当传入了不同的 supabase_url 时才临时创建
+  const searchSupabase =
+    supabase_url === (Deno.env.get("SUPABASE_URL") ?? "")
+      ? supabase
+      : createClient(supabase_url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
   try {
     // const searchableTables = ["cantonese_corpus_all"];
 
@@ -254,10 +236,10 @@ async function textSearchV2Handler(context: any) {
     // }
     // Search for both traditional and simplified versions
     const [traditionalResults, simplifiedResults] = await Promise.all([
-      supabase
+      searchSupabase
         .rpc("search_cantonese_corpus", { search_term: traditionalKey })
         .order("id", { ascending: false }),
-      supabase
+      searchSupabase
         .rpc("search_cantonese_corpus", { search_term: simplifiedKey })
         .order("id", { ascending: false }),
     ]);
@@ -362,10 +344,6 @@ router
   })
   // http://localhost:8000/main_data
   .get("/main_data", async (context) => {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     try {
       const { data, error } = await supabase
@@ -389,10 +367,6 @@ router
   })
   //exp: https://backend.aidimsum.com/all_items?corpus_name=yyjq&cursor=0&limit=2
   .get("/all_items", async (context) => {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     const queryParams = context.request.url.searchParams;
     const corpus_name = queryParams.get("corpus_name");
     const limit = queryParams.get("limit") || "100";
@@ -491,10 +465,6 @@ router
       return;
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     try {
       let query = supabase
@@ -533,10 +503,6 @@ router
   })
   // exp: https://backend.aidimsum.com/random_item?corpus_name=zyzdv2
   .get("/random_item", async (context) => {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     const queryParams = context.request.url.searchParams;
     const corpus_name = queryParams.get("corpus_name");
 
@@ -651,10 +617,6 @@ router
   })
   // APIs for corpus things.
   .get("/corpus_apps", async (context) => {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     const { data, error } = await supabase
       .from("cantonese_corpus_apps")
@@ -667,10 +629,6 @@ router
     context.response.body = data;
   })
   .get("/corpus_categories", async (context) => {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     const { data, error } = await supabase
       .from("cantonese_categories")
@@ -685,10 +643,6 @@ router
   .get("/v2/corpus_category", async (context) => {
     const queryParams = context.request.url.searchParams;
     const name = queryParams.get("name");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     const { data, error } = await supabase
       .from("cantonese_categories")
@@ -704,10 +658,6 @@ router
   .get("/corpus_category", async (context) => {
     const queryParams = context.request.url.searchParams;
     const name = queryParams.get("name");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     const { data, error } = await supabase
       .from("cantonese_categories")
@@ -724,10 +674,6 @@ router
     const queryParams = context.request.url.searchParams;
     const unique_id = queryParams.get("unique_id");
     const data = queryParams.get("data");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     let query = supabase.from("cantonese_corpus_all").select("*");
 
@@ -755,10 +701,6 @@ router
     const queryParams = context.request.url.searchParams;
     const unique_id = queryParams.get("unique_id");
     const data = queryParams.get("data");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     let query = supabase.from("cantonese_corpus_all").select("*");
 
@@ -789,10 +731,6 @@ router
     const queryParams = context.request.url.searchParams;
     const item_id = queryParams.get("item_id");
     const user_id = queryParams.get("user_id");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     // TODO.
   })
 
@@ -949,10 +887,6 @@ curl -X POST http://localhost:8000/dev/insert_corpus_item \
     let body = await context.request.body({ type: "json" });
     const content = await body.value;
     const { data, note, category, tags, api_key } = content;
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     // Verify API key
     const apiKeyData = await verifyAPIKey(context, api_key);
     if (!apiKeyData) {
@@ -1025,10 +959,6 @@ Curl example:
       return;
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     try {
       // Get the item from table cantonese_corpus_all by uuid
@@ -1116,10 +1046,6 @@ curl -X POST http://localhost:8000/dev/get_update_history \
     const { unique_id, api_key } = content;
     const apiKeyData = await verifyAPIKey(context, api_key);
     // TODO: get the update history by unique_id from cantonese_corpus_update_history.
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     const { data: updateHistory, error: updateHistoryError } = await supabase
       .from("cantonese_corpus_update_history")
       .select("*")
@@ -1155,10 +1081,6 @@ curl -X POST http://localhost:8000/dev/get_update_history \
       return;
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     const { data: updateHistory, error: updateHistoryError } = await supabase
       .from("cantonese_corpus_update_history")
       .select("*")
@@ -1323,10 +1245,6 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
       if (!apiKeyData) {
         return;
     }
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     try {
       // Get corpus info by corpus_name from cantonese_categories
@@ -1379,10 +1297,6 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
   })
   /* ↓↓↓ APIs for apps ↓↓↓ */
   .get("/app/meme_pic_links", async (context) => {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
     const { data, error } = await supabase.from("meme_pic_links").select("*");
 
     if (error) {

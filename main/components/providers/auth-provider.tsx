@@ -17,7 +17,12 @@ export enum SessionUserRole {
   RESEARCHER = 'RESEARCHER',
 }
 
-function AuthProviderContent({ children }: { children: React.ReactNode }) {
+/**
+ * 只包含 auth 副作用逻辑，不渲染 children。
+ * 单独放进 Suspense，避免整个子树（FloatingNav 等）被包进去
+ * 导致 Radix UI ID 计数器服务端/客户端不一致，引发 hydration mismatch。
+ */
+function AuthEffects() {
   const { data: session, status } = useSession();
   const { setUser, clearUser } = useAuthStore();
   const searchParams = useSearchParams();
@@ -35,18 +40,16 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
         role: session.user.role || "",
       });
 
-      // 使用 URL 参数判断登录成功
       if (loginStatus === 'success') {
         toast.success("Sign in successful", {
           description: "Welcome back!",
         });
       }
 
-      // 检查用户选择的角色,如果用户选择的角色与当前角色不一致,则显示角色更改提示（目前默认新注册用户为learner）
       if (role && role !== formatRole(session.user.role as SessionUserRole).toLowerCase()) {
         setShowRoleTip(true);
       }
-      // 移除 URL 中的 login 参数
+
       const url = new URL(window.location.href);
       url.searchParams.delete('login');
       url.searchParams.delete('role');
@@ -57,17 +60,21 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
   }, [session, status, setUser, clearUser, loginStatus, role]);
 
   return (
-    <>
-      {children}
-      <RoleTipDialog isOpen={showRoleTip} onClose={() => setShowRoleTip(false)} />
-    </>
+    <RoleTipDialog isOpen={showRoleTip} onClose={() => setShowRoleTip(false)} />
   );
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={null}>
-      <AuthProviderContent>{children}</AuthProviderContent>
-    </Suspense>
+    <>
+      {/*
+        children 在 Suspense 外部渲染，SSR 时 ID 计数器保持一致，不产生 hydration mismatch。
+        AuthEffects 单独包进 Suspense，隔离 useSearchParams() 引起的 suspension。
+      */}
+      <Suspense fallback={null}>
+        <AuthEffects />
+      </Suspense>
+      {children}
+    </>
   );
-} 
+}
