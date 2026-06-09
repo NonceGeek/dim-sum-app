@@ -97,6 +97,7 @@ interface DropdownState {
   handleFocus: () => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   closeDropdown: () => void;
+  abortSuggestions: () => void;
   selectItem: (term: string) => void;
   addToHistory: (term: string) => void;
   removeHistory: (term: string) => void;
@@ -154,6 +155,7 @@ function SearchInputField({
     handleFocus,
     handleKeyDown,
     closeDropdown,
+    abortSuggestions,
     selectItem,
     addToHistory,
     removeHistory,
@@ -162,6 +164,7 @@ function SearchInputField({
 
   const handleManualSearch = () => {
     if (searchPrompt.trim()) addToHistory(searchPrompt.trim());
+    abortSuggestions(); // 立即中止 autocomplete 请求，释放连接
     onSearch();
     closeDropdown();
   };
