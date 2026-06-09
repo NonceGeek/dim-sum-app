@@ -17,12 +17,7 @@ export enum SessionUserRole {
   RESEARCHER = 'RESEARCHER',
 }
 
-/**
- * 只包含 auth 副作用逻辑，不渲染 children。
- * 单独放进 Suspense，避免整个子树（FloatingNav 等）被包进去
- * 导致 Radix UI ID 计数器服务端/客户端不一致，引发 hydration mismatch。
- */
-function AuthEffects() {
+function AuthProviderContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const { setUser, clearUser } = useAuthStore();
   const searchParams = useSearchParams();
@@ -60,21 +55,17 @@ function AuthEffects() {
   }, [session, status, setUser, clearUser, loginStatus, role]);
 
   return (
-    <RoleTipDialog isOpen={showRoleTip} onClose={() => setShowRoleTip(false)} />
+    <>
+      {children}
+      <RoleTipDialog isOpen={showRoleTip} onClose={() => setShowRoleTip(false)} />
+    </>
   );
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      {/*
-        children 在 Suspense 外部渲染，SSR 时 ID 计数器保持一致，不产生 hydration mismatch。
-        AuthEffects 单独包进 Suspense，隔离 useSearchParams() 引起的 suspension。
-      */}
-      <Suspense fallback={null}>
-        <AuthEffects />
-      </Suspense>
-      {children}
-    </>
+    <Suspense fallback={null}>
+      <AuthProviderContent>{children}</AuthProviderContent>
+    </Suspense>
   );
 }
