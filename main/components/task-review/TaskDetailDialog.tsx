@@ -29,7 +29,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTask, useCompleteTask, useSkipTask, useViewTask, useUserTaskPermissions } from "@/lib/hooks/useTaskReview";
-import { useCategoryStore } from "@/lib/stores/category-store";
+import { useAllCategories, getCategoryNickname, type CategoryInfo } from "@/lib/api/category";
 import { SuggestionCard } from "./SuggestionCard";
 import type {
   AgentTask,
@@ -156,14 +156,14 @@ function buildSuggestionsFromTask(detail: TaskDetail): TaskSuggestion[] {
 function getSourceName(
   suggestion: TaskSuggestion,
   corpusName: string | undefined,
-  getNickname: (name: string) => string
+  categories: CategoryInfo[]
 ): string {
   if (suggestion.kind === "llm") return "LLM";
   if (suggestion.kind === "baseline") {
     const name = suggestion.lexiconBaseCorpusName;
-    return name ? getNickname(name) : "Baseline";
+    return name ? getCategoryNickname(categories, name) : "Baseline";
   }
-  return corpusName ? getNickname(corpusName) : "Original";
+  return corpusName ? getCategoryNickname(categories, corpusName) : "Original";
 }
 
 function checkCanSubmit(suggestions: TaskSuggestion[], currentIndex: number): boolean {
@@ -218,7 +218,7 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
   const completeMutation = useCompleteTask();
   const skipMutation = useSkipTask();
   const viewMutation = useViewTask();
-  const { fetchCategories, getNickname } = useCategoryStore();
+  const { data: categories = [] } = useAllCategories();
 
   const [suggestions, setSuggestions] = useState<TaskSuggestion[]>([]);
   const [initialSuggestions, setInitialSuggestions] = useState<TaskSuggestion[]>([]);
@@ -238,11 +238,6 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
 
   // Ref for stable access in keyboard handler
   const submitRef = useRef<() => void>(undefined);
-
-  // Fetch categories for Chinese source names
-  useEffect(() => {
-    if (open) fetchCategories();
-  }, [open, fetchCategories]);
 
   // Initialize suggestions from task detail
   useEffect(() => {
@@ -466,7 +461,7 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
                 return (
                   <SuggestionCard
                     index={0}
-                    sourceName={getSourceName(suggestions[0], task?.context.corpusName, getNickname)}
+                    sourceName={getSourceName(suggestions[0], task?.context.corpusName, categories)}
                     record={suggestions[0].record}
                     canEdit={perms.canEdit}
                     canDelete={perms.canDelete}
@@ -484,7 +479,7 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
                 >
                   {suggestions.map((suggestion, idx) => (
                     <TabsTrigger key={idx} value={String(idx)}>
-                      {getSourceName(suggestion, task?.context.corpusName, getNickname)}
+                      {getSourceName(suggestion, task?.context.corpusName, categories)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -495,7 +490,7 @@ export function TaskDetailDialog({ task, open, onClose }: TaskDetailDialogProps)
                     <TabsContent key={idx} value={String(idx)}>
                       <SuggestionCard
                         index={idx}
-                        sourceName={getSourceName(suggestion, task?.context.corpusName, getNickname)}
+                        sourceName={getSourceName(suggestion, task?.context.corpusName, categories)}
                         record={suggestion.record}
                         canEdit={perms.canEdit}
                         canDelete={perms.canDelete}

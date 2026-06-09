@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronRight } from "lucide-react";
 import type { AgentTask } from "@/lib/types/task-review";
 import { useTranslations } from "next-intl";
-import { useCategoryStore } from "@/lib/stores/category-store";
+import { useAllCategories, getCategoryNickname } from "@/lib/api/category";
 
 interface TaskCardProps {
   task: AgentTask;
@@ -14,7 +14,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
   const t = useTranslations("TaskReview");
-  const getNickname = useCategoryStore((s) => s.getNickname);
+  const { data: categories = [] } = useAllCategories();
 
   const isCompleted = task.status === "completed";
 
@@ -40,7 +40,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           )}
           {task.context.corpusName && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {t("dataSource", { source: getNickname(task.context.corpusName) })}
+              {t("dataSource", { source: getCategoryNickname(categories, task.context.corpusName) })}
             </p>
           )}
         </div>

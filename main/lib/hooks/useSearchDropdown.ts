@@ -61,6 +61,10 @@ export function useSearchDropdown({
       return;
     }
 
+    // 只有用户真正聚焦过输入框才发建议词请求
+    // 避免 query 从 URL params 初始化时触发不必要的 autocomplete 请求
+    if (!hasFocusedRef.current) return;
+
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(
         { keyword: query.trim(), category: JSON.stringify(selectedDataset) },
