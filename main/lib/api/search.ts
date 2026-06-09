@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { fetchAllCategories, CategoryInfo } from "./category";
 
 export type LyricsResult = {
@@ -62,7 +62,8 @@ type SearchParams = {
  * @returns 返回匹配的语料库项目
  */
 export async function getCorpusItemByUniqueId(
-  uniqueId: string
+  uniqueId: string,
+  queryClient?: QueryClient
 ): Promise<SearchResult | null> {
   try {
     const response = await fetch(
@@ -87,12 +88,19 @@ export async function getCorpusItemByUniqueId(
 
     const item = Array.isArray(data) ? data[0] : data;
 
-    // 获取分类信息
-    const allCategories = await fetchAllCategories();
+    // 优先从 TanStack Query 缓存读取分类信息
+    const allCategories = queryClient
+      ? await queryClient.fetchQuery({
+          queryKey: ['allCategories'],
+          queryFn: fetchAllCategories,
+          staleTime: Infinity,
+        })
+      : await fetchAllCategories();
+
     const categoryInfo = allCategories.find(cat => cat.name === item.category);
-    
-    return { 
-      ...item, 
+
+    return {
+      ...item,
       category: categoryInfo?.nickname || item.category,
       editable_level: categoryInfo?.editable_level || 0
     };
@@ -106,55 +114,30 @@ export async function getCorpusItemByUniqueId(
 }
 
 export function useSearch() {
-  console.log("useSearch");
   const search = async (params: SearchParams) => {
     try {
-      // Build the URL with optional category parameter and configurable table name
-      const params_category = JSON.parse(params.category)
-      const table_name = params_category.includes('all') || !params_category.length ? ["cantonese_corpus_all"]: params.category;
-      let url = process.env.NEXT_PUBLIC_BACKEND_URL +
+      const params_category = JSON.parse(params.category);
+      const table_name =
+        params_category.includes("all") || !params_category.length
+          ? ["cantonese_corpus_all"]
+          : params.category;
+
+      const url =
+        process.env.NEXT_PUBLIC_BACKEND_URL +
         `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(
           params.keyword
         )}`;
 
-      console.log("table_name", table_name);
-
-      console.log("url", url);
-
       const response = await fetch(url, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
-      if (!response.ok) {
-        throw new Error("Search request failed");
-      }
+      if (!response.ok) throw new Error("Search request failed");
 
-      const data = (await response.json()) as SearchResult[];
-
-      // 获取全量分类信息
-      const allCategories = await fetchAllCategories();
-      
-      // 创建分类名称到分类信息的映射
-      const categoryMap = new Map<string, CategoryInfo>();
-      allCategories.forEach(cat => {
-        categoryMap.set(cat.name, cat);
-      });
-
-      // 更新搜索结果，匹配分类信息并添加 editable_level
-      const updatedData = data.map((result) => {
-        const categoryInfo = categoryMap.get(result.category);
-        return {
-          ...result,
-          category: categoryInfo?.nickname || result.category, // 使用 nickname 作为显示名称
-          editable_level: categoryInfo?.editable_level || 0, // 添加 editable_level
-          category_name: result.category, // 保留原始分类名称
-        };
-      });
-
-      return updatedData;
+      // 直接返回原始结果，category nickname 映射交给渲染层处理
+      // 避免在 mutation 里额外 await categories，导致 isPending 时间虚长
+      return (await response.json()) as SearchResult[];
     } catch (error) {
       console.error("Search failed:", error);
       throw error;
@@ -163,5 +146,42 @@ export function useSearch() {
 
   return useMutation<SearchResult[], Error, SearchParams>({
     mutationFn: search,
+  });
+}
+
+async function fetchSearch(params: SearchParams): Promise<SearchResult[]> {
+  const params_category = JSON.parse(params.category);
+  const table_name =
+    params_category.includes("all") || !params_category.length
+      ? ["cantonese_corpus_all"]
+      : params.category;
+
+  const url =
+    process.env.NEXT_PUBLIC_BACKEND_URL +
+    `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(
+      params.keyword
+    )}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) throw new Error("Search request failed");
+  return response.json();
+}
+
+/**
+ * 带缓存的搜索 hook（useQuery）。
+ * 同一个关键词 + dataset 组合，会话内只请求一次，结果缓存 5 分钟。
+ */
+export function useSearchQuery(keyword: string, category: string, enabled = true) {
+  return useQuery<SearchResult[]>({
+    queryKey: ["search", keyword, category],
+    queryFn: () => fetchSearch({ keyword, category }),
+    enabled: enabled && !!keyword,
+    staleTime: 5 * 60 * 1000, // 5 分钟内同样的搜索词直接命中缓存
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
   });
 }
