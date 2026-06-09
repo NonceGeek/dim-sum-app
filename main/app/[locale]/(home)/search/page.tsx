@@ -2,9 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSearch, type SearchResult } from "@/lib/api/search";
+import { useSearchQuery, useSearch, type SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
 import {
   Search,
@@ -33,30 +33,55 @@ function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
 }
 
 export default function SearchPage() {
-  const [searchPrompt, setSearchPrompt] = useState("");
-  const [results, setResults] = useState<SearchResult[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const { mutate: search, isPending } = useSearch();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<SearchResult | null>(null);
-  const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
   const [selectCategory, setSelectCategory] = useState<string>("全部");
   const [tabsHidden, setTabsHidden] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const t = useTranslations("Search");
-  const th = useTranslations("Home"); // used for searchPlaceholder + searchButton passed to SearchHeader
+  const th = useTranslations("Home");
+
+  // 直接从 URL 读取搜索参数，驱动 useSearchQuery
+  const urlKeyword = searchParams.get("q") || "";
+  const urlDataset = searchParams.get("dataset") || "";
+  const datasetName = urlDataset ? urlDataset.split(",").filter(Boolean) : [];
+  const categoryParam = JSON.stringify(datasetName.length ? datasetName : ["all"]);
+
+  // 用 useQuery 替代 useMutation，同样关键词命中缓存直接返回，无需重新请求
+  const { data: results, isPending, error: searchError } = useSearchQuery(urlKeyword, categoryParam, !!urlKeyword);
+
+  // 搜索参数同步到 UI state（用于 SearchHeader 显示）
+  const [searchPrompt, setSearchPrompt] = useState(urlKeyword);
+  const [selectedDataset, setSelectedDataset] = useState<string[]>(
+    datasetName.length ? datasetName : ["all"]
+  );
+
+  // URL 变化时同步 UI state 并重置分页
+  useEffect(() => {
+    if (!urlKeyword) { router.push("/"); return; }
+    setSearchPrompt(urlKeyword);
+    setSelectedDataset(datasetName.length ? datasetName : ["all"]);
+    setCurrentPage(1);
+    setSelectCategory("全部");
+  }, [urlKeyword, urlDataset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (searchError) toast.error(t("searchFailed"), { description: (searchError as Error).message });
+  }, [searchError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch available categories
-  const { data: categories, isLoading: categoriesLoading } = useAllCategories();
+  const { data: categories } = useAllCategories();
   const { data: hotTerms, isLoading: hotTermsLoading } = useHotTerms();
-  const fiter_not_in = [
-    { id: "all", name: "all", nickname: th("globalSearch") },
-    ...(categories || [])?.filter((cat) => cat.if_in_all_data),
-  ];
+  const globalSearchLabel = th("globalSearch");
+  const fiter_not_in = useMemo(() => [
+    { id: "all", name: "all", nickname: globalSearchLabel },
+    ...(categories || []).filter((cat) => cat.if_in_all_data),
+  ], [categories, globalSearchLabel]);
 
   // Observe category tabs to trigger header shadow only when tabs are hidden behind header
   useEffect(() => {
@@ -69,43 +94,6 @@ export default function SearchPage() {
     observer.observe(el);
     return () => observer.disconnect();
   }, [results]);
-
-  // Read search params from URL -- redirect to home if no query
-  useEffect(() => {
-    const keyword = searchParams.get("q") || "";
-    const datasetParam = searchParams.get("dataset") || "";
-
-    // No query param → redirect back to homepage
-    if (!keyword) {
-      router.push("/");
-      return;
-    }
-
-    const datasetName = fiter_not_in
-      .map((cat) =>
-        datasetParam.split(",").includes(cat.name) ? cat.name : null,
-      )
-      .filter(Boolean) as string[];
-
-    // Sync UI state
-    setSearchPrompt(keyword);
-    setSelectedDataset(datasetName.length ? datasetName : ["all"]);
-    setCurrentPage(1);
-
-    // Search using URL values directly (not state)
-    search(
-      {
-        keyword,
-        category: JSON.stringify(datasetName.length ? datasetName : ["all"]),
-      },
-      {
-        onSuccess: setResults,
-        onError: (error: Error) => {
-          toast.error(t("searchFailed"), { description: error.message });
-        },
-      },
-    );
-  }, [searchParams, JSON.stringify(fiter_not_in)]);
 
   const buildDatasetParam = () =>
     fiter_not_in
@@ -146,13 +134,28 @@ export default function SearchPage() {
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
+  // 在渲染层把原始 category name 映射为 nickname，不在 mutation 里 await
+  const enrichedResults = useMemo(() => {
+    if (!results || !categories) return results;
+    const categoryMap = new Map(categories.map((c) => [c.name, c]));
+    return results.map((result) => {
+      const info = categoryMap.get(result.category);
+      return {
+        ...result,
+        category: info?.nickname || result.category,
+        editable_level: info?.editable_level ?? 0,
+        category_name: result.category,
+      };
+    });
+  }, [results, categories]);
+
   const filteredResults = useMemo(() => {
-    if (!results) return [];
-    return results.filter(
+    if (!enrichedResults) return [];
+    return enrichedResults.filter(
       (result) =>
         selectCategory === "全部" || result.category === selectCategory,
     );
-  }, [results, selectCategory]);
+  }, [enrichedResults, selectCategory]);
 
   const totalPages = Math.ceil((filteredResults?.length || 0) / itemsPerPage);
   const currentResults =
@@ -216,13 +219,13 @@ export default function SearchPage() {
         searchPlaceholder={th("searchPlaceholder")}
         searchButtonLabel={th("searchButton")}
         searchingLabel={t("searching")}
-        shadowActive={results && results.length > 0 ? tabsHidden : undefined}
+        shadowActive={enrichedResults && enrichedResults.length > 0 ? tabsHidden : undefined}
       />
 
       {/* ── Main content ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col">
         {/* ── Category tabs ────────────────────────────────────────────── */}
-        {results && results.length > 0 && (
+        {enrichedResults && enrichedResults.length > 0 && (
           <div ref={tabsRef}>
             <CategoryTabs
               results={results}
@@ -275,7 +278,7 @@ export default function SearchPage() {
         )}
 
         {/* ── Results：重新搜索时保留旧结果并降低透明度 ────────────────── */}
-        {results && results.length > 0 && (
+        {enrichedResults && enrichedResults.length > 0 && (
           <div
             className={cn(
               "px-4 py-4 transition-opacity duration-200",
@@ -341,7 +344,6 @@ export default function SearchPage() {
                               key={term}
                               onClick={() => {
                                 if (isPending) return;
-                                setResults(null);
                                 handleExampleSearch(term);
                               }}
                               className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
@@ -469,7 +471,6 @@ export default function SearchPage() {
                             key={term}
                             onClick={() => {
                               if (isPending) return;
-                              setResults(null);
                               handleExampleSearch(term);
                             }}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
@@ -545,7 +546,7 @@ export default function SearchPage() {
         )}
 
         {/* ── No results ───────────────────────────────────────────────── */}
-        {results && results.length === 0 && !isPending && (
+        {enrichedResults && enrichedResults.length === 0 && !isPending && (
           <div className="flex-1 flex flex-col justify-center px-4 pb-32">
             {/* Desktop/Tablet: Align with search bar */}
             <div className="hidden sm:flex">
@@ -583,7 +584,6 @@ export default function SearchPage() {
                           key={example.prompt}
                           onClick={() => {
                             if (isPending) return;
-                            setResults(null);
                             handleExampleSearch(example.prompt);
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
@@ -630,7 +630,6 @@ export default function SearchPage() {
                             key={term}
                             onClick={() => {
                               if (isPending) return;
-                              setResults(null);
                               handleExampleSearch(term);
                             }}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useAllCategories } from "@/lib/api/category";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 // import { Header } from "@/components/layout/header";
@@ -234,7 +235,7 @@ function CorpusCard({ corpus }: { corpus: Corpus }) {
 export default function LibraryPage() {
   const t = useTranslations("Library");
   const [corpus, setCorpus] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: allCategoriesData, isLoading: loading } = useAllCategories();
   const [selectedTag, setSelectedTag] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -285,34 +286,20 @@ export default function LibraryPage() {
   }, [corpus, selectedTag]);
 
 
+  // 从 useAllCategories 缓存中处理数据，替代直接 fetch /corpus_categories
   useEffect(() => {
-    const fetchCorpus = async () => {
-      try {
-        const response = await fetch(
-          process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_categories"
-        );
-        const data = await response.json();
-        // Sort the data: first by pinned (true first), then by sorting (larger numbers first)
-        const sortedData = data.filter(item => item.is_public).sort((a, b) => {
-          // First sort by pinned: true comes before false
-          if (a.pinned && !b.pinned) return -1;
-          if (!a.pinned && b.pinned) return 1;
-          
-          // Then sort by sorting: smaller numbers first (ascending)
-          const aSorting = a.sorting ?? 0;
-          const bSorting = b.sorting ?? 0;
-          return aSorting - bSorting;
-        });
-        setCorpus(sortedData);
-      } catch (error) {
-        console.error("Error fetching books:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCorpus();
-  }, []);
+    if (!allCategoriesData) return;
+    const sortedData = allCategoriesData
+      .filter(item => item.is_public)
+      .sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        const aSorting = a.sorting ?? 0;
+        const bSorting = b.sorting ?? 0;
+        return aSorting - bSorting;
+      });
+    setCorpus(sortedData as any);
+  }, [allCategoriesData]);
 
   return (
     <>

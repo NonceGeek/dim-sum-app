@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTasks } from "@/lib/hooks/useTaskReview";
-import { useCategoryStore } from "@/lib/stores/category-store";
+import { useAllCategories } from "@/lib/api/category";
 import { TaskCard } from "./TaskCard";
 import { TaskTable } from "./TaskTable";
 import { TaskDetailDialog } from "./TaskDetailDialog";
@@ -23,9 +23,7 @@ interface TaskListTabProps {
 
 export function TaskListTab({ datasets }: TaskListTabProps) {
   const t = useTranslations("TaskReview");
-  const { fetchCategories, categories } = useCategoryStore();
-
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  const { data: categories = [] } = useAllCategories();
 
   const [taskTab, setTaskTab] = useState("uncompleted");
   const [corpusName, setCorpusName] = useState<string>("all");

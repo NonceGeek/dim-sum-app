@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearch, type SearchResult } from '@/lib/api/search';
+import type { SearchResult } from '@/lib/api/search';
 import { useSearchHistoryStore } from '@/lib/store/useSearchHistoryStore';
 
 const DEBOUNCE_MS = 300;
@@ -24,6 +24,8 @@ interface UseSearchDropdownReturn {
   handleFocus: () => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   closeDropdown: () => void;
+  /** 立即中止正在进行的 autocomplete 请求，供导航前调用 */
+  abortSuggestions: () => void;
   selectItem: (term: string) => void;
   addToHistory: (term: string) => void;
   removeHistory: (term: string) => void;
@@ -35,7 +37,6 @@ export function useSearchDropdown({
   selectedDataset,
   onSearchTerm,
 }: UseSearchDropdownOptions): UseSearchDropdownReturn {
-  const { mutate: fetchSuggestions } = useSearch();
   const { history, add, remove, clear } = useSearchHistoryStore();
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -43,6 +44,8 @@ export function useSearchDropdown({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // AbortController for the current in-flight suggestion request
+  const abortRef = useRef<AbortController | null>(null);
   const wrapperRef = useRef<HTMLElement | null>(null);
   // Only auto-open dropdown if the user has explicitly focused the input
   const hasFocusedRef = useRef(false);
@@ -50,33 +53,60 @@ export function useSearchDropdown({
   // Derived mode: history when empty, suggestions when typing
   const mode: DropdownMode = query.trim() ? 'suggestions' : 'history';
 
+  // Abort any in-flight suggestion request (called on navigate / unmount)
+  const abortSuggestions = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
+
   // Debounced suggestion fetch when query changes
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    abortSuggestions();
     setSuggestions([]);
     setActiveIndex(-1);
 
-    if (!query.trim()) {
-      // empty → stay open if focused (history mode), no fetch needed
-      return;
-    }
+    if (!query.trim()) return;
 
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(
-        { keyword: query.trim(), category: JSON.stringify(selectedDataset) },
-        {
-          onSuccess: (data) => {
-            setSuggestions(data.slice(0, MAX_SUGGESTIONS));
-            setActiveIndex(-1);
-          },
-          onError: () => setSuggestions([]),
+    // 只有用户真正聚焦过输入框才发建议词请求
+    if (!hasFocusedRef.current) return;
+
+    debounceRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const params_category = selectedDataset;
+        const table_name =
+          params_category.includes('all') || !params_category.length
+            ? ['cantonese_corpus_all']
+            : JSON.stringify(selectedDataset);
+
+        const url =
+          process.env.NEXT_PUBLIC_BACKEND_URL +
+          `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(query.trim())}`;
+
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error('suggestion fetch failed');
+        const data: SearchResult[] = await res.json();
+        setSuggestions(data.slice(0, MAX_SUGGESTIONS));
+        setActiveIndex(-1);
+      } catch (err) {
+        // AbortError is expected on cancel — silently ignore
+        if ((err as Error).name !== 'AbortError') {
+          setSuggestions([]);
         }
-      );
+      } finally {
+        if (abortRef.current === controller) abortRef.current = null;
+      }
     }, DEBOUNCE_MS);
 
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return abortSuggestions;
   }, [query, JSON.stringify(selectedDataset)]);
 
   // Click-outside to close
@@ -155,9 +185,10 @@ export function useSearchDropdown({
   );
 
   const closeDropdown = useCallback(() => {
+    abortSuggestions();
     setShowDropdown(false);
     setActiveIndex(-1);
-  }, []);
+  }, [abortSuggestions]);
 
   const removeHistory = useCallback(
     (term: string) => {
@@ -181,6 +212,7 @@ export function useSearchDropdown({
     handleFocus,
     handleKeyDown,
     closeDropdown,
+    abortSuggestions,
     selectItem,
     addToHistory: add,
     removeHistory,

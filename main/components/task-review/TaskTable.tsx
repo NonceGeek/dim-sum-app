@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
-import { useCategoryStore } from "@/lib/stores/category-store";
+import { useAllCategories, getCategoryNickname } from "@/lib/api/category";
 import type { AgentTask } from "@/lib/types/task-review";
 
 interface TaskTableProps {
@@ -21,7 +21,7 @@ interface TaskTableProps {
 
 export function TaskTable({ tasks, onTaskClick }: TaskTableProps) {
   const t = useTranslations("TaskReview");
-  const getNickname = useCategoryStore((s) => s.getNickname);
+  const { data: categories = [] } = useAllCategories();
 
   return (
     <Card className="overflow-hidden">
@@ -49,7 +49,7 @@ export function TaskTable({ tasks, onTaskClick }: TaskTableProps) {
               <TableCell>
                 <span className="text-muted-foreground text-sm">
                   {task.context.corpusName
-                    ? getNickname(task.context.corpusName)
+                    ? getCategoryNickname(categories, task.context.corpusName)
                     : "—"}
                 </span>
               </TableCell>
