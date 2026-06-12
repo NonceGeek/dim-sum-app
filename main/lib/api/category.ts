@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "./client";
+import { backendFetch } from "./backend";
 
 export interface CategoryInfo {
   id: number;
@@ -26,9 +26,8 @@ export function useCategoryEditableLevel(categoryName: string | null) {
     queryKey: ["categoryEditableLevel", categoryName],
     queryFn: async () => {
       if (!categoryName) return null;
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/v2/corpus_category?name=${categoryName}`
+      const response = await backendFetch(
+        `/v2/corpus_category?name=${categoryName}`
       );
       const data = await response.json();
       return data?.editable_level || null;
@@ -46,9 +45,7 @@ export function getCategoryNickname(categories: CategoryInfo[], name: string): s
 
 // 获取全量分类信息
 export async function fetchAllCategories(): Promise<CategoryInfo[]> {
-  const response = await fetch(
-    process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_categories"
-  );
+  const response = await backendFetch("/corpus_categories");
   if (!response.ok) {
     throw new Error("Failed to fetch categories");
   }

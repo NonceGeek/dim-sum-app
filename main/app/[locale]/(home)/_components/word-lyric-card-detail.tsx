@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { backendFetch } from "@/lib/api/backend";
 
 // Helper function to check if a string is an image URL
 function isImageUrl(url: string): boolean {
@@ -125,10 +126,9 @@ export default function WordLyricCardDetail({
   const { data, isLoading } = useQuery({
     queryKey: ["corpusCatrgory", result.category_name],
     queryFn: () =>
-      fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/v2/corpus_category?name=${result.category_name}`
-      ).then((res) => res.json()),
+      backendFetch(`/v2/corpus_category?name=${result.category_name}`).then(
+        (res) => res.json()
+      ),
     staleTime: 60 * 1000,
   });
 

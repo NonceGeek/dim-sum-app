@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAppStore } from "@/stores/use-app-store";
 import domtoimage from 'dom-to-image';
 import { Download } from 'lucide-react';
+import { backendFetch } from "@/lib/api/backend";
 
 interface DictionaryNote {
   page?: number;
@@ -230,7 +231,7 @@ function CardGeneratorContent() {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + `/v2/corpus_item?unique_id=${uniqueId}`);
+        const response = await backendFetch(`/v2/corpus_item?unique_id=${uniqueId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
