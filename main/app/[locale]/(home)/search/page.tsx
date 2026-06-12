@@ -228,7 +228,7 @@ export default function SearchPage() {
         {enrichedResults && enrichedResults.length > 0 && (
           <div ref={tabsRef}>
             <CategoryTabs
-              results={results}
+              results={enrichedResults}
               selectedCategory={selectCategory}
               onSelect={(cat) => {
                 setSelectCategory(cat);
