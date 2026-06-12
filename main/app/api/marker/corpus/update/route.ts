@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { CorpusPermission } from "@prisma/client";
 import { checkCorpusPermission } from "@/lib/permission";
+import { backendFetch } from "@/lib/api/backend";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,8 +56,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Make request to backend with server-side API key
-    const response = await fetch(
-      process.env.BACKEND_URL + "/dev/insert_corpus_item",
+    const response = await backendFetch(
+      "/dev/insert_corpus_item",
       {
         method: "POST",
         headers: {

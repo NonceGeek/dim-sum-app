@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
+import { backendFetch } from "@/lib/api/backend";
 
 export async function POST(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Call upstream API
-      const response = await fetch(`${process.env.BACKEND_URL}/admin/oss/upload`, {
+      const response = await backendFetch("/admin/oss/upload", {
         method: "POST",
         body: upstreamFormData,
         // duplicate-headers are usually handled automatically by fetch with FormData

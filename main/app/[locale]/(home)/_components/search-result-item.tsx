@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import ReactPlayer from "react-player";
+import { backendFetch } from "@/lib/api/backend";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -443,10 +444,9 @@ export default function SearchResultItem({
   const { data: categoryData } = useQuery({
     queryKey: ["corpusCategory", result.category_name],
     queryFn: () =>
-      fetch(
-        process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/v2/corpus_category?name=${result.category_name}`
-      ).then((res) => res.json()),
+      backendFetch(`/v2/corpus_category?name=${result.category_name}`).then(
+        (res) => res.json()
+      ),
     staleTime: 60 * 1000,
   });
 
