@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMarker } from "@/lib/auth";
+import { backendFetch } from "@/lib/api/backend";
 
 export async function GET(req: NextRequest) {
   return requireMarker(req, async (req: NextRequest, userId: string) => {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
 
       // TODO: check: it is strange because this looks like useless.
       // Make request to backend with server-side API key
-      const response = await fetch(process.env.BACKEND_URL + '/dev/editable_items', {
+      const response = await backendFetch('/dev/editable_items', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

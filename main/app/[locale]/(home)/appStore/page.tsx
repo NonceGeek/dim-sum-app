@@ -22,6 +22,7 @@ import {
 import { ArrowBigRight, Link, Video } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
+import { backendFetch } from "@/lib/api/backend";
 
 // Define App interface for type safety
 interface App {
@@ -298,7 +299,7 @@ export default function AppStorePage() {
   useEffect(() => {
     const fetchApps = async () => {
       try {
-        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/corpus_apps");
+        const response = await backendFetch("/corpus_apps");
         const data = await response.json();
         // Sort the data to put pinned items first
         const sortedData = data.sort((a, b) => {

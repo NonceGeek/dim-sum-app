@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { fetchAllCategories, CategoryInfo } from "./category";
+import { backendFetch } from "./backend";
 
 export type LyricsResult = {
   sec: number;
@@ -66,9 +67,7 @@ export async function getCorpusItemByUniqueId(
   queryClient?: QueryClient
 ): Promise<SearchResult | null> {
   try {
-    const response = await fetch(
-      process.env.NEXT_PUBLIC_BACKEND_URL + `/v2/corpus_item?unique_id=${uniqueId}`
-    );
+    const response = await backendFetch(`/v2/corpus_item?unique_id=${uniqueId}`);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -122,16 +121,15 @@ export function useSearch() {
           ? ["cantonese_corpus_all"]
           : params.category;
 
-      const url =
-        process.env.NEXT_PUBLIC_BACKEND_URL +
+      const response = await backendFetch(
         `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(
           params.keyword
-        )}`;
-
-      const response = await fetch(url, {
+        )}`,
+        {
         method: "GET",
         headers: { "Content-Type": "application/json" },
-      });
+        }
+      );
 
       if (!response.ok) throw new Error("Search request failed");
 
@@ -156,16 +154,15 @@ async function fetchSearch(params: SearchParams): Promise<SearchResult[]> {
       ? ["cantonese_corpus_all"]
       : params.category;
 
-  const url =
-    process.env.NEXT_PUBLIC_BACKEND_URL +
+  const response = await backendFetch(
     `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(
       params.keyword
-    )}`;
-
-  const response = await fetch(url, {
+    )}`,
+    {
     method: "GET",
     headers: { "Content-Type": "application/json" },
-  });
+    }
+  );
 
   if (!response.ok) throw new Error("Search request failed");
   return response.json();
