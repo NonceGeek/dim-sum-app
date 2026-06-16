@@ -47,8 +47,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { HamburgerDropdownContent } from "@/components/layout/hamburger-dropdown-content";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
@@ -65,6 +70,7 @@ import {
   workplaceSubmenuItems,
 } from "@/components/layout/sidebar/menu-config";
 import { Role } from "@prisma/client";
+import MobileSheetContent from "./sidebar/mobile-sheet-content";
 
 interface Category {
   id: string | number;
@@ -452,25 +458,6 @@ function SearchInputField({
   );
 }
 
-function MobileSheetContent({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex h-14 items-center border-b px-4">
-        <Image
-          src="/logo.png"
-          alt="DimSum AI Labs Logo"
-          width={24}
-          height={24}
-          className="rounded-sm"
-        />
-        <span className="ml-2 text-sm font-medium">DimSum AI</span>
-      </div>
-      <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
-        <HamburgerMenuContent onNavClick={onClose} />
-      </nav>
-    </div>
-  );
-}
 
 export function SearchHeader({
   searchPrompt,
@@ -702,6 +689,9 @@ export function SearchHeader({
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64 p-0">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Navigation</SheetTitle>
+                </SheetHeader>
                 <MobileSheetContent onClose={() => setMobileOpen(false)} />
               </SheetContent>
             </Sheet>
@@ -721,6 +711,9 @@ export function SearchHeader({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-64 p-0">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Navigation</SheetTitle>
+                  </SheetHeader>
                   <MobileSheetContent onClose={() => setMobileOpen(false)} />
                 </SheetContent>
               </Sheet>
