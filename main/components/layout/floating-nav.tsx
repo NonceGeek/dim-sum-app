@@ -6,7 +6,7 @@ import { Menu, Settings, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
 import {
   DropdownMenu,
@@ -143,6 +143,9 @@ export function FloatingNav() {
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-64 p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation</SheetTitle>
+            </SheetHeader>
             <div className="flex flex-col h-full">
               <div className="flex h-14 items-center border-b px-4">
                 <Image

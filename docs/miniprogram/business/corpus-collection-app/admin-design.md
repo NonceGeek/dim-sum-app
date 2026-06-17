@@ -191,14 +191,24 @@ isSystemAdmin = true
 
 | 字段 | 说明 |
 |------|------|
-| 活动标题 | 必填 |
-| 活动介绍 | 必填 |
-| 活动规则 | 必填 |
+| 活动标题 | 必填，最多 20 字 |
+| 活动介绍 | 必填，最多 100 字 |
+| 活动规则 | 必填，最多 100 字 |
 | 奖励配置 | 可选 |
-| 开始/结束时间 | 必填 |
-| 允许媒体类型 | 图片/音频/视频配置 |
-| Banner | 可上传或 AI 生成 |
+| 开始/结束时间 | 必填，开始时间必须早于结束时间 |
+| 需要媒体类型 | 图片/音频/视频多选，至少选择一项 |
+| Banner | 可手动填写 URL，或 AI 生成后上传到 OSS 获取永久 URL |
 | 状态 | draft/published/offline/archived |
+
+媒体类型配置写入 `media_requirements`：
+
+```json
+{
+  "requiredTypes": ["image", "video", "audio"]
+}
+```
+
+后台只声明活动需要哪些媒体类型；小程序前端根据 `requiredTypes` 自行控制上传数量和组合，例如仅视频、图片+音频、视频+最多 8 张图片等。
 
 ### 4.5 分类标签管理
 
@@ -348,7 +358,8 @@ POST   /api/admin/corpus-collection/covers/select
 说明：
 
 - `generate` 调用 agent 返回临时候选图
-- `select` 将选中的临时图转存到项目 OSS，并绑定到活动或精选内容
+- `select` 将选中的临时图转存到项目 OSS，返回永久 `uploaded.url`
+- 后台页面需要展示永久 URL 并提供复制入口；临时候选图 URL 不作为最终复制地址
 
 ### 5.6 数据统计
 

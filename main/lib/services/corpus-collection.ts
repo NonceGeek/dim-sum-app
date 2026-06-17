@@ -22,6 +22,114 @@ export function jsonInput(value: unknown): Prisma.InputJsonValue | undefined {
   return value as Prisma.InputJsonValue;
 }
 
+const CORPUS_COLLECTION_MEDIA_TYPES = ["image", "video", "audio"] as const;
+export type CorpusCollectionMediaType = (typeof CORPUS_COLLECTION_MEDIA_TYPES)[number];
+
+export const ACTIVITY_TEXT_LIMITS = {
+  title: 20,
+  description: 100,
+  rules: 100,
+} as const;
+
+function countCharacters(value: string) {
+  return Array.from(value.trim()).length;
+}
+
+function parseLimitedActivityText(
+  value: unknown,
+  field: keyof typeof ACTIVITY_TEXT_LIMITS,
+  options: { required?: boolean } = {}
+) {
+  if (value === undefined || value === null) {
+    if (options.required) {
+      throw new Error(`${field} is required`);
+    }
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`${field} must be a string`);
+  }
+
+  const trimmed = value.trim();
+  if (options.required && !trimmed) {
+    throw new Error(`${field} is required`);
+  }
+
+  if (countCharacters(trimmed) > ACTIVITY_TEXT_LIMITS[field]) {
+    throw new Error(`${field} must be ${ACTIVITY_TEXT_LIMITS[field]} characters or less`);
+  }
+
+  return trimmed;
+}
+
+export function parseActivityTextFields(
+  body: Record<string, unknown>,
+  options: { requireTitle?: boolean } = {}
+) {
+  return {
+    title: parseLimitedActivityText(body.title, "title", { required: options.requireTitle }),
+    description: parseLimitedActivityText(body.description, "description"),
+    rules: parseLimitedActivityText(body.rules, "rules"),
+  };
+}
+
+export function normalizeActivityMediaRequirements(value: unknown) {
+  if (value && typeof value === "object") {
+    const source = value as Record<string, any>;
+    const requiredTypesSource = Array.isArray(source.requiredTypes)
+      ? source.requiredTypes
+      : Array.isArray(source.allowedTypes)
+        ? source.allowedTypes
+        : undefined;
+
+    if (requiredTypesSource) {
+      const requiredTypes = CORPUS_COLLECTION_MEDIA_TYPES.filter((type) =>
+        requiredTypesSource.includes(type)
+      );
+      return { requiredTypes };
+    }
+
+    const requiredTypes = CORPUS_COLLECTION_MEDIA_TYPES.filter((type) => {
+      const legacyKey = type === "image" ? "images" : type;
+      const config = source[type] ?? source[legacyKey];
+      return Boolean(config?.enabled ?? config?.required);
+    });
+
+    if (requiredTypes.length > 0) {
+      return { requiredTypes };
+    }
+  }
+
+  return { requiredTypes: ["image"] as CorpusCollectionMediaType[] };
+}
+
+export function parseActivityMediaRequirements(value: unknown) {
+  const normalized = normalizeActivityMediaRequirements(value);
+  if (normalized.requiredTypes.length < 1) {
+    throw new Error("At least one media type is required");
+  }
+  return normalized as Prisma.InputJsonValue;
+}
+
+export function parseActivityWindow(startsAtValue: unknown, endsAtValue: unknown) {
+  const startsAt =
+    typeof startsAtValue === "string" && startsAtValue ? new Date(startsAtValue) : null;
+  const endsAt = typeof endsAtValue === "string" && endsAtValue ? new Date(endsAtValue) : null;
+
+  if (startsAt && Number.isNaN(startsAt.getTime())) {
+    throw new Error("Invalid start time");
+  }
+  if (endsAt && Number.isNaN(endsAt.getTime())) {
+    throw new Error("Invalid end time");
+  }
+  if (startsAt && endsAt && startsAt.getTime() >= endsAt.getTime()) {
+    throw new Error("Start time must be earlier than end time");
+  }
+
+  return { startsAt, endsAt };
+}
+
 export function formatCompactCount(value: number | null | undefined) {
   const count = Number(value ?? 0);
   if (count >= 10000) return `${(count / 10000).toFixed(count >= 100000 ? 0 : 1)}万`;
@@ -94,7 +202,7 @@ export function serializeActivity(activity: any) {
     tags: activity.tags ?? [],
     submissionTypes: activity.submission_types ?? [],
     rewardConfig: activity.reward_config,
-    mediaRequirements: activity.media_requirements,
+    mediaRequirements: normalizeActivityMediaRequirements(activity.media_requirements),
     bannerUrl: activity.banner_url,
     status: activity.status,
     timeStatus: getActivityTimeStatus(activity),
@@ -372,8 +480,16 @@ export function validateSubmissionMedia(media: unknown[]) {
   const audios = media.filter((item: any) => item?.type === "audio");
   const videos = media.filter((item: any) => item?.type === "video");
 
-  if (images.length < 1 || images.length > 9) return false;
-  if (audios.length < 1) return false;
+  if (media.length < 1) return false;
+  if (media.some((item: any) => !CORPUS_COLLECTION_MEDIA_TYPES.includes(item?.type))) {
+    return false;
+  }
+  if (media.some((item: any) => typeof item?.url !== "string" || !item.url.trim())) {
+    return false;
+  }
+  if (images.length > 8) return false;
+  if (audios.length > 1) return false;
+  if (videos.length > 1) return false;
   if (audios.some((item: any) => Number(item.durationSec ?? 0) > 60)) return false;
   if (videos.some((item: any) => Number(item.durationSec ?? 0) > 30)) return false;
   return true;

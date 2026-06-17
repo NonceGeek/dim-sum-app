@@ -4,7 +4,13 @@ import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { parseBigIntId, serializeActivity } from "@/lib/services/corpus-collection";
+import {
+  parseActivityMediaRequirements,
+  parseActivityTextFields,
+  parseActivityWindow,
+  parseBigIntId,
+  serializeActivity,
+} from "@/lib/services/corpus-collection";
 
 export async function GET(req: NextRequest, context: AppRouteContext) {
   return requireAdmin(req, async () => {
@@ -26,20 +32,39 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
 
     const body = await req.json();
+    let textFields: ReturnType<typeof parseActivityTextFields>;
+    let startsAt: Date | null | undefined;
+    let endsAt: Date | null | undefined;
+    let mediaRequirements: Prisma.InputJsonValue | undefined;
+    try {
+      textFields = parseActivityTextFields(body);
+      if (body.startsAt !== undefined || body.endsAt !== undefined) {
+        const parsedWindow = parseActivityWindow(body.startsAt, body.endsAt);
+        startsAt = parsedWindow.startsAt;
+        endsAt = parsedWindow.endsAt;
+      }
+      if (body.mediaRequirements !== undefined) {
+        mediaRequirements = parseActivityMediaRequirements(body.mediaRequirements);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid activity payload";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
     const data = {
-      title: body.title,
+      title: textFields.title,
       slug: body.slug,
-      description: body.description,
-      rules: body.rules,
+      description: textFields.description,
+      rules: textFields.rules,
       category: body.category,
       tags: body.tags as Prisma.InputJsonValue | undefined,
       submission_types: body.submissionTypes as Prisma.InputJsonValue | undefined,
       reward_config: body.rewardConfig as Prisma.InputJsonValue | undefined,
-      media_requirements: body.mediaRequirements as Prisma.InputJsonValue | undefined,
+      media_requirements: mediaRequirements,
       banner_url: body.bannerUrl,
       status: body.status,
-      starts_at: body.startsAt ? new Date(body.startsAt) : undefined,
-      ends_at: body.endsAt ? new Date(body.endsAt) : undefined,
+      starts_at: startsAt,
+      ends_at: endsAt,
     } as Prisma.corpus_collection_activitiesUncheckedUpdateInput;
 
     const activity = await prisma.corpus_collection_activities.update({
