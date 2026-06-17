@@ -134,7 +134,7 @@ showOnHome = true
 用户点击我要投稿
   -> 选择投稿类型
   -> 填写标题、介绍内容、分类标签
-  -> 上传图片、音频、可选视频
+  -> 根据活动 mediaRequirements.requiredTypes 上传图片、视频或音频
   -> 小程序前端调用平台投稿前安全检查接口
   -> 检查通过后调用正式投稿接口，写入投稿表，状态 pending_review
   -> 检查拒绝则由小程序提示违规，不继续调用正式投稿接口
@@ -148,9 +148,7 @@ showOnHome = true
 | 标题 | 必填 |
 | 介绍内容 | 必填 |
 | 分类标签 | 必填，由运营后台配置 |
-| 图片 | 必填，最少 1 张，最多 9 张 |
-| 语音 | 必填，时长不超过 1 分钟 |
-| 视频 | 可选，时长不超过 30 秒 |
+| 图片/视频/语音 | 根据活动 `mediaRequirements.requiredTypes` 展示对应入口，数量组合由小程序前端控制 |
 
 投稿前安全检查只检查文本和图片。音频、视频在后续 AI 审核或人工审核阶段处理。
 
@@ -206,6 +204,8 @@ visibility = private
 - 视频
 - 图文 + 音频
 - 图文 + 视频
+- 视频 + 音频
+- 图文 + 视频 + 音频
 
 活动可分享。分享次数建议作为互动统计字段保存。
 
@@ -288,8 +288,9 @@ show_on_home
 ```text
 运营创建活动
   -> 填写主题、时间、规则、奖励、投稿媒体类型
+  -> 校验开始时间早于结束时间，并且至少选择一种媒体类型
   -> 可调用 AI 生成 Banner 候选
-  -> 选择并上传 Banner 到 OSS
+  -> 选择候选图并上传到 OSS，获取永久 URL 后复制或写入 Banner URL
   -> 活动上线
 ```
 
@@ -383,7 +384,7 @@ show_on_home
 | `tags` | 活动标签 JSON |
 | `submission_types` | 活动允许的投稿类型 JSON |
 | `reward_config` | 奖励配置 JSON |
-| `media_requirements` | 允许媒体类型与限制 JSON |
+| `media_requirements` | 活动需要的媒体类型 JSON，例如 `{ "requiredTypes": ["image"] }` |
 | `banner_url` | 正式 Banner URL |
 | `status` | `draft` / `published` / `offline` / `archived` |
 | `starts_at` / `ends_at` | 活动时间 |

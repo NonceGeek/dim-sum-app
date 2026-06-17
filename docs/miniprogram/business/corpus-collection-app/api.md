@@ -231,6 +231,9 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
       "title": "粤语诗歌朗诵赛",
       "description": "征集粤语诗歌朗诵作品",
       "bannerUrl": "https://oss/banner.jpg",
+      "mediaRequirements": {
+        "requiredTypes": ["image", "audio"]
+      },
       "status": "published",
       "timeStatus": "ongoing",
       "canSubmit": true,
@@ -274,6 +277,8 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
   }
 }
 ```
+
+`mediaRequirements.requiredTypes` 由后台活动配置生成，用于告诉小程序该活动需要展示哪些媒体入口。可选值为 `image`、`video`、`audio`；具体上传数量和组合规则由小程序前端按产品规则控制。
 
 ### 2.2 获取活动详情
 
@@ -553,7 +558,7 @@ Base64 形态：
 | `title` | string | 是 | 标题 |
 | `intro` | string | 是 | 介绍内容 |
 | `tags` | string[] | 是 | 分类标签 |
-| `media` | array | 是 | 多媒体列表，至少 1 张图片和 1 条音频 |
+| `media` | array | 是 | 多媒体列表，活动投稿按活动 `mediaRequirements.requiredTypes` 展示对应上传入口 |
 | `precheckResult` | object | 否 | 投稿前安全检查结果 |
 
 #### 成功响应 (201)

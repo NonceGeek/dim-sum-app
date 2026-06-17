@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarDays, Eye, Image, Loader2, Plus, Search } from "lucide-react";
+import { CalendarDays, Check, Copy, Eye, Image, Loader2, Plus, Search, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -58,12 +59,30 @@ type CoverResponse = {
   size: string;
 };
 
+type MediaType = "image" | "video" | "audio";
+
+const textLimits = {
+  title: 20,
+  description: 100,
+  rules: 100,
+} as const;
+
+const mediaTypeOptions: Array<{ value: MediaType; label: string; description: string }> = [
+  { value: "image", label: "Images", description: "Tell the miniprogram this activity needs images." },
+  { value: "video", label: "Video", description: "Tell the miniprogram this activity needs video." },
+  { value: "audio", label: "Audio", description: "Tell the miniprogram this activity needs recording." },
+];
+
 const statusColor: Record<string, string> = {
   draft: "bg-secondary text-secondary-foreground",
   published: "bg-success text-success-foreground",
   offline: "bg-warning text-warning-foreground",
   archived: "bg-muted text-muted-foreground",
 };
+
+function countCharacters(value: string) {
+  return Array.from(value.trim()).length;
+}
 
 export default function CorpusCollectionActivitiesPage() {
   const queryClient = useQueryClient();
@@ -79,9 +98,12 @@ export default function CorpusCollectionActivitiesPage() {
     startsAt: "",
     endsAt: "",
     bannerUrl: "",
+    requiredMediaTypes: ["image"] as MediaType[],
   });
   const [coverPrompt, setCoverPrompt] = useState("");
   const [covers, setCovers] = useState<CoverResponse | null>(null);
+  const [uploadingCoverUrl, setUploadingCoverUrl] = useState<string | null>(null);
+  const [savedCoverUrls, setSavedCoverUrls] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery<ActivitiesResponse>({
     queryKey: ["corpus-collection-activities", status, q, qMode],
@@ -106,22 +128,30 @@ export default function CorpusCollectionActivitiesPage() {
           startsAt: form.startsAt || undefined,
           endsAt: form.endsAt || undefined,
           bannerUrl: form.bannerUrl || undefined,
-          mediaRequirements: {
-            images: { required: true, min: 1, max: 9 },
-            audio: { required: true, maxDurationSec: 60 },
-            video: { required: false, maxDurationSec: 30 },
-          },
+          requiredMediaTypes: undefined,
+          mediaRequirements: { requiredTypes: form.requiredMediaTypes },
         }),
       });
-      if (!response.ok) throw new Error("Failed to create activity");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to create activity");
+      }
       return response.json();
     },
     onSuccess: () => {
       toast.success("Activity created");
-      setForm({ title: "", description: "", rules: "", startsAt: "", endsAt: "", bannerUrl: "" });
+      setForm({
+        title: "",
+        description: "",
+        rules: "",
+        startsAt: "",
+        endsAt: "",
+        bannerUrl: "",
+        requiredMediaTypes: ["image"],
+      });
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-activities"] });
     },
-    onError: () => toast.error("Failed to create activity"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to create activity"),
   });
 
   const setStatusMutation = useMutation({
@@ -151,6 +181,7 @@ export default function CorpusCollectionActivitiesPage() {
     },
     onSuccess: (result) => {
       setCovers(result);
+      setSavedCoverUrls({});
       toast.success("Cover candidates generated");
     },
     onError: () => toast.error("Failed to generate cover candidates"),
@@ -158,6 +189,7 @@ export default function CorpusCollectionActivitiesPage() {
 
   const selectCoverMutation = useMutation({
     mutationFn: async (url: string) => {
+      setUploadingCoverUrl(url);
       const response = await fetch("/api/admin/corpus-collection/covers/select", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -166,17 +198,53 @@ export default function CorpusCollectionActivitiesPage() {
       if (!response.ok) throw new Error("Failed to select cover");
       return response.json() as Promise<{ url: string }>;
     },
-    onSuccess: (result) => {
+    onSuccess: (result, sourceUrl) => {
       setForm((current) => ({ ...current, bannerUrl: result.url }));
-      toast.success("Cover saved to OSS and added to the banner field");
+      setSavedCoverUrls((current) => ({ ...current, [sourceUrl]: result.url }));
+      toast.success("Cover uploaded to OSS");
     },
-    onError: () => toast.error("Failed to save cover"),
+    onError: () => toast.error("Failed to upload cover"),
+    onSettled: () => setUploadingCoverUrl(null),
   });
+
+  const toggleMediaType = (type: MediaType, checked: boolean) => {
+    setForm((current) => {
+      const requiredMediaTypes = checked
+        ? Array.from(new Set([...current.requiredMediaTypes, type]))
+        : current.requiredMediaTypes.filter((item) => item !== type);
+      return { ...current, requiredMediaTypes };
+    });
+  };
+
+  const copyUrl = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    toast.success("URL copied");
+  };
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.title.trim()) {
       toast.error("Title is required");
+      return;
+    }
+    if (countCharacters(form.title) > textLimits.title) {
+      toast.error(`Title must be ${textLimits.title} characters or less`);
+      return;
+    }
+    if (countCharacters(form.description) > textLimits.description) {
+      toast.error(`Description must be ${textLimits.description} characters or less`);
+      return;
+    }
+    if (countCharacters(form.rules) > textLimits.rules) {
+      toast.error(`Rules must be ${textLimits.rules} characters or less`);
+      return;
+    }
+    if (form.startsAt && form.endsAt && new Date(form.startsAt) >= new Date(form.endsAt)) {
+      toast.error("Start time must be earlier than end time");
+      return;
+    }
+    if (form.requiredMediaTypes.length < 1) {
+      toast.error("Select at least one media type");
       return;
     }
     createMutation.mutate();
@@ -200,16 +268,43 @@ export default function CorpusCollectionActivitiesPage() {
           <CardContent>
             <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
               <div className="space-y-2 md:col-span-2">
-                <Label>Title</Label>
-                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Title</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {countCharacters(form.title)}/{textLimits.title}
+                  </span>
+                </div>
+                <Input
+                  value={form.title}
+                  maxLength={textLimits.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Description</Label>
-                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Description</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {countCharacters(form.description)}/{textLimits.description}
+                  </span>
+                </div>
+                <Textarea
+                  value={form.description}
+                  maxLength={textLimits.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Rules</Label>
-                <Textarea value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} />
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Rules</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {countCharacters(form.rules)}/{textLimits.rules}
+                  </span>
+                </div>
+                <Textarea
+                  value={form.rules}
+                  maxLength={textLimits.rules}
+                  onChange={(e) => setForm({ ...form, rules: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Starts At</Label>
@@ -222,6 +317,31 @@ export default function CorpusCollectionActivitiesPage() {
               <div className="space-y-2 md:col-span-2">
                 <Label>Banner URL</Label>
                 <Input value={form.bannerUrl} onChange={(e) => setForm({ ...form, bannerUrl: e.target.value })} />
+              </div>
+              <div className="space-y-3 md:col-span-2">
+                <div>
+                  <Label>Required Media Types</Label>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    The miniprogram uses this to decide which upload controls to show.
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {mediaTypeOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex cursor-pointer items-start gap-3 rounded-md border bg-background p-3"
+                    >
+                      <Checkbox
+                        checked={form.requiredMediaTypes.includes(option.value)}
+                        onCheckedChange={(checked) => toggleMediaType(option.value, checked === true)}
+                      />
+                      <span className="space-y-1">
+                        <span className="block text-sm font-medium text-foreground">{option.label}</span>
+                        <span className="block text-xs leading-5 text-muted-foreground">{option.description}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="md:col-span-2">
                 <Button type="submit" disabled={createMutation.isPending}>
@@ -236,7 +356,9 @@ export default function CorpusCollectionActivitiesPage() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>AI Banner</CardTitle>
-            <CardDescription>Generate temporary cover candidates from a prompt.</CardDescription>
+            <CardDescription>
+              Generate temporary candidates, then upload the selected image to OSS to get a permanent URL.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
@@ -250,18 +372,56 @@ export default function CorpusCollectionActivitiesPage() {
             </Button>
             {covers && (
               <div className="grid gap-3">
-                {covers.images.map((image) => (
-                  <button
-                    key={image.index}
-                    type="button"
-                    className="overflow-hidden rounded-md border text-left"
-                    onClick={() => selectCoverMutation.mutate(image.url)}
-                    disabled={selectCoverMutation.isPending}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.url} alt={`Candidate ${image.index}`} className="aspect-video w-full object-cover" />
-                  </button>
-                ))}
+                {covers.images.map((image) => {
+                  const uploadedUrl = savedCoverUrls[image.url];
+                  return (
+                    <div key={image.index} className="overflow-hidden rounded-md border bg-background">
+                      <div className="bg-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={image.url} alt={`Candidate ${image.index}`} className="aspect-video w-full object-cover" />
+                      </div>
+                      <div className="space-y-3 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-medium text-foreground">Candidate {image.index + 1}</div>
+                            <div className="text-xs text-muted-foreground">Expires {format(new Date(image.expiresAt), "MMM d, HH:mm")}</div>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => selectCoverMutation.mutate(image.url)}
+                            disabled={selectCoverMutation.isPending}
+                          >
+                            {uploadingCoverUrl === image.url ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Upload className="mr-2 h-4 w-4" />
+                            )}
+                            Upload to OSS for URL
+                          </Button>
+                        </div>
+                        {uploadedUrl && (
+                          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                              <Check className="h-4 w-4 text-success" />
+                              Permanent OSS URL
+                            </div>
+                            <div className="flex gap-2">
+                              <Input readOnly value={uploadedUrl} className="font-mono text-xs" />
+                              <Button type="button" variant="outline" size="icon" onClick={() => copyUrl(uploadedUrl)}>
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p className="text-xs leading-5 text-muted-foreground">
+                              This uploaded URL has been filled into the Banner URL field and can be copied here.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

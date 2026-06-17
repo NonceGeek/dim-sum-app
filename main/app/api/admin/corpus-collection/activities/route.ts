@@ -3,6 +3,9 @@ import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  parseActivityMediaRequirements,
+  parseActivityTextFields,
+  parseActivityWindow,
   parsePositiveInt,
   serializeActivity,
 } from "@/lib/services/corpus-collection";
@@ -59,24 +62,36 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   return requireAdmin(req, async (_req, userId) => {
     const body = await req.json();
-    if (!body.title) {
-      return NextResponse.json({ error: "title is required" }, { status: 400 });
+
+    let textFields: ReturnType<typeof parseActivityTextFields>;
+    let startsAt: Date | null;
+    let endsAt: Date | null;
+    let mediaRequirements: Prisma.InputJsonValue;
+    try {
+      textFields = parseActivityTextFields(body, { requireTitle: true });
+      const parsedWindow = parseActivityWindow(body.startsAt, body.endsAt);
+      startsAt = parsedWindow.startsAt;
+      endsAt = parsedWindow.endsAt;
+      mediaRequirements = parseActivityMediaRequirements(body.mediaRequirements);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid activity payload";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     const data = {
-      title: body.title,
+      title: textFields.title ?? "",
       slug: body.slug || undefined,
-      description: body.description,
-      rules: body.rules,
+      description: textFields.description,
+      rules: textFields.rules,
       category: body.category,
       tags: (body.tags ?? []) as Prisma.InputJsonValue,
       submission_types: (body.submissionTypes ?? []) as Prisma.InputJsonValue,
       reward_config: (body.rewardConfig ?? {}) as Prisma.InputJsonValue,
-      media_requirements: (body.mediaRequirements ?? {}) as Prisma.InputJsonValue,
+      media_requirements: mediaRequirements,
       banner_url: body.bannerUrl,
       status: body.status || "draft",
-      starts_at: body.startsAt ? new Date(body.startsAt) : null,
-      ends_at: body.endsAt ? new Date(body.endsAt) : null,
+      starts_at: startsAt,
+      ends_at: endsAt,
       created_by: userId,
     } as Prisma.corpus_collection_activitiesUncheckedCreateInput;
 

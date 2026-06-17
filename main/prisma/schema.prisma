@@ -559,7 +559,6 @@ model game_player_progress {
 /// 语料采集 - 活动
 model corpus_collection_activities {
   id                 BigInt                             @id @default(autoincrement())
-  display_uuid       String                             @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title              String
   slug               String?                            @unique
   description        String?
@@ -576,6 +575,7 @@ model corpus_collection_activities {
   category           String?
   submission_types   Json                               @default("[]")
   tags               Json                               @default("[]")
+  display_uuid       String                             @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   creator            User?                              @relation(fields: [created_by], references: [id])
   review_batches     corpus_collection_review_batches[]
   submissions        corpus_collection_submissions[]
@@ -822,6 +822,20 @@ model app_lib_shadowing_game {
   created_at            DateTime  @default(now()) @db.Timestamptz(6)
   updated_at            DateTime? @default(now()) @db.Timestamptz(6)
   data_table            String    @default("cantonese_corpus_all")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model wu_corpus_all {
+  id             BigInt    @id @default(autoincrement())
+  data           String?
+  note           Json?     @default("{}")
+  category       String?
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  tags           Json?
+  editable_level BigInt    @default(1)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+  unique_id      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 }
 
 enum Role {
