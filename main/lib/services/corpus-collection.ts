@@ -177,6 +177,13 @@ function getSubmissionImages(submission: any) {
     .map((item: any) => item.url);
 }
 
+function normalizeCoverUrl(value: unknown) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
 function getCoverMetadata(submission: any) {
   const cover = (submission.media ?? []).find((item: any) => item.media_type === "image");
   const metadata = cover?.metadata;
@@ -184,7 +191,7 @@ function getCoverMetadata(submission: any) {
   const height = Number(metadata?.height);
 
   return {
-    coverUrl: cover?.url ?? null,
+    coverUrl: submission.cover_url ?? cover?.url ?? null,
     coverWidth: Number.isFinite(width) && width > 0 ? width : null,
     coverHeight: Number.isFinite(height) && height > 0 ? height : null,
   };
@@ -267,7 +274,7 @@ export function serializeSubmission(
     isAwarded: submission.is_awarded,
     awardStatus: submission.award_status,
     awardInfo: submission.award_info,
-    coverUrl: imageUrls[0] ?? null,
+    coverUrl: submission.cover_url ?? imageUrls[0] ?? null,
     imageUrls,
     liked: viewerLiked,
     activity: submission.activity
@@ -301,7 +308,7 @@ export function serializeHomeSubmission(submission: any) {
   const imageUrls = getSubmissionImages(submission);
   return {
     id: submission.id.toString(),
-    imageUrl: imageUrls[0] ?? "",
+    imageUrl: submission.cover_url ?? imageUrls[0] ?? "",
     author: author?.name ?? "用户昵称",
     avatar: author?.avatar ?? "",
     viewCount: submission.view_count,
@@ -475,10 +482,11 @@ export async function listHomeFeedSubmissions(options: {
   };
 }
 
-export function validateSubmissionMedia(media: unknown[]) {
+export function validateSubmissionMedia(media: unknown[], coverUrlValue?: unknown) {
   const images = media.filter((item: any) => item?.type === "image");
   const audios = media.filter((item: any) => item?.type === "audio");
   const videos = media.filter((item: any) => item?.type === "video");
+  const coverUrl = normalizeCoverUrl(coverUrlValue);
 
   if (media.length < 1) return false;
   if (media.some((item: any) => !CORPUS_COLLECTION_MEDIA_TYPES.includes(item?.type))) {
@@ -492,7 +500,19 @@ export function validateSubmissionMedia(media: unknown[]) {
   if (videos.length > 1) return false;
   if (audios.some((item: any) => Number(item.durationSec ?? 0) > 60)) return false;
   if (videos.some((item: any) => Number(item.durationSec ?? 0) > 30)) return false;
+  if (coverUrl === undefined) return false;
   return true;
+}
+
+function buildSubmissionMediaCreateInput(media: any[]) {
+  return media.map((item: any, index: number) => ({
+    media_type: item.type,
+    url: item.url,
+    duration_seconds:
+      typeof item.durationSec === "number" ? Math.floor(item.durationSec) : null,
+    sort_order: typeof item.sortOrder === "number" ? item.sortOrder : index,
+    metadata: (item.metadata ?? {}) as Prisma.InputJsonValue,
+  }));
 }
 
 export async function createCorpusSubmission(userId: string, body: any) {
@@ -507,11 +527,12 @@ export async function createCorpusSubmission(userId: string, body: any) {
     throw new Error("Missing required fields");
   }
 
-  if (!validateSubmissionMedia(media)) {
+  if (!validateSubmissionMedia(media, body.coverUrl)) {
     throw new Error("Invalid media requirements");
   }
 
   const activityId = parseBigIntId(body.activityId);
+  const coverUrl = normalizeCoverUrl(body.coverUrl);
 
   return prisma.corpus_collection_submissions.create({
     data: {
@@ -521,18 +542,12 @@ export async function createCorpusSubmission(userId: string, body: any) {
       title: body.title,
       intro: body.intro,
       tags: body.tags as Prisma.InputJsonValue,
+      cover_url: coverUrl ?? null,
       precheck_result: jsonInput(body.precheckResult),
       review_status: "pending_review",
       visibility: "private",
       media: {
-        create: media.map((item: any, index: number) => ({
-          media_type: item.type,
-          url: item.url,
-          duration_seconds:
-            typeof item.durationSec === "number" ? Math.floor(item.durationSec) : null,
-          sort_order: typeof item.sortOrder === "number" ? item.sortOrder : index,
-          metadata: (item.metadata ?? {}) as Prisma.InputJsonValue,
-        })),
+        create: buildSubmissionMediaCreateInput(media),
       },
     },
     include: submissionInclude,
@@ -551,7 +566,7 @@ export async function updateCorpusSubmission(userId: string, id: bigint, body: a
     throw new Error("Missing required fields");
   }
 
-  if (!validateSubmissionMedia(media)) {
+  if (!validateSubmissionMedia(media, body.coverUrl)) {
     throw new Error("Invalid media requirements");
   }
 
@@ -581,19 +596,13 @@ export async function updateCorpusSubmission(userId: string, id: bigint, body: a
         title: body.title,
         intro: body.intro,
         tags: body.tags as Prisma.InputJsonValue,
+        cover_url: normalizeCoverUrl(body.coverUrl) ?? null,
         precheck_result: jsonInput(body.precheckResult),
         review_status: "pending_review",
         review_reason: null,
         visibility: "private",
         media: {
-          create: media.map((item: any, index: number) => ({
-            media_type: item.type,
-            url: item.url,
-            duration_seconds:
-              typeof item.durationSec === "number" ? Math.floor(item.durationSec) : null,
-            sort_order: typeof item.sortOrder === "number" ? item.sortOrder : index,
-            metadata: (item.metadata ?? {}) as Prisma.InputJsonValue,
-          })),
+          create: buildSubmissionMediaCreateInput(media),
         },
       },
       include: submissionInclude,
