@@ -608,6 +608,7 @@ model corpus_collection_submissions {
   title            String
   intro            String
   tags             Json                                   @default("[]")
+  cover_url        String?
   review_status    String                                 @default("pending_review")
   precheck_result  Json?
   ai_review_result Json?

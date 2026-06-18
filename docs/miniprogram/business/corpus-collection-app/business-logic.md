@@ -149,6 +149,7 @@ showOnHome = true
 | 介绍内容 | 必填 |
 | 分类标签 | 必填，由运营后台配置 |
 | 图片/视频/语音 | 根据活动 `mediaRequirements.requiredTypes` 展示对应入口，数量组合由小程序前端控制 |
+| 封面图 | 可选，前端可传 `coverUrl` 指定封面；不要求来自 `media[]`。未传时后端 fallback 到第一张图片；没有图片则前端展示占位图 |
 
 投稿前安全检查只检查文本和图片。音频、视频在后续 AI 审核或人工审核阶段处理。
 
@@ -412,6 +413,7 @@ show_on_home
 | `title` | 标题 |
 | `intro` | 介绍内容 |
 | `tags` | 标签 JSON |
+| `cover_url` | 投稿封面 URL，可为空 |
 | `review_status` | 审核状态 |
 | `precheck_result` | 投稿前安全检查结果 |
 | `ai_review_result` | AI 审核结果 |

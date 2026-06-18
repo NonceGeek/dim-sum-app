@@ -172,7 +172,7 @@ const response = await wx.request({
 
 | 字段 | 说明 |
 |------|------|
-| `coverUrl` | 瀑布流卡片主图，优先取第一张图片 |
+| `coverUrl` | 瀑布流卡片主图，优先取投稿 `coverUrl`，未设置时取第一张图片；都没有时为 `null` 或空字符串，前端可显示占位图 |
 | `coverWidth` / `coverHeight` | 上传媒体元数据中存在宽高时返回，否则为 `null` |
 | `coverAspectRatio` | `coverWidth / coverHeight`，前端可用于预占瀑布流高度 |
 | `liked` | 当前登录用户是否已点赞 |
@@ -308,9 +308,7 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
     "description": "优秀作品可获得纪念奖品"
   },
   "mediaRequirements": {
-    "images": { "required": true, "min": 1, "max": 9 },
-    "audio": { "required": true, "maxDurationSec": 60 },
-    "video": { "required": false, "maxDurationSec": 30 }
+    "requiredTypes": ["image", "audio"]
   },
   "bannerUrl": "https://oss/banner.jpg",
   "canSubmit": true,
@@ -318,7 +316,45 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
 }
 ```
 
-`timeStatus` 由后端根据当前时间和活动时间计算，可选值：`not_started`、`ongoing`、`ended`。`canSubmit` 由后端根据活动状态、开始结束时间和当前用户权限计算。
+`mediaRequirements` 对外统一返回 `{ "requiredTypes": [...] }`。后端兼容旧配置格式，例如 `allowedTypes` 或 `{ images/audio/video: { enabled|required } }`，但小程序端只需要消费 `requiredTypes`。`timeStatus` 由后端根据当前时间和活动时间计算，可选值：`not_started`、`ongoing`、`ended`。`canSubmit` 由后端根据活动状态、开始结束时间和当前用户权限计算。
+
+### 2.3 活动媒体要求模型变更说明
+
+`mediaRequirements.requiredTypes` 会影响所有返回活动对象的接口，以及投稿创建/编辑中的 `media` 校验和前端上传入口展示。
+
+受影响接口：
+
+| 接口 | 受影响模型 | 说明 |
+|------|------------|------|
+| `GET /api/miniprogram/corpus_collection/home` | 首页活动 / Banner 活动对象 | 活动对象中的 `mediaRequirements` 统一为 `{ requiredTypes }` |
+| `GET /api/miniprogram/corpus_collection/activities` | 活动列表 `items[]` | 活动列表每个活动返回统一媒体要求 |
+| `GET /api/miniprogram/corpus_collection/activities/{id}` | 活动详情 | 活动详情返回统一媒体要求 |
+| `GET /api/miniprogram/corpus_collection/activities/{id}/works` | 作品列表中的 `activity` 或作品所属活动 | 若返回活动信息，按统一媒体要求展示 |
+| `POST /api/miniprogram/corpus_collection/submissions` | 投稿请求 `media[]` | 前端根据活动 `requiredTypes` 展示上传入口，实际提交仍是 `media[]` |
+| `PATCH /api/miniprogram/corpus_collection/submissions/{id}` | 编辑投稿请求 `media[]` | 编辑时同样按活动 `requiredTypes` 展示入口，保存后重建媒体列表 |
+
+相关模型：
+
+| 模型 | 变更点 |
+|------|--------|
+| Activity | `mediaRequirements` 对外统一为 `{ "requiredTypes": ["image" | "video" | "audio"] }` |
+| Submission Request | `media` 支持 `image`、`audio`、`video`，字段为 `{ type, url, durationSec?, sortOrder?, metadata? }`；可选传 `coverUrl` 指定封面图片 |
+| Submission Response | 返回 `media[]`，同时保留 `coverUrl`、`imageUrls` 兼容瀑布流和旧图片展示；`coverUrl` 优先使用投稿封面字段，未设置时使用第一张图片 |
+| Submission Media | 数据库存储为 `media_type`、`url`、`duration_seconds`、`sort_order`、`metadata` |
+
+当前后端基础校验：
+
+```text
+media 至少 1 个
+type 只能是 image / audio / video
+image 最多 8 张
+audio 最多 1 个，durationSec <= 60
+video 最多 1 个，durationSec <= 30
+```
+
+注意：后端当前只做通用媒体数量和时长校验，尚未强校验“活动 requiredTypes 中声明的类型必须全部提交”。因此活动投稿时，小程序端需要根据 `mediaRequirements.requiredTypes` 控制上传入口和必填提示。自由投稿不关联活动，因此不受活动 `mediaRequirements.requiredTypes` 约束，但当前仍受下方通用 `media[]` 校验约束。
+
+`coverUrl` 是独立封面字段，不要求必须出现在 `media[]` 图片列表中；如果未传 `coverUrl`，后端会尝试使用第一张图片作为封面。如果没有图片也没有 `coverUrl`，响应封面为空，前端小程序自行展示占位图。
 
 #### 错误响应
 
@@ -541,6 +577,7 @@ Base64 形态：
   "title": "月光光",
   "intro": "粤语童谣经典作品",
   "tags": ["童谣", "荔湾"],
+  "coverUrl": "https://oss/1.jpg",
   "media": [
     { "type": "image", "url": "https://oss/1.jpg", "sortOrder": 0 },
     { "type": "audio", "url": "https://oss/a.mp3", "durationSec": 58 }
@@ -558,8 +595,11 @@ Base64 形态：
 | `title` | string | 是 | 标题 |
 | `intro` | string | 是 | 介绍内容 |
 | `tags` | string[] | 是 | 分类标签 |
+| `coverUrl` | string | 否 | 指定封面图 URL，可独立于 `media[]`。未传时后端 fallback 到第一张图片；若无图片则响应封面为空 |
 | `media` | array | 是 | 多媒体列表，活动投稿按活动 `mediaRequirements.requiredTypes` 展示对应上传入口 |
 | `precheckResult` | object | 否 | 投稿前安全检查结果 |
+
+`coverUrl` 会保存为投稿封面字段；`imageUrls` 仍从 `media[]` 中的图片派生。音频/视频投稿可以只传 `coverUrl` 作为封面，不必为了封面额外把它放进 `media[]`。
 
 #### 成功响应 (201)
 
@@ -588,6 +628,8 @@ Base64 形态：
   "error": "Invalid media requirements"
 }
 ```
+
+当媒体类型不合法、URL 为空、音视频超过数量或时长限制，或 `coverUrl` 不是字符串时，会返回该错误。
 
 ### 3.4 获取我的投稿
 
