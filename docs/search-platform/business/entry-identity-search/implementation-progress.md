@@ -141,7 +141,9 @@ P0 聚合字段：
 - [x] 实现 similar 召回和“换一批”。
 - [x] 实现 recommended 召回和“换一批”。
 - [x] 本地验证 `/api/search/entries?q=好` 可返回 `primary=1`、`similar=3`、`recommended=4`。
-- [ ] 接入 Search 页面 UI。
+- [x] 新增 `useEntrySearchQuery`，与旧 `useSearchQuery` 并行存在。
+- [x] 新增三段式结果展示组件 `EntrySearchSections`。
+- [x] 以 `/search?mode=entry&q=...` 方式接入 Search 页面 UI，不影响旧列表模式。
 - [ ] 接入分享卡片预览。
 
 ### 后端 / 数据配合
@@ -161,12 +163,15 @@ P0 聚合字段：
 ```text
 main/lib/search/entry-identity.ts
 main/app/api/search/entries/route.ts
+main/lib/api/search.ts
+main/app/[locale]/(home)/_components/entry-search-sections.tsx
+main/app/[locale]/(home)/search/page.tsx
 ```
 
 下一步先做三件事：
 
-1. 新增前端 hook，和旧 `useSearchQuery` 并行存在。
-2. 接入 Search 页面三段式 UI。
+1. 用浏览器检查 `/search?mode=entry&q=好` 的桌面和移动端视觉布局。
+2. 验证新旧搜索并行时的 loading、空结果、换一批状态。
 3. 如线上仍需更低延迟，再把聚合 SQL 下沉为 Supabase RPC，并评估缓存热门 query。
 
 向量检索放在 P0.5：等非向量链路跑通后，再把 `corpus_field_embeddings` 作为候选增强接入。
@@ -178,3 +183,4 @@ main/app/api/search/entries/route.ts
 - 多次远端 `$queryRaw` 每次有约 0.8-1.1 秒往返/执行成本，串行会把接口拖到 5 秒级。
 - 已将 Route Handler 改成单次聚合 SQL，一次返回 primary / similar / recommended 候选和身份聚合数据。
 - 本地热请求验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒；首次编译或热更新后可能出现更高抖动。
+- 页面编译验证：`/zh-CN/search?mode=entry&q=好` 会 307 到默认 locale 无前缀路径，跟随重定向后返回 200。
