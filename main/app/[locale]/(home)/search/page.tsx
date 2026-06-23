@@ -167,8 +167,9 @@ export default function SearchPage() {
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
-  const handleToggleSearchMode = () => {
+  const handleSearchModeChange = (nextUseEntryMode: boolean) => {
     if (!urlKeyword.trim()) return;
+    if (nextUseEntryMode === useEntryMode) return;
     setCurrentPage(1);
     setSelectCategory("全部");
     setSimilarCursor(null);
@@ -177,7 +178,7 @@ export default function SearchPage() {
     const params = new URLSearchParams();
     params.set("q", urlKeyword.trim());
     if (urlDataset) params.set("dataset", urlDataset);
-    if (!useEntryMode) params.set("mode", "entry");
+    if (nextUseEntryMode) params.set("mode", "entry");
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
@@ -276,23 +277,61 @@ export default function SearchPage() {
             <div className="hidden sm:flex">
               <div className="shrink-0 w-[172px]" />
               <div className="flex-1 max-w-3xl">
-                <button
-                  type="button"
-                  onClick={handleToggleSearchMode}
-                  className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  {useEntryMode ? "切换到旧搜索" : "切换到新搜索"}
-                </button>
+                <div className="inline-flex h-8 rounded-md border border-border bg-muted/30 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSearchModeChange(false)}
+                    className={cn(
+                      "rounded px-2.5 text-xs font-medium transition-colors",
+                      !useEntryMode
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    旧搜索
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSearchModeChange(true)}
+                    className={cn(
+                      "rounded px-2.5 text-xs font-medium transition-colors",
+                      useEntryMode
+                        ? "bg-background text-primary shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    新搜索
+                  </button>
+                </div>
               </div>
             </div>
             <div className="sm:hidden">
-              <button
-                type="button"
-                onClick={handleToggleSearchMode}
-                className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {useEntryMode ? "切换到旧搜索" : "切换到新搜索"}
-              </button>
+              <div className="inline-flex h-8 rounded-md border border-border bg-muted/30 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleSearchModeChange(false)}
+                  className={cn(
+                    "rounded px-2.5 text-xs font-medium transition-colors",
+                    !useEntryMode
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  旧搜索
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSearchModeChange(true)}
+                  className={cn(
+                    "rounded px-2.5 text-xs font-medium transition-colors",
+                    useEntryMode
+                      ? "bg-background text-primary shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  新搜索
+                </button>
+              </div>
             </div>
           </div>
         )}
