@@ -94,7 +94,7 @@ export type CorpusTagRow = {
 };
 
 export type ContributorRow = {
-  unique_id: string;
+  corpus_id: bigint | number;
   contributor_ids: string[] | null;
 };
 
@@ -276,12 +276,12 @@ export function groupTagsByCorpus(rows: CorpusTagRow[]): Map<number, CorpusTagRo
   return grouped;
 }
 
-export function groupContributorsByUniqueId(
+export function groupContributorsByCorpusId(
   rows: ContributorRow[],
-): Map<string, string[]> {
-  const grouped = new Map<string, string[]>();
+): Map<number, string[]> {
+  const grouped = new Map<number, string[]>();
   for (const row of rows) {
-    grouped.set(row.unique_id, row.contributor_ids?.filter(Boolean) ?? []);
+    grouped.set(asNumber(row.corpus_id), row.contributor_ids?.filter(Boolean) ?? []);
   }
   return grouped;
 }

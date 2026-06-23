@@ -149,7 +149,7 @@ P0 聚合字段：
 - [x] 核心表已存在。
 - [x] 分类和标签已有初始化数据。
 - [x] 字段级向量表已存在。
-- [ ] 优化推荐 SQL 性能：当前本地接口可跑通，但完整聚合耗时约 5 秒，不能直接视为上线性能。
+- [x] 优化聚合查询性能：已将多次 `$queryRaw` 合并为单次聚合 SQL，热请求约 1.1-1.3 秒。
 - [ ] 确认是否需要提供批量 `entryIdentity` RPC。
 
 ---
@@ -165,8 +165,16 @@ main/app/api/search/entries/route.ts
 
 下一步先做三件事：
 
-1. 拆分并 EXPLAIN 当前 `/api/search/entries` 的 primary / similar / recommended SQL，优先优化 5 秒级耗时。
-2. 新增前端 hook，和旧 `useSearchQuery` 并行存在。
-3. 接入 Search 页面三段式 UI。
+1. 新增前端 hook，和旧 `useSearchQuery` 并行存在。
+2. 接入 Search 页面三段式 UI。
+3. 如线上仍需更低延迟，再把聚合 SQL 下沉为 Supabase RPC，并评估缓存热门 query。
 
 向量检索放在 P0.5：等非向量链路跑通后，再把 `corpus_field_embeddings` 作为候选增强接入。
+
+当前性能观察：
+
+- `primary` 单 SQL 约 100ms。
+- 原始 `similar` SQL 曾因 `left join + or + group by` 扫描大量候选，约 2.38 秒；已改为从 `corpus_tags` / `corpus_category` 先取候选再合并分数，单 SQL 约 133ms。
+- 多次远端 `$queryRaw` 每次有约 0.8-1.1 秒往返/执行成本，串行会把接口拖到 5 秒级。
+- 已将 Route Handler 改成单次聚合 SQL，一次返回 primary / similar / recommended 候选和身份聚合数据。
+- 本地热请求验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒；首次编译或热更新后可能出现更高抖动。
