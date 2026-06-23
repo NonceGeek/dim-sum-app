@@ -286,16 +286,6 @@ export default function HomePage() {
                       : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors",
-                      useEntryMode
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-muted-foreground/40",
-                    )}
-                  >
-                    {useEntryMode && <Check className="h-3 w-3" />}
-                  </span>
                   新版搜索
                 </button>
 
