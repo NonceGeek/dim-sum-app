@@ -98,8 +98,9 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
 |--------|------|------|--------|------|
 | `q` | string | 是 | - | 搜索关键词 |
 | `dataset` | string | 否 | `all` | 现有 Search URL 中的 dataset，逗号分隔 |
-| `page` | number | 否 | `1` | 页码 |
-| `pageSize` | number | 否 | `20` | 每页数量 |
+| `section` | string | 否 | `all` | `all` / `similar` / `recommended`。首次搜索用 `all`，换一批时指定 section |
+| `batchSize` | number | 否 | 按 section | 每批返回数量。`similar` 默认 3，`recommended` 默认 4 |
+| `batchToken` | string | 否 | - | 换一批游标，由上一次响应返回 |
 | `includeRecommendations` | boolean | 否 | `true` | 是否返回二级/三级结果 |
 
 #### 聚合逻辑
@@ -111,28 +112,32 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
   -> 合并繁简结果并按 unique_id 去重
   -> 根据 dataset 过滤现有语料库 category
   -> 排除 test category
-  -> 读取本地分类、身份字段、互动统计
+  -> 读取 content_categories / corpus_category 身份分类
+  -> 读取 tags / corpus_tags / tag_related 标签关系
+  -> 批量聚合 cantonese_corpus_update_history 编辑贡献者
+  -> 读取互动统计
   -> 标准化每条结果为 entryIdentity
   -> 按精准命中规则分出 primary
-  -> 按标签召回或分组生成 similar
-  -> 按推荐标签生成 recommended
+  -> 按 corpus_tags / tag_related / content_categories 生成 similar
+  -> 按 recommended tags / tag_related / 热门词生成 recommended
   -> 返回分层结果
 ```
 
 #### 成功响应
+
+首次搜索返回三个 section 的首屏结果：
 
 ```json
 {
   "query": "好",
   "legacyResults": [],
   "sections": {
-    "primary": [
-      {
-        "entryIdentity": {
-          "entryId": "771a1c5-b027",
-          "entryName": "相骂冇好口",
-          "pronunciation": "xiāng mà móu hǎo kǒu",
-          "jyutping": "soeng1maa6 mou4 hou3 hau3",
+    "primary": {
+      "item": {
+          "entryIdentity": {
+            "entryId": "771a1c5-b027",
+            "entryName": "相骂冇好口",
+            "jyutping": "soeng1maa6 mou4 hou3 hau3",
           "meaning": "多不相让，言语冲突。",
           "source": {
             "categoryName": "zyzdv2",
@@ -160,21 +165,54 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
           "status": "published"
         },
         "match": {
+          "section": "primary",
           "type": "exact",
-          "score": 1
+          "score": 1,
+          "reason": "完全匹配"
         }
       }
-    ],
-    "similar": [],
-    "recommended": []
-  },
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "total": 1000,
-    "hasMore": true
+    },
+    "similar": {
+      "items": [],
+      "batch": {
+        "batchSize": 3,
+        "nextBatchToken": "similar:2",
+        "hasNextBatch": true
+      }
+    },
+    "recommended": {
+      "items": [],
+      "batch": {
+        "batchSize": 4,
+        "nextBatchToken": "recommended:2",
+        "hasNextBatch": true
+      }
+    }
   }
 }
+```
+
+刷新原则：
+
+- `primary` 是答案区，只返回 1 个最佳结果。
+- `similar` 使用“换一批相似结果”，按 section 单独刷新并替换当前结果，一次返回 3 条。
+- `recommended` 使用“换一批推荐”，按 section 单独刷新并替换当前结果，一次返回 4 条。
+- 前端不展示传统分页，也不做追加加载。
+- `batchToken` 可以在 P0 内部映射为 page/offset，后续接入向量或混合排序后可映射为 cursor。
+
+换一批示例：
+
+```text
+GET /api/search/entries?q=好&dataset=all&section=similar&batchToken=similar:2&batchSize=3
+GET /api/search/entries?q=好&dataset=all&section=recommended&batchToken=recommended:2&batchSize=4
+```
+
+后端实现说明：
+
+```text
+batchToken 是不透明字符串，前端只负责原样传回。
+P0 可编码 page/offset。
+P1/P2 可编码 vector score、last unique_id、seed 或推荐池 offset。
 ```
 
 兼容策略：
@@ -338,7 +376,7 @@ GET /api/admin/corpus
 | 参数名 | 类型 | 说明 |
 |--------|------|------|
 | `lifecycleStage` | string | 生命周期筛选 |
-| `missingIdentityField` | string | 缺失字段筛选，如 `meaning`、`pronunciation` |
+| `missingIdentityField` | string | 缺失字段筛选，如 `meaning`、`jyutping` |
 | `tagType` | string | precise / related / recommended |
 | `tagRelevance` | string | strong / medium / weak |
 | `hasShareCard` | boolean | 是否有分享卡片 |
@@ -354,7 +392,6 @@ GET /api/admin/corpus
       "data": "相骂冇好口",
       "identitySummary": {
         "meaning": "多不相让，言语冲突。",
-        "pronunciation": "xiāng mà móu hǎo kǒu",
         "jyutping": "soeng1maa6 mou4 hou3 hau3",
         "contributor": "User123",
         "completeness": 0.82
@@ -385,11 +422,9 @@ PATCH /api/admin/corpus/{uniqueId}/identity
 ```json
 {
   "identity": {
-    "pronunciation": "xiāng mà móu hǎo kǒu",
     "jyutping": "soeng1maa6 mou4 hou3 hau3",
     "meaning": "多不相让，言语冲突。",
-    "contributor": "User123",
-    "secondaryCategory": "日常口语"
+    "secondaryCategoryId": 12
   }
 }
 ```
@@ -397,14 +432,17 @@ PATCH /api/admin/corpus/{uniqueId}/identity
 写入建议：
 
 ```text
-cantonese_corpus_all.structured_note.identity
+structured_note.data[].jyutping
+structured_note.data[].blocks[type=definition]
+corpus_category
 ```
 
 原因：
 
 - 避免破坏不同类别现有 `note` 结构。
-- 前台仍可按原逻辑展示旧数据。
-- 新身份字段有稳定位置。
+- 读音和粤拼统一使用粤拼字段。
+- 分类不写入 JSON，使用 `content_categories` / `corpus_category` 关系表。
+- 贡献者不写入 `structured_note`，由 `cantonese_corpus_update_history` 聚合。
 
 ### 4.3 更新结构化标签
 
@@ -421,7 +459,7 @@ PATCH /api/admin/corpus/{uniqueId}/tags
   "tags": [
     {
       "name": "相骂",
-      "type": "precise",
+      "tagRole": "precise",
       "relevanceLevel": "strong",
       "source": "manual"
     }
@@ -432,8 +470,11 @@ PATCH /api/admin/corpus/{uniqueId}/tags
 写入：
 
 ```text
-cantonese_corpus_all.tags
+tags
+corpus_tags
 ```
+
+其中 `tags` 保存标签词表，`corpus_tags` 保存语料和标签的关联关系。当前 P0 先不依赖 `corpus_tags.tag_role` 和 `corpus_tags.relevance_level`，接口聚合时统一把已有标签输出为 `related / medium`；后续如字段落库，再支持 precise / related / recommended 和 strong / medium / weak 的精细编辑。
 
 ---
 
@@ -483,7 +524,7 @@ PATCH /api/admin/categories/{name}
   "entryIdentity": {},
   "meta": {
     "title": "相骂冇好口 - DimSum 粤语词条",
-    "description": "了解粤语词条相骂冇好口的读音、粤拼、来源、分类与相关表达。",
+    "description": "了解粤语词条相骂冇好口的粤拼、来源、分类与相关表达。",
     "canonical": "https://search.aidimsum.com/entries/771a1c5-b027"
   },
   "relatedEntries": []

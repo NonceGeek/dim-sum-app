@@ -1,99 +1,218 @@
-# 词条身份信息与搜索分发能力文档
+# 语料身份搜索方案
 
-## 一、文档定位
+## 一、当前结论
 
-本文档组用于承接“词条身份信息体系”新需求，覆盖 Search 前台、Admin 后台、分享卡片工具、SEO 落地页与后续投放支持。
+本需求是在现有语料库 `cantonese_corpus_all` 上建设“语料身份 + 搜索分层 + 推荐分发”能力，不新建一套独立 Entry 主实体。
 
-本文档已经按现有 `dimsum-app/main` 与 `dimsum-app/deno` 源码校正：当前系统的业务主实体是 `cantonese_corpus_all`，公开身份 ID 是 `unique_id`，旧搜索接口来自 Deno backend 的 `/v2/text_search`，后台已有 `/admin/corpus` 与 `/admin/categories`。因此本需求应设计为“现有语料搜索系统增强”，不是另起一套孤立 Entry 服务。
-
-本期架构建议：新搜索分层接口优先放在 Next Route Handler 中，由 Next 服务端直连 Supabase RPC；Deno 的 `/v2/text_search` 保留为历史兼容接口，不在本期继续扩展新业务能力。
-
-目录结构：
-
-| 文档 | 说明 |
-|------|------|
-| `source-audit.md` | 现有源码、模型、页面、接口和分享逻辑梳理 |
-| `business-logic.md` | 产品目标、用户场景、搜索分层、分享与 SEO 业务逻辑 |
-| `data-model.md` | 词条身份信息字段、分类标签模型、推荐数据表 |
-| `admin-design.md` | Admin 后台菜单、页面、权限、审核与维护流程 |
-| `api.md` | Search 前台、Admin 后台、分享卡片、SEO 页面接口草案 |
-| `responsibilities.md` | @RAiN 与其他协作方职责拆分、剩余任务清单 |
-| `rain-handoff.md` | 给 @RAiN 的具体对接说明和可直接发送的话术 |
-| `search-ranking-recommendation.md` | 一级/二级/三级搜索相关性、推荐策略和 Supabase 实现建议 |
-
----
-
-## 二、需求摘要
-
-本期希望为每个语料词条建立统一的身份信息，使现有 `cantonese_corpus_all` 记录不仅能被搜索，也能被展示、推荐、分享、沉淀到 SEO 页面，并在后续支持投放与个性化推荐。
-
-核心公式：
+最终口径：
 
 ```text
-搜索 = 分类（结构） + 向量（语义） + 标签（扩散）
-分发 = SEO（站外） + 卡片（站内外传播）
-数据底座 = 词条身份信息体系
+语料主实体：cantonese_corpus_all
+公开 ID：unique_id
+后端数据底座：分类表、标签表、相关标签表、字段级向量表
+前端交付面：Next Search API、Search UI、分享卡片、SEO 页面
 ```
 
----
+本期搜索结果：
 
-## 三、源码对齐后的本期范围
+| Section | 数量 | 交互 |
+|---------|------|------|
+| `primary` | 1 条 | 精准最佳答案，不分页 |
+| `similar` | 3 条 | 换一批 |
+| `recommended` | 4 条 | 换一批 |
 
-| 模块 | 本期目标 |
-|------|----------|
-| 词条身份信息 | 基于 `cantonese_corpus_all` 聚合 `unique_id`、`data`、`note`、`structured_note`、`category`、`tags`、状态与分享信息 |
-| Search 前台 | 在现有 `/search` 上增加一级精准结果、二级相似结果、三级推荐结果展示；由 Next `/api/search/entries` 提供分层响应 |
-| 分类标签 | 本期落地一级/二级语义分类，增强现有 `cantonese_categories` 与 `tags` JSON，支持标签类型与相关度 |
-| 分享卡片 | 复用 `card.app.aidimsum.com/?uuid=` 与站内 card-generator，补充预览、下载、复制链接、埋点 |
-| SEO 支持 | 基于 `unique_id` 提供词条详情页，基于现有分类和标签生成聚合页 |
-| Admin 后台 | 增强现有 `/admin/corpus`、`/admin/categories`，补充身份信息、标签治理和分享配置 |
+一级精准结果不走向量；二级和三级可把向量作为候选维度，但优先结合标签、相关标签和分类。
 
 ---
 
-## 四、暂不纳入本期
+## 二、推荐阅读顺序
 
-- 完整千人千面推荐策略。
-- 站外 SEO 付费投流闭环。
-- 广告账户和投放系统。
-- 全自动无人工审核的数据治理机制。
-- 复杂向量召回排序策略的最终权重配置。
+### 先看这三份
+
+| 文档 | 用途 |
+|------|------|
+| `README.md` | 当前结论和文档地图 |
+| `implementation-progress.md` | 当前实施状态、可开发项、暂缓项 |
+| `frontend-backend-contract.md` | 前后端职责边界、接口契约、待实现清单 |
+| `语料身份需求.md` | 后端确认的数据表、DDL、查询示例 |
+
+### 后端 / 数据侧
+
+| 文档 | 用途 |
+|------|------|
+| `语料身份需求.md` | 后端数据底座 Source of Truth |
+| `data-model.md` | 面向产品和前端的 entryIdentity 数据模型 |
+| `search-engine-research.md` | qwen3-vl-embedding、pgvector、短 query 策略 |
+
+### 前端 / Next / UI
+
+| 文档 | 用途 |
+|------|------|
+| `frontend-backend-contract.md` | 前后端怎么对接 |
+| `api.md` | Next `/api/search/entries` 和 Admin API 草案 |
+| `search-results-ui.md` | Search 页面展示和换一批交互 |
+| `search-ranking-recommendation.md` | primary / similar / recommended 召回与排序 |
+| `admin-design.md` | Admin 后台如何治理分类、标签、身份字段 |
+
+### 背景和历史
+
+| 文档 | 用途 |
+|------|------|
+| `business-logic.md` | 产品目标、用户场景、分享和 SEO 逻辑 |
+| `source-audit.md` | 现有源码、旧接口、旧页面梳理 |
+| `archive/` | 早期 RAiN 对接和职责拆分过程稿，不再作为最新数据口径 |
 
 ---
 
-## 五、初步产品判断
+## 三、后端负责什么
 
-1. `entryIdentity` 应是基于现有语料记录的聚合对象，不是新的主表概念。
-2. `entryId` 对外应直接使用现有 `unique_id`，避免破坏已存在的分享、互动、编辑链路。
-3. 本期新搜索接口放在 Next Route Handler，直接使用 `SUPABASE_URL` 与 `SUPABASE_SERVICE_ROLE_KEY` 在服务端调用 Supabase RPC。
-4. Deno backend 的 `/v2/text_search` 保持兼容，不承载本期新增的身份聚合、一级/二级分类、分享和 SEO 逻辑。
-5. 一级精准结果需要优先保证稳定性和速度；二级/三级推荐可以允许异步增强或降级为空。
-6. 标签建议先在现有 `tags` 能力上扩展结构化格式，相关度等级采用枚举值，向量召回作为后续增强能力接入。
-7. 分享卡片与 SEO 页面应复用同一份 `entryIdentity` 数据，避免 Search、卡片、落地页字段口径不一致。
-8. Admin 后台需要增强现有 Corpus Data 和 Categories 页面，而不是重复建设一套 Search Entries 后台。
+后端负责“数据底座”：
 
----
+| 能力 | 表 / 来源 |
+|------|-----------|
+| 语料主数据 | `cantonese_corpus_all` |
+| 结构化内容 | `structured_note.data[].blocks` |
+| 两级身份分类 | `content_categories`、`corpus_category` |
+| 标签词表 | `tags` |
+| 语料标签关系 | `corpus_tags` |
+| 相关标签 | `tag_related` |
+| 字段级向量 | `corpus_field_embeddings` |
+| 编辑贡献者 | `cantonese_corpus_update_history` |
 
-## 六、关键待确认项
+后端需要保证：
 
-| 问题 | 当前建议 | 需要对齐对象 |
-|------|----------|--------------|
-| 一级/二级分类如何落库 | 本期落地，建议新增稳定字段承载语义分类，现有 `category` 继续表示语料库/dataset | 产品 / 运营 / 数据侧 |
-| 标签相关度如何定义 | 先使用 `precise/related/recommended` + `strong/medium/weak`，后台可编辑 | 产品 / 运营 |
-| 贡献者字段来源 | 现有贡献者可能在 `note.contributor` 或 `note.context.author`，需定义解析优先级 | 数据侧 |
-| 一级搜索命中规则 | Next `/api/search/entries` 直连 Supabase RPC 后二次分组；后续可沉淀为数据库 RPC | 搜索侧 |
-| 二级结果召回优先级 | 本期先标签召回，向量召回作为增强 | 搜索 / 算法 |
-| 分享卡片可承载字段 | 现有卡片工具已支持 `uuid`，需与 AW 对齐是否增强原工具或新建模板 | AW |
-| SEO 页面是否需要 SSR | 建议需要，至少词条页、分类页、标签页可被爬虫稳定访问 | 前端 / SEO |
+- 语料只挂一个二级身份分类。
+- 当前 `corpus_tags` 可提供语料标签关系。
+- 本期先不依赖 `corpus_tags.tag_role` 和 `corpus_tags.relevance_level`；前端聚合时把已有标签统一视为 `related / medium`。
+- `tag_related` 可按 `cooc / semantic / manual` 提供相关标签。
+- `corpus_field_embeddings` 可用于二级/三级推荐增强。
 
 ---
 
-## 七、建议里程碑
+## 四、前端负责什么
 
-| 阶段 | 工作内容 |
-|------|----------|
-| P0 | 确认 `entryIdentity` 从现有字段的映射规则、一级/二级分类字段、标签结构 |
-| P1 | 增强 `/admin/corpus` 和 `/admin/categories`，支持身份信息、一级/二级分类与标签治理 |
-| P2 | 完成 `/search` 一级精准结果身份信息展示，兼容旧搜索响应 |
-| P3 | 完成二级标签召回与三级推荐展示 |
-| P4 | 增强现有卡片分享工具，支持预览弹窗、下载、复制链接、分享统计 |
-| P5 | 补充 SEO 词条页、分类页、标签页与站外埋点统计 |
+前端和 Next 负责“交付面”：
+
+- 新增 `GET /api/search/entries`。
+- 使用服务端 Supabase key 聚合数据。
+- 输出统一 `entryIdentity`。
+- 实现 `primary / similar / recommended` 三段结果。
+- Search UI 展示一级大卡、二级 3 条、三级 4 条。
+- 实现二级/三级“换一批”。
+- 复用 `entryIdentity` 做分享卡片和 SEO 页面。
+
+安全边界：
+
+- `SUPABASE_SERVICE_ROLE_KEY` 只能在 Next Route Handler 使用。
+- 浏览器不得直接访问 Supabase service role key。
+- 旧 Deno `/v2/text_search` 保留兜底，不承载本期新能力。
+
+---
+
+## 五、核心数据口径
+
+### 5.1 分类
+
+不再新增：
+
+```text
+identity_category_l1
+identity_category_l2
+```
+
+正式使用：
+
+```text
+content_categories
+corpus_category
+```
+
+对外仍聚合为：
+
+```json
+{
+  "category": {
+    "primary": {},
+    "secondary": {}
+  }
+}
+```
+
+### 5.2 标签
+
+不再把新标签治理写入：
+
+```text
+cantonese_corpus_all.tags
+```
+
+正式使用：
+
+```text
+tags
+corpus_tags
+tag_related
+```
+
+对外聚合为：
+
+```json
+{
+  "tags": {
+    "precise": [],
+    "related": [],
+    "recommended": []
+  }
+}
+```
+
+当前 P0 兼容口径：
+
+- `corpus_tags` 里已有的语料标签统一进入 `related`。
+- `relevanceLevel` 统一按 `medium` 输出。
+- `precise` 暂时由一级精准命中、标题命中或运营规则派生；没有规则时可为空。
+- `recommended` 优先由 `tag_related` 扩展，不要求语料本身已有 recommended tag。
+
+### 5.3 向量
+
+字段级向量表：
+
+```text
+corpus_field_embeddings
+```
+
+使用原则：
+
+- 一级精准不走向量。
+- 二级和三级可用向量增强。
+- 短 query 优先标签、相关标签和分类。
+- 长 query 或完整句子再提高向量权重。
+
+---
+
+## 六、当前待办
+
+### 暂缓字段
+
+以下字段属于后续增强项，当前实施先不阻塞：
+
+| 表 | 字段 | 暂缓原因 |
+|----|------|----------|
+| `corpus_tags` | `tag_role` | 当前已有标签可先统一按 `related` 展示 |
+| `corpus_tags` | `relevance_level` | 当前可统一按 `medium` 输出 |
+| `corpus_category` | `confidence` | 主要用于 AI 分类复核，不影响前台展示 |
+| `corpus_category` | `batch_id` | 主要用于批量导入追溯，不影响前台展示 |
+
+### 后端待确认
+
+- 是否能提供批量聚合 `entryIdentity` 的 SQL / RPC。
+- `corpus_field_embeddings` 在线查询的性能边界和推荐 SQL 是否稳定。
+
+### 前端待实现
+
+- `/api/search/entries`
+- `entryIdentity` 聚合器
+- Search 页面三段式结果
+- 二级和三级换一批
+- 分享卡片预览
+- SEO 词条页、分类页、标签页

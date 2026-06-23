@@ -10,7 +10,8 @@ unique_id = 对外公开词条 ID
 data = 词条内容
 note / structured_note = 身份扩展信息
 category = 当前分类
-tags = 当前标签
+content_categories / corpus_category = 词条身份二级分类
+tags / corpus_tags / tag_related = 标签字典、语料标签关系、相关标签
 ```
 
 对外接口可以命名为 `entryIdentity`，但它本质是对 `cantonese_corpus_all` 记录的聚合视图。
@@ -23,18 +24,17 @@ tags = 当前标签
 |----------|-----------------|------|
 | `entry_id` | `cantonese_corpus_all.unique_id` | 继续使用 UUID，避免破坏卡片、互动、编辑链路 |
 | `entry_name` | `cantonese_corpus_all.data` | Search 结果标题 |
-| `pronunciation` | `note.context.pron` / `note.context.pinyin` / `structured_note.pronunciation` | 需要建立解析优先级 |
-| `jyutping` | `note.context.pron` / `structured_note.jyutping` | 现有代码中 `pron` 常作为粤拼展示 |
-| `meaning` | `note.context.meaning` / `note.meaning` / `structured_note.meaning` | 当前 Search 卡片已从 note 中抽取 snippet |
-| `corpus_id` | `category` 或扩展字段 | 当前没有独立语料集 ID 概念，需确认是否把分类视为来源语料集 |
+| `jyutping` | `structured_note.data[].jyutping` / `note.context.pron` | 读音和粤拼统一使用粤拼字段 |
+| `meaning` | `structured_note.data[].blocks[type=definition]` / `note.context.meaning` / `note.meaning` | 当前 Search 卡片已从 note 中抽取 snippet |
+| `corpus_id` | `cantonese_corpus_all.id` | 后端关系表使用 bigint id；前端和公开链接仍使用 `unique_id` |
 | `corpus_name` | `cantonese_categories.nickname` / `category` | 前台已有 nickname 映射 |
-| `contributor_id` | `note.contributor` / `note.context.author` / 扩展字段 | 当前不是稳定用户 ID |
-| `level_1_category` | 新增 `identity_category_l1` | 本期落地，表示词条语义一级分类 |
-| `level_2_category` | 新增 `identity_category_l2` | 本期落地，表示词条语义二级分类 |
-| `precise_tags` | `tags` 扩展结构 | 当前 `tags` 是扁平 JSON |
-| `related_tags` | `tags` 扩展结构 | 需要新增类型 |
-| `recommended_tags` | `tags` 扩展结构 | 需要新增类型 |
-| `cover_image` | `note` 内图片字段 / `structured_note.cover_image` | 当前 Search 卡片会按 URL 后缀识别图片 |
+| `contributor_id` | `cantonese_corpus_update_history.contributor_user_id` | 原始导入数据没有可信贡献者，前台应展示编辑贡献者 |
+| `level_1_category` | `content_categories` parent row | 通过 `corpus_category -> content_categories(level=2) -> parent_id` 聚合 |
+| `level_2_category` | `content_categories` child row | 语料只挂二级分类；未归类则无 `corpus_category` 行 |
+| `precise_tags` | P0 可为空或由精准命中规则派生 | `corpus_tags.tag_role` 暂缓落库 |
+| `related_tags` | `corpus_tags` 全部已有标签 | P0 统一按 `related / medium` 输出 |
+| `recommended_tags` | `tag_related` 扩展 | 推荐标签不要求语料本身已有该标签 |
+| `cover_image` | `structured_note.data[].blocks[type=image].url` / `note` 内图片字段 | 当前 Search 卡片会按 URL 后缀识别图片 |
 | `share_link` | 按 `unique_id` 生成 | 现有格式 `https://card.app.aidimsum.com/?uuid={unique_id}` |
 | `status` | `lifecycle_stage` | 当前默认 `draft` |
 | `created_at` | `created_at` | 已存在 |
@@ -50,7 +50,6 @@ Search、分享卡片、SEO 页面统一消费该对象：
 {
   "entryId": "771a1c5-b027",
   "entryName": "相骂冇好口",
-  "pronunciation": "xiāng mà móu hǎo kǒu",
   "jyutping": "soeng1maa6 mou4 hou3 hau3",
   "meaning": "多不相让，言语冲突。",
   "source": {
@@ -96,46 +95,37 @@ Search、分享卡片、SEO 页面统一消费该对象：
 
 ---
 
-## 四、标签结构扩展
+## 四、标签表结构
 
-当前 `tags` 是 JSON，Search 卡片直接按字符串数组渲染：
+本期采用独立标签表，不再把新标签治理能力写回 `cantonese_corpus_all.tags` JSON。旧 `tags` JSON 仅作为导入和兼容来源。
 
-```json
-["相骂", "冲突", "争吵"]
+正式表：
+
+```text
+tags = 标签词表
+corpus_tags = 语料与标签关系
+tag_related = 预聚合相关标签
 ```
 
-为了支持 PRD，建议新结构兼容旧结构：
-
-```json
-[
-  {
-    "name": "相骂",
-    "type": "precise",
-    "relevanceLevel": "strong",
-    "source": "manual"
-  },
-  {
-    "name": "冲突",
-    "type": "related",
-    "relevanceLevel": "medium",
-    "source": "ai"
-  }
-]
-```
-
-兼容规则：
-
-- 旧字符串标签默认视为 `related + medium`。
-- 前台展示时仍可渲染 `name`。
-- 后台保存时统一保存结构化格式。
+`tags.facet` 表示标签自己的维护维度，例如场景、主题、媒体、来源。当前 `corpus_tags` 只表示“语料拥有这个标签”，不再要求本期同时落 `tag_role` 和 `relevance_level`。
 
 枚举建议：
 
 | 字段 | 值 |
 |------|----|
-| `type` | `precise` / `related` / `recommended` |
-| `relevanceLevel` | `strong` / `medium` / `weak` |
-| `source` | `manual` / `ai` / `import` |
+| `tags.facet` | `kind` / `media` / `language` / `source` / `scene` / `topic` / `region` / `dialect` / `other` |
+| `corpus_tags.tag_role` | 暂缓增强：`precise` / `related` / `recommended` |
+| `corpus_tags.relevance_level` | 暂缓增强：`strong` / `medium` / `weak` |
+| `corpus_tags.source` | `import` / `manual` / `auto` |
+| `tag_related.method` | `cooc` / `semantic` / `manual` |
+
+兼容规则：
+
+- 旧 `cantonese_corpus_all.tags` 字符串标签导入 `tags` 和 `corpus_tags`。
+- 旧字符串标签默认进入 `corpus_tags`。
+- 前台 P0 聚合时，把 `corpus_tags` 中已有标签统一视为 `related / medium`。
+- 前台展示统一消费聚合后的 `entryIdentity.tags.precise / related / recommended`。
+- `tag_related` 可用于二级/三级推荐的标签扩展，不直接代表语料已拥有该标签。
 
 ---
 
@@ -143,20 +133,21 @@ Search、分享卡片、SEO 页面统一消费该对象：
 
 本期明确落地 PRD 中的一级/二级分类。但现有 `cantonese_corpus_all.category` 已经承担语料库、dataset 筛选、权限、前台分类 tabs、category nickname 映射等职责，不建议直接改造成语义一级分类。
 
-建议新增字段承载词条语义分类：
+正式采用独立分类表承载词条语义分类：
 
 ```text
-cantonese_corpus_all.identity_category_l1
-cantonese_corpus_all.identity_category_l2
+content_categories = 两级分类树
+corpus_category = 语料到二级分类的单一归属
 ```
 
 字段含义：
 
 | 字段 | 说明 |
 |------|------|
-| `category` | 现有语料库 / dataset / corpus 分类，继续保留原语义 |
-| `identity_category_l1` | 词条身份信息一级分类，用于搜索展示、SEO 聚合、后台治理 |
-| `identity_category_l2` | 词条身份信息二级分类，必须挂靠在一级分类下 |
+| `cantonese_corpus_all.category` | 现有语料库 / dataset / corpus 分类，继续保留原语义 |
+| `content_categories(level=1)` | 词条身份一级分类，用于搜索展示、SEO 聚合、后台治理 |
+| `content_categories(level=2)` | 词条身份二级分类，语料只挂二级 |
+| `corpus_category` | 语料到二级分类的关系表；一条语料最多一个分类 |
 
 为什么不用 `structured_note.identity` 承载分类：
 
@@ -165,26 +156,24 @@ cantonese_corpus_all.identity_category_l2
 - SEO 分类页需要稳定查询。
 - JSON 字段能快速展示，但不利于长期索引和运营治理。
 
-分类字典建议：
+`corpus_category.source` 当前可按后端现有值使用。后续如要区分来源，建议包含：
 
 ```text
-corpus_identity_categories
+ai / import / rule / manual
 ```
 
-字段建议：
+AI 初始化分类的 `confidence` 和 `batch_id` 先暂缓，不作为 P0 前端开发依赖；后续需要运营复核、批量追溯或回滚时再补。
 
-| 字段 | 说明 |
-|------|------|
-| `id` | 分类 ID |
-| `name` | 分类名称 |
-| `level` | 1 / 2 |
-| `parent_id` | 二级分类所属一级分类 |
-| `slug` | SEO slug |
-| `description` | 分类说明 |
-| `sort_order` | 排序 |
-| `status` | draft / published / offline |
+对外 API 仍聚合为：
 
-如果为了首期速度不建分类字典，也至少应在 `cantonese_corpus_all` 增加两个文本字段，并在 Admin 中通过枚举配置限制可选值。
+```json
+{
+  "category": {
+    "primary": { "id": 1, "slug": "idiom", "name": "词语习语" },
+    "secondary": { "id": 2, "slug": "idiom-3char", "name": "三字习语" }
+  }
+}
+```
 
 ---
 
@@ -223,8 +212,8 @@ corpus_share_events
 | 优先级 | 工作 |
 |--------|------|
 | P0 | 定义 `entryIdentity` 解析函数，统一从现有字段聚合身份信息 |
-| P0 | 新增 `identity_category_l1` / `identity_category_l2` 字段或等价关系表 |
-| P0 | 结构化标签兼容方案 |
+| P0 | 接入 `content_categories` / `corpus_category` 分类关系 |
+| P0 | 接入 `tags` / `corpus_tags` / `tag_related` 标签关系 |
 | P1 | Admin Corpus 页面支持编辑身份信息、一级/二级分类和结构化标签 |
 | P1 | Next `/api/search/entries` 直连 Supabase RPC 并消费 `entryIdentity` |
 | P2 | 分享事件表与分享统计 |

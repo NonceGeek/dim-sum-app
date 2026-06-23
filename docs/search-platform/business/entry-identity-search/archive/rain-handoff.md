@@ -1,5 +1,7 @@
 # @RAiN 对接说明
 
+> 注意：本文是早期给 @RAiN 的对接草稿，部分字段口径已被后端最新方案替代。最新落库方案以 `语料身份需求.md` 和 `data-model.md` 为准：分类使用 `content_categories` / `corpus_category`，标签使用 `tags` / `corpus_tags` / `tag_related`，不再新增 `identity_category_l1` / `identity_category_l2` 字段。
+
 ## 一、对接目标
 
 @RAiN 侧主要负责“词条身份信息数据底座”。

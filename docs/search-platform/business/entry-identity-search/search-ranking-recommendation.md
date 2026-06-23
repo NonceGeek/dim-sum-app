@@ -6,7 +6,7 @@
 
 | 层级 | 名称 | 目标 |
 |------|------|------|
-| 一级 | 精准结果 `primary` | 用户搜什么，最上方看到最可能的词条 |
+| 一级 | 精准结果 `primary` | 用户搜什么，最上方看到 1 个最佳词条 |
 | 二级 | 相似结果 `similar` | 围绕当前词条继续发现相近内容 |
 | 三级 | 扩展推荐 `recommended` | 展示更宽泛、可探索、可运营的相关内容 |
 
@@ -41,17 +41,16 @@ data 前缀匹配
 
 ### 2.3 输出要求
 
-一级结果必须携带完整 `entryIdentity`：
+一级结果只返回 1 个最佳命中，并且必须携带完整 `entryIdentity`：
 
 - `unique_id`
 - `data`
-- 读音
 - 粤拼
 - 释义
 - 现有语料库 `category`
-- `identity_category_l1`
-- `identity_category_l2`
-- 结构化 tags
+- `content_categories` 聚合出的一级/二级身份分类
+- `corpus_tags` 聚合出的已有标签；P0 统一输出到 `related`
+- `tag_related` 扩展出的 `recommended` 标签
 - 分享链接
 
 ---
@@ -71,10 +70,10 @@ data 前缀匹配
 优先级：
 
 ```text
-同 precise tag
-> 同 related tag
-> 同 identity_category_l2
-> 同 identity_category_l1
+同 corpus_tags 已有标签
+> tag_related 相关标签
+> 同二级身份分类
+> 同一级身份分类
 > 同现有 category/dataset
 ```
 
@@ -92,15 +91,17 @@ data 前缀匹配
 
 | 因子 | 建议权重 |
 |------|----------|
-| 同 precise tag | +100 |
-| 同 related tag | +60 |
-| 同 `identity_category_l2` | +40 |
-| 同 `identity_category_l1` | +20 |
-| `relevanceLevel = strong` | +30 |
-| `relevanceLevel = medium` | +15 |
-| `relevanceLevel = weak` | +5 |
+| 同已有标签 | +60 |
+| `tag_related.method = manual` | +80 |
+| `tag_related.method = cooc` | +45 |
+| `tag_related.method = semantic` | +30 |
+| 同二级身份分类 | +40 |
+| 同一级身份分类 | +20 |
+| field vector 相似 | query 较长时加权，query 很短时弱化或不用 |
 
 二级结果应排除一级结果中已经展示的词条。
+
+`corpus_tags.tag_role` 和 `corpus_tags.relevance_level` 暂缓落库期间，所有已有标签统一按 `related / medium` 处理；相关性差异主要由标签命中数量、`tag_related` 分数、分类相同和文本命中共同决定。
 
 ---
 
@@ -119,7 +120,7 @@ data 前缀匹配
 优先级：
 
 ```text
-recommended tags
+tag_related 相关标签
 > 同一级分类下热门词
 > 同 dataset 下热门词
 > 运营配置 recommend_words
@@ -131,6 +132,7 @@ recommended tags
 
 ```text
 推荐标签相关度
++ 相关标签分数
 + 浏览量
 + 收藏量
 + 新鲜度
@@ -151,7 +153,7 @@ recommended tags
 Next /api/search/entries
   -> 调 Supabase RPC search_cantonese_corpus
   -> 合并繁简结果
-  -> 根据 tags / identity_category_l1 / identity_category_l2 分层
+  -> 根据 corpus_tags / tag_related / content_categories 分层
   -> 返回 primary / similar / recommended
 ```
 
@@ -202,26 +204,30 @@ Next /api/search/entries
 ```text
 data
 meaning
-identity_category_l1
-identity_category_l2
-tags.name
+content_categories.name
+tags.name / tags.gloss
 ```
 
 ### 5.4 P3：向量推荐
 
-当分类和标签稳定后，可为每条词条生成 embedding：
+后端已经提供 `corpus_field_embeddings` 字段级向量表：
 
 ```text
-entry_embedding = embedding(data + meaning + categories + tags)
+field_type = doc / sentence / definition / headword / image / video
 ```
-
-存储到 Supabase pgvector 字段中。
 
 用于：
 
 - 二级相似结果增强。
 - 无标签词条召回。
 - 后续个性化推荐。
+
+使用策略：
+
+- 一级精准结果不走向量，仍走 `cantonese_corpus_all.data` 的 exact / prefix / like / full text。
+- 二级和三级可以把 `corpus_field_embeddings` 作为一个召回维度，但不作为唯一依据。
+- query 是完整句子或较长表达时，可以尝试 `sentence` / `definition` / `doc` 向量。
+- query 只有一两个字时，向量容易漂，优先同标签、相关标签、同分类，向量只做弱补充或不用。
 
 ---
 
@@ -242,4 +248,3 @@ entry_embedding = embedding(data + meaning + categories + tags)
 - Supabase Hybrid Search: https://supabase.com/docs/guides/ai/hybrid-search
 - Supabase Vector Columns / pgvector: https://supabase.com/docs/guides/ai/vector-columns
 - PostgreSQL `ts_rank`: https://www.postgresql.org/docs/current/textsearch-controls.html
-

@@ -27,7 +27,7 @@ Search 平台当前已经具备基础语料搜索能力：用户在 `/search` �
 | 新搜索数据源 | Next `/api/search/entries` 直连 Supabase RPC |
 | 词条详情数据源 | Deno backend `/v2/corpus_item?unique_id=` |
 | 分类 | `cantonese_categories`，当前一层分类 |
-| 标签 | `cantonese_corpus_all.tags` JSON |
+| 标签 | `tags` / `corpus_tags` / `tag_related`，旧 `cantonese_corpus_all.tags` 仅作为导入兼容 |
 | 搜索结果卡片 | `SearchResultItem` |
 | 分享卡片 | `card.app.aidimsum.com/?uuid=`、`/inner-apps/card-generator?uuid=` |
 | 互动 | 浏览、点赞、收藏已有；分享统计待补充 |
@@ -51,7 +51,7 @@ Search 平台当前已经具备基础语料搜索能力：用户在 `/search` �
 
 ### 4.1 用户精准搜索词条
 
-用户输入关键词后，系统优先展示精准命中的语料词条，并把 `unique_id`、读音、粤拼、释义、来源分类、标签、分享入口集中展示。
+用户输入关键词后，系统优先展示精准命中的语料词条，并把 `unique_id`、粤拼、释义、来源分类、标签、分享入口集中展示。
 
 本场景对应现有 `/search` 页面改造：
 
@@ -103,16 +103,16 @@ https://card.app.aidimsum.com/?uuid={unique_id}
 
 ```text
 一级精准结果 primary
-  -> 完全匹配或高置信命中
+  -> 完全匹配或高置信命中的 1 个最佳答案
   -> 展示完整 entryIdentity
 
 二级相似结果 similar
   -> 基于精准/关联标签召回
-  -> 展示相似词条、图片、视频、句子
+  -> 展示一批相似词条，支持换一批
 
 三级扩展推荐 recommended
   -> 基于推荐标签召回
-  -> 展示更宽泛的探索内容
+  -> 展示一批更宽泛的探索内容，支持换一批
 ```
 
 ### 5.3 迁移策略
@@ -125,7 +125,8 @@ Next /api/search/entries
   -> 服务端调用 Supabase RPC search_cantonese_corpus
   -> 合并繁简结果并去重
   -> 按 dataset 过滤现有 category
-  -> 读取 identity_category_l1 / identity_category_l2
+  -> 通过 content_categories / corpus_category 读取一级/二级身份分类
+  -> 通过 tags / corpus_tags / tag_related 读取标签和相关标签
   -> exact match 进入 primary
   -> 标签相同 / 语义分类相同进入 similar
   -> 推荐标签进入 recommended
@@ -149,13 +150,13 @@ Deno /v2/text_search
 |--------|------|
 | 词条内容 | `data` |
 | Unique ID | `unique_id` |
-| 读音 / 粤拼 | `structured_note.identity` 优先，其次 `note.context.pron/pinyin` |
-| 释义 | `structured_note.identity.meaning` 优先，其次 `note.context.meaning` |
+| 粤拼 | `structured_note.data[].jyutping` 优先，其次 `note.context.pron/pinyin` |
+| 释义 | `structured_note.data[].blocks[type=definition]` 优先，其次 `note.context.meaning` |
 | 来源 | `category` + `cantonese_categories.nickname` |
-| 一级分类 | `identity_category_l1` |
-| 二级分类 | `identity_category_l2` |
-| 贡献者 | `structured_note.identity.contributor` 优先，其次 `note.contributor` |
-| 标签 | 结构化 `tags`，兼容旧字符串标签 |
+| 一级分类 | `content_categories(level=1)` |
+| 二级分类 | `content_categories(level=2)` |
+| 贡献者 | `cantonese_corpus_update_history.contributor_user_id` 聚合，展示为编辑贡献者 |
+| 标签 | P0 将 `corpus_tags` 已有标签聚合为 related；recommended 由 `tag_related` 扩展 |
 | 分享链接 | 按 `unique_id` 生成 |
 
 缺失字段处理：
