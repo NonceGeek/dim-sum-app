@@ -144,7 +144,7 @@ P0 聚合字段：
 - [x] 新增 `useEntrySearchQuery`，与旧 `useSearchQuery` 并行存在。
 - [x] 新增三段式结果展示组件 `EntrySearchSections`。
 - [x] 以 `/search?mode=entry&q=...` 方式接入 Search 页面 UI，不影响旧列表模式。
-- [ ] 接入分享卡片预览。
+- [x] 接入分享卡片预览弹窗，支持复制链接和打开卡片。
 
 ### 后端 / 数据配合
 
@@ -171,7 +171,7 @@ main/app/[locale]/(home)/search/page.tsx
 下一步先做三件事：
 
 1. 用浏览器检查 `/search?mode=entry&q=好` 的桌面和移动端视觉布局。
-2. 验证新旧搜索并行时的 loading、空结果、换一批状态。
+2. 验证分享卡片弹窗、复制链接、打开卡片、新旧搜索并行时的 loading、空结果、换一批状态。
 3. 如线上仍需更低延迟，再把聚合 SQL 下沉为 Supabase RPC，并评估缓存热门 query。
 
 向量检索放在 P0.5：等非向量链路跑通后，再把 `corpus_field_embeddings` 作为候选增强接入。

@@ -2,9 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Copy, RefreshCcw, Share2 } from "lucide-react";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
+import { useState } from "react";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
@@ -52,7 +59,70 @@ function TagList({ entry }: { entry: EntryIdentity }) {
   );
 }
 
-function PrimaryEntry({ entry }: { entry: EntryIdentity }) {
+function SharePreview({
+  entry,
+  open,
+  onOpenChange,
+}: {
+  entry: EntryIdentity | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!entry) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>分享卡片预览</DialogTitle>
+        </DialogHeader>
+        <div className="rounded-md border border-border p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="inline-block h-5 w-5 rounded-full border border-primary/30" />
+            DimSum
+          </div>
+          <h3 className="mb-1 text-2xl font-semibold text-foreground">
+            {entry.entryName}
+          </h3>
+          {entry.jyutping && (
+            <p className="mb-2 text-sm text-muted-foreground">{entry.jyutping}</p>
+          )}
+          {entry.meaning && (
+            <p className="mb-3 line-clamp-3 text-sm leading-6 text-foreground">
+              {entry.meaning}
+            </p>
+          )}
+          <TagList entry={entry} />
+          <p className="mt-4 font-mono text-xs text-muted-foreground">
+            Unique ID: {compactId(entry.entryId)}
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => copyText(entry.share.seoUrl)}
+          >
+            复制链接
+          </Button>
+          <Button type="button" asChild>
+            <a href={entry.share.cardUrl} target="_blank" rel="noopener noreferrer">
+              打开卡片
+            </a>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PrimaryEntry({
+  entry,
+  onShare,
+}: {
+  entry: EntryIdentity;
+  onShare: (entry: EntryIdentity) => void;
+}) {
   return (
     <section className="border-b border-border px-4 py-5 sm:px-0">
       <div className="max-w-3xl">
@@ -70,7 +140,7 @@ function PrimaryEntry({ entry }: { entry: EntryIdentity }) {
             variant="outline"
             size="icon"
             aria-label="分享"
-            onClick={() => copyText(entry.share.seoUrl)}
+            onClick={() => onShare(entry)}
           >
             <Share2 className="h-4 w-4" />
           </Button>
@@ -171,6 +241,8 @@ export function EntrySearchSections({
   onRefreshSimilar,
   onRefreshRecommended,
 }: EntrySearchSectionsProps) {
+  const [shareEntry, setShareEntry] = useState<EntryIdentity | null>(null);
+
   if (!result.primary) {
     return (
       <div className="px-4 py-10 text-sm text-muted-foreground sm:px-0">
@@ -181,7 +253,7 @@ export function EntrySearchSections({
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <PrimaryEntry entry={result.primary} />
+      <PrimaryEntry entry={result.primary} onShare={setShareEntry} />
       <ResultSection
         title="二级相似结果"
         entries={result.similar}
@@ -195,6 +267,13 @@ export function EntrySearchSections({
         refreshLabel="换一批"
         isRefreshing={isRefreshingRecommended}
         onRefresh={result.cursors.recommendedNext ? onRefreshRecommended : undefined}
+      />
+      <SharePreview
+        entry={shareEntry}
+        open={Boolean(shareEntry)}
+        onOpenChange={(open) => {
+          if (!open) setShareEntry(null);
+        }}
       />
     </div>
   );
