@@ -167,6 +167,20 @@ export default function SearchPage() {
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
+  const handleToggleSearchMode = () => {
+    if (!urlKeyword.trim()) return;
+    setCurrentPage(1);
+    setSelectCategory("全部");
+    setSimilarCursor(null);
+    setRecommendedCursor(null);
+
+    const params = new URLSearchParams();
+    params.set("q", urlKeyword.trim());
+    if (urlDataset) params.set("dataset", urlDataset);
+    if (!useEntryMode) params.set("mode", "entry");
+    router.push(`/search?${params.toString()}`, { scroll: false });
+  };
+
   // 在渲染层把原始 category name 映射为 nickname，不在 mutation 里 await
   const enrichedResults = useMemo(() => {
     if (!results || !categories) return results;
@@ -257,6 +271,32 @@ export default function SearchPage() {
 
       {/* ── Main content ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col">
+        {urlKeyword && (
+          <div className="px-4 pt-3">
+            <div className="hidden sm:flex">
+              <div className="shrink-0 w-[172px]" />
+              <div className="flex-1 max-w-3xl">
+                <button
+                  type="button"
+                  onClick={handleToggleSearchMode}
+                  className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  {useEntryMode ? "切换到旧搜索" : "切换到新搜索"}
+                </button>
+              </div>
+            </div>
+            <div className="sm:hidden">
+              <button
+                type="button"
+                onClick={handleToggleSearchMode}
+                className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {useEntryMode ? "切换到旧搜索" : "切换到新搜索"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Category tabs ────────────────────────────────────────────── */}
         {enrichedResults && enrichedResults.length > 0 && !useEntryMode && (
           <div ref={tabsRef}>
