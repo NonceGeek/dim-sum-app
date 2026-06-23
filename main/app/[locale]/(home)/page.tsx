@@ -275,32 +275,29 @@ export default function HomePage() {
 
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-                <div className="inline-flex h-8 rounded-md border border-border bg-muted/30 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setUseEntryMode(false)}
+                <button
+                  type="button"
+                  aria-pressed={useEntryMode}
+                  onClick={() => setUseEntryMode((value) => !value)}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors",
+                    useEntryMode
+                      ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
+                      : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  <span
                     className={cn(
-                      "rounded px-2.5 text-xs font-medium transition-colors",
-                      !useEntryMode
-                        ? "bg-background text-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    旧搜索
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUseEntryMode(true)}
-                    className={cn(
-                      "rounded px-2.5 text-xs font-medium transition-colors",
+                      "flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors",
                       useEntryMode
-                        ? "bg-background text-primary shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted-foreground/40",
                     )}
                   >
-                    新搜索
-                  </button>
-                </div>
+                    {useEntryMode && <Check className="h-3 w-3" />}
+                  </span>
+                  新版搜索
+                </button>
 
                 <div className="flex items-center justify-end gap-2">
                   {/* Dataset selector */}
