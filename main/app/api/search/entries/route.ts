@@ -22,12 +22,6 @@ type AggregatedSearchRow = CorpusSearchRow & {
   contributor_ids: string[] | null;
 };
 
-function toNumber(value: bigint | number | null | undefined): number {
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "number") return value;
-  return 0;
-}
-
 function parseCursor(value: string | null): number {
   if (!value) return 0;
   const parsed = Number.parseInt(value, 10);
@@ -148,7 +142,18 @@ async function fetchAggregatedSearchRows(params: {
         select c.id,
                ln(c.view_num::float + 1) + 5 as score
         from cantonese_corpus_all c
-        where c.category = (select category from primary_row)
+        join corpus_category cg on cg.corpus_id = c.id
+        where cg.category_id = (select secondary_category_id from primary_row)
+          and c.id <> (select id from primary_row)
+
+        union all
+
+        select c.id,
+               ln(c.view_num::float + 1) + 2 as score
+        from cantonese_corpus_all c
+        join corpus_category cg on cg.corpus_id = c.id
+        join content_categories child on child.id = cg.category_id
+        where child.parent_id = (select primary_category_id from primary_row)
           and c.id <> (select id from primary_row)
       ),
       recommended_ranked as (
@@ -267,6 +272,7 @@ async function fetchAggregatedSearchRows(params: {
           join tag_related tr on tr.tag_id = ot.tag_id
           join tags related_tag on related_tag.id = tr.related_id
           where related_tag.status = 'active'
+            and related_tag.corpus_count >= 3
             and not exists (
               select 1
               from owned_tags existing

@@ -115,7 +115,7 @@ P0 聚合字段：
 |---------|------|---------|
 | `primary` | 1 | exact / 繁简 exact / prefix / like / full text，取最佳 |
 | `similar` | 3 | 先用同标签、相关标签、同分类召回；向量作为可选增强 |
-| `recommended` | 4 | 先用 `tag_related`、同一级分类热门、dataset 热门兜底 |
+| `recommended` | 4 | 先用 `tag_related`、同二级身份分类、同一级身份分类热门兜底 |
 
 二级和三级不做传统分页，只提供“换一批”刷新。
 
@@ -152,11 +152,28 @@ P0 聚合字段：
 - [x] 分类和标签已有初始化数据。
 - [x] 字段级向量表已存在。
 - [x] 优化聚合查询性能：已将多次 `$queryRaw` 合并为单次聚合 SQL，热请求约 1.1-1.3 秒。
+- [x] 三级推荐兜底已从旧 `cantonese_corpus_all.category` 调整为 `corpus_category -> content_categories` 身份分类。
 - [ ] 确认是否需要提供批量 `entryIdentity` RPC。
 
 ---
 
-## 六、下一步
+## 六、与后端原始文档的实现差异
+
+`语料身份需求.md` 只保留后端原始数据底座描述。当前前端 / Next 实现与该文档的关系如下：
+
+| 项目 | 当前实现 | 后续处理 |
+|------|----------|----------|
+| `structured_note.data[].jyutping` | 已读取 | 多音字目前取第一条有值读音，后续可按 UI 展开多读音 |
+| `blocks[type=image/video/audio].url` | 已读取 | 视频封面不落库，后续如需展示优先走 OSS 截帧 |
+| `content_categories` / `corpus_category` | 已用于身份分类展示、相似和推荐兜底 | 后续 Admin 再做人工治理 |
+| `tags` / `corpus_tags` | 已作为已有标签输出到 `related` | 后续如后端新增 `tag_role` / `relevance_level`，再拆分 precise / related / recommended |
+| `tag_related` | 已用于推荐语料和推荐标签，推荐标签过滤 `corpus_count >= 3` | 后续可接 manual 权重治理 |
+| `corpus_field_embeddings` | 暂未接入线上查询 | P0.5 再接向量候选，不影响当前规则版搜索 |
+| 一级精准搜索 | 当前为 exact / lower exact / prefix / like | full text 和繁简归一后续接 |
+
+---
+
+## 七、下一步
 
 当前已完成非向量版服务端 API 第一版：
 
