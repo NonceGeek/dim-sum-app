@@ -62,6 +62,7 @@ type EntrySearchParams = {
   keyword: string;
   similarCursor?: string | null;
   recommendedCursor?: string | null;
+  section?: "all" | "primary" | "semantic";
 };
 
 
@@ -193,11 +194,13 @@ export function useSearchQuery(keyword: string, category: string, enabled = true
 
 async function fetchEntrySearch({
   keyword,
+  section,
   similarCursor,
   recommendedCursor,
 }: EntrySearchParams): Promise<EntrySearchResponse> {
   const params = new URLSearchParams();
   params.set("q", keyword);
+  if (section) params.set("section", section);
   if (similarCursor) params.set("similarCursor", similarCursor);
   if (recommendedCursor) params.set("recommendedCursor", recommendedCursor);
 
@@ -226,6 +229,51 @@ export function useEntrySearchQuery(
     queryFn: () =>
       fetchEntrySearch({
         keyword,
+        similarCursor: options.similarCursor,
+        recommendedCursor: options.recommendedCursor,
+      }),
+    enabled: (options.enabled ?? true) && !!keyword.trim(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export function useEntryPrimarySearchQuery(keyword: string, enabled = true) {
+  return useQuery<EntrySearchResponse>({
+    queryKey: ["entry-search", "primary", keyword],
+    queryFn: () =>
+      fetchEntrySearch({
+        keyword,
+        section: "primary",
+      }),
+    enabled: enabled && !!keyword.trim(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export function useEntrySemanticSearchQuery(
+  keyword: string,
+  options: {
+    similarCursor?: string | null;
+    recommendedCursor?: string | null;
+    enabled?: boolean;
+  } = {},
+) {
+  return useQuery<EntrySearchResponse>({
+    queryKey: [
+      "entry-search",
+      "semantic",
+      keyword,
+      options.similarCursor ?? null,
+      options.recommendedCursor ?? null,
+    ],
+    queryFn: () =>
+      fetchEntrySearch({
+        keyword,
+        section: "semantic",
         similarCursor: options.similarCursor,
         recommendedCursor: options.recommendedCursor,
       }),

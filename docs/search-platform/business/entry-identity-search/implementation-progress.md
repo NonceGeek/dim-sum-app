@@ -114,8 +114,8 @@ P0 聚合字段：
 | Section | 数量 | P0 逻辑 |
 |---------|------|---------|
 | `primary` | 1 | exact / 繁简 exact / prefix / like / full text，取最佳 |
-| `similar` | 3 | 以后端文档为准，优先接 `corpus_field_embeddings(field_type='doc')` 向量召回，再融合/兜底同标签和同二级身份分类 |
-| `recommended` | 4 | 先用 `tag_related`，再融合低权重向量召回、同二级身份分类、同一级身份分类热门兜底 |
+| `similar` | 3 | 以后端文档为准，优先用用户 query 调阿里云生成 1024 维向量，再查 `corpus_field_embeddings(field_type='doc')`；融合/兜底同标签和同二级身份分类 |
+| `recommended` | 4 | 基于 query vector、`tag_related`、同二级身份分类、同一级身份分类热门融合排序 |
 
 二级和三级不做传统分页，只提供“换一批”刷新。
 
@@ -145,6 +145,7 @@ P0 聚合字段：
 - [x] 新增三段式结果展示组件 `EntrySearchSections`。
 - [x] 以 `/search?mode=entry&q=...` 方式接入 Search 页面 UI，不影响旧列表模式。
 - [x] 接入分享卡片预览弹窗，支持复制链接和打开卡片。
+- [x] 前端拆分 primary / semantic 两个请求，支持分别 loading。
 
 ### 后端 / 数据配合
 
@@ -154,6 +155,7 @@ P0 聚合字段：
 - [x] 优化聚合查询性能：已将多次 `$queryRaw` 合并为单次聚合 SQL，热请求约 1.1-1.3 秒。
 - [x] 三级推荐兜底已从旧 `cantonese_corpus_all.category` 调整为 `corpus_category -> content_categories` 身份分类。
 - [x] 二级相似结果已按后端文档接入 `corpus_field_embeddings` 的 doc 向量 KNN 召回；三级推荐低权重融合 doc 向量候选。
+- [x] 新增 query embedding 接入点：`DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY` 配置后，semantic section 会先调阿里云 `qwen3-vl-embedding` 获取用户 query 向量。
 - [ ] 确认是否需要提供批量 `entryIdentity` RPC。
 
 ---
@@ -169,7 +171,7 @@ P0 聚合字段：
 | `content_categories` / `corpus_category` | 已用于身份分类展示、相似和推荐兜底 | 后续 Admin 再做人工治理 |
 | `tags` / `corpus_tags` | 已作为已有标签输出到 `related` | 后续如后端新增 `tag_role` / `relevance_level`，再拆分 precise / related / recommended |
 | `tag_related` | 已用于推荐语料和推荐标签，推荐标签过滤 `corpus_count >= 3` | 后续可接 manual 权重治理 |
-| `corpus_field_embeddings` | 已用于二级相似 doc 向量召回，并作为三级推荐低权重候选 | 后续可扩展到 `sentence` / `definition` / `headword` 分面 |
+| `corpus_field_embeddings` | semantic section 优先使用用户 query vector 查询 doc 向量；缺少 DashScope key 时 fallback 到 primary doc 向量/规则版 | 后续可扩展到 `sentence` / `definition` / `headword` 分面 |
 | 一级精准搜索 | 当前为 exact / lower exact / prefix / like | full text 和繁简归一后续接 |
 
 ---
@@ -192,7 +194,7 @@ main/app/[locale]/(home)/search/page.tsx
 2. 验证分享卡片弹窗、复制链接、打开卡片、新旧搜索并行时的 loading、空结果、换一批状态。
 3. 如线上仍需更低延迟，再把聚合 SQL 下沉为 Supabase RPC，并评估缓存热门 query。
 
-向量检索当前先接入后端文档中的 doc→doc 相似查询。后续 P0.5 再把 `sentence` / `definition` / `headword` 分面接入，并评估查询耗时和索引命中。
+向量检索当前按后端方案改为 query→doc 查询优先；`primary` 文本搜索和 `semantic` 向量搜索在前端分别请求、分别 loading。后续 P0.5 再把 `sentence` / `definition` / `headword` 分面接入，并评估查询耗时和索引命中。
 
 当前性能观察：
 

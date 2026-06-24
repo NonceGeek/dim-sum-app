@@ -15,6 +15,8 @@ import { useState } from "react";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
+  isLoadingPrimary?: boolean;
+  isLoadingSemantic?: boolean;
   isRefreshingSimilar?: boolean;
   isRefreshingRecommended?: boolean;
   onRefreshSimilar?: () => void;
@@ -169,6 +171,29 @@ function PrimaryEntry({
   );
 }
 
+function PrimaryLoading() {
+  return (
+    <section className="border-b border-border px-4 py-5 sm:px-0">
+      <div className="max-w-3xl">
+        <div className="mb-3 h-3 w-24 rounded bg-muted" />
+        <div className="mb-3 h-8 w-36 rounded bg-muted" />
+        <div className="mb-3 h-4 w-2/3 rounded bg-muted" />
+        <div className="h-16 w-full rounded bg-muted" />
+      </div>
+    </section>
+  );
+}
+
+function EmptyPrimary() {
+  return (
+    <section className="border-b border-border px-4 py-5 sm:px-0">
+      <div className="max-w-3xl text-sm text-muted-foreground">
+        未找到完全匹配词条
+      </div>
+    </section>
+  );
+}
+
 function EntryTile({ entry }: { entry: EntryIdentity }) {
   return (
     <article className="rounded-md border border-border bg-background p-3">
@@ -206,8 +231,6 @@ function ResultSection({
   isRefreshing?: boolean;
   onRefresh?: () => void;
 }) {
-  if (!entries.length) return null;
-
   return (
     <section className="border-b border-border px-4 py-5 sm:px-0">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -225,17 +248,33 @@ function ResultSection({
           </Button>
         )}
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {entries.map((entry) => (
-          <EntryTile key={entry.entryId} entry={entry} />
-        ))}
-      </div>
+      {isRefreshing && !entries.length ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {Array.from({ length: title.includes("二级") ? 3 : 4 }).map((_, index) => (
+            <div key={index} className="rounded-md border border-border p-3">
+              <div className="mb-2 h-4 w-2/3 rounded bg-muted" />
+              <div className="mb-2 h-3 w-1/2 rounded bg-muted" />
+              <div className="h-10 w-full rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      ) : entries.length ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {entries.map((entry) => (
+            <EntryTile key={entry.entryId} entry={entry} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">暂无结果</p>
+      )}
     </section>
   );
 }
 
 export function EntrySearchSections({
   result,
+  isLoadingPrimary,
+  isLoadingSemantic,
   isRefreshingSimilar,
   isRefreshingRecommended,
   onRefreshSimilar,
@@ -243,29 +282,27 @@ export function EntrySearchSections({
 }: EntrySearchSectionsProps) {
   const [shareEntry, setShareEntry] = useState<EntryIdentity | null>(null);
 
-  if (!result.primary) {
-    return (
-      <div className="px-4 py-10 text-sm text-muted-foreground sm:px-0">
-        未找到相关词条
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <PrimaryEntry entry={result.primary} onShare={setShareEntry} />
+      {isLoadingPrimary ? (
+        <PrimaryLoading />
+      ) : result.primary ? (
+        <PrimaryEntry entry={result.primary} onShare={setShareEntry} />
+      ) : (
+        <EmptyPrimary />
+      )}
       <ResultSection
         title="二级相似结果"
         entries={result.similar}
         refreshLabel="换一批"
-        isRefreshing={isRefreshingSimilar}
+        isRefreshing={isLoadingSemantic || isRefreshingSimilar}
         onRefresh={result.cursors.similarNext ? onRefreshSimilar : undefined}
       />
       <ResultSection
         title="三级推荐结果"
         entries={result.recommended}
         refreshLabel="换一批"
-        isRefreshing={isRefreshingRecommended}
+        isRefreshing={isLoadingSemantic || isRefreshingRecommended}
         onRefresh={result.cursors.recommendedNext ? onRefreshRecommended : undefined}
       />
       <SharePreview

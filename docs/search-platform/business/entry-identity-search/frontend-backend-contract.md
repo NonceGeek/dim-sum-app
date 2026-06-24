@@ -151,7 +151,17 @@ Next 负责分层和排序：
 exact / 繁简 exact / prefix / like / full text
 ```
 
-二级和三级：
+二级和三级使用后端原始文档里的 query vector 方案，不依赖 primary 必然存在：
+
+```text
+用户 query
+  -> 调阿里云 qwen3-vl-embedding
+  -> 得到 1024 维 query vector
+  -> 查 corpus_field_embeddings
+  -> 生成 similar / recommended 候选
+```
+
+排序融合维度：
 
 ```text
 corpus_field_embeddings
@@ -163,9 +173,16 @@ content_categories
 
 执行口径：
 
-- `similar`：优先使用 primary 语料的 `doc` 向量做 KNN 召回，再融合已有标签和身份分类；向量缺失时回退标签和分类。
-- `recommended`：优先使用 `tag_related` 和身份分类热门，低权重融合向量相似候选。
-- 短 query 的一级精准仍不走向量；向量只在已有 primary 语料后用于二级/三级扩展。
+- `primary`：文本精准链路，独立查询。
+- `similar`：语义链路，优先使用 query vector 在 `corpus_field_embeddings(field_type='doc')` 做 KNN 召回，再融合已有标签和身份分类；primary 找不到时仍应返回语义相似结果。
+- `recommended`：语义链路，使用 query vector、`tag_related`、身份分类热门和热度融合。
+- 短 query 的一级精准仍不走向量；短 query 的 similar / recommended 仍可走 query vector，但需要结合 tag / category 做过滤或加权。
+
+前端 loading：
+
+- primary 和 semantic 分别请求、分别 loading。
+- primary 找不到时，只显示“未找到完全匹配词条”，不阻塞 similar / recommended。
+- similar / recommended 换一批只刷新对应语义结果区域，不让 primary 变灰或禁用。
 
 ### 3.4 UI
 
@@ -190,6 +207,7 @@ content_categories
 - `corpus_tags` 可查询语料已有标签；P0 前端统一按 `related / medium` 输出。
 - `tag_related` 可用于相关标签扩展。
 - `corpus_field_embeddings` 可用于二级/三级向量召回；至少需要支持按源 `corpus_id` 取 `field_type='doc'` 向量，并在 doc 子空间 KNN 查询相似语料。
+- 前端语义搜索会优先使用用户 query 实时生成的 1024 维向量查询 `corpus_field_embeddings`；按源 `corpus_id` 查 doc 向量仅作为围绕 primary 扩展的后续增强。
 - 贡献者可通过 `cantonese_corpus_update_history` 批量聚合。
 
 ### 4.2 前端需要保证

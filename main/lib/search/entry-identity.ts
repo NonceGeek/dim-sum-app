@@ -51,6 +51,14 @@ export type EntrySearchResponse = {
   primary: EntryIdentity | null;
   similar: EntryIdentity[];
   recommended: EntryIdentity[];
+  loadingSections?: {
+    primary: boolean;
+    semantic: boolean;
+  };
+  sectionStatus?: {
+    primary: "idle" | "loading" | "success" | "error";
+    semantic: "idle" | "loading" | "success" | "error" | "fallback";
+  };
   cursors: {
     similarNext: string | null;
     recommendedNext: string | null;

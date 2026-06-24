@@ -5,7 +5,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  useEntryPrimarySearchQuery,
   useEntrySearchQuery,
+  useEntrySemanticSearchQuery,
   useSearchQuery,
   useSearch,
   type SearchResult,
@@ -68,16 +70,56 @@ export default function SearchPage() {
     !!urlKeyword && !useEntryMode,
   );
   const {
-    data: entryResult,
-    isPending: entryPending,
-    isFetching: entryFetching,
-    error: entrySearchError,
-  } = useEntrySearchQuery(urlKeyword, {
+    data: entryPrimaryResult,
+    isPending: entryPrimaryPending,
+    isFetching: entryPrimaryFetching,
+    error: entryPrimarySearchError,
+  } = useEntryPrimarySearchQuery(urlKeyword, !!urlKeyword && useEntryMode);
+  const {
+    data: entrySemanticResult,
+    isPending: entrySemanticPending,
+    isFetching: entrySemanticFetching,
+    error: entrySemanticSearchError,
+  } = useEntrySemanticSearchQuery(urlKeyword, {
     similarCursor,
     recommendedCursor,
     enabled: !!urlKeyword && useEntryMode,
   });
-  const searchPending = useEntryMode ? entryPending : isPending;
+  const entryResult = useMemo(() => {
+    if (!useEntryMode) return null;
+    if (!entryPrimaryResult && !entrySemanticResult) return null;
+
+    return {
+      query: urlKeyword,
+      primary: entryPrimaryResult?.primary ?? null,
+      similar: entrySemanticResult?.similar ?? [],
+      recommended: entrySemanticResult?.recommended ?? [],
+      loadingSections: {
+        primary: entryPrimaryPending || entryPrimaryFetching,
+        semantic: entrySemanticPending || entrySemanticFetching,
+      },
+      sectionStatus: {
+        primary: entryPrimaryResult?.sectionStatus?.primary ?? "idle",
+        semantic: entrySemanticResult?.sectionStatus?.semantic ?? "idle",
+      },
+      cursors: {
+        similarNext: entrySemanticResult?.cursors.similarNext ?? null,
+        recommendedNext: entrySemanticResult?.cursors.recommendedNext ?? null,
+      },
+    };
+  }, [
+    entryPrimaryFetching,
+    entryPrimaryPending,
+    entryPrimaryResult,
+    entrySemanticFetching,
+    entrySemanticPending,
+    entrySemanticResult,
+    urlKeyword,
+    useEntryMode,
+  ]);
+  const searchPending = useEntryMode
+    ? entryPrimaryPending || entrySemanticPending
+    : isPending;
 
   // 搜索参数同步到 UI state（用于 SearchHeader 显示）
   const [searchPrompt, setSearchPrompt] = useState(urlKeyword);
@@ -101,8 +143,12 @@ export default function SearchPage() {
   }, [searchError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (entrySearchError) toast.error(t("searchFailed"), { description: (entrySearchError as Error).message });
-  }, [entrySearchError]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (entryPrimarySearchError) toast.error(t("searchFailed"), { description: (entryPrimarySearchError as Error).message });
+  }, [entryPrimarySearchError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (entrySemanticSearchError) toast.error(t("searchFailed"), { description: (entrySemanticSearchError as Error).message });
+  }, [entrySemanticSearchError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch available categories
   const { data: categories } = useAllCategories();
@@ -315,7 +361,6 @@ export default function SearchPage() {
           <div
             className={cn(
               "px-4 py-4 transition-opacity duration-200",
-              entryFetching && "opacity-60 pointer-events-none",
             )}
           >
             <div className="hidden sm:flex">
@@ -323,8 +368,10 @@ export default function SearchPage() {
               <div className="flex-1 max-w-3xl">
                 <EntrySearchSections
                   result={entryResult}
-                  isRefreshingSimilar={entryFetching}
-                  isRefreshingRecommended={entryFetching}
+                  isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
+                  isLoadingSemantic={entrySemanticPending && !entrySemanticResult}
+                  isRefreshingSimilar={entrySemanticFetching}
+                  isRefreshingRecommended={entrySemanticFetching}
                   onRefreshSimilar={() =>
                     setSimilarCursor(entryResult.cursors.similarNext)
                   }
@@ -337,8 +384,10 @@ export default function SearchPage() {
             <div className="sm:hidden">
               <EntrySearchSections
                 result={entryResult}
-                isRefreshingSimilar={entryFetching}
-                isRefreshingRecommended={entryFetching}
+                isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
+                isLoadingSemantic={entrySemanticPending && !entrySemanticResult}
+                isRefreshingSimilar={entrySemanticFetching}
+                isRefreshingRecommended={entrySemanticFetching}
                 onRefreshSimilar={() =>
                   setSimilarCursor(entryResult.cursors.similarNext)
                 }
