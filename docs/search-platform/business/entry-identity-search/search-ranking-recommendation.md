@@ -70,8 +70,8 @@ data 前缀匹配
 优先级：
 
 ```text
-同 corpus_tags 已有标签
-> tag_related 相关标签
+corpus_field_embeddings doc 向量相似
+> 同 corpus_tags 已有标签
 > 同二级身份分类
 > 同一级身份分类
 > 同现有 category/dataset
@@ -91,17 +91,18 @@ data 前缀匹配
 
 | 因子 | 建议权重 |
 |------|----------|
+| `field_type = doc` 向量相似 | +90 * similarity |
 | 同已有标签 | +60 |
 | `tag_related.method = manual` | +80 |
 | `tag_related.method = cooc` | +45 |
 | `tag_related.method = semantic` | +30 |
 | 同二级身份分类 | +40 |
 | 同一级身份分类 | +20 |
-| field vector 相似 | query 较长时加权，query 很短时弱化或不用 |
+| 其他 field vector 相似 | 后续按 `sentence` / `definition` / `headword` 分面增强 |
 
 二级结果应排除一级结果中已经展示的词条。
 
-`corpus_tags.tag_role` 和 `corpus_tags.relevance_level` 暂缓落库期间，所有已有标签统一按 `related / medium` 处理；相关性差异主要由标签命中数量、`tag_related` 分数、分类相同和文本命中共同决定。
+`corpus_tags.tag_role` 和 `corpus_tags.relevance_level` 暂缓落库期间，所有已有标签统一按 `related / medium` 处理；相关性差异主要由 doc 向量相似、标签命中数量、分类相同和文本命中共同决定。若源语料没有 doc 向量，二级结果回退到标签和分类规则。
 
 ---
 
@@ -121,6 +122,7 @@ data 前缀匹配
 
 ```text
 tag_related 相关标签
+> corpus_field_embeddings doc 向量弱召回
 > 同一级分类下热门词
 > 同 dataset 下热门词
 > 运营配置 recommend_words

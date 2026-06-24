@@ -87,7 +87,29 @@ async function fetchAggregatedSearchRows(params: {
         from corpus_tags ct
         join primary_row p on p.id = ct.corpus_id
       ),
+      primary_doc_embedding as (
+        select embedding
+        from corpus_field_embeddings
+        where corpus_id = (select id from primary_row)
+          and field_type = 'doc'
+        limit 1
+      ),
       similar_candidates as (
+        select id, score
+        from (
+          select
+            e.corpus_id as id,
+            (1 - (e.embedding <=> src.embedding)) * 90 as score
+          from corpus_field_embeddings e,
+               primary_doc_embedding src
+          where e.field_type = 'doc'
+            and e.corpus_id <> (select id from primary_row)
+          order by e.embedding <=> src.embedding
+          limit 12
+        ) vector_candidates
+
+        union all
+
         select ct.corpus_id as id, 60 as score
         from corpus_tags ct
         where ct.tag_id in (select tag_id from primary_tags)
@@ -121,6 +143,21 @@ async function fetchAggregatedSearchRows(params: {
         offset ${params.similarOffset}
       ),
       recommended_candidates as (
+        select id, score
+        from (
+          select
+            e.corpus_id as id,
+            (1 - (e.embedding <=> src.embedding)) * 20 as score
+          from corpus_field_embeddings e,
+               primary_doc_embedding src
+          where e.field_type = 'doc'
+            and e.corpus_id <> (select id from primary_row)
+          order by e.embedding <=> src.embedding
+          limit 24
+        ) vector_candidates
+
+        union all
+
         select c.id,
                sum(
                  case tr.method

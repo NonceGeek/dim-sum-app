@@ -94,7 +94,7 @@
 field_type = doc / sentence / definition / headword / image / video
 ```
 
-后端提供可用的向量查询能力，但不强制前端推荐逻辑只用向量。
+后端提供可用的向量查询能力。搜索实现以后端原始文档为准：一级精准结果不依赖向量；二级相似结果必须接入 `corpus_field_embeddings` 的字段级向量召回，并在向量缺失时回退标签、相关标签、分类和热度规则；三级推荐可使用低权重向量召回补充探索结果。
 
 ---
 
@@ -154,14 +154,18 @@ exact / 繁简 exact / prefix / like / full text
 二级和三级：
 
 ```text
+corpus_field_embeddings
 corpus_tags
 tag_related
 content_categories
-corpus_field_embeddings
 热度和运营规则
 ```
 
-短 query 不应强依赖向量。用户只搜一两个字时，优先标签、相关标签和分类；长句或完整表达再使用字段级向量增强。
+执行口径：
+
+- `similar`：优先使用 primary 语料的 `doc` 向量做 KNN 召回，再融合已有标签和身份分类；向量缺失时回退标签和分类。
+- `recommended`：优先使用 `tag_related` 和身份分类热门，低权重融合向量相似候选。
+- 短 query 的一级精准仍不走向量；向量只在已有 primary 语料后用于二级/三级扩展。
 
 ### 3.4 UI
 
@@ -185,7 +189,7 @@ corpus_field_embeddings
 - `content_categories` 和 `corpus_category` 可查询语料一级/二级身份分类。
 - `corpus_tags` 可查询语料已有标签；P0 前端统一按 `related / medium` 输出。
 - `tag_related` 可用于相关标签扩展。
-- `corpus_field_embeddings` 可用于二级/三级向量召回。
+- `corpus_field_embeddings` 可用于二级/三级向量召回；至少需要支持按源 `corpus_id` 取 `field_type='doc'` 向量，并在 doc 子空间 KNN 查询相似语料。
 - 贡献者可通过 `cantonese_corpus_update_history` 批量聚合。
 
 ### 4.2 前端需要保证
@@ -206,7 +210,7 @@ corpus_field_embeddings
 
 - [ ] 确认 `corpus_category.source` 是否已包含 `ai/import/rule/manual`。
 - [ ] 提供批量查询 entryIdentity 所需字段的 SQL 或 RPC。
-- [ ] 提供 `corpus_field_embeddings` 可用索引和查询示例。
+- [x] 提供 `corpus_field_embeddings` 可用索引和查询示例。
 
 ### 暂缓增强
 
@@ -220,6 +224,7 @@ corpus_field_embeddings
 - [x] 新增 `/api/search/entries` 第一版。
 - [x] 实现 `entryIdentity` 聚合器第一版。
 - [x] 实现 primary / similar / recommended 分层第一版。
+- [x] 二级/三级接入 `corpus_field_embeddings` doc 向量召回。
 - [x] 实现二级和三级换一批第一版。
 - [ ] 改造 Search UI。
 - [ ] 改造分享卡片预览。

@@ -114,8 +114,8 @@ P0 聚合字段：
 | Section | 数量 | P0 逻辑 |
 |---------|------|---------|
 | `primary` | 1 | exact / 繁简 exact / prefix / like / full text，取最佳 |
-| `similar` | 3 | 先用同标签、相关标签、同分类召回；向量作为可选增强 |
-| `recommended` | 4 | 先用 `tag_related`、同二级身份分类、同一级身份分类热门兜底 |
+| `similar` | 3 | 以后端文档为准，优先接 `corpus_field_embeddings(field_type='doc')` 向量召回，再融合/兜底同标签和同二级身份分类 |
+| `recommended` | 4 | 先用 `tag_related`，再融合低权重向量召回、同二级身份分类、同一级身份分类热门兜底 |
 
 二级和三级不做传统分页，只提供“换一批”刷新。
 
@@ -153,6 +153,7 @@ P0 聚合字段：
 - [x] 字段级向量表已存在。
 - [x] 优化聚合查询性能：已将多次 `$queryRaw` 合并为单次聚合 SQL，热请求约 1.1-1.3 秒。
 - [x] 三级推荐兜底已从旧 `cantonese_corpus_all.category` 调整为 `corpus_category -> content_categories` 身份分类。
+- [x] 二级相似结果已按后端文档接入 `corpus_field_embeddings` 的 doc 向量 KNN 召回；三级推荐低权重融合 doc 向量候选。
 - [ ] 确认是否需要提供批量 `entryIdentity` RPC。
 
 ---
@@ -168,7 +169,7 @@ P0 聚合字段：
 | `content_categories` / `corpus_category` | 已用于身份分类展示、相似和推荐兜底 | 后续 Admin 再做人工治理 |
 | `tags` / `corpus_tags` | 已作为已有标签输出到 `related` | 后续如后端新增 `tag_role` / `relevance_level`，再拆分 precise / related / recommended |
 | `tag_related` | 已用于推荐语料和推荐标签，推荐标签过滤 `corpus_count >= 3` | 后续可接 manual 权重治理 |
-| `corpus_field_embeddings` | 暂未接入线上查询 | P0.5 再接向量候选，不影响当前规则版搜索 |
+| `corpus_field_embeddings` | 已用于二级相似 doc 向量召回，并作为三级推荐低权重候选 | 后续可扩展到 `sentence` / `definition` / `headword` 分面 |
 | 一级精准搜索 | 当前为 exact / lower exact / prefix / like | full text 和繁简归一后续接 |
 
 ---
@@ -191,7 +192,7 @@ main/app/[locale]/(home)/search/page.tsx
 2. 验证分享卡片弹窗、复制链接、打开卡片、新旧搜索并行时的 loading、空结果、换一批状态。
 3. 如线上仍需更低延迟，再把聚合 SQL 下沉为 Supabase RPC，并评估缓存热门 query。
 
-向量检索放在 P0.5：等非向量链路跑通后，再把 `corpus_field_embeddings` 作为候选增强接入。
+向量检索当前先接入后端文档中的 doc→doc 相似查询。后续 P0.5 再把 `sentence` / `definition` / `headword` 分面接入，并评估查询耗时和索引命中。
 
 当前性能观察：
 
@@ -199,5 +200,5 @@ main/app/[locale]/(home)/search/page.tsx
 - 原始 `similar` SQL 曾因 `left join + or + group by` 扫描大量候选，约 2.38 秒；已改为从 `corpus_tags` / `corpus_category` 先取候选再合并分数，单 SQL 约 133ms。
 - 多次远端 `$queryRaw` 每次有约 0.8-1.1 秒往返/执行成本，串行会把接口拖到 5 秒级。
 - 已将 Route Handler 改成单次聚合 SQL，一次返回 primary / similar / recommended 候选和身份聚合数据。
-- 本地热请求验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒；首次编译或热更新后可能出现更高抖动。
+- 非向量版本地热请求曾验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒；接入 `corpus_field_embeddings` doc 向量召回后需要重新实测索引命中和接口耗时。
 - 页面编译验证：`/zh-CN/search?mode=entry&q=好` 会 307 到默认 locale 无前缀路径，跟随重定向后返回 200。
