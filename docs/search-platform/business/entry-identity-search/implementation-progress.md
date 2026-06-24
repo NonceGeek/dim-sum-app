@@ -200,5 +200,7 @@ main/app/[locale]/(home)/search/page.tsx
 - 原始 `similar` SQL 曾因 `left join + or + group by` 扫描大量候选，约 2.38 秒；已改为从 `corpus_tags` / `corpus_category` 先取候选再合并分数，单 SQL 约 133ms。
 - 多次远端 `$queryRaw` 每次有约 0.8-1.1 秒往返/执行成本，串行会把接口拖到 5 秒级。
 - 已将 Route Handler 改成单次聚合 SQL，一次返回 primary / similar / recommended 候选和身份聚合数据。
-- 非向量版本地热请求曾验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒；接入 `corpus_field_embeddings` doc 向量召回后需要重新实测索引命中和接口耗时。
+- 非向量版本地热请求曾验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒。
+- 接入 `corpus_field_embeddings` doc 向量召回后，曾尝试“两步查：先取源向量、再绑定参数 KNN”，可命中 HNSW，但因为远端 DB 往返增加，接口退化到约 3.6-4.8 秒。
+- 当前采用“单次聚合 SQL + 标量子查询取源向量”的写法，`EXPLAIN ANALYZE` 已确认向量段命中 `corpus_field_emb_doc_hnsw`；本地热请求约 1.9-2.4 秒，`好` 这类短 query 仍受 primary `%like%` 扫描和远端 DB 往返影响。
 - 页面编译验证：`/zh-CN/search?mode=entry&q=好` 会 307 到默认 locale 无前缀路径，跟随重定向后返回 200。
