@@ -377,12 +377,30 @@ function PrimaryEntry({
 
 function PrimaryLoading() {
   return (
-    <section className="border-b border-border/60 px-4 py-5 sm:px-0">
-      <div className="max-w-4xl">
-        <div className="mb-3 h-3 w-24 rounded bg-muted" />
-        <div className="mb-3 h-8 w-36 rounded bg-muted" />
-        <div className="mb-3 h-4 w-2/3 rounded bg-muted" />
-        <div className="h-16 w-full rounded bg-muted" />
+    <section className="border-b border-border/60 px-4 py-8 sm:px-0">
+      <div className="max-w-5xl animate-pulse">
+        <div className="mb-5 flex items-center gap-2">
+          <div className="h-5 w-1 rounded-full bg-primary/30" />
+          <div className="h-4 w-24 rounded bg-muted" />
+        </div>
+        <div className="space-y-3">
+          <div className="h-10 w-4/5 max-w-3xl rounded bg-muted sm:h-12" />
+          <div className="h-10 w-1/2 max-w-xl rounded bg-muted sm:h-12" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <div className="h-4 w-56 rounded bg-muted" />
+          <div className="h-4 w-20 rounded bg-muted" />
+        </div>
+        <div className="mt-7 space-y-3">
+          <div className="h-4 w-full max-w-2xl rounded bg-muted" />
+          <div className="h-4 w-3/5 max-w-xl rounded bg-muted" />
+        </div>
+        <div className="mt-6 h-10 w-full max-w-3xl rounded-full bg-muted" />
+        <div className="mt-5 flex gap-2">
+          <div className="h-7 w-16 rounded-md bg-muted" />
+          <div className="h-7 w-20 rounded-md bg-muted" />
+          <div className="h-7 w-14 rounded-md bg-muted" />
+        </div>
       </div>
     </section>
   );
@@ -435,6 +453,33 @@ function EntryTile({
           entry={entry}
           relatedLimit={dense ? 3 : 4}
         />
+      </div>
+    </article>
+  );
+}
+
+function EntryTileSkeleton({ dense = false }: { dense?: boolean }) {
+  return (
+    <article className="flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5">
+      <div className="animate-pulse">
+        <div className="mb-4 h-3 w-20 rounded bg-muted" />
+        <div className="mb-2 h-5 w-4/5 rounded bg-muted" />
+        <div className="mb-4 h-5 w-2/3 rounded bg-muted" />
+        <div className="mb-2 h-4 w-3/5 rounded bg-muted" />
+        <div className="mb-5 h-4 w-1/2 rounded bg-muted" />
+        <div className="mb-5 space-y-2 border-l-2 border-border pl-3">
+          <div className="h-3 w-full rounded bg-muted" />
+          <div className="h-3 w-3/4 rounded bg-muted" />
+        </div>
+        <div className="mt-auto flex flex-wrap gap-2">
+          {Array.from({ length: dense ? 3 : 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-7 rounded-md bg-muted"
+              style={{ width: `${index % 2 === 0 ? 52 : 72}px` }}
+            />
+          ))}
+        </div>
       </div>
     </article>
   );
@@ -499,11 +544,7 @@ function ResultSection({
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
             {Array.from({ length: columns }).map((_, index) => (
-              <div key={index} className="rounded-md border border-border p-3">
-                <div className="mb-2 h-4 w-2/3 rounded bg-muted" />
-                <div className="mb-2 h-3 w-1/2 rounded bg-muted" />
-                <div className="h-10 w-full rounded bg-muted" />
-              </div>
+              <EntryTileSkeleton key={index} dense={dense} />
             ))}
           </motion.div>
         ) : entries.length ? (
