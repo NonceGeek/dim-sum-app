@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import * as OpenCC from "opencc-js";
 import { publicApi } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,6 +13,8 @@ import { getQueryEmbeddingText } from "@/lib/search/query-embedding";
 
 const SIMILAR_LIMIT = 3;
 const RECOMMENDED_LIMIT = 4;
+const toSimplified = OpenCC.Converter({ from: "hk", to: "cn" });
+const toTraditional = OpenCC.Converter({ from: "cn", to: "hk" });
 
 type ResultSection = "primary" | "similar" | "recommended";
 
@@ -34,6 +37,54 @@ function parseCursor(value: string | null): number {
 
 function normalizeTags(value: CorpusTagRow[] | null): CorpusTagRow[] {
   return Array.isArray(value) ? value : [];
+}
+
+function getPrimarySearchTerms(query: string): string[] {
+  const normalized = query.trim();
+  return Array.from(
+    new Set(
+      [normalized, toSimplified(normalized), toTraditional(normalized)]
+        .map((term) => term.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function orJoin(parts: Prisma.Sql[]): Prisma.Sql {
+  return Prisma.sql`(${Prisma.join(parts, " or ")})`;
+}
+
+function buildPrimaryMatchCondition(query: string): Prisma.Sql {
+  const terms = getPrimarySearchTerms(query);
+  const lowerTerms = terms.map((term) => term.toLowerCase());
+  const prefixParts = terms.map((term) => Prisma.sql`c.data ilike ${`${term}%`}`);
+  const likeParts = terms.map((term) => Prisma.sql`c.data ilike ${`%${term}%`}`);
+  const fullTextParts = terms.map((term) => Prisma.sql`c.data &@~ ${term}`);
+
+  return orJoin([
+    Prisma.sql`c.data in (${Prisma.join(terms)})`,
+    Prisma.sql`lower(c.data) in (${Prisma.join(lowerTerms)})`,
+    ...prefixParts,
+    ...likeParts,
+    ...fullTextParts,
+  ]);
+}
+
+function buildPrimaryRankCase(query: string): Prisma.Sql {
+  const terms = getPrimarySearchTerms(query);
+  const lowerTerms = terms.map((term) => term.toLowerCase());
+  const prefixParts = terms.map((term) => Prisma.sql`c.data ilike ${`${term}%`}`);
+  const fullTextParts = terms.map((term) => Prisma.sql`c.data &@~ ${term}`);
+
+  return Prisma.sql`
+    case
+      when c.data in (${Prisma.join(terms)}) then 0
+      when lower(c.data) in (${Prisma.join(lowerTerms)}) then 1
+      when ${orJoin(prefixParts)} then 2
+      when ${orJoin(fullTextParts)} then 3
+      else 4
+    end
+  `;
 }
 
 function buildResponse(params: {
@@ -84,128 +135,41 @@ function buildResponse(params: {
 }
 
 async function fetchPrimarySearchRows(query: string): Promise<AggregatedSearchRow[]> {
+  const terms = getPrimarySearchTerms(query);
   return prisma.$queryRaw<AggregatedSearchRow[]>(
     Prisma.sql`
-      with primary_row as (
-        select
-          'primary'::text as section,
-          0::bigint as item_order,
-          c.id,
-          c.unique_id::text as unique_id,
-          c.data,
-          c.note,
-          c.structured_note,
-          c.category,
-          cc.nickname as category_display_name,
-          c.lifecycle_stage,
-          c.liked_num,
-          c.bookmark_num,
-          c.view_num,
-          c.created_at,
-          c.updated_at,
-          parent.id as primary_category_id,
-          parent.slug as primary_category_slug,
-          parent.name as primary_category_name,
-          child.id as secondary_category_id,
-          child.slug as secondary_category_slug,
-          child.name as secondary_category_name
-        from cantonese_corpus_all c
-        left join cantonese_categories cc on cc.name = c.category
-        left join corpus_category cg on cg.corpus_id = c.id
-        left join content_categories child on child.id = cg.category_id
-        left join content_categories parent on parent.id = child.parent_id
-        where c.data = ${query}
-           or lower(c.data) = lower(${query})
-           or c.data ilike ${`${query}%`}
-           or c.data ilike ${`%${query}%`}
-        order by
-          case
-            when c.data = ${query} then 0
-            when lower(c.data) = lower(${query}) then 1
-            when c.data ilike ${`${query}%`} then 2
-            else 3
-          end,
-          length(c.data),
-          c.view_num desc,
-          c.bookmark_num desc,
-          c.liked_num desc
-        limit 1
+      with primary_match as (
+        select unique_id
+        from public.search_entry_primary(array[${Prisma.join(terms)}]::text[])
       )
       select
-        pr.*,
-        coalesce(related.related_tags, '[]'::jsonb) as related_tags,
-        coalesce(recommended.recommended_tags, '[]'::jsonb) as recommended_tags,
-        coalesce(contributors.contributor_ids, array[]::text[]) as contributor_ids
-      from primary_row pr
-      left join lateral (
-        select jsonb_agg(
-          jsonb_build_object(
-            'corpus_id', ct.corpus_id,
-            'tag_id', t.id,
-            'slug', t.slug,
-            'name', t.name,
-            'facet', t.facet
-          )
-          order by t.facet, t.sort_order, t.name
-        ) as related_tags
-        from corpus_tags ct
-        join tags t on t.id = ct.tag_id
-        where ct.corpus_id = pr.id
-          and t.status = 'active'
-      ) related on true
-      left join lateral (
-        with owned_tags as (
-          select tag_id
-          from corpus_tags
-          where corpus_id = pr.id
-        ),
-        ranked_tags as (
-          select
-            related_tag.id as tag_id,
-            related_tag.slug,
-            related_tag.name,
-            related_tag.facet,
-            row_number() over (
-              order by sum(
-                case tr.method
-                  when 'manual' then 3.0
-                  when 'cooc' then 1.0
-                  when 'semantic' then 0.6
-                  else 0.4
-                end * tr.score
-              ) desc
-            ) as rank
-          from owned_tags ot
-          join tag_related tr on tr.tag_id = ot.tag_id
-          join tags related_tag on related_tag.id = tr.related_id
-          where related_tag.status = 'active'
-            and related_tag.corpus_count >= 3
-            and not exists (
-              select 1
-              from owned_tags existing
-              where existing.tag_id = tr.related_id
-            )
-          group by related_tag.id, related_tag.slug, related_tag.name, related_tag.facet
-        )
-        select jsonb_agg(
-          jsonb_build_object(
-            'corpus_id', pr.id,
-            'tag_id', tag_id,
-            'slug', slug,
-            'name', name,
-            'facet', facet
-          )
-          order by rank
-        ) as recommended_tags
-        from ranked_tags
-        where rank <= 6
-      ) recommended on true
-      left join lateral (
-        select array_agg(distinct h.contributor_user_id)
-          filter (where h.contributor_user_id is not null) as contributor_ids
-        from cantonese_corpus_update_history h
-        where h.unique_id = pr.unique_id::uuid
-      ) contributors on true
+        'primary'::text as section,
+        0::bigint as item_order,
+        entry.id,
+        entry.unique_id::text as unique_id,
+        entry.data,
+        entry.note,
+        entry.structured_note,
+        entry.category,
+        entry.category_display_name,
+        entry.lifecycle_stage,
+        entry.liked_num,
+        entry.bookmark_num,
+        entry.view_num,
+        entry.created_at,
+        entry.updated_at,
+        entry.primary_category_id,
+        entry.primary_category_slug,
+        entry.primary_category_name,
+        entry.secondary_category_id,
+        entry.secondary_category_slug,
+        entry.secondary_category_name,
+        entry.related_tags,
+        entry.recommended_tags,
+        entry.contributor_ids
+      from primary_match pm
+      join lateral public.get_entry_identities(array[pm.unique_id]::uuid[]) entry
+        on true
     `,
   );
 }
@@ -243,17 +207,9 @@ async function fetchAggregatedSearchRows(params: {
         left join corpus_category cg on cg.corpus_id = c.id
         left join content_categories child on child.id = cg.category_id
         left join content_categories parent on parent.id = child.parent_id
-        where c.data = ${params.query}
-           or lower(c.data) = lower(${params.query})
-           or c.data ilike ${`${params.query}%`}
-           or c.data ilike ${`%${params.query}%`}
+        where ${buildPrimaryMatchCondition(params.query)}
         order by
-          case
-            when c.data = ${params.query} then 0
-            when lower(c.data) = lower(${params.query}) then 1
-            when c.data ilike ${`${params.query}%`} then 2
-            else 3
-          end,
+          ${buildPrimaryRankCase(params.query)},
           length(c.data),
           c.view_num desc,
           c.bookmark_num desc,
@@ -579,17 +535,9 @@ async function fetchSemanticSearchRows(params: {
         left join corpus_category cg on cg.corpus_id = c.id
         left join content_categories child on child.id = cg.category_id
         left join content_categories parent on parent.id = child.parent_id
-        where c.data = ${params.query}
-           or lower(c.data) = lower(${params.query})
-           or c.data ilike ${`${params.query}%`}
-           or c.data ilike ${`%${params.query}%`}
+        where ${buildPrimaryMatchCondition(params.query)}
         order by
-          case
-            when c.data = ${params.query} then 0
-            when lower(c.data) = lower(${params.query}) then 1
-            when c.data ilike ${`${params.query}%`} then 2
-            else 3
-          end,
+          ${buildPrimaryRankCase(params.query)},
           length(c.data),
           c.view_num desc,
           c.bookmark_num desc,

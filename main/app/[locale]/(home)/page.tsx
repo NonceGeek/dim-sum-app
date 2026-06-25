@@ -280,13 +280,13 @@ export default function HomePage() {
                   aria-pressed={useEntryMode}
                   onClick={() => setUseEntryMode((value) => !value)}
                   className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors",
+                    "inline-flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors",
                     useEntryMode
-                      ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
-                      : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                      ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
+                      : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
-                  新版搜索
+                  {t("entrySearchBeta")}
                 </button>
 
                 <div className="flex items-center justify-end gap-2">

@@ -148,6 +148,9 @@ P0 聚合字段：
 - [x] 前端拆分 primary / semantic 两个请求，支持分别 loading。
 - [x] 前端进一步拆分 similar / recommended 请求，支持二级和三级分别换一批、分别 loading。
 - [x] 搜索结果卡片已基于 `assets.audioUrl/videoUrl/coverImage` 展示媒体入口；音频支持点击播放。
+- [x] 新增 `/entries/{unique_id}` SEO 词条页，复用 entryIdentity 聚合结果生成页面和 metadata。
+- [x] 新增 `entry-query` 内部聚合服务，并切到 `public.get_entry_identities(uuid[])` Supabase RPC。
+- [x] primary 精准搜索支持繁简/HK-CN 查询变体和 PGroonga 全文匹配，并已下沉为 `public.search_entry_primary(text[])` Supabase RPC。
 
 ### 后端 / 数据配合
 
@@ -159,7 +162,9 @@ P0 聚合字段：
 - [x] 二级相似结果已按后端文档接入百炼 query embedding + `corpus_field_embeddings(field_type='doc')` KNN 召回。
 - [x] 三级推荐已从二级 similar 结果的 `doc` 向量继续扩散，并低权重融合 query/primary 语义候选。
 - [x] 新增 query embedding 接入点：`DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY` 配置后，semantic section 会调阿里云 `qwen3-vl-embedding` 获取用户 query 向量。
-- [ ] 确认是否需要提供批量 `entryIdentity` RPC。
+- [x] 批量 `entryIdentity` 聚合已下沉为 Supabase RPC。
+- [x] primary 精准搜索已下沉为 Supabase RPC。
+- [ ] `search_entry_similar`、`search_entry_recommended`、`list_entries_by_category`、`list_entries_by_tag` 后续再做。
 
 ---
 
@@ -175,7 +180,7 @@ P0 聚合字段：
 | `tags` / `corpus_tags` | 已作为已有标签输出到 `related` | 后续如后端新增 `tag_role` / `relevance_level`，再拆分 precise / related / recommended |
 | `tag_related` | 已用于推荐语料和推荐标签，推荐标签过滤 `corpus_count >= 3` | 后续可接 manual 权重治理 |
 | `corpus_field_embeddings` | semantic section 使用用户 query vector 查询 doc 向量；缺少 DashScope key 时 fallback 到规则版 | 后续可扩展到 `sentence` / `definition` / `headword` 分面 |
-| 一级精准搜索 | 当前为 exact / lower exact / prefix / like | full text 和繁简归一后续接 |
+| 一级精准搜索 | 当前为 exact / lower exact / prefix / like / PGroonga 全文，支持繁简/HK-CN 查询变体 | 后续可继续优化排序权重 |
 
 ---
 
@@ -191,11 +196,11 @@ main/app/[locale]/(home)/_components/entry-search-sections.tsx
 main/app/[locale]/(home)/search/page.tsx
 ```
 
-下一步先做三件事：
+下一步建议先做三件事：
 
-1. 用浏览器检查 `/search?mode=entry&q=好` 的桌面和移动端视觉布局。
+1. 用浏览器检查 `/search?mode=entry&q=好` 和 `/entries/{unique_id}` 的桌面、移动端视觉布局。
 2. 验证分享卡片弹窗、复制链接、打开卡片、新旧搜索并行时的 loading、空结果、换一批状态。
-3. 如线上仍需更低延迟，再把聚合 SQL 下沉为 Supabase RPC，并评估缓存热门 query。
+3. 如线上仍需更低延迟，再评估 similar/recommended 召回 SQL 是否也需要局部下沉，并缓存热门 query。
 
 向量检索当前按后端方案保持 query vector 优先：二级固定请求百炼把用户 query 转成 1024 维向量，再查 `corpus_field_embeddings(field_type='doc')`；三级从二级结果的 `doc` 向量继续扩散。`primary` 文本搜索和 `semantic` 向量搜索在前端分别请求、分别 loading。后续 P0.5 再把 `sentence` / `definition` / `headword` 分面接入，并评估查询耗时和索引命中。
 

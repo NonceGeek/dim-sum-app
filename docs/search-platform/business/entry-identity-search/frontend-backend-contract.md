@@ -177,7 +177,8 @@ content_categories
 - `primary`：文本精准链路，独立查询。
 - `similar`：语义链路，固定使用用户 query vector 查询 `corpus_field_embeddings(field_type='doc')`，再融合已有标签和身份分类。
 - `recommended`：语义链路，优先从 similar 结果的 `doc` 向量继续扩散，再融合 `tag_related`、身份分类热门和热度。
-- 短 query 的一级精准仍不走向量；短 query 的 similar 仍用 query vector，但需要结合 tag / category 做过滤或加权，减少短文本向量不稳定带来的误召回。
+- 短 query 的一级精准仍不走向量；当前 primary 已支持原词、繁简/HK-CN 转换词、prefix、like 和 PGroonga 全文匹配。
+- 短 query 的 similar 仍用 query vector，但需要结合 tag / category 做过滤或加权，减少短文本向量不稳定带来的误召回。
 
 当前 `field_type` 使用范围：
 
@@ -208,7 +209,7 @@ content_categories
 - 二级和三级“换一批”交互。
 - 音频、图片、视频等多媒体能力的轻量展示和入口；媒体类型不能只作为标签展示。
 - 分享卡片预览弹窗。
-- SEO 词条页、分类页、标签页。
+- SEO 词条页；分类页、标签页后续规划。
 
 ---
 
@@ -225,6 +226,32 @@ content_categories
 - 前端语义搜索固定使用用户 query 实时生成的 1024 维向量查询 `corpus_field_embeddings(field_type='doc')`，不依赖 primary 必然存在。
 - 当前不强依赖 `tags.embedding` 和相似标签向量；如果 similar / recommended 效果不够，再把相似标签下的语料加入召回池。
 - 贡献者可通过 `cantonese_corpus_update_history` 批量聚合。
+- `public.get_entry_identities(uuid[])` 已作为批量 entryIdentity RPC 落库，可供 Next、Supabase SDK 和后续外部服务复用。
+
+Supabase RPC 调用示例：
+
+```ts
+const { data, error } = await supabase.rpc("get_entry_identities", {
+  p_unique_ids: ["81972ccc-ef47-434c-a572-be44bb69d93d"],
+});
+```
+
+Next 当前通过 Prisma 调用同一个数据库函数：
+
+```sql
+select *
+from public.get_entry_identities(array[...unique_ids]::uuid[])
+```
+
+Primary 搜索也已下沉为数据库函数：
+
+```ts
+const { data, error } = await supabase.rpc("search_entry_primary", {
+  p_query_variants: ["風扇", "风扇"],
+});
+```
+
+Next 负责用 `opencc-js` 生成繁简/HK-CN 查询变体，数据库函数负责 exact、prefix、PGroonga full text、like 排序。
 
 ### 4.2 前端需要保证
 
@@ -243,8 +270,17 @@ content_categories
 ### 后端
 
 - [ ] 确认 `corpus_category.source` 是否已包含 `ai/import/rule/manual`。
-- [ ] 提供批量查询 entryIdentity 所需字段的 SQL 或 RPC。
+- [x] 前端提供批量查询 entryIdentity 的内部服务边界。
+- [x] 批量 entryIdentity 聚合已下沉为 Supabase RPC：`public.get_entry_identities(uuid[])`。
+- [x] primary 精准搜索已下沉为 Supabase RPC：`public.search_entry_primary(text[])`。
 - [x] 提供 `corpus_field_embeddings` 可用索引和查询示例。
+
+### 后续 RPC
+
+- [ ] `search_entry_similar`：输入 query embedding，输出二级相似结果候选。
+- [ ] `search_entry_recommended`：输入 similar ids / offset，输出三级推荐结果候选。
+- [ ] `list_entries_by_category`：分类 SEO 页和分类浏览。
+- [ ] `list_entries_by_tag`：标签 SEO 页和标签浏览。
 
 ### 暂缓增强
 
@@ -262,4 +298,5 @@ content_categories
 - [x] 实现二级和三级换一批第一版。
 - [x] 改造 Search UI。
 - [x] 改造分享卡片预览。
-- [ ] 规划 SEO 页面。
+- [x] 新增 SEO 词条页 `/entries/{unique_id}`。
+- [ ] 规划 SEO 分类页、标签页。
