@@ -43,6 +43,7 @@ export async function fetchEntryIdentitiesByUniqueIds(
         structured_note,
         category,
         category_display_name,
+        editable_level,
         lifecycle_stage,
         liked_num,
         bookmark_num,

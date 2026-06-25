@@ -135,6 +135,22 @@ cantonese_corpus_update_history
 
 Search 页面、分享卡片、SEO 页面都消费同一个 `entryIdentity`，避免字段口径不一致。
 
+#### 3.2.1 旧 `note.context` fallback
+
+`entryIdentity` 字段优先从后端新结构 `structured_note` 抽取；如果旧语料尚未清洗出 `structured_note.data[].blocks`，Next 需要兼容读取 `cantonese_corpus_all.note.context`，保证旧搜索里已有的展示信息不会在新版搜索丢失。
+
+当前 fallback 映射：
+
+| entryIdentity 字段 | 优先来源 | fallback 来源 |
+|--------------------|----------|---------------|
+| `jyutping` | `structured_note.data[].jyutping` | `note.context.jyutping`、`粤拼`、`粤语拼音`、`pron`、`pinyin`、`拼音` |
+| `meaning` | `structured_note` 中 `type=definition` 的 block | `note.context.meaning`、`definition`、`translation`、`普通话翻译`、`中文翻译`、`释义`、`意思` |
+| `assets.audioUrl` | `structured_note` 中 `type=audio` 的 `url` | `note.context.audio`、`audioUrl`、`音频`、`音频链接` |
+| `assets.videoUrl` | `structured_note` 中 `type=video` 的 `url` | `note.context.video`、`videoUrl`、`视频`、`视频链接` |
+| `assets.coverImage` | `structured_note` 中 `type=image` 的 `url` | `note.context.image`、`imageUrl`、`cover`、`coverImage`、`图片`、`封面`、`封面图` |
+
+该 fallback 只用于前端 / Next 聚合展示兼容，不改变后端新数据模型，也不要求后端继续维护旧 `note.context` 作为治理来源。后续旧语料逐步补齐 `structured_note` 后，展示仍以 `structured_note` 为准。
+
 ### 3.3 搜索分层
 
 Next 负责分层和排序：
@@ -258,6 +274,7 @@ Next 负责用 `opencc-js` 生成繁简/HK-CN 查询变体，数据库函数负�
 - 不在浏览器暴露 `SUPABASE_SERVICE_ROLE_KEY`。
 - 不把旧 `identity_category_l1` / `identity_category_l2` 当作真实字段使用。
 - 不把 `cantonese_corpus_all.tags` 当作新标签治理来源。
+- 旧语料展示字段可以 fallback 到 `note.context`，但分类、标签、向量治理不依赖旧 `note.context`。
 - `batchToken` 作为不透明字符串处理，前端只原样传回。
 - 向量召回失败或缺少百炼 key 时，仍可用标签、分类、热门词兜底，并把 semantic 状态标记为 `fallback`。
 
@@ -293,6 +310,7 @@ Next 负责用 `opencc-js` 生成繁简/HK-CN 查询变体，数据库函数负�
 
 - [x] 新增 `/api/search/entries` 第一版。
 - [x] 实现 `entryIdentity` 聚合器第一版。
+- [x] 为旧语料补充 `note.context` 展示字段 fallback。
 - [x] 实现 primary / similar / recommended 分层第一版。
 - [x] 二级/三级接入 `corpus_field_embeddings` 字段级向量召回。
 - [x] 实现二级和三级换一批第一版。

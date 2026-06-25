@@ -10,10 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Copy, ImageIcon, RefreshCcw, Share2, Video, Volume2 } from "lucide-react";
+import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { AnimatePresence, motion } from "motion/react";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
@@ -23,6 +27,8 @@ type EntrySearchSectionsProps = {
   isRefreshingRecommended?: boolean;
   onRefreshSimilar?: () => void;
   onRefreshRecommended?: () => void;
+  setEditingResult?: React.Dispatch<React.SetStateAction<SearchResult | null>>;
+  setUpdateDialogOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function displayCategory(entry: EntryIdentity): string {
@@ -46,6 +52,15 @@ function entryHref(entry: EntryIdentity): string {
 async function copyText(value: string, successMessage: string) {
   await navigator.clipboard.writeText(value);
   toast.success(successMessage);
+}
+
+function canEditEntry(entry: EntryIdentity, user: { role?: string } | null | undefined) {
+  if (!user) return false;
+  if (entry.editableLevel === 0) return false;
+  if (entry.editableLevel === 1) {
+    return user.role === "TAGGER_PARTNER" || user.role === "TAGGER_OUTSOURCING";
+  }
+  return true;
 }
 
 function playAudio(url: string, errorMessage: string) {
@@ -128,13 +143,9 @@ function PrimaryMediaPreview({ entry }: { entry: EntryIdentity }) {
   if (!audioUrl && !videoUrl && !coverImage) return null;
 
   return (
-    <div className="mb-4 space-y-3">
+    <div className="space-y-3">
       {audioUrl && (
-        <audio
-          src={audioUrl}
-          controls
-          className="h-10 w-full max-w-2xl rounded-md"
-        />
+        <audio src={audioUrl} controls className="h-10 w-full max-w-3xl" />
       )}
 
       {(coverImage || videoUrl) && (
@@ -167,18 +178,25 @@ function PrimaryMediaPreview({ entry }: { entry: EntryIdentity }) {
   );
 }
 
-function TagList({ entry, limit = 6 }: { entry: EntryIdentity; limit?: number }) {
-  const tags = [
-    ...entry.tags.related.slice(0, 4),
-    ...entry.tags.recommended.slice(0, 2),
-  ].slice(0, limit);
+function TagList({
+  entry,
+  relatedLimit = 4,
+}: {
+  entry: EntryIdentity;
+  relatedLimit?: number;
+}) {
+  const relatedTags = entry.tags.related.slice(0, relatedLimit);
 
-  if (!tags.length) return null;
+  if (!relatedTags.length) return null;
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {tags.map((tag) => (
-        <Badge key={`${tag.role}-${tag.id}`} variant="secondary" className="rounded">
+      {relatedTags.map((tag) => (
+        <Badge
+          key={`${tag.role}-${tag.id}`}
+          variant="secondary"
+          className="rounded-md border border-primary/15 bg-primary/10 font-medium text-primary"
+        >
           {tag.name}
         </Badge>
       ))}
@@ -253,69 +271,105 @@ function SharePreview({
 function PrimaryEntry({
   entry,
   labels,
+  canEdit,
+  isEditLoading,
+  onEdit,
   onShare,
 }: {
   entry: EntryIdentity;
   labels: {
     title: string;
     share: string;
+    edit: string;
+    editing: string;
     copied: string;
     media: MediaLabels;
   };
+  canEdit: boolean;
+  isEditLoading: boolean;
+  onEdit?: (entry: EntryIdentity) => void;
   onShare: (entry: EntryIdentity) => void;
 }) {
+  const hasMetadata = Boolean(entry.jyutping || displayCategory(entry));
+
   return (
-    <section className="border-b border-border px-4 py-6 sm:px-0">
-      <div className="max-w-4xl">
-        <div className="mb-4">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">{labels.title}</p>
-            <div className="mt-2 flex items-start gap-2">
-              <Link
-                href={entryHref(entry)}
-                className="min-w-0 break-words text-3xl font-semibold leading-tight text-foreground hover:underline"
-              >
-                {entry.entryName}
-              </Link>
+    <section className="border-b border-border/60 px-4 py-8 sm:px-0">
+      <div className="max-w-5xl">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="h-5 w-1 rounded-full bg-primary/70" />
+          <p className="text-sm font-semibold text-primary">{labels.title}</p>
+        </div>
+
+        <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+          <Link
+            href={entryHref(entry)}
+            className="min-w-0 max-w-5xl break-words text-3xl font-semibold leading-tight text-foreground transition-colors hover:text-primary sm:text-4xl"
+          >
+            {entry.entryName}
+          </Link>
+          <div className="mt-1 flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              aria-label={labels.share}
+              onClick={() => onShare(entry)}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+            {canEdit && onEdit && (
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="mt-0.5 h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:text-foreground"
-                aria-label={labels.share}
-                onClick={() => onShare(entry)}
+                size="sm"
+                className="h-8 rounded-md px-2 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                disabled={isEditLoading}
+                onClick={() => onEdit(entry)}
               >
-                <Share2 className="h-4 w-4" />
+                {isEditLoading ? labels.editing : labels.edit}
               </Button>
-            </div>
+            )}
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          {entry.jyutping && (
-            <span className="font-medium text-muted-foreground/90">
-              {entry.jyutping}
-            </span>
+        <div className="mt-3 text-sm text-muted-foreground">
+          {hasMetadata && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {entry.jyutping && (
+                <span className="font-medium leading-6 text-muted-foreground/90">
+                  {entry.jyutping}
+                </span>
+              )}
+              <span className="text-muted-foreground/75">
+                {displayCategory(entry)}
+              </span>
+            </div>
           )}
-          <span className="text-muted-foreground/80">{displayCategory(entry)}</span>
+        </div>
+
+        <div className="mt-6 grid gap-5">
+          {entry.meaning && (
+            <p className="max-w-3xl text-base leading-8 text-foreground">
+              {entry.meaning}
+            </p>
+          )}
+
+          <PrimaryMediaPreview entry={entry} />
+
+          {entry.tags.related.length > 0 && (
+            <TagList entry={entry} relatedLimit={4} />
+          )}
+
           <button
             type="button"
             onClick={() => copyText(entry.entryId, labels.copied)}
-            className="inline-flex max-w-full items-center gap-1 rounded border border-border/60 px-1.5 py-0.5 font-mono text-xs text-muted-foreground/70 hover:border-border hover:bg-muted hover:text-muted-foreground"
+            className="group/id inline-flex max-w-full items-center gap-1 self-start font-mono text-xs text-muted-foreground/55 transition-colors hover:text-primary"
           >
-            <span className="truncate">{compactId(entry.entryId)}</span>
-            <Copy className="h-3 w-3 shrink-0" />
+            <span className="break-all">{entry.entryId}</span>
+            <Copy className="h-3 w-3 shrink-0 opacity-60 group-hover/id:opacity-100" />
           </button>
         </div>
-
-        {entry.meaning && (
-          <p className="mb-4 max-w-3xl text-sm leading-6 text-foreground">
-            {entry.meaning}
-          </p>
-        )}
-
-        <PrimaryMediaPreview entry={entry} />
-        <TagList entry={entry} />
       </div>
     </section>
   );
@@ -323,7 +377,7 @@ function PrimaryEntry({
 
 function PrimaryLoading() {
   return (
-    <section className="border-b border-border px-4 py-5 sm:px-0">
+    <section className="border-b border-border/60 px-4 py-5 sm:px-0">
       <div className="max-w-4xl">
         <div className="mb-3 h-3 w-24 rounded bg-muted" />
         <div className="mb-3 h-8 w-36 rounded bg-muted" />
@@ -336,7 +390,7 @@ function PrimaryLoading() {
 
 function EmptyPrimary({ text }: { text: string }) {
   return (
-    <section className="border-b border-border px-4 py-5 sm:px-0">
+    <section className="border-b border-border/60 px-4 py-5 sm:px-0">
       <div className="max-w-4xl text-sm text-muted-foreground">
         {text}
       </div>
@@ -351,42 +405,36 @@ function EntryTile({
 }: {
   entry: EntryIdentity;
   labels: {
-    copied: string;
     media: MediaLabels;
   };
   dense?: boolean;
 }) {
   return (
-    <article className="flex min-h-[168px] flex-col rounded-md border border-border bg-background p-4 transition-colors hover:bg-muted/30">
-      <Link href={entryHref(entry)} className="group mb-3 block min-w-0">
-        <div className="mb-2 flex items-start justify-between gap-3">
-          <h3 className="line-clamp-2 min-w-0 break-words text-base font-semibold leading-snug text-foreground group-hover:underline">
-            {entry.entryName}
-          </h3>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {displayCategory(entry)}
-          </span>
+    <article className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
+      <Link href={entryHref(entry)} className="mb-4 block min-w-0">
+        <div className="mb-2 text-xs font-medium text-muted-foreground">
+          {displayCategory(entry)}
         </div>
+        <h3 className="line-clamp-2 min-w-0 break-words text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+          {entry.entryName}
+        </h3>
         {entry.jyutping && (
-          <p className="mb-2 text-sm text-muted-foreground">{entry.jyutping}</p>
+          <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-muted-foreground">
+            {entry.jyutping}
+          </p>
         )}
         {entry.meaning && (
-          <p className="line-clamp-2 text-sm leading-5 text-muted-foreground">
+          <p className="mt-3 line-clamp-2 border-l-2 border-border pl-3 text-sm leading-6 text-muted-foreground">
             {entry.meaning}
           </p>
         )}
       </Link>
-      <div className="mt-auto space-y-2">
+      <div className="mt-auto space-y-3">
         <MediaControls entry={entry} labels={labels.media} compact />
-        <TagList entry={entry} limit={dense ? 4 : 5} />
-        <button
-          type="button"
-          onClick={() => copyText(entry.entryId, labels.copied)}
-          className="inline-flex max-w-full items-center gap-1 self-start rounded border border-border px-1.5 py-0.5 font-mono text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <span className="truncate">{compactId(entry.entryId)}</span>
-          <Copy className="h-3 w-3 shrink-0" />
-        </button>
+        <TagList
+          entry={entry}
+          relatedLimit={dense ? 3 : 4}
+        />
       </div>
     </article>
   );
@@ -408,7 +456,6 @@ function ResultSection({
   refreshLabel: string;
   emptyLabel: string;
   labels: {
-    copied: string;
     media: MediaLabels;
   };
   isRefreshing?: boolean;
@@ -416,12 +463,16 @@ function ResultSection({
   columns?: 3 | 4;
   dense?: boolean;
 }) {
-  const gridClass = columns === 4 ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-4" : "grid gap-3 sm:grid-cols-3";
+  const gridClass =
+    columns === 4
+      ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      : "grid gap-4 sm:grid-cols-3";
+  const entriesKey = entries.map((entry) => entry.entryId).join("|") || "empty";
 
   return (
-    <section className="border-b border-border px-4 py-6 sm:px-0">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+    <section className="px-4 py-7 sm:px-0">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         {onRefresh && (
           <Button
             type="button"
@@ -430,35 +481,62 @@ function ResultSection({
             onClick={onRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCcw className="mr-1.5 h-4 w-4" />
+            <RefreshCcw
+              className={`mr-1.5 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             {refreshLabel}
           </Button>
         )}
       </div>
-      {isRefreshing && !entries.length ? (
-        <div className={gridClass}>
-          {Array.from({ length: columns }).map((_, index) => (
-            <div key={index} className="rounded-md border border-border p-3">
-              <div className="mb-2 h-4 w-2/3 rounded bg-muted" />
-              <div className="mb-2 h-3 w-1/2 rounded bg-muted" />
-              <div className="h-10 w-full rounded bg-muted" />
-            </div>
-          ))}
-        </div>
-      ) : entries.length ? (
-        <div className={gridClass}>
-          {entries.map((entry) => (
-            <EntryTile
-              key={entry.entryId}
-              entry={entry}
-              labels={labels}
-              dense={dense}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        {isRefreshing && !entries.length ? (
+          <motion.div
+            key="loading"
+            className={gridClass}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            {Array.from({ length: columns }).map((_, index) => (
+              <div key={index} className="rounded-md border border-border p-3">
+                <div className="mb-2 h-4 w-2/3 rounded bg-muted" />
+                <div className="mb-2 h-3 w-1/2 rounded bg-muted" />
+                <div className="h-10 w-full rounded bg-muted" />
+              </div>
+            ))}
+          </motion.div>
+        ) : entries.length ? (
+          <motion.div
+            key={entriesKey}
+            className={gridClass}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            {entries.map((entry) => (
+              <EntryTile
+                key={entry.entryId}
+                entry={entry}
+                labels={labels}
+                dense={dense}
+              />
+            ))}
+          </motion.div>
+        ) : (
+          <motion.p
+            key="empty"
+            className="text-sm text-muted-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            {emptyLabel}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
@@ -478,9 +556,14 @@ export function EntrySearchSections({
   isRefreshingRecommended,
   onRefreshSimilar,
   onRefreshRecommended,
+  setEditingResult,
+  setUpdateDialogOpen,
 }: EntrySearchSectionsProps) {
   const t = useTranslations("EntrySearch");
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [shareEntry, setShareEntry] = useState<EntryIdentity | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const mediaLabels: MediaLabels = {
     audio: t("audio"),
     video: t("video"),
@@ -488,9 +571,27 @@ export function EntrySearchSections({
     audioPlayFailed: t("audioPlayFailed"),
   };
   const commonLabels = {
-    copied: t("copied"),
     media: mediaLabels,
   };
+  const handleEditEntry =
+    setEditingResult && setUpdateDialogOpen
+      ? async (entry: EntryIdentity) => {
+          setEditingEntryId(entry.entryId);
+          try {
+            const result = await getCorpusItemByUniqueId(entry.entryId, queryClient);
+            if (!result) {
+              toast.error(t("editLoadFailed"));
+              return;
+            }
+            setEditingResult(result);
+            setUpdateDialogOpen(true);
+          } catch {
+            toast.error(t("editLoadFailed"));
+          } finally {
+            setEditingEntryId(null);
+          }
+        }
+      : undefined;
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -502,9 +603,14 @@ export function EntrySearchSections({
           labels={{
             title: t("primaryTitle"),
             share: t("share"),
+            edit: t("edit"),
+            editing: t("editing"),
             copied: t("copied"),
             media: mediaLabels,
           }}
+          canEdit={canEditEntry(result.primary, user)}
+          isEditLoading={editingEntryId === result.primary.entryId}
+          onEdit={handleEditEntry}
           onShare={setShareEntry}
         />
       ) : (

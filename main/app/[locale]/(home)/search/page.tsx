@@ -9,6 +9,7 @@ import {
   useEntrySemanticSearchQuery,
   useSearchQuery,
   useSearch,
+  type EntrySearchResponse,
   type SearchResult,
 } from "@/lib/api/search";
 import { toast } from "sonner";
@@ -63,6 +64,10 @@ export default function SearchPage() {
   const [recommendedCursor, setRecommendedCursor] = useState<string | null>(null);
   const [recommendedBaseSimilarCursor, setRecommendedBaseSimilarCursor] =
     useState<string | null>(null);
+  const [displaySimilarResult, setDisplaySimilarResult] =
+    useState<EntrySearchResponse | undefined>(undefined);
+  const [displayRecommendedResult, setDisplayRecommendedResult] =
+    useState<EntrySearchResponse | undefined>(undefined);
 
   // 用 useQuery 替代 useMutation，同样关键词命中缓存直接返回，无需重新请求
   const { data: results, isPending, error: searchError } = useSearchQuery(
@@ -99,15 +104,15 @@ export default function SearchPage() {
   });
   const entryResult = useMemo(() => {
     if (!useEntryMode) return null;
-    if (!entryPrimaryResult && !entrySimilarResult && !entryRecommendedResult) {
+    if (!entryPrimaryResult && !displaySimilarResult && !displayRecommendedResult) {
       return null;
     }
 
     return {
       query: urlKeyword,
       primary: entryPrimaryResult?.primary ?? null,
-      similar: entrySimilarResult?.similar ?? [],
-      recommended: entryRecommendedResult?.recommended ?? [],
+      similar: displaySimilarResult?.similar ?? [],
+      recommended: displayRecommendedResult?.recommended ?? [],
       loadingSections: {
         primary: entryPrimaryPending || entryPrimaryFetching,
         semantic:
@@ -119,25 +124,25 @@ export default function SearchPage() {
       sectionStatus: {
         primary: entryPrimaryResult?.sectionStatus?.primary ?? "idle",
         semantic:
-          entrySimilarResult?.sectionStatus?.semantic ??
-          entryRecommendedResult?.sectionStatus?.semantic ??
+          displaySimilarResult?.sectionStatus?.semantic ??
+          displayRecommendedResult?.sectionStatus?.semantic ??
           "idle",
       },
       cursors: {
-        similarNext: entrySimilarResult?.cursors.similarNext ?? null,
-        recommendedNext: entryRecommendedResult?.cursors.recommendedNext ?? null,
+        similarNext: displaySimilarResult?.cursors.similarNext ?? null,
+        recommendedNext: displayRecommendedResult?.cursors.recommendedNext ?? null,
       },
     };
   }, [
+    displayRecommendedResult,
+    displaySimilarResult,
     entryPrimaryFetching,
     entryPrimaryPending,
     entryPrimaryResult,
     entryRecommendedFetching,
     entryRecommendedPending,
-    entryRecommendedResult,
     entrySimilarFetching,
     entrySimilarPending,
-    entrySimilarResult,
     urlKeyword,
     useEntryMode,
   ]);
@@ -161,7 +166,19 @@ export default function SearchPage() {
     setSimilarCursor(null);
     setRecommendedCursor(null);
     setRecommendedBaseSimilarCursor(null);
+    setDisplaySimilarResult(undefined);
+    setDisplayRecommendedResult(undefined);
   }, [urlKeyword, urlDataset, useEntryMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!useEntryMode || !entrySimilarResult) return;
+    setDisplaySimilarResult(entrySimilarResult);
+  }, [entrySimilarResult, useEntryMode]);
+
+  useEffect(() => {
+    if (!useEntryMode || !entryRecommendedResult) return;
+    setDisplayRecommendedResult(entryRecommendedResult);
+  }, [entryRecommendedResult, useEntryMode]);
 
   useEffect(() => {
     if (searchError) toast.error(t("searchFailed"), { description: (searchError as Error).message });
@@ -399,8 +416,8 @@ export default function SearchPage() {
                   result={entryResult}
                   isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
                   isLoadingSemantic={
-                    (entrySimilarPending && !entrySimilarResult) ||
-                    (entryRecommendedPending && !entryRecommendedResult)
+                    (entrySimilarPending && !displaySimilarResult) ||
+                    (entryRecommendedPending && !displayRecommendedResult)
                   }
                   isRefreshingSimilar={entrySimilarFetching}
                   isRefreshingRecommended={entryRecommendedFetching}
@@ -411,6 +428,8 @@ export default function SearchPage() {
                     setRecommendedBaseSimilarCursor(similarCursor);
                     setRecommendedCursor(entryResult.cursors.recommendedNext);
                   }}
+                  setEditingResult={setEditingResult}
+                  setUpdateDialogOpen={setUpdateDialogOpen}
                 />
               </div>
             </div>
@@ -419,8 +438,8 @@ export default function SearchPage() {
                 result={entryResult}
                 isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
                 isLoadingSemantic={
-                  (entrySimilarPending && !entrySimilarResult) ||
-                  (entryRecommendedPending && !entryRecommendedResult)
+                  (entrySimilarPending && !displaySimilarResult) ||
+                  (entryRecommendedPending && !displayRecommendedResult)
                 }
                 isRefreshingSimilar={entrySimilarFetching}
                 isRefreshingRecommended={entryRecommendedFetching}
@@ -431,6 +450,8 @@ export default function SearchPage() {
                   setRecommendedBaseSimilarCursor(similarCursor);
                   setRecommendedCursor(entryResult.cursors.recommendedNext);
                 }}
+                setEditingResult={setEditingResult}
+                setUpdateDialogOpen={setUpdateDialogOpen}
               />
             </div>
           </div>

@@ -11,6 +11,7 @@ export type EntryIdentity = {
   corpusId: number;
   entryId: string;
   entryName: string;
+  editableLevel: number;
   jyutping: string | null;
   meaning: string | null;
   source: {
@@ -79,6 +80,7 @@ export type CorpusSearchRow = {
   structured_note: unknown;
   category: string;
   category_display_name: string | null;
+  editable_level: bigint | number | null;
   lifecycle_stage: string;
   liked_num: bigint | number | null;
   bookmark_num: bigint | number | null;
@@ -135,6 +137,37 @@ function getStructuredItems(structuredNote: unknown): StructuredDataItem[] {
   return Array.isArray(data) ? (data as StructuredDataItem[]) : [];
 }
 
+function getNoteContext(note: unknown): Record<string, unknown> | null {
+  if (!note || typeof note !== "object" || Array.isArray(note)) return null;
+  const context = (note as { context?: unknown }).context;
+  if (!context || typeof context !== "object" || Array.isArray(context)) return null;
+  return context as Record<string, unknown>;
+}
+
+function firstContextString(
+  note: unknown,
+  keys: string[],
+  transform: (value: string) => string = (value) => value.trim(),
+): string | null {
+  const context = getNoteContext(note);
+  if (!context) return null;
+
+  for (const key of keys) {
+    const value = context[key];
+    if (typeof value === "string" && value.trim()) return transform(value);
+    if (Array.isArray(value)) {
+      const text = value
+        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        .map(transform)
+        .filter(Boolean)
+        .join("、");
+      if (text) return text;
+    }
+  }
+
+  return null;
+}
+
 function firstBlockValue(
   structuredNote: unknown,
   type: string,
@@ -172,33 +205,43 @@ function firstJyutping(structuredNote: unknown, note: unknown): string | null {
     }
   }
 
-  if (note && typeof note === "object" && !Array.isArray(note)) {
-    const context = (note as { context?: Record<string, unknown> }).context;
-    const pron = context?.pron ?? context?.pinyin;
-    if (typeof pron === "string" && pron.trim()) return cleanJyutping(pron);
-    if (Array.isArray(pron)) {
-      return pron
-        .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-        .map(cleanJyutping)
-        .join("、") || null;
-    }
-  }
-
-  return null;
+  return firstContextString(
+    note,
+    ["jyutping", "粤拼", "粤语拼音", "pron", "pinyin", "拼音"],
+    cleanJyutping,
+  );
 }
 
 function firstMeaning(structuredNote: unknown, note: unknown): string | null {
   const structuredMeaning = firstBlockValue(structuredNote, "definition");
   if (structuredMeaning) return structuredMeaning;
 
-  if (note && typeof note === "object" && !Array.isArray(note)) {
-    const context = (note as { context?: Record<string, unknown> }).context;
-    const meaning = context?.meaning;
-    if (typeof meaning === "string" && meaning.trim()) return meaning.trim();
-    if (Array.isArray(meaning)) return meaning.filter(Boolean).join("、") || null;
-  }
+  return firstContextString(note, [
+    "meaning",
+    "definition",
+    "translation",
+    "普通话翻译",
+    "中文翻译",
+    "释义",
+    "意思",
+  ]);
+}
 
-  return null;
+function firstAssetUrl(
+  structuredNote: unknown,
+  note: unknown,
+  blockType: "audio" | "video" | "image",
+): string | null {
+  const structuredUrl = firstBlockValue(structuredNote, blockType, "url");
+  if (structuredUrl) return structuredUrl;
+
+  const keyMap = {
+    audio: ["audio", "audioUrl", "音频", "音频链接"],
+    video: ["video", "videoUrl", "视频", "视频链接"],
+    image: ["image", "imageUrl", "cover", "coverImage", "图片", "封面", "封面图"],
+  } satisfies Record<typeof blockType, string[]>;
+
+  return firstContextString(note, keyMap[blockType]);
 }
 
 function buildCategory(row: CorpusSearchRow) {
@@ -261,6 +304,7 @@ export function buildEntryIdentity(
     corpusId: asNumber(row.id),
     entryId,
     entryName: cleanEntryName(row.data, row.structured_note),
+    editableLevel: asNumber(row.editable_level),
     jyutping: firstJyutping(row.structured_note, row.note),
     meaning: firstMeaning(row.structured_note, row.note),
     source: {
@@ -275,9 +319,9 @@ export function buildEntryIdentity(
       recommended: buildRecommendedTags(options.recommendedTags),
     },
     assets: {
-      audioUrl: firstBlockValue(row.structured_note, "audio", "url"),
-      videoUrl: firstBlockValue(row.structured_note, "video", "url"),
-      coverImage: firstBlockValue(row.structured_note, "image", "url"),
+      audioUrl: firstAssetUrl(row.structured_note, row.note, "audio"),
+      videoUrl: firstAssetUrl(row.structured_note, row.note, "video"),
+      coverImage: firstAssetUrl(row.structured_note, row.note, "image"),
     },
     stats: {
       likes: asNumber(row.liked_num),
