@@ -22,7 +22,8 @@ import { AnimatePresence, motion } from "motion/react";
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
   isLoadingPrimary?: boolean;
-  isLoadingSemantic?: boolean;
+  isLoadingSimilar?: boolean;
+  isLoadingRecommended?: boolean;
   isRefreshingSimilar?: boolean;
   isRefreshingRecommended?: boolean;
   onRefreshSimilar?: () => void;
@@ -592,7 +593,8 @@ type MediaLabels = {
 export function EntrySearchSections({
   result,
   isLoadingPrimary,
-  isLoadingSemantic,
+  isLoadingSimilar,
+  isLoadingRecommended,
   isRefreshingSimilar,
   isRefreshingRecommended,
   onRefreshSimilar,
@@ -663,7 +665,7 @@ export function EntrySearchSections({
         refreshLabel={t("refresh")}
         emptyLabel={t("emptyResults")}
         labels={commonLabels}
-        isRefreshing={isLoadingSemantic || isRefreshingSimilar}
+        isRefreshing={isLoadingSimilar || isRefreshingSimilar}
         onRefresh={result.cursors.similarNext ? onRefreshSimilar : undefined}
       />
       <ResultSection
@@ -672,7 +674,7 @@ export function EntrySearchSections({
         refreshLabel={t("refresh")}
         emptyLabel={t("emptyResults")}
         labels={commonLabels}
-        isRefreshing={isLoadingSemantic || isRefreshingRecommended}
+        isRefreshing={isLoadingRecommended || isRefreshingRecommended}
         onRefresh={result.cursors.recommendedNext ? onRefreshRecommended : undefined}
         columns={4}
         dense

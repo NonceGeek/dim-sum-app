@@ -206,12 +206,13 @@ content_categories
 
 暂不使用 `headword`、`sentence`、`definition`、`image`、`video`。后续如果要按搜索意图增强，可考虑：完整句子 query 引入 `sentence`，释义/概念 query 引入 `definition`，明确词条名 query 用 `headword` 做辅助。
 
-前端 loading：
+前端请求和 loading：
 
-- primary 和 semantic 分别请求、分别 loading。
-- primary 找不到时，只显示“未找到完全匹配词条”，不阻塞 similar / recommended。
-- similar / recommended 分别请求、分别 loading。
-- similar / recommended 换一批只刷新对应结果区域；点击二级“换一批”时三级保持当前结果，点击三级“换一批”时二级保持当前结果。
+- `primary` 和 `similar` 首次进入时并发请求、分别 loading。
+- `primary` 找不到时，只显示“未找到完全匹配词条”，不阻塞 `similar`。
+- `recommended` 首次请求等待 `similar` 返回后再启动，使用二级结果作为扩散基准，避免推荐链路和相关表达语义脱节。
+- `similar` / `recommended` 分别 loading；`recommended` 等待 `similar` 期间展示自己的首次 loading 骨架，不影响 `similar` 展示。
+- `similar` / `recommended` 换一批只刷新对应结果区域；点击二级“换一批”时三级保持当前结果，点击三级“换一批”时二级保持当前结果。
 - 三级换一批可使用当前二级批次作为扩散基准，但不因为二级换批自动刷新。
 
 ### 3.4 UI

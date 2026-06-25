@@ -91,6 +91,8 @@ export default function SearchPage() {
     semanticPart: "similar",
     enabled: !!urlKeyword && useEntryMode,
   });
+  const shouldRequestRecommended =
+    !!urlKeyword && useEntryMode && Boolean(entrySimilarResult);
   const {
     data: entryRecommendedResult,
     isPending: entryRecommendedPending,
@@ -100,8 +102,20 @@ export default function SearchPage() {
     similarCursor: recommendedBaseSimilarCursor,
     recommendedCursor,
     semanticPart: "recommended",
-    enabled: !!urlKeyword && useEntryMode,
+    enabled: shouldRequestRecommended,
   });
+  const isInitialSimilarLoading =
+    !displaySimilarResult && (entrySimilarPending || entrySimilarFetching);
+  const isInitialRecommendedLoading =
+    !displayRecommendedResult &&
+    !entryRecommendedSearchError &&
+    (
+      entryRecommendedPending ||
+      entryRecommendedFetching ||
+      entrySimilarPending ||
+      entrySimilarFetching ||
+      shouldRequestRecommended
+    );
   const entryResult = useMemo(() => {
     if (!useEntryMode) return null;
     if (!entryPrimaryResult && !displaySimilarResult && !displayRecommendedResult) {
@@ -415,10 +429,8 @@ export default function SearchPage() {
                 <EntrySearchSections
                   result={entryResult}
                   isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
-                  isLoadingSemantic={
-                    (entrySimilarPending && !displaySimilarResult) ||
-                    (entryRecommendedPending && !displayRecommendedResult)
-                  }
+                  isLoadingSimilar={isInitialSimilarLoading}
+                  isLoadingRecommended={isInitialRecommendedLoading}
                   isRefreshingSimilar={entrySimilarFetching}
                   isRefreshingRecommended={entryRecommendedFetching}
                   onRefreshSimilar={() =>
@@ -437,10 +449,8 @@ export default function SearchPage() {
               <EntrySearchSections
                 result={entryResult}
                 isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
-                isLoadingSemantic={
-                  (entrySimilarPending && !displaySimilarResult) ||
-                  (entryRecommendedPending && !displayRecommendedResult)
-                }
+                isLoadingSimilar={isInitialSimilarLoading}
+                isLoadingRecommended={isInitialRecommendedLoading}
                 isRefreshingSimilar={entrySimilarFetching}
                 isRefreshingRecommended={entryRecommendedFetching}
                 onRefreshSimilar={() =>
