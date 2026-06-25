@@ -24,6 +24,7 @@ type AggregatedSearchRow = CorpusSearchRow & {
 };
 
 type EntrySearchSection = "all" | "primary" | "semantic";
+type SemanticPart = "all" | "similar" | "recommended";
 
 function parseCursor(value: string | null): number {
   if (!value) return 0;
@@ -657,6 +658,26 @@ async function fetchSemanticSearchRows(params: {
 
         union all
 
+        select candidate.id, candidate.score
+        from similar_ids s
+        join lateral (
+          select
+            e.corpus_id as id,
+            (1 - (e.embedding <=> source.embedding)) * 45 as score
+          from corpus_field_embeddings source
+          join corpus_field_embeddings e on e.field_type = 'doc'
+          where source.corpus_id = s.id
+            and source.field_type = 'doc'
+            and e.corpus_id <> coalesce((select id from primary_seed), -1)
+            and not exists (
+              select 1 from similar_ids existing where existing.id = e.corpus_id
+            )
+          order by e.embedding <=> source.embedding
+          limit 24
+        ) candidate on true
+
+        union all
+
         select c.id,
                sum(
                  case tr.method
@@ -849,6 +870,11 @@ export async function GET(req: NextRequest) {
       sectionParam === "primary" || sectionParam === "semantic"
         ? sectionParam
         : "all";
+    const semanticPartParam = searchParams.get("semanticPart");
+    const semanticPart: SemanticPart =
+      semanticPartParam === "similar" || semanticPartParam === "recommended"
+        ? semanticPartParam
+        : "all";
     const similarOffset = parseCursor(searchParams.get("similarCursor"));
     const recommendedOffset = parseCursor(searchParams.get("recommendedCursor"));
 
@@ -872,19 +898,26 @@ export async function GET(req: NextRequest) {
             similarOffset,
             recommendedOffset,
           });
+          const rows = fallbackRows.filter((row) => row.section !== "primary");
           return {
-            rows: fallbackRows.filter((row) => row.section !== "primary"),
+            rows: rows.filter(
+              (row) => semanticPart === "all" || row.section === semanticPart,
+            ),
             status: "fallback",
           };
         }
 
+        const rows = await fetchSemanticSearchRows({
+          query,
+          queryEmbeddingText,
+          similarOffset,
+          recommendedOffset,
+        });
+
         return {
-          rows: await fetchSemanticSearchRows({
-            query,
-            queryEmbeddingText,
-            similarOffset,
-            recommendedOffset,
-          }),
+          rows: rows.filter(
+            (row) => semanticPart === "all" || row.section === semanticPart,
+          ),
           status: "success",
         };
       } catch (error) {
@@ -894,8 +927,11 @@ export async function GET(req: NextRequest) {
           similarOffset,
           recommendedOffset,
         });
+        const rows = fallbackRows.filter((row) => row.section !== "primary");
         return {
-          rows: fallbackRows.filter((row) => row.section !== "primary"),
+          rows: rows.filter(
+            (row) => semanticPart === "all" || row.section === semanticPart,
+          ),
           status: "fallback",
         };
       }

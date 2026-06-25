@@ -102,7 +102,7 @@ data 前缀匹配
 
 二级结果应排除一级结果中已经展示的词条。
 
-`corpus_tags.tag_role` 和 `corpus_tags.relevance_level` 暂缓落库期间，所有已有标签统一按 `related / medium` 处理；相关性差异主要由 query vector 相似、标签命中数量、分类相同和文本命中共同决定。primary 找不到时，二级结果仍然使用 query vector 返回相似语料。若 query embedding 不可用，二级结果回退到标签和分类规则。
+`corpus_tags.tag_role` 和 `corpus_tags.relevance_level` 暂缓落库期间，所有已有标签统一按 `related / medium` 处理；相关性差异主要由 query vector 相似、标签命中数量、分类相同和文本命中共同决定。primary 找不到时，二级结果仍然使用 query vector 返回相似语料。若 query embedding 不可用，二级结果回退到标签和分类规则，并将 semantic 状态标记为 `fallback`。
 
 ---
 
@@ -122,7 +122,8 @@ data 前缀匹配
 
 ```text
 tag_related 相关标签
-> query vector -> corpus_field_embeddings doc 向量弱召回
+> similar 结果的 doc 向量继续扩散
+> query vector 弱召回
 > 同一级分类下热门词
 > 同 dataset 下热门词
 > 运营配置 recommend_words
@@ -227,9 +228,9 @@ field_type = doc / sentence / definition / headword / image / video
 使用策略：
 
 - 一级精准结果不走向量，仍走 `cantonese_corpus_all.data` 的 exact / prefix / like / full text。
-- 二级和三级优先使用用户 query vector 查询 `corpus_field_embeddings`，但不作为唯一依据。
-- query 是完整句子或较长表达时，可以尝试 `sentence` / `definition` / `doc` 向量。
-- query 只有一两个字时，向量容易漂，优先同标签、相关标签、同分类，向量只做弱补充或不用。
+- 二级固定使用用户 query vector 查询 `corpus_field_embeddings(field_type=doc)`，不依赖一级精准结果必然存在。
+- 三级优先从二级结果的 `doc` 向量继续扩散，再叠加标签、相关标签、同分类和热度。
+- query 只有一两个字时，向量容易漂，优先用同标签、相关标签、同分类做约束。
 
 ---
 

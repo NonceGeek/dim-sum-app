@@ -149,18 +149,39 @@ function firstBlockValue(
   return null;
 }
 
+function stripImportSuffix(value: string): string {
+  return value.replace(/__\d{6}_[0-9a-f]{8}$/i, "").trim();
+}
+
+function cleanEntryName(data: string, structuredNote: unknown): string {
+  const sentence = firstBlockValue(structuredNote, "sentence");
+  if (sentence && sentence !== data) {
+    return stripImportSuffix(sentence);
+  }
+  return stripImportSuffix(data);
+}
+
+function cleanJyutping(value: string): string {
+  return value.replace(/\s+\d{6}\s+[0-9a-f]{8}$/i, "").trim();
+}
+
 function firstJyutping(structuredNote: unknown, note: unknown): string | null {
   for (const item of getStructuredItems(structuredNote)) {
     if (typeof item.jyutping === "string" && item.jyutping.trim()) {
-      return item.jyutping.trim();
+      return cleanJyutping(item.jyutping);
     }
   }
 
   if (note && typeof note === "object" && !Array.isArray(note)) {
     const context = (note as { context?: Record<string, unknown> }).context;
     const pron = context?.pron ?? context?.pinyin;
-    if (typeof pron === "string" && pron.trim()) return pron.trim();
-    if (Array.isArray(pron)) return pron.filter(Boolean).join("、") || null;
+    if (typeof pron === "string" && pron.trim()) return cleanJyutping(pron);
+    if (Array.isArray(pron)) {
+      return pron
+        .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+        .map(cleanJyutping)
+        .join("、") || null;
+    }
   }
 
   return null;
@@ -239,7 +260,7 @@ export function buildEntryIdentity(
   return {
     corpusId: asNumber(row.id),
     entryId,
-    entryName: row.data,
+    entryName: cleanEntryName(row.data, row.structured_note),
     jyutping: firstJyutping(row.structured_note, row.note),
     meaning: firstMeaning(row.structured_note, row.note),
     source: {

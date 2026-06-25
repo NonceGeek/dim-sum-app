@@ -63,6 +63,7 @@ type EntrySearchParams = {
   similarCursor?: string | null;
   recommendedCursor?: string | null;
   section?: "all" | "primary" | "semantic";
+  semanticPart?: "similar" | "recommended";
 };
 
 
@@ -197,10 +198,12 @@ async function fetchEntrySearch({
   section,
   similarCursor,
   recommendedCursor,
+  semanticPart,
 }: EntrySearchParams): Promise<EntrySearchResponse> {
   const params = new URLSearchParams();
   params.set("q", keyword);
   if (section) params.set("section", section);
+  if (semanticPart) params.set("semanticPart", semanticPart);
   if (similarCursor) params.set("similarCursor", similarCursor);
   if (recommendedCursor) params.set("recommendedCursor", recommendedCursor);
 
@@ -259,6 +262,7 @@ export function useEntrySemanticSearchQuery(
   options: {
     similarCursor?: string | null;
     recommendedCursor?: string | null;
+    semanticPart?: "similar" | "recommended";
     enabled?: boolean;
   } = {},
 ) {
@@ -266,6 +270,7 @@ export function useEntrySemanticSearchQuery(
     queryKey: [
       "entry-search",
       "semantic",
+      options.semanticPart ?? "all",
       keyword,
       options.similarCursor ?? null,
       options.recommendedCursor ?? null,
@@ -274,6 +279,7 @@ export function useEntrySemanticSearchQuery(
       fetchEntrySearch({
         keyword,
         section: "semantic",
+        semanticPart: options.semanticPart,
         similarCursor: options.similarCursor,
         recommendedCursor: options.recommendedCursor,
       }),

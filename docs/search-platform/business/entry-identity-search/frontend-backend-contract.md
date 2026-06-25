@@ -94,7 +94,7 @@
 field_type = doc / sentence / definition / headword / image / video
 ```
 
-后端提供可用的向量查询能力。搜索实现以后端原始文档为准：一级精准结果不依赖向量；二级相似结果必须接入 `corpus_field_embeddings` 的字段级向量召回，并在向量缺失时回退标签、相关标签、分类和热度规则；三级推荐可使用低权重向量召回补充探索结果。
+后端提供可用的向量查询能力。搜索实现以后端原始文档为准：一级精准结果不依赖向量；二级相似结果必须使用用户搜索文本的百炼 query vector 查询 `corpus_field_embeddings`；三级推荐从二级结果继续扩散，可叠加标签、分类和热度约束，避免只靠语义相似导致结果漂移。
 
 ---
 
@@ -141,9 +141,9 @@ Next 负责分层和排序：
 
 | Section | 数量 | 说明 |
 |---------|------|------|
-| `primary` | 1 | 精准结果，不走向量 |
-| `similar` | 3 | 相似结果，支持换一批 |
-| `recommended` | 4 | 推荐结果，支持换一批 |
+| `primary` | 1 | UI 标题为“精准匹配”，不走向量 |
+| `similar` | 3 | UI 标题为“相关表达”，支持换一批 |
+| `recommended` | 4 | UI 标题为“继续探索”，支持换一批 |
 
 一级精准结果：
 
@@ -151,14 +151,15 @@ Next 负责分层和排序：
 exact / 繁简 exact / prefix / like / full text
 ```
 
-二级和三级使用后端原始文档里的 query vector 方案，不依赖 primary 必然存在：
+二级和三级使用后端原始文档里的字段级向量能力。二级保持直接使用用户搜索文本向量：
 
 ```text
 用户 query
   -> 调阿里云 qwen3-vl-embedding
   -> 得到 1024 维 query vector
-  -> 查 corpus_field_embeddings
-  -> 生成 similar / recommended 候选
+  -> 查 corpus_field_embeddings(field_type=doc)
+  -> 生成 similar
+  -> 再从 similar 的 doc 向量扩散 recommended
 ```
 
 排序融合维度：
@@ -174,15 +175,27 @@ content_categories
 执行口径：
 
 - `primary`：文本精准链路，独立查询。
-- `similar`：语义链路，优先使用 query vector 在 `corpus_field_embeddings(field_type='doc')` 做 KNN 召回，再融合已有标签和身份分类；primary 找不到时仍应返回语义相似结果。
-- `recommended`：语义链路，使用 query vector、`tag_related`、身份分类热门和热度融合。
-- 短 query 的一级精准仍不走向量；短 query 的 similar / recommended 仍可走 query vector，但需要结合 tag / category 做过滤或加权。
+- `similar`：语义链路，固定使用用户 query vector 查询 `corpus_field_embeddings(field_type='doc')`，再融合已有标签和身份分类。
+- `recommended`：语义链路，优先从 similar 结果的 `doc` 向量继续扩散，再融合 `tag_related`、身份分类热门和热度。
+- 短 query 的一级精准仍不走向量；短 query 的 similar 仍用 query vector，但需要结合 tag / category 做过滤或加权，减少短文本向量不稳定带来的误召回。
+
+当前 `field_type` 使用范围：
+
+| Section | 当前 `field_type` | 说明 |
+|---------|-------------------|------|
+| `primary` | 不使用向量 | 直接查 `cantonese_corpus_all.data`，走 exact / prefix / like |
+| `similar` | `doc` | 用户搜索文本先调百炼生成 query vector，再在 `corpus_field_embeddings(field_type='doc')` 子空间召回 |
+| `recommended` | `doc` | 先取 similar 结果，再使用这些语料的 `doc` 向量继续扩散推荐 |
+
+暂不使用 `headword`、`sentence`、`definition`、`image`、`video`。后续如果要按搜索意图增强，可考虑：完整句子 query 引入 `sentence`，释义/概念 query 引入 `definition`，明确词条名 query 用 `headword` 做辅助。
 
 前端 loading：
 
 - primary 和 semantic 分别请求、分别 loading。
 - primary 找不到时，只显示“未找到完全匹配词条”，不阻塞 similar / recommended。
-- similar / recommended 换一批只刷新对应语义结果区域，不让 primary 变灰或禁用。
+- similar / recommended 分别请求、分别 loading。
+- similar / recommended 换一批只刷新对应结果区域；点击二级“换一批”时三级保持当前结果，点击三级“换一批”时二级保持当前结果。
+- 三级换一批可使用当前二级批次作为扩散基准，但不因为二级换批自动刷新。
 
 ### 3.4 UI
 
@@ -191,7 +204,9 @@ content_categories
 - Search 页面一级大卡片。
 - 二级 3 条相似结果。
 - 三级 4 条推荐结果。
+- 页面标题文案使用“精准匹配 / 相关表达 / 继续探索”，避免向用户暴露一级、二级、三级这类系统术语。
 - 二级和三级“换一批”交互。
+- 音频、图片、视频等多媒体能力的轻量展示和入口；媒体类型不能只作为标签展示。
 - 分享卡片预览弹窗。
 - SEO 词条页、分类页、标签页。
 
@@ -206,8 +221,9 @@ content_categories
 - `content_categories` 和 `corpus_category` 可查询语料一级/二级身份分类。
 - `corpus_tags` 可查询语料已有标签；P0 前端统一按 `related / medium` 输出。
 - `tag_related` 可用于相关标签扩展。
-- `corpus_field_embeddings` 可用于二级/三级向量召回；至少需要支持按源 `corpus_id` 取 `field_type='doc'` 向量，并在 doc 子空间 KNN 查询相似语料。
-- 前端语义搜索会优先使用用户 query 实时生成的 1024 维向量查询 `corpus_field_embeddings`；按源 `corpus_id` 查 doc 向量仅作为围绕 primary 扩展的后续增强。
+- `corpus_field_embeddings` 可用于二级/三级向量召回；至少需要支持用户 query vector 在 `field_type='doc'` 子空间 KNN 查询相似语料，以及按 similar `corpus_id` 取 `field_type='doc'` 向量继续扩散推荐。
+- 前端语义搜索固定使用用户 query 实时生成的 1024 维向量查询 `corpus_field_embeddings(field_type='doc')`，不依赖 primary 必然存在。
+- 当前不强依赖 `tags.embedding` 和相似标签向量；如果 similar / recommended 效果不够，再把相似标签下的语料加入召回池。
 - 贡献者可通过 `cantonese_corpus_update_history` 批量聚合。
 
 ### 4.2 前端需要保证
@@ -216,7 +232,7 @@ content_categories
 - 不把旧 `identity_category_l1` / `identity_category_l2` 当作真实字段使用。
 - 不把 `cantonese_corpus_all.tags` 当作新标签治理来源。
 - `batchToken` 作为不透明字符串处理，前端只原样传回。
-- 向量召回失败时，仍可用标签、分类、热门词兜底。
+- 向量召回失败或缺少百炼 key 时，仍可用标签、分类、热门词兜底，并把 semantic 状态标记为 `fallback`。
 
 ---
 
@@ -242,8 +258,8 @@ content_categories
 - [x] 新增 `/api/search/entries` 第一版。
 - [x] 实现 `entryIdentity` 聚合器第一版。
 - [x] 实现 primary / similar / recommended 分层第一版。
-- [x] 二级/三级接入 `corpus_field_embeddings` doc 向量召回。
+- [x] 二级/三级接入 `corpus_field_embeddings` 字段级向量召回。
 - [x] 实现二级和三级换一批第一版。
-- [ ] 改造 Search UI。
-- [ ] 改造分享卡片预览。
+- [x] 改造 Search UI。
+- [x] 改造分享卡片预览。
 - [ ] 规划 SEO 页面。

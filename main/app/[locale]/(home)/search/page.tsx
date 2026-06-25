@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useEntryPrimarySearchQuery,
-  useEntrySearchQuery,
   useEntrySemanticSearchQuery,
   useSearchQuery,
   useSearch,
@@ -62,6 +61,8 @@ export default function SearchPage() {
   const categoryParam = JSON.stringify(datasetName.length ? datasetName : ["all"]);
   const [similarCursor, setSimilarCursor] = useState<string | null>(null);
   const [recommendedCursor, setRecommendedCursor] = useState<string | null>(null);
+  const [recommendedBaseSimilarCursor, setRecommendedBaseSimilarCursor] =
+    useState<string | null>(null);
 
   // 用 useQuery 替代 useMutation，同样关键词命中缓存直接返回，无需重新请求
   const { data: results, isPending, error: searchError } = useSearchQuery(
@@ -76,49 +77,72 @@ export default function SearchPage() {
     error: entryPrimarySearchError,
   } = useEntryPrimarySearchQuery(urlKeyword, !!urlKeyword && useEntryMode);
   const {
-    data: entrySemanticResult,
-    isPending: entrySemanticPending,
-    isFetching: entrySemanticFetching,
-    error: entrySemanticSearchError,
+    data: entrySimilarResult,
+    isPending: entrySimilarPending,
+    isFetching: entrySimilarFetching,
+    error: entrySimilarSearchError,
   } = useEntrySemanticSearchQuery(urlKeyword, {
     similarCursor,
+    semanticPart: "similar",
+    enabled: !!urlKeyword && useEntryMode,
+  });
+  const {
+    data: entryRecommendedResult,
+    isPending: entryRecommendedPending,
+    isFetching: entryRecommendedFetching,
+    error: entryRecommendedSearchError,
+  } = useEntrySemanticSearchQuery(urlKeyword, {
+    similarCursor: recommendedBaseSimilarCursor,
     recommendedCursor,
+    semanticPart: "recommended",
     enabled: !!urlKeyword && useEntryMode,
   });
   const entryResult = useMemo(() => {
     if (!useEntryMode) return null;
-    if (!entryPrimaryResult && !entrySemanticResult) return null;
+    if (!entryPrimaryResult && !entrySimilarResult && !entryRecommendedResult) {
+      return null;
+    }
 
     return {
       query: urlKeyword,
       primary: entryPrimaryResult?.primary ?? null,
-      similar: entrySemanticResult?.similar ?? [],
-      recommended: entrySemanticResult?.recommended ?? [],
+      similar: entrySimilarResult?.similar ?? [],
+      recommended: entryRecommendedResult?.recommended ?? [],
       loadingSections: {
         primary: entryPrimaryPending || entryPrimaryFetching,
-        semantic: entrySemanticPending || entrySemanticFetching,
+        semantic:
+          entrySimilarPending ||
+          entrySimilarFetching ||
+          entryRecommendedPending ||
+          entryRecommendedFetching,
       },
       sectionStatus: {
         primary: entryPrimaryResult?.sectionStatus?.primary ?? "idle",
-        semantic: entrySemanticResult?.sectionStatus?.semantic ?? "idle",
+        semantic:
+          entrySimilarResult?.sectionStatus?.semantic ??
+          entryRecommendedResult?.sectionStatus?.semantic ??
+          "idle",
       },
       cursors: {
-        similarNext: entrySemanticResult?.cursors.similarNext ?? null,
-        recommendedNext: entrySemanticResult?.cursors.recommendedNext ?? null,
+        similarNext: entrySimilarResult?.cursors.similarNext ?? null,
+        recommendedNext: entryRecommendedResult?.cursors.recommendedNext ?? null,
       },
     };
   }, [
     entryPrimaryFetching,
     entryPrimaryPending,
     entryPrimaryResult,
-    entrySemanticFetching,
-    entrySemanticPending,
-    entrySemanticResult,
+    entryRecommendedFetching,
+    entryRecommendedPending,
+    entryRecommendedResult,
+    entrySimilarFetching,
+    entrySimilarPending,
+    entrySimilarResult,
     urlKeyword,
     useEntryMode,
   ]);
   const searchPending = useEntryMode
-    ? entryPrimaryPending || entrySemanticPending
+    ? entryPrimaryPending || entrySimilarPending || entryRecommendedPending
     : isPending;
 
   // 搜索参数同步到 UI state（用于 SearchHeader 显示）
@@ -136,6 +160,7 @@ export default function SearchPage() {
     setSelectCategory("全部");
     setSimilarCursor(null);
     setRecommendedCursor(null);
+    setRecommendedBaseSimilarCursor(null);
   }, [urlKeyword, urlDataset, useEntryMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -147,8 +172,12 @@ export default function SearchPage() {
   }, [entryPrimarySearchError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (entrySemanticSearchError) toast.error(t("searchFailed"), { description: (entrySemanticSearchError as Error).message });
-  }, [entrySemanticSearchError]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (entrySimilarSearchError) toast.error(t("searchFailed"), { description: (entrySimilarSearchError as Error).message });
+  }, [entrySimilarSearchError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (entryRecommendedSearchError) toast.error(t("searchFailed"), { description: (entryRecommendedSearchError as Error).message });
+  }, [entryRecommendedSearchError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch available categories
   const { data: categories } = useAllCategories();
@@ -365,19 +394,23 @@ export default function SearchPage() {
           >
             <div className="hidden sm:flex">
               <div className="shrink-0 w-[172px]">{/* Spacer */}</div>
-              <div className="flex-1 max-w-3xl">
+              <div className="flex-1 max-w-5xl">
                 <EntrySearchSections
                   result={entryResult}
                   isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
-                  isLoadingSemantic={entrySemanticPending && !entrySemanticResult}
-                  isRefreshingSimilar={entrySemanticFetching}
-                  isRefreshingRecommended={entrySemanticFetching}
+                  isLoadingSemantic={
+                    (entrySimilarPending && !entrySimilarResult) ||
+                    (entryRecommendedPending && !entryRecommendedResult)
+                  }
+                  isRefreshingSimilar={entrySimilarFetching}
+                  isRefreshingRecommended={entryRecommendedFetching}
                   onRefreshSimilar={() =>
                     setSimilarCursor(entryResult.cursors.similarNext)
                   }
-                  onRefreshRecommended={() =>
-                    setRecommendedCursor(entryResult.cursors.recommendedNext)
-                  }
+                  onRefreshRecommended={() => {
+                    setRecommendedBaseSimilarCursor(similarCursor);
+                    setRecommendedCursor(entryResult.cursors.recommendedNext);
+                  }}
                 />
               </div>
             </div>
@@ -385,15 +418,19 @@ export default function SearchPage() {
               <EntrySearchSections
                 result={entryResult}
                 isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
-                isLoadingSemantic={entrySemanticPending && !entrySemanticResult}
-                isRefreshingSimilar={entrySemanticFetching}
-                isRefreshingRecommended={entrySemanticFetching}
+                isLoadingSemantic={
+                  (entrySimilarPending && !entrySimilarResult) ||
+                  (entryRecommendedPending && !entryRecommendedResult)
+                }
+                isRefreshingSimilar={entrySimilarFetching}
+                isRefreshingRecommended={entryRecommendedFetching}
                 onRefreshSimilar={() =>
                   setSimilarCursor(entryResult.cursors.similarNext)
                 }
-                onRefreshRecommended={() =>
-                  setRecommendedCursor(entryResult.cursors.recommendedNext)
-                }
+                onRefreshRecommended={() => {
+                  setRecommendedBaseSimilarCursor(similarCursor);
+                  setRecommendedCursor(entryResult.cursors.recommendedNext);
+                }}
               />
             </div>
           </div>

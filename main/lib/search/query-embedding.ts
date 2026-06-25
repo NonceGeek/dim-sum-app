@@ -11,7 +11,7 @@ type DashScopeEmbeddingResponse = {
   code?: string;
 };
 
-const queryEmbeddingCache = new Map<string, string>();
+const queryEmbeddingCache = new Map<string, Promise<string>>();
 
 function getDashScopeApiKey(): string | null {
   return (
@@ -35,7 +35,7 @@ export async function getQueryEmbeddingText(query: string): Promise<string | nul
   const apiKey = getDashScopeApiKey();
   if (!apiKey) return null;
 
-  const response = await fetch(DASHSCOPE_EMBEDDING_ENDPOINT, {
+  const request = fetch(DASHSCOPE_EMBEDDING_ENDPOINT, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -51,24 +51,30 @@ export async function getQueryEmbeddingText(query: string): Promise<string | nul
         enable_fusion: false,
       },
     }),
-  });
+  })
+    .then(async (response) => {
+      const payload = (await response.json()) as DashScopeEmbeddingResponse;
 
-  const payload = (await response.json()) as DashScopeEmbeddingResponse;
+      if (!response.ok) {
+        throw new Error(
+          payload.message ||
+            payload.code ||
+            `DashScope embedding request failed: ${response.status}`,
+        );
+      }
 
-  if (!response.ok) {
-    throw new Error(
-      payload.message ||
-        payload.code ||
-        `DashScope embedding request failed: ${response.status}`,
-    );
-  }
+      const embedding = payload.output?.embeddings?.[0]?.embedding;
+      if (!Array.isArray(embedding) || embedding.length !== 1024) {
+        throw new Error("DashScope embedding response missing 1024-d vector");
+      }
 
-  const embedding = payload.output?.embeddings?.[0]?.embedding;
-  if (!Array.isArray(embedding) || embedding.length !== 1024) {
-    throw new Error("DashScope embedding response missing 1024-d vector");
-  }
+      return `[${embedding.join(",")}]`;
+    })
+    .catch((error) => {
+      queryEmbeddingCache.delete(normalizedQuery);
+      throw error;
+    });
 
-  const embeddingText = `[${embedding.join(",")}]`;
-  queryEmbeddingCache.set(normalizedQuery, embeddingText);
-  return embeddingText;
+  queryEmbeddingCache.set(normalizedQuery, request);
+  return request;
 }
