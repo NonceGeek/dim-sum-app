@@ -35,39 +35,42 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
-  id                              String                             @id @default(cuid())
-  name                            String?
-  email                           String?                            @unique
-  emailVerified                   DateTime?
-  image                           String?
-  phoneNumber                     String?
-  wechatAvatar                    String?
-  role                            Role                               @default(LEARNER)
-  bio                             String?
-  isSystemAdmin                   Boolean                            @default(false)
-  ethAddress                      String?                            @unique
-  createdAt                       DateTime                           @default(now()) @db.Timestamptz(6)
-  updatedAt                       DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
-  deletionRequestedAt             DateTime?                          @db.Timestamptz(6)
-  status                          UserStatus                         @default(ACTIVE)
-  accounts                        Account[]
-  sessions                        Session[]
-  walletNonces                    WalletNonce[]
-  api_key                         api_key[]
-  cantonese_corpus_update_history cantonese_corpus_update_history[]
-  corpusCollectionActivities      corpus_collection_activities[]
-  corpusCollectionComments        corpus_collection_comments[]
-  corpusCollectionLikes           corpus_collection_likes[]
-  corpusCollectionMessages        corpus_collection_messages[]
-  corpusCollectionReviewBatches   corpus_collection_review_batches[]
-  corpusCollectionReviewedItems   corpus_collection_submissions[]    @relation("CorpusCollectionReviewer")
-  corpusCollectionSubmissions     corpus_collection_submissions[]
-  gameAnswerRecords               game_answer_records[]
-  gamePlayerProgress              game_player_progress?
-  auditLogsAsOperator             permission_audit_logs[]            @relation("AuditOperator")
-  auditLogsAsTarget               permission_audit_logs[]            @relation("AuditTarget")
-  corpusInteractions              user_corpus_interactions[]
-  corpusPermissions               user_corpus_permissions[]
+  id                                                                                        String                             @id @default(cuid())
+  name                                                                                      String?
+  email                                                                                     String?                            @unique
+  emailVerified                                                                             DateTime?
+  image                                                                                     String?
+  phoneNumber                                                                               String?
+  wechatAvatar                                                                              String?
+  role                                                                                      Role                               @default(LEARNER)
+  bio                                                                                       String?
+  isSystemAdmin                                                                             Boolean                            @default(false)
+  ethAddress                                                                                String?                            @unique
+  createdAt                                                                                 DateTime                           @default(now()) @db.Timestamptz(6)
+  updatedAt                                                                                 DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
+  deletionRequestedAt                                                                       DateTime?                          @db.Timestamptz(6)
+  status                                                                                    UserStatus                         @default(ACTIVE)
+  accounts                                                                                  Account[]
+  sessions                                                                                  Session[]
+  walletNonces                                                                              WalletNonce[]
+  api_key                                                                                   api_key[]
+  cantonese_corpus_update_history_cantonese_corpus_update_history_contributor_user_idToUser cantonese_corpus_update_history[]  @relation("cantonese_corpus_update_history_contributor_user_idToUser")
+  cantonese_corpus_update_history                                                           cantonese_corpus_update_history[]
+  corpus_category                                                                           corpus_category[]
+  corpusCollectionActivities                                                                corpus_collection_activities[]
+  corpusCollectionComments                                                                  corpus_collection_comments[]
+  corpusCollectionLikes                                                                     corpus_collection_likes[]
+  corpusCollectionMessages                                                                  corpus_collection_messages[]
+  corpusCollectionReviewBatches                                                             corpus_collection_review_batches[]
+  corpusCollectionReviewedItems                                                             corpus_collection_submissions[]    @relation("CorpusCollectionReviewer")
+  corpusCollectionSubmissions                                                               corpus_collection_submissions[]
+  corpus_tags                                                                               corpus_tags[]
+  gameAnswerRecords                                                                         game_answer_records[]
+  gamePlayerProgress                                                                        game_player_progress?
+  auditLogsAsOperator                                                                       permission_audit_logs[]            @relation("AuditOperator")
+  auditLogsAsTarget                                                                         permission_audit_logs[]            @relation("AuditTarget")
+  corpusInteractions                                                                        user_corpus_interactions[]
+  corpusPermissions                                                                         user_corpus_permissions[]
 }
 
 model Session {
@@ -143,6 +146,8 @@ model cantonese_corpus_all {
   lifecycle_stage      String                     @default("draft")
   structured_note      Json?
   cantonese_categories cantonese_categories       @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  corpus_category      corpus_category?
+  corpus_tags          corpus_tags[]
   corpus_zyzdv2        corpus_zyzdv2[]
   userInteractions     user_corpus_interactions[]
 
@@ -189,23 +194,25 @@ model cantonese_corpus_dict_yin {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model cantonese_corpus_update_history {
-  id                   BigInt        @default(autoincrement())
-  unique_id            String        @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  note                 Json
-  status               Status        @default(PENDING)
-  updated_at           DateTime?     @default(now()) @db.Timestamp(6)
-  created_at           DateTime      @default(now()) @db.Timestamptz(6)
-  user_id              String
-  approver_user_id     String?
-  last_note            Json          @default("{}")
-  operation_type       OperationType @default(UPDATE)
-  data                 String?
-  tags                 Json?         @default("[]")
-  category             String?
-  last_structured_note Json?
-  structured_note      Json?
-  last_data            String?
-  User                 User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                                                             BigInt        @default(autoincrement())
+  unique_id                                                      String        @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  note                                                           Json
+  status                                                         Status        @default(PENDING)
+  updated_at                                                     DateTime?     @default(now()) @db.Timestamp(6)
+  created_at                                                     DateTime      @default(now()) @db.Timestamptz(6)
+  user_id                                                        String
+  approver_user_id                                               String?
+  last_note                                                      Json          @default("{}")
+  operation_type                                                 OperationType @default(UPDATE)
+  data                                                           String?
+  tags                                                           Json?         @default("[]")
+  category                                                       String?
+  last_structured_note                                           Json?
+  structured_note                                                Json?
+  last_data                                                      String?
+  contributor_user_id                                            String?
+  User_cantonese_corpus_update_history_contributor_user_idToUser User?         @relation("cantonese_corpus_update_history_contributor_user_idToUser", fields: [contributor_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cantonese_corpus_update_history_contributor_fkey")
+  User                                                           User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([id, unique_id])
 }
@@ -608,7 +615,6 @@ model corpus_collection_submissions {
   title            String
   intro            String
   tags             Json                                   @default("[]")
-  cover_url        String?
   review_status    String                                 @default("pending_review")
   precheck_result  Json?
   ai_review_result Json?
@@ -628,6 +634,7 @@ model corpus_collection_submissions {
   is_awarded       Boolean                                @default(false)
   view_count       Int                                    @default(0)
   is_locked        Boolean                                @default(false)
+  cover_url        String?
   comments         corpus_collection_comments[]
   likes            corpus_collection_likes[]
   messages         corpus_collection_messages[]
@@ -837,6 +844,124 @@ model wu_corpus_all {
   editable_level BigInt    @default(1)
   updated_at     DateTime? @default(now()) @db.Timestamptz(6)
   unique_id      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model content_categories {
+  id                       BigInt               @id @default(autoincrement())
+  slug                     String               @unique
+  name                     String
+  parent_id                BigInt?
+  level                    Int                  @db.SmallInt
+  sort_order               Int                  @default(0)
+  status                   String               @default("active")
+  description              String?
+  item_count               Int                  @default(0)
+  created_at               DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime             @default(now()) @db.Timestamptz(6)
+  content_categories       content_categories?  @relation("content_categoriesTocontent_categories", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  other_content_categories content_categories[] @relation("content_categoriesTocontent_categories")
+  corpus_category          corpus_category[]
+
+  @@unique([parent_id, name], map: "cc_sibling_name_uk")
+  @@index([parent_id], map: "cc_parent_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model corpus_category {
+  corpus_id            BigInt               @id
+  category_id          BigInt
+  source               String               @default("rule")
+  assigned_by          String?
+  assigned_at          DateTime             @default(now()) @db.Timestamptz(6)
+  User                 User?                @relation(fields: [assigned_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  content_categories   content_categories   @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  cantonese_corpus_all cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([category_id], map: "corpus_category_cat_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model corpus_field_embeddings {
+  id          BigInt                @id @default(autoincrement())
+  corpus_id   BigInt
+  field_type  String
+  modality    String                @default("text")
+  content_ref String
+  embedding   Unsupported("vector")
+  updated_at  DateTime              @default(now()) @db.Timestamptz(6)
+
+  @@index([corpus_id], map: "corpus_field_emb_entry_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model corpus_tags {
+  corpus_id            BigInt
+  tag_id               BigInt
+  source               String               @default("import")
+  created_by           String?
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  cantonese_corpus_all cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User                 User?                @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tags                 tags                 @relation(fields: [tag_id], references: [id], onUpdate: NoAction)
+
+  @@id([corpus_id, tag_id])
+  @@index([tag_id], map: "corpus_tags_tag_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tag_related {
+  tag_id                            BigInt
+  related_id                        BigInt
+  method                            String
+  score                             Float  @db.Real
+  tags_tag_related_related_idTotags tags   @relation("tag_related_related_idTotags", fields: [related_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags_tag_related_tag_idTotags     tags   @relation("tag_related_tag_idTotags", fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([tag_id, related_id, method])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tags {
+  id                                       BigInt                 @id @default(autoincrement())
+  slug                                     String                 @unique
+  name                                     String
+  facet                                    String                 @default("other")
+  sort_order                               Int                    @default(0)
+  status                                   String                 @default("active")
+  gloss                                    String?
+  embedding                                Unsupported("vector")?
+  corpus_count                             Int                    @default(0)
+  created_at                               DateTime               @default(now()) @db.Timestamptz(6)
+  corpus_tags                              corpus_tags[]
+  tag_related_tag_related_related_idTotags tag_related[]          @relation("tag_related_related_idTotags")
+  tag_related_tag_related_tag_idTotags     tag_related[]          @relation("tag_related_tag_idTotags")
+
+  @@index([embedding])
+  @@index([facet])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_corpus_field_embeddings {
+  corpus_id   BigInt?
+  field_type  String?
+  modality    String?
+  content_ref String?
+  embedding   Unsupported("vector")?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tmp_corpus_tags {
+  corpus_id BigInt?
+  slug      String?
+  source    String?
+
+  @@ignore
 }
 
 enum Role {
