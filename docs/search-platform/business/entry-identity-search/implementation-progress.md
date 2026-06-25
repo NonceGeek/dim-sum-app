@@ -1,6 +1,6 @@
 # 实施进度
 
-更新时间：2026-06-24
+更新时间：2026-06-25
 
 本文用于记录“语料身份搜索”从方案进入实施后的状态。`语料身份需求.md` 是后端原始数据底座文档，不写入前端实现建议、搜索策略建议或暂缓字段建议；这些内容统一沉淀在本文、`data-model.md`、`search-ranking-recommendation.md` 和 `frontend-backend-contract.md`。
 
@@ -184,9 +184,46 @@ P0 聚合字段：
 
 ---
 
-## 七、下一步
+## 七、当前未完成事项
 
-当前已完成非向量版服务端 API 第一版：
+### 7.1 P0 剩余验收
+
+- [ ] 浏览器完整验收 `/search?mode=entry&q=...`：桌面、移动端、空结果、loading、换一批、分享弹窗、打开详情页。
+- [ ] 覆盖多类 query：短词如“好”、长句、繁简输入、没有精准匹配但有相似结果的输入。
+- [ ] 线上环境确认 `DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY`、Supabase 连接、RPC migration 已部署。
+
+### 7.2 性能 / RPC 后续
+
+- [ ] `search_entry_similar` 下沉为 Supabase RPC。
+- [ ] `search_entry_recommended` 下沉为 Supabase RPC。
+- [ ] `list_entries_by_category` 下沉为 Supabase RPC 或稳定查询接口。
+- [ ] `list_entries_by_tag` 下沉为 Supabase RPC 或稳定查询接口。
+- [ ] 评估热门 query 缓存，降低实时调用百炼和远端 DB 查询成本。
+
+### 7.3 搜索效果调优
+
+- [ ] 二级 similar 当前主要使用 `field_type='doc'`，后续评估接入 `headword` / `sentence` / `definition` 多分面融合。
+- [ ] 评估 `tags.embedding`、相似标签向量、`tag_related.manual`、身份分类权重对 similar / recommended 的排序提升。
+- [ ] 针对短 query 的误召回做样本测试和权重调参，减少短文本向量不稳定带来的漂移。
+- [ ] 继续优化一级精准搜索权重，特别是 exact / prefix / PGroonga / like 的排序边界。
+
+### 7.4 页面能力
+
+- [ ] 词条详情页继续丰富：相关表达、继续探索、相似词条、分享入口布局、更多 `structured_note.blocks` 类型展示。
+- [ ] 分类页、标签页、标签聚合页后续规划。
+- [ ] 浏览量统计暂未接入，避免详情页访问或爬虫直接刷 `view_num`；后续需要独立设计防刷和去重策略。
+
+### 7.5 数据治理 / 后台
+
+- [ ] `tag_role`、`relevance_level`、`confidence`、`batch_id` 仍为暂缓增强字段。
+- [ ] Admin 侧分类 / 标签人工治理能力未开始。
+- [ ] 数据库原始内容，包括词条、释义、分类名、标签名，暂不做中英文内容翻译；当前仅完成 UI 固定文案多语言。
+
+---
+
+## 八、下一步建议
+
+当前已完成服务端 API、向量召回、搜索 UI、词条详情页、部分 RPC 下沉：
 
 ```text
 main/lib/search/entry-identity.ts
@@ -194,6 +231,9 @@ main/app/api/search/entries/route.ts
 main/lib/api/search.ts
 main/app/[locale]/(home)/_components/entry-search-sections.tsx
 main/app/[locale]/(home)/search/page.tsx
+main/app/[locale]/(home)/entries/[entryId]/page.tsx
+main/prisma/migrations/20260625110115_add_entry_identity_rpc/migration.sql
+main/prisma/migrations/20260625111423_add_entry_primary_search_rpc/migration.sql
 ```
 
 下一步建议先做三件事：
