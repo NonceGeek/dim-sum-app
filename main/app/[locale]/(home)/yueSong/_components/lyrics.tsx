@@ -6,11 +6,12 @@ import {
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-} from "@/components/ui/tooltip";
+} from "@/components/ui/tooltip.lyrics";
 import { Button } from "@/components/ui/button";
 import { SearchResult } from "@/lib/api/search";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "next-themes";
 
 interface ILyricLine {
   data: string;
@@ -32,6 +33,7 @@ export default function Lyrics({
   progress,
   handleSeekEnd,
 }: ILyricsProps) {
+  const { theme } = useTheme();
   const { lyric_full, duration } = lyric;
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -142,7 +144,7 @@ export default function Lyrics({
       data.note.context.author,
     )}&lyric=${encodeURIComponent(line.data)}&pron=${encodeURIComponent(
       line.pron,
-    )}&contri=${data.note.contributor}`;
+    )}&contri=${data.note.contributor}&mode=${theme === "dark" ? "dark" : "light"}`;
 
     // setDebugMsg("shareUrl created");
 

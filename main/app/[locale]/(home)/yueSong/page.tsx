@@ -33,8 +33,10 @@ import {
 } from "@/components/ui/popover";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 function YueSong() {
+  const { theme } = useTheme();
   const searchParams = useSearchParams();
   const uuid = searchParams.get("id");
   const router = useRouter();
@@ -358,7 +360,7 @@ function YueSong() {
                     />
                   )}
                   <a
-                    href={`https://card.app.aidimsum.com//?uuid=${uuid}`}
+                    href={`https://card.app.aidimsum.com//?uuid=${uuid}&mode=${theme === "dark" ? "dark" : "light"}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e: any) => {
