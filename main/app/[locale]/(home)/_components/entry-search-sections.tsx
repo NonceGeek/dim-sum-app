@@ -356,11 +356,8 @@ function SharePreview({
   const sourceName =
     entry.source.categoryDisplayName || entry.source.categoryName;
   const categoryName = displayCategory(entry);
-  const tags = [
-    ...entry.tags.precise,
-    ...entry.tags.related,
-    ...entry.tags.recommended,
-  ].slice(0, 8);
+  const hasTags =
+    entry.tags.related.length > 0 || entry.tags.recommended.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -406,7 +403,7 @@ function SharePreview({
                 </ShareMetaRow>
               )}
 
-              {(sourceName || categoryName || tags.length > 0) && (
+              {(sourceName || categoryName || hasTags) && (
                 <div className="my-3 border-t border-border" />
               )}
 
@@ -456,7 +453,6 @@ function SharePreview({
             <p className="mt-6 font-mono text-xs text-muted-foreground">
               {labels.uniqueId}: {compactId(entry.entryId)}
             </p>
-
           </div>
         </div>
 
