@@ -44,7 +44,7 @@ export default async function proxy(request: NextRequest) {
     pathname.includes('.')
   ) {
     // Still apply auth for protected API routes
-    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/public') && !pathname.startsWith('/api/search') && !pathname.startsWith('/api/auth') && !pathname.startsWith('/api/miniprogram')) {
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/public') && !pathname.startsWith('/api/search') && !pathname.startsWith('/api/entries') && !pathname.startsWith('/api/auth') && !pathname.startsWith('/api/miniprogram')) {
       const token = await getToken({ req: request });
       if (!token) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
