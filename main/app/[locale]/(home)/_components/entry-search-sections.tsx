@@ -36,8 +36,8 @@ type EntrySearchSectionsProps = {
 
 function displayCategory(entry: EntryIdentity): string {
   return (
-    entry.category.secondary?.name ||
     entry.category.primary?.name ||
+    entry.category.secondary?.name ||
     entry.source.categoryDisplayName ||
     entry.source.categoryName
   );
