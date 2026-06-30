@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { AnimatePresence, motion } from "motion/react";
+import { useTheme } from "next-themes";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
@@ -56,6 +58,12 @@ function entryHref(entry: EntryIdentity, returnQuery?: string): string {
 
   const params = new URLSearchParams({ fromSearch: query });
   return `${entry.share.seoUrl}?${params.toString()}`;
+}
+
+function absoluteUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  if (typeof window === "undefined") return pathOrUrl;
+  return new URL(pathOrUrl, window.location.origin).toString();
 }
 
 async function copyText(value: string, successMessage: string) {
@@ -245,6 +253,21 @@ function RecommendedTagList({
   );
 }
 
+function ShareMetaRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[5.5rem_1fr] gap-3 text-sm leading-6">
+      <dt className="font-semibold text-foreground">{label}</dt>
+      <dd className="min-w-0 text-foreground">{children}</dd>
+    </div>
+  );
+}
+
 function PrimaryIdentityInfo({
   entry,
   labels,
@@ -314,83 +337,148 @@ function SharePreview({
     copyLink: string;
     openCard: string;
     copied: string;
+
+    jyutping: string;
+    meaning: string;
     source: string;
     category: string;
     keyTags: string;
     recommendedTags: string;
     media: MediaLabels;
+    tags: string;
   };
   onOpenChange: (open: boolean) => void;
 }) {
+  const { theme } = useTheme();
+
   if (!entry) return null;
+
+  const sourceName =
+    entry.source.categoryDisplayName || entry.source.categoryName;
+  const categoryName = displayCategory(entry);
+  const tags = [
+    ...entry.tags.precise,
+    ...entry.tags.related,
+    ...entry.tags.recommended,
+  ].slice(0, 8);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl p-0">
         <DialogHeader>
-          <DialogTitle>{labels.title}</DialogTitle>
+          <DialogTitle className="px-7 pt-7 text-2xl font-semibold">
+            {labels.title}
+          </DialogTitle>
         </DialogHeader>
-        <div className="rounded-md border border-border p-4">
-          <div className="mb-3 text-sm font-semibold">DimSum</div>
-          <h3 className="mb-1 text-2xl font-semibold text-foreground">
-            {entry.entryName}
-          </h3>
-          {entry.jyutping && (
-            <p className="mb-2 text-sm text-muted-foreground">{entry.jyutping}</p>
-          )}
-          {entry.meaning && (
-            <p className="mb-3 line-clamp-3 text-sm leading-6 text-foreground">
-              {entry.meaning}
+
+        <div className="px-7 pb-6">
+          <div className="rounded-lg border border-border bg-background p-6 shadow-sm shadow-black/10">
+            <div className="mb-5 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Image
+                src="/logo.png"
+                alt="DimSum"
+                width={24}
+                height={24}
+                className="h-6 w-6 rounded-full"
+              />
+              <span>DimSum</span>
+            </div>
+
+            <h3 className="mb-4 break-words text-4xl font-semibold leading-tight text-foreground">
+              {entry.entryName}
+            </h3>
+
+            <dl className="space-y-1.5">
+              {entry.jyutping && (
+                <>
+                  {/* <ShareMetaRow label={labels.pronunciation}>
+                    {entry.jyutping}
+                  </ShareMetaRow> */}
+                  <ShareMetaRow label={labels.jyutping}>
+                    {entry.jyutping}
+                  </ShareMetaRow>
+                </>
+              )}
+
+              {entry.meaning && (
+                <ShareMetaRow label={labels.meaning}>
+                  <span className="line-clamp-3">{entry.meaning}</span>
+                </ShareMetaRow>
+              )}
+
+              {(sourceName || categoryName || tags.length > 0) && (
+                <div className="my-3 border-t border-border" />
+              )}
+
+              {sourceName && (
+                <ShareMetaRow label={labels.source}>{sourceName}</ShareMetaRow>
+              )}
+
+              {categoryName && (
+                <ShareMetaRow label={labels.category}>
+                  {categoryName}
+                </ShareMetaRow>
+              )}
+
+              {entry.tags.related.length > 0 && (
+                <ShareMetaRow label={labels.tags}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {entry.tags.related.map((tag) => (
+                      <Badge
+                        key={`${tag.role}-${tag.id}`}
+                        variant="secondary"
+                        className="rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </ShareMetaRow>
+              )}
+
+              {entry.tags.recommended.length > 0 && (
+                <ShareMetaRow label={labels.recommendedTags}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {entry.tags.recommended.map((tag) => (
+                      <Badge
+                        key={`${tag.role}-${tag.id}`}
+                        variant="secondary"
+                        className="rounded-md border border-border bg-muted/60 px-2 py-0.5 text-xs font-semibold text-muted-foreground"
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </ShareMetaRow>
+              )}
+            </dl>
+
+            <p className="mt-6 font-mono text-xs text-muted-foreground">
+              {labels.uniqueId}: {compactId(entry.entryId)}
             </p>
-          )}
-          <MediaControls entry={entry} labels={labels.media} />
-          <div className="mt-3 space-y-2 text-sm">
-            <div>
-              <span className="font-semibold">{labels.source}: </span>
-              <span>{displaySource(entry)}</span>
-            </div>
-            <div>
-              <span className="font-semibold">{labels.category}: </span>
-              <span>
-                {[entry.category.primary?.name, entry.category.secondary?.name]
-                  .filter(Boolean)
-                  .join(" / ") || displayCategory(entry)}
-              </span>
-            </div>
+
           </div>
-          {entry.tags.related.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">
-                {labels.keyTags}
-              </div>
-              <TagList entry={entry} relatedLimit={6} />
-            </div>
-          )}
-          {entry.tags.recommended.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground">
-                {labels.recommendedTags}
-              </div>
-              <RecommendedTagList entry={entry} limit={6} />
-            </div>
-          )}
-          <p className="mt-4 font-mono text-xs text-muted-foreground">
-            {labels.uniqueId}: {compactId(entry.entryId)}
-          </p>
         </div>
-        <div className="flex justify-end gap-2">
+
+        <div className="flex justify-end gap-2 border-t border-border bg-muted/30 px-7 py-4">
           <Button
             type="button"
             variant="outline"
-            onClick={() => copyText(entry.share.seoUrl, labels.copied)}
+            onClick={() => copyText(absoluteUrl(entry.share.seoUrl), labels.copied)}
           >
             {labels.copyLink}
           </Button>
-          <Button type="button" asChild>
-            <a href={entry.share.cardUrl} target="_blank" rel="noopener noreferrer">
-              {labels.openCard}
-            </a>
-          </Button>
+          {entry.share.cardUrl && (
+            <Button type="button" asChild>
+              <a
+                href={entry.share.cardUrl + `&mode=${theme === "dark" ? "dark" : "light"}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {labels.openCard}
+              </a>
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -559,9 +647,7 @@ function PrimaryLoading() {
 function EmptyPrimary({ text }: { text: string }) {
   return (
     <section className="border-b border-border/60 px-4 py-5 sm:px-0">
-      <div className="max-w-4xl text-sm text-muted-foreground">
-        {text}
-      </div>
+      <div className="max-w-4xl text-sm text-muted-foreground">{text}</div>
     </section>
   );
 }
@@ -849,8 +935,11 @@ export function EntrySearchSections({
           copyLink: t("copyLink"),
           openCard: t("openCard"),
           copied: t("copied"),
+          jyutping: t("jyutping"),
+          meaning: t("meaning"),
           source: t("source"),
           category: t("category"),
+          tags: t("tags"),
           keyTags: t("keyTags"),
           recommendedTags: t("recommendedTags"),
           media: mediaLabels,

@@ -22,7 +22,7 @@ import BorderGlow from "@/components/ui/border-glow";
 import SplitText from "@/components/ui/split-text";
 import TextType from "@/components/ui/text-type";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
-import { useAllCategories } from "@/lib/api/category";
+import { getCategoryNickname, useAllCategories } from "@/lib/api/category";
 import { useHotTerms } from "@/lib/api/public";
 import GradientText from "@/components/ui/gradient-text";
 import {
@@ -481,7 +481,7 @@ export default function HomePage() {
                             {item.data}
                           </span>
                           <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                            {item.category}
+                            {getCategoryNickname(categories ?? [], item.category)}
                           </span>
                         </li>
                       ))}
