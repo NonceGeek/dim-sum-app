@@ -41,13 +41,21 @@ function displayCategory(entry: EntryIdentity): string {
   );
 }
 
+function displaySource(entry: EntryIdentity): string {
+  return entry.source.categoryDisplayName || entry.source.categoryName;
+}
+
 function compactId(entryId: string): string {
   if (entryId.length <= 12) return entryId;
   return `${entryId.slice(0, 8)}...${entryId.slice(-4)}`;
 }
 
-function entryHref(entry: EntryIdentity): string {
-  return entry.share.seoUrl;
+function entryHref(entry: EntryIdentity, returnQuery?: string): string {
+  const query = returnQuery?.trim();
+  if (!query) return entry.share.seoUrl;
+
+  const params = new URLSearchParams({ fromSearch: query });
+  return `${entry.share.seoUrl}?${params.toString()}`;
 }
 
 async function copyText(value: string, successMessage: string) {
@@ -139,7 +147,13 @@ function MediaControls({
   );
 }
 
-function PrimaryMediaPreview({ entry }: { entry: EntryIdentity }) {
+function PrimaryMediaPreview({
+  entry,
+  returnQuery,
+}: {
+  entry: EntryIdentity;
+  returnQuery?: string;
+}) {
   const { audioUrl, videoUrl, coverImage } = entry.assets;
   if (!audioUrl && !videoUrl && !coverImage) return null;
 
@@ -153,7 +167,7 @@ function PrimaryMediaPreview({ entry }: { entry: EntryIdentity }) {
         <div className="grid gap-3 sm:grid-cols-2">
           {coverImage && (
             <Link
-              href={entryHref(entry)}
+              href={entryHref(entry, returnQuery)}
               className="block overflow-hidden rounded-md border border-border bg-muted/30"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -205,6 +219,87 @@ function TagList({
   );
 }
 
+function RecommendedTagList({
+  entry,
+  limit = 6,
+}: {
+  entry: EntryIdentity;
+  limit?: number;
+}) {
+  const recommendedTags = entry.tags.recommended.slice(0, limit);
+
+  if (!recommendedTags.length) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {recommendedTags.map((tag) => (
+        <Badge
+          key={`${tag.role}-${tag.id}`}
+          variant="secondary"
+          className="rounded-md border border-border bg-muted/60 font-medium text-muted-foreground"
+        >
+          {tag.name}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+function PrimaryIdentityInfo({
+  entry,
+  labels,
+}: {
+  entry: EntryIdentity;
+  labels: {
+    source: string;
+    primaryCategory: string;
+    secondaryCategory: string;
+    contributors: string;
+  };
+}) {
+  const contributorId = entry.source.contributorIds.find(Boolean);
+  const items = [
+    {
+      label: labels.source,
+      value: displaySource(entry),
+    },
+    {
+      label: labels.primaryCategory,
+      value: entry.category.primary?.name ?? null,
+    },
+    {
+      label: labels.secondaryCategory,
+      value: entry.category.secondary?.name ?? null,
+    },
+    {
+      label: labels.contributors,
+      value: contributorId ?? null,
+      mono: Boolean(contributorId),
+    },
+  ].filter((item) => item.value);
+
+  if (!items.length) return null;
+
+  return (
+    <dl className="grid max-w-3xl gap-x-6 gap-y-3 rounded-lg border border-border/70 bg-muted/20 p-4 text-sm sm:grid-cols-2">
+      {items.map((item) => (
+        <div key={item.label} className="min-w-0">
+          <dt className="text-xs font-medium text-muted-foreground">
+            {item.label}
+          </dt>
+          <dd
+            className={`mt-1 min-w-0 break-words font-medium text-foreground ${
+              item.mono ? "font-mono text-xs" : ""
+            }`}
+          >
+            {item.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function SharePreview({
   entry,
   open,
@@ -219,6 +314,10 @@ function SharePreview({
     copyLink: string;
     openCard: string;
     copied: string;
+    source: string;
+    category: string;
+    keyTags: string;
+    recommendedTags: string;
     media: MediaLabels;
   };
   onOpenChange: (open: boolean) => void;
@@ -245,7 +344,36 @@ function SharePreview({
             </p>
           )}
           <MediaControls entry={entry} labels={labels.media} />
-          <TagList entry={entry} />
+          <div className="mt-3 space-y-2 text-sm">
+            <div>
+              <span className="font-semibold">{labels.source}: </span>
+              <span>{displaySource(entry)}</span>
+            </div>
+            <div>
+              <span className="font-semibold">{labels.category}: </span>
+              <span>
+                {[entry.category.primary?.name, entry.category.secondary?.name]
+                  .filter(Boolean)
+                  .join(" / ") || displayCategory(entry)}
+              </span>
+            </div>
+          </div>
+          {entry.tags.related.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">
+                {labels.keyTags}
+              </div>
+              <TagList entry={entry} relatedLimit={6} />
+            </div>
+          )}
+          {entry.tags.recommended.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">
+                {labels.recommendedTags}
+              </div>
+              <RecommendedTagList entry={entry} limit={6} />
+            </div>
+          )}
           <p className="mt-4 font-mono text-xs text-muted-foreground">
             {labels.uniqueId}: {compactId(entry.entryId)}
           </p>
@@ -276,6 +404,7 @@ function PrimaryEntry({
   isEditLoading,
   onEdit,
   onShare,
+  returnQuery,
 }: {
   entry: EntryIdentity;
   labels: {
@@ -284,14 +413,19 @@ function PrimaryEntry({
     edit: string;
     editing: string;
     copied: string;
+    source: string;
+    primaryCategory: string;
+    secondaryCategory: string;
+    contributors: string;
     media: MediaLabels;
   };
   canEdit: boolean;
   isEditLoading: boolean;
   onEdit?: (entry: EntryIdentity) => void;
   onShare: (entry: EntryIdentity) => void;
+  returnQuery?: string;
 }) {
-  const hasMetadata = Boolean(entry.jyutping || displayCategory(entry));
+  const hasMetadata = Boolean(entry.jyutping);
 
   return (
     <section className="border-b border-border/60 px-4 py-8 sm:px-0">
@@ -303,7 +437,7 @@ function PrimaryEntry({
 
         <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
           <Link
-            href={entryHref(entry)}
+            href={entryHref(entry, returnQuery)}
             className="min-w-0 max-w-5xl break-words text-3xl font-semibold leading-tight text-foreground transition-colors hover:text-primary sm:text-4xl"
           >
             {entry.entryName}
@@ -342,9 +476,6 @@ function PrimaryEntry({
                   {entry.jyutping}
                 </span>
               )}
-              <span className="text-muted-foreground/75">
-                {displayCategory(entry)}
-              </span>
             </div>
           )}
         </div>
@@ -356,10 +487,28 @@ function PrimaryEntry({
             </p>
           )}
 
-          <PrimaryMediaPreview entry={entry} />
+          <PrimaryMediaPreview entry={entry} returnQuery={returnQuery} />
+
+          <PrimaryIdentityInfo
+            entry={entry}
+            labels={{
+              source: labels.source,
+              primaryCategory: labels.primaryCategory,
+              secondaryCategory: labels.secondaryCategory,
+              contributors: labels.contributors,
+            }}
+          />
 
           {entry.tags.related.length > 0 && (
-            <TagList entry={entry} relatedLimit={4} />
+            <div className="max-w-3xl">
+              <TagList entry={entry} relatedLimit={6} />
+            </div>
+          )}
+
+          {entry.tags.recommended.length > 0 && (
+            <div className="max-w-3xl">
+              <RecommendedTagList entry={entry} limit={6} />
+            </div>
           )}
 
           <button
@@ -421,16 +570,18 @@ function EntryTile({
   entry,
   labels,
   dense = false,
+  returnQuery,
 }: {
   entry: EntryIdentity;
   labels: {
     media: MediaLabels;
   };
   dense?: boolean;
+  returnQuery?: string;
 }) {
   return (
     <article className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
-      <Link href={entryHref(entry)} className="mb-4 block min-w-0">
+      <Link href={entryHref(entry, returnQuery)} className="mb-4 block min-w-0">
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           {displayCategory(entry)}
         </div>
@@ -496,6 +647,7 @@ function ResultSection({
   onRefresh,
   columns = 3,
   dense = false,
+  returnQuery,
 }: {
   title: string;
   entries: EntryIdentity[];
@@ -508,6 +660,7 @@ function ResultSection({
   onRefresh?: () => void;
   columns?: 3 | 4;
   dense?: boolean;
+  returnQuery?: string;
 }) {
   const gridClass =
     columns === 4
@@ -563,6 +716,7 @@ function ResultSection({
                 entry={entry}
                 labels={labels}
                 dense={dense}
+                returnQuery={returnQuery}
               />
             ))}
           </motion.div>
@@ -649,12 +803,17 @@ export function EntrySearchSections({
             edit: t("edit"),
             editing: t("editing"),
             copied: t("copied"),
+            source: t("source"),
+            primaryCategory: t("primaryCategory"),
+            secondaryCategory: t("secondaryCategory"),
+            contributors: t("contributors"),
             media: mediaLabels,
           }}
           canEdit={canEditEntry(result.primary, user)}
           isEditLoading={editingEntryId === result.primary.entryId}
           onEdit={handleEditEntry}
           onShare={setShareEntry}
+          returnQuery={result.query}
         />
       ) : (
         <EmptyPrimary text={t("emptyPrimary")} />
@@ -667,6 +826,7 @@ export function EntrySearchSections({
         labels={commonLabels}
         isRefreshing={isLoadingSimilar || isRefreshingSimilar}
         onRefresh={result.cursors.similarNext ? onRefreshSimilar : undefined}
+        returnQuery={result.query}
       />
       <ResultSection
         title={t("recommendedTitle")}
@@ -678,6 +838,7 @@ export function EntrySearchSections({
         onRefresh={result.cursors.recommendedNext ? onRefreshRecommended : undefined}
         columns={4}
         dense
+        returnQuery={result.query}
       />
       <SharePreview
         entry={shareEntry}
@@ -688,6 +849,10 @@ export function EntrySearchSections({
           copyLink: t("copyLink"),
           openCard: t("openCard"),
           copied: t("copied"),
+          source: t("source"),
+          category: t("category"),
+          keyTags: t("keyTags"),
+          recommendedTags: t("recommendedTags"),
           media: mediaLabels,
         }}
         onOpenChange={(open) => {

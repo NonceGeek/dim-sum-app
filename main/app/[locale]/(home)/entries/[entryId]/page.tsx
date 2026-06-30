@@ -13,6 +13,9 @@ type EntryPageProps = {
     locale: string;
     entryId: string;
   }>;
+  searchParams?: Promise<{
+    fromSearch?: string;
+  }>;
 };
 
 function displayCategory(entry: Awaited<ReturnType<typeof fetchEntryIdentityByUniqueId>>) {
@@ -65,14 +68,19 @@ export async function generateMetadata({ params }: EntryPageProps): Promise<Meta
   };
 }
 
-export default async function EntryPage({ params }: EntryPageProps) {
+export default async function EntryPage({ params, searchParams }: EntryPageProps) {
   const { entryId, locale } = await params;
+  const resolvedSearchParams = await searchParams;
   const t = await getTranslations({ locale, namespace: "EntryDetail" });
   const entry = await fetchEntryIdentityByUniqueId(entryId);
 
   if (!entry) notFound();
 
-  const tags = entry.tags.related.slice(0, 10);
+  const returnQuery = resolvedSearchParams?.fromSearch?.trim() || entry.entryName;
+  const backToSearchHref =
+    `/search?mode=entry&dataset=all&q=${encodeURIComponent(returnQuery)}`;
+  const relatedTags = entry.tags.related.slice(0, 10);
+  const recommendedTags = entry.tags.recommended.slice(0, 10);
   const hasMedia = Boolean(
     entry.assets.audioUrl || entry.assets.videoUrl || entry.assets.coverImage,
   );
@@ -94,7 +102,7 @@ export default async function EntryPage({ params }: EntryPageProps) {
 
       <div className="mb-10">
         <Button variant="ghost" size="sm" asChild className="-ml-3 text-muted-foreground">
-          <Link href={`/search?mode=entry&q=${encodeURIComponent(entry.entryName)}`}>
+          <Link href={backToSearchHref}>
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             {t("backToSearch")}
           </Link>
@@ -131,7 +139,6 @@ export default async function EntryPage({ params }: EntryPageProps) {
                 {entry.jyutping}
               </span>
             )}
-            <span className="text-muted-foreground/75">{displayCategory(entry)}</span>
           </div>
 
           {entry.meaning && (
@@ -164,10 +171,24 @@ export default async function EntryPage({ params }: EntryPageProps) {
             </section>
           )}
 
-          {tags.length > 0 && (
-            <section className="mt-7 max-w-3xl">
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
+          {(relatedTags.length > 0 || recommendedTags.length > 0) && (
+            <section className="mt-7 max-w-3xl space-y-2">
+              {relatedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {relatedTags.map((tag) => (
+                    <Badge
+                      key={`${tag.role}-${tag.id}`}
+                      variant="secondary"
+                      className="rounded-md border border-primary/15 bg-primary/10 font-medium text-primary"
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {recommendedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {recommendedTags.map((tag) => (
                   <Badge
                     key={`${tag.role}-${tag.id}`}
                     variant="secondary"
@@ -175,8 +196,9 @@ export default async function EntryPage({ params }: EntryPageProps) {
                   >
                     {tag.name}
                   </Badge>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -193,10 +215,10 @@ export default async function EntryPage({ params }: EntryPageProps) {
           <dl className="mt-5 space-y-5 text-sm">
             <div>
               <dt className="text-xs font-medium uppercase text-muted-foreground">
-                {t("category")}
+                {t("source")}
               </dt>
               <dd className="mt-1 font-medium text-foreground">
-                {displayCategory(entry)}
+                {entry.source.categoryDisplayName || entry.source.categoryName}
               </dd>
             </div>
             {entry.category.primary && (

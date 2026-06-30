@@ -51,6 +51,7 @@
 | `frontend-backend-contract.md` | 前后端怎么对接 |
 | `api.md` | Next `/api/search/entries` 和 Admin API 草案 |
 | `search-results-ui.md` | Search 页面展示和换一批交互 |
+| `tag-and-identity-model.md` | note、corpus_tags、tag_related 的标签口径和 UI 展示边界 |
 | `search-ranking-recommendation.md` | primary / similar / recommended 召回与排序 |
 | `admin-design.md` | Admin 后台如何治理分类、标签、身份字段 |
 
