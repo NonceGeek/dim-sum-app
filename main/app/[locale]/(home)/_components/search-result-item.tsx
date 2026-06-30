@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import ReactPlayer from "react-player";
 import { backendFetch } from "@/lib/api/backend";
+import { useTheme } from "next-themes";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -434,6 +435,7 @@ export default function SearchResultItem({
   setUpdateDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   keyword?: string;
 }) {
+  const { theme } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuthStore();
   const canEdit = useCanEdit(result, user);
@@ -499,7 +501,7 @@ export default function SearchResultItem({
             </Button>
             <Button variant="ghost" size="sm" asChild>
               <a
-                href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}`}
+                href={`https://card.app.aidimsum.com/?uuid=${result.unique_id}&mode=${theme === "dark" ? "dark" : "light"}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={tc("share")}
