@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Phone, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { Phone, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -36,9 +36,10 @@ export function BindPhoneDialog({
 }: BindPhoneDialogProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [step, setStep] = useState<"input" | "verify" | "conflict">("input");
+  const [step, setStep] = useState<"input" | "verify" | "merge-confirm">(
+    "input"
+  );
   const [countdown, setCountdown] = useState(0);
-  const [conflictPhone, setConflictPhone] = useState("");
 
   const sendBindCodeMutation = useSendBindCode();
   const bindPhoneMutation = useBindPhone();
@@ -63,7 +64,6 @@ export function BindPhoneDialog({
       setVerificationCode("");
       setStep("input");
       setCountdown(0);
-      setConflictPhone("");
     }
   }, [open]);
 
@@ -93,15 +93,6 @@ export function BindPhoneDialog({
         setCountdown(60);
       }
     } catch (error: any) {
-      // 处理冲突错误
-      if (
-        error?.response?.status === 409 ||
-        error?.message?.includes("PHONE_ALREADY_BOUND")
-      ) {
-        setConflictPhone(phoneNumber);
-        setStep("conflict");
-        return;
-      }
       console.error("Send code error:", error);
       toast.error(error?.message || "Failed to send verification code");
     }
@@ -125,13 +116,9 @@ export function BindPhoneDialog({
         onSuccess?.();
       }
     } catch (error: any) {
-      // 处理冲突错误
-      if (
-        error?.response?.status === 409 ||
-        error?.message?.includes("PHONE_ALREADY_BOUND")
-      ) {
-        setConflictPhone(phoneNumber);
-        setStep("conflict");
+      // 手机号已关联另一个账号 —— 需要用户显式确认后才合并
+      if (error?.message === "MERGE_REQUIRED") {
+        setStep("merge-confirm");
         return;
       }
       console.error("Bind phone error:", error);
@@ -139,11 +126,30 @@ export function BindPhoneDialog({
     }
   };
 
+  // 用户确认合并：用同一验证码带 confirmMerge 再次提交
+  const handleConfirmMerge = async () => {
+    try {
+      const result = await bindPhoneMutation.mutateAsync({
+        phoneNumber: phoneNumber.replace(/[\s\-\(\)]/g, ""),
+        code: verificationCode,
+        confirmMerge: true,
+      });
+
+      if (result.success) {
+        toast.success("Phone bound and the previous account was merged");
+        onOpenChange(false);
+        onSuccess?.();
+      }
+    } catch (error: any) {
+      console.error("Merge accounts error:", error);
+      toast.error(error?.message || "Merge failed");
+    }
+  };
+
   const handleBack = () => {
-    if (step === "verify" || step === "conflict") {
+    if (step === "verify" || step === "merge-confirm") {
       setStep("input");
       setVerificationCode("");
-      setConflictPhone("");
     }
   };
 
@@ -159,17 +165,19 @@ export function BindPhoneDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            {step === "input" && (currentPhone ? "Change Phone Number" : "Bind Phone Number")}
+            {step === "input" &&
+              (currentPhone ? "Change Phone Number" : "Bind Phone Number")}
             {step === "verify" && "Enter Verification Code"}
-            {step === "conflict" && "Phone Number Already in Use"}
+            {step === "merge-confirm" && "Merge Account?"}
           </DialogTitle>
           <DialogDescription className="text-center">
             {step === "input" &&
               (currentPhone
                 ? `Current phone: ${maskPhone(currentPhone)}, enter new phone number to change`
                 : "Bind phone number to enable phone login")}
-            {step === "verify" && `Verification code sent to ${maskPhone(phoneNumber)}`}
-            {step === "conflict" && ""}
+            {step === "verify" &&
+              `Verification code sent to ${maskPhone(phoneNumber)}`}
+            {step === "merge-confirm" && ""}
           </DialogDescription>
         </DialogHeader>
 
@@ -233,13 +241,20 @@ export function BindPhoneDialog({
             </>
           )}
 
-          {step === "conflict" && (
+          {step === "merge-confirm" && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
+              <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Phone number {maskPhone(conflictPhone)} is already linked to another account.
+                Phone number {maskPhone(phoneNumber)} is already linked to
+                another account.
                 <br />
-                To use this number, please log out and log in with this phone number.
+                <br />
+                Continuing will merge that account&apos;s data into your current
+                account. Where both accounts have data (likes, bookmarks,
+                permissions, game progress), your current account&apos;s version
+                is kept and the rest is combined in — <strong>nothing is
+                lost</strong>. The other account will then be deactivated (it is
+                archived and can be restored by an admin).
               </AlertDescription>
             </Alert>
           )}
@@ -305,18 +320,31 @@ export function BindPhoneDialog({
             </>
           )}
 
-          {step === "conflict" && (
+          {step === "merge-confirm" && (
             <>
-              <Button variant="outline" onClick={handleBack} className="flex-1">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Use Another Number
-              </Button>
               <Button
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleBack}
+                disabled={bindPhoneMutation.isPending}
                 className="flex-1"
               >
-                Cancel
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmMerge}
+                disabled={bindPhoneMutation.isPending}
+                className="flex-1"
+              >
+                {bindPhoneMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Merging...
+                  </>
+                ) : (
+                  "Merge & Bind"
+                )}
               </Button>
             </>
           )}

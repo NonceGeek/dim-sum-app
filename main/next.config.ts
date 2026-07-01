@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
+import path from 'node:path';
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['ali-oss'],
@@ -16,6 +17,7 @@ const nextConfig: NextConfig = {
     ],
   },
   turbopack: {
+    root: path.resolve(__dirname),
     rules: {
       '*.md': {
         loaders: ['raw-loader'],

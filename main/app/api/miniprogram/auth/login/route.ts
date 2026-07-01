@@ -61,9 +61,11 @@ function getMiniprogramConfig(miniprogramApp: MiniprogramApp) {
  *    - code: WeChat login code from wx.login()
  *    - miniprogramApp: optional app enum, defaults to "review-app"
  *
- * 2. Phone login:
+ * 2. Phone login / free registration:
  *    - phoneNumber: User's phone number
  *    - verificationCode: SMS verification code
+ *    - Existing phone (incl. phone bound to a WeChat account) -> log in that user
+ *    - Unknown phone -> auto-create a new user (default LEARNER role) then log in
  *
  * Response:
  * - accessToken: JWT token for API access (7 days)
@@ -143,24 +145,51 @@ async function handlePhoneLogin(phoneNumber: string, verificationCode: string) {
     );
   }
 
-  // 查找用户（仅登录，不自动注册）
-  const user = await prisma.user.findFirst({
+  // 查找用户。命中即登录：无论该手机号是手机注册产生的，
+  // 还是已被某账号（如微信用户）绑定，都落在同一个 phoneNumber 字段上。
+  const userSelect = {
+    id: true,
+    name: true,
+    image: true,
+    wechatAvatar: true,
+    role: true,
+    isSystemAdmin: true,
+  } as const;
+
+  let user = await prisma.user.findFirst({
     where: { phoneNumber: formattedPhone },
-    select: {
-      id: true,
-      name: true,
-      image: true,
-      wechatAvatar: true,
-      role: true,
-      isSystemAdmin: true,
-    },
+    select: userSelect,
   });
 
+  // 未命中则自由注册：新建用户（默认 LEARNER 角色）并创建 SMS Account 记录，
+  // 与 Web 端手机绑定流程 (/api/user/phone/bind) 保持一致。
   if (!user) {
-    return NextResponse.json(
-      { error: "用户不存在，请先通过 Web 端注册或使用微信登录" },
-      { status: 404 },
-    );
+    try {
+      user = await prisma.user.create({
+        data: {
+          // 随机后缀，避免用手机号数字作为默认昵称（隐私）；用户可后续自行修改
+          name: `用户_${Math.random().toString(36).slice(2, 8)}`,
+          phoneNumber: formattedPhone,
+          accounts: {
+            create: {
+              type: "credentials",
+              provider: "sms",
+              providerAccountId: formattedPhone,
+            },
+          },
+        },
+        select: userSelect,
+      });
+    } catch (createError) {
+      // 并发注册时唯一约束可能冲突，回读一次已存在的用户
+      user = await prisma.user.findFirst({
+        where: { phoneNumber: formattedPhone },
+        select: userSelect,
+      });
+      if (!user) {
+        throw createError;
+      }
+    }
   }
 
   // 删除已使用的验证码

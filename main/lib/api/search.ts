@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { fetchAllCategories, CategoryInfo } from "./category";
 import { backendFetch } from "./backend";
+import { api } from "./client";
+import type { EntrySearchResponse } from "@/lib/search/entry-identity";
 
 export type LyricsResult = {
   sec: number;
@@ -54,6 +56,14 @@ export type SearchResult = {
 type SearchParams = {
   keyword: string;
   category?: string;
+};
+
+type EntrySearchParams = {
+  keyword: string;
+  similarCursor?: string | null;
+  recommendedCursor?: string | null;
+  section?: "all" | "primary" | "semantic";
+  semanticPart?: "similar" | "recommended";
 };
 
 
@@ -182,3 +192,102 @@ export function useSearchQuery(keyword: string, category: string, enabled = true
     retry: 1,
   });
 }
+
+async function fetchEntrySearch({
+  keyword,
+  section,
+  similarCursor,
+  recommendedCursor,
+  semanticPart,
+}: EntrySearchParams): Promise<EntrySearchResponse> {
+  const params = new URLSearchParams();
+  params.set("q", keyword);
+  if (section) params.set("section", section);
+  if (semanticPart) params.set("semanticPart", semanticPart);
+  if (similarCursor) params.set("similarCursor", similarCursor);
+  if (recommendedCursor) params.set("recommendedCursor", recommendedCursor);
+
+  return api.get<EntrySearchResponse>(`/api/search/entries?${params.toString()}`);
+}
+
+/**
+ * 新语料身份搜索 hook。
+ * 与旧 useSearchQuery 并行存在，便于三段式 UI 灰度接入。
+ */
+export function useEntrySearchQuery(
+  keyword: string,
+  options: {
+    similarCursor?: string | null;
+    recommendedCursor?: string | null;
+    enabled?: boolean;
+  } = {},
+) {
+  return useQuery<EntrySearchResponse>({
+    queryKey: [
+      "entry-search",
+      keyword,
+      options.similarCursor ?? null,
+      options.recommendedCursor ?? null,
+    ],
+    queryFn: () =>
+      fetchEntrySearch({
+        keyword,
+        similarCursor: options.similarCursor,
+        recommendedCursor: options.recommendedCursor,
+      }),
+    enabled: (options.enabled ?? true) && !!keyword.trim(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export function useEntryPrimarySearchQuery(keyword: string, enabled = true) {
+  return useQuery<EntrySearchResponse>({
+    queryKey: ["entry-search", "primary", keyword],
+    queryFn: () =>
+      fetchEntrySearch({
+        keyword,
+        section: "primary",
+      }),
+    enabled: enabled && !!keyword.trim(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export function useEntrySemanticSearchQuery(
+  keyword: string,
+  options: {
+    similarCursor?: string | null;
+    recommendedCursor?: string | null;
+    semanticPart?: "similar" | "recommended";
+    enabled?: boolean;
+  } = {},
+) {
+  return useQuery<EntrySearchResponse>({
+    queryKey: [
+      "entry-search",
+      "semantic",
+      options.semanticPart ?? "all",
+      keyword,
+      options.similarCursor ?? null,
+      options.recommendedCursor ?? null,
+    ],
+    queryFn: () =>
+      fetchEntrySearch({
+        keyword,
+        section: "semantic",
+        semanticPart: options.semanticPart,
+        similarCursor: options.similarCursor,
+        recommendedCursor: options.recommendedCursor,
+      }),
+    enabled: (options.enabled ?? true) && !!keyword.trim(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export type { EntrySearchResponse };
