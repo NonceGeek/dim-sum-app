@@ -275,7 +275,8 @@ export default function HomePage() {
 
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-                <button
+                {/* Beta 按钮暂时隐藏 */}
+                {/* <button
                   type="button"
                   aria-pressed={useEntryMode}
                   onClick={() => setUseEntryMode((value) => !value)}
@@ -287,9 +288,9 @@ export default function HomePage() {
                   )}
                 >
                   {t("entrySearchBeta")}
-                </button>
+                </button> */}
 
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-2 ml-auto">
                   {/* Dataset selector */}
                   <Popover>
                     <PopoverTrigger asChild>
