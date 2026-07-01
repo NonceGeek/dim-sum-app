@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -14,12 +15,13 @@ import { Copy, ImageIcon, RefreshCcw, Share2, Video, Volume2 } from "lucide-reac
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
+import domtoimage from "dom-to-image";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
@@ -36,8 +38,8 @@ type EntrySearchSectionsProps = {
 
 function displayCategory(entry: EntryIdentity): string {
   return (
-    entry.category.secondary?.name ||
     entry.category.primary?.name ||
+    entry.category.secondary?.name ||
     entry.source.categoryDisplayName ||
     entry.source.categoryName
   );
@@ -261,7 +263,7 @@ function ShareMetaRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[5.5rem_1fr] gap-3 text-sm leading-6">
+    <div className="grid grid-cols-[4.5rem_1fr] gap-2 text-sm leading-6 sm:grid-cols-[5.5rem_1fr] sm:gap-3">
       <dt className="font-semibold text-foreground">{label}</dt>
       <dd className="min-w-0 text-foreground">{children}</dd>
     </div>
@@ -334,6 +336,8 @@ function SharePreview({
   labels: {
     title: string;
     uniqueId: string;
+    downloadImage: string;
+    downloadImageFailed: string;
     copyLink: string;
     openCard: string;
     copied: string;
@@ -350,38 +354,69 @@ function SharePreview({
   onOpenChange: (open: boolean) => void;
 }) {
   const { theme } = useTheme();
+  const previewRef = useRef<HTMLDivElement>(null);
 
   if (!entry) return null;
 
   const sourceName =
     entry.source.categoryDisplayName || entry.source.categoryName;
   const categoryName = displayCategory(entry);
+  const shareUrl = absoluteUrl(entry.share.seoUrl);
   const hasTags =
     entry.tags.related.length > 0 || entry.tags.recommended.length > 0;
 
+  async function handleDownloadImage() {
+    if (!previewRef.current || !entry) return;
+
+    try {
+      const dataUrl = await domtoimage.toPng(previewRef.current, {
+        quality: 1,
+        cacheBust: true,
+        bgcolor: theme === "dark" ? "#020817" : "#ffffff",
+        width: previewRef.current.offsetWidth * 2,
+        height: previewRef.current.offsetHeight * 2,
+        style: {
+          transform: "scale(2)",
+          transformOrigin: "top left",
+        },
+      });
+      const link = document.createElement("a");
+      link.download = `dimsum-${entry.entryName}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Failed to generate share preview image:", error);
+      toast.error(labels.downloadImageFailed);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl p-0">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] gap-0 overflow-y-auto p-0 sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="px-7 pt-7 text-2xl font-semibold">
+          <DialogTitle className="px-4 pt-5 pr-10 text-xl font-semibold sm:px-7 sm:pt-7 sm:text-2xl">
             {labels.title}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {entry.entryName}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="px-7 pb-6">
-          <div className="rounded-lg border border-border bg-background p-6 shadow-sm shadow-black/10">
-            <div className="mb-5 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Image
+        <div className="px-4 pt-3 pb-4 sm:px-7 sm:pt-4 sm:pb-6">
+          <div
+            ref={previewRef}
+            className="rounded-lg border border-primary/45 bg-background p-4 shadow-[0_10px_30px_color-mix(in_srgb,var(--primary)_16%,transparent)] sm:p-6"
+          >
+            <div className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground sm:mb-5 sm:text-lg">
+              <img
                 src="/logo.png"
                 alt="DimSum"
-                width={24}
-                height={24}
                 className="h-6 w-6 rounded-full"
               />
               <span>DimSum</span>
             </div>
 
-            <h3 className="mb-4 break-words text-4xl font-semibold leading-tight text-foreground">
+            <h3 className="mb-3 break-words text-3xl font-semibold leading-tight text-foreground sm:mb-4 sm:text-4xl">
               {entry.entryName}
             </h3>
 
@@ -404,7 +439,7 @@ function SharePreview({
               )}
 
               {(sourceName || categoryName || hasTags) && (
-                <div className="my-3 border-t border-border" />
+                <div className="my-3 border-t border-primary" />
               )}
 
               {sourceName && (
@@ -456,16 +491,29 @@ function SharePreview({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border bg-muted/30 px-7 py-4">
+        <div className="flex flex-wrap justify-stretch gap-2 border-t border-border bg-muted/30 px-4 py-3 sm:justify-end sm:px-7 sm:py-4">
           <Button
             type="button"
             variant="outline"
-            onClick={() => copyText(absoluteUrl(entry.share.seoUrl), labels.copied)}
+            className="flex-1 sm:flex-none"
+            onClick={handleDownloadImage}
+          >
+            {labels.downloadImage}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            onClick={() => copyText(shareUrl, labels.copied)}
           >
             {labels.copyLink}
           </Button>
           {entry.share.cardUrl && (
-            <Button type="button" asChild>
+            <Button
+              type="button"
+              className="flex-1 sm:flex-none"
+              asChild
+            >
               <a
                 href={entry.share.cardUrl + `&mode=${theme === "dark" ? "dark" : "light"}`}
                 target="_blank"
@@ -928,6 +976,8 @@ export function EntrySearchSections({
         labels={{
           title: t("sharePreviewTitle"),
           uniqueId: t("uniqueId"),
+          downloadImage: t("downloadImage"),
+          downloadImageFailed: t("downloadImageFailed"),
           copyLink: t("copyLink"),
           openCard: t("openCard"),
           copied: t("copied"),
