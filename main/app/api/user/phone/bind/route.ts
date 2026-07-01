@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { AliyunSmsService } from "@/lib/services/aliyun-sms";
 import { prisma } from "@/lib/prisma";
+import { mergeUserRelations } from "@/lib/user-merge";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "请先登录" }, { status: 401 });
     }
 
-    const { phoneNumber, code } = await request.json();
+    const { phoneNumber, code, confirmMerge } = await request.json();
 
     if (!phoneNumber || !code) {
       return NextResponse.json(
@@ -54,13 +55,70 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        {
-          error: "PHONE_ALREADY_BOUND",
-          message: "该手机号已被其他账号使用",
+      // 该手机号已被另一个账号（通常是小程序「手机号自由注册」产生的账号）占用。
+      // 合并是不可逆操作（会删除占用账号），必须经用户显式确认。
+      // 未确认时返回 MERGE_REQUIRED，且【不消费验证码】，以便用户确认后用同一验证码再次提交。
+      if (!confirmMerge) {
+        return NextResponse.json(
+          {
+            error: "MERGE_REQUIRED",
+            message:
+              "该手机号已关联另一个账号。继续绑定将把该账号的数据合并到当前账号，且原账号会被删除，此操作不可撤销。",
+          },
+          { status: 409 }
+        );
+      }
+
+      // 用户已通过短信验证码证明其拥有该号码，且已确认合并：
+      // 将占用账号合并进当前登录账号。
+      await prisma.$transaction(
+        async (tx) => {
+          // 1) 合并：快照归档 + 字段级合并 + 源账号软删除（内部已把源手机号置空、释放唯一约束）
+          await mergeUserRelations(tx, existingUser.id, session.user.id);
+          // 2) 手机号落到当前用户
+          await tx.user.update({
+            where: { id: session.user.id },
+            data: { phoneNumber: formattedPhone },
+          });
+          // 4) 确保当前用户有对应的 SMS Account（合并时占用账号的 sms account 已被 repoint 过来）
+          const smsAccount = await tx.account.findFirst({
+            where: { userId: session.user.id, provider: "sms" },
+          });
+          if (!smsAccount) {
+            await tx.account.create({
+              data: {
+                type: "credentials",
+                provider: "sms",
+                providerAccountId: formattedPhone,
+                userId: session.user.id,
+              },
+            });
+          } else {
+            await tx.account.update({
+              where: { id: smsAccount.id },
+              data: { providerAccountId: formattedPhone },
+            });
+          }
+          // 5) 删除已使用的验证码
+          await tx.verificationToken.delete({
+            where: {
+              identifier_token: {
+                identifier: `bind:${formattedPhone}:${session.user.id}`,
+                token: code,
+              },
+            },
+          });
         },
-        { status: 409 }
+        { timeout: 30000, maxWait: 10000 }
       );
+
+      return NextResponse.json({
+        success: true,
+        merged: true,
+        message: "手机号绑定成功，且已合并该号码原有的账号数据",
+        phoneNumber:
+          formattedPhone.slice(0, 3) + "****" + formattedPhone.slice(-4),
+      });
     }
 
     // 使用事务绑定手机号并删除验证码

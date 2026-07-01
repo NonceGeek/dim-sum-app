@@ -32,23 +32,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "手机号格式不正确" }, { status: 400 });
     }
 
-    // 检查手机号是否已被其他用户绑定
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        phoneNumber: formattedPhone,
-        id: { not: session.user.id },
-      },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        {
-          error: "PHONE_ALREADY_BOUND",
-          message: "该手机号已被其他账号使用",
-        },
-        { status: 409 }
-      );
-    }
+    // 注意：不再因「手机号已被其他账号占用」而拒绝发码。
+    // 用户需要先通过短信验证证明自己拥有该号码，验证通过后在绑定接口
+    // (/api/user/phone/bind) 走「确认后合并」流程。占用与否交由绑定接口判断。
 
     // 检查当前用户是否已绑定该手机号
     const currentUser = await prisma.user.findUnique({

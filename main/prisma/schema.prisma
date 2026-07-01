@@ -40,7 +40,7 @@ model User {
   email                                                                                     String?                            @unique
   emailVerified                                                                             DateTime?
   image                                                                                     String?
-  phoneNumber                                                                               String?
+  phoneNumber                                                                               String?                            @unique
   wechatAvatar                                                                              String?
   role                                                                                      Role                               @default(LEARNER)
   bio                                                                                       String?
@@ -50,6 +50,7 @@ model User {
   updatedAt                                                                                 DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)
   deletionRequestedAt                                                                       DateTime?                          @db.Timestamptz(6)
   status                                                                                    UserStatus                         @default(ACTIVE)
+  mergedIntoId                                                                              String?
   accounts                                                                                  Account[]
   sessions                                                                                  Session[]
   walletNonces                                                                              WalletNonce[]
@@ -972,10 +973,26 @@ enum Role {
 }
 
 /// 用户账号状态
+/// 账号合并归档：合并前把源账号数据快照存下，源账号软删除（status=MERGED），以便将来撤回合并
+model user_merge_logs {
+  id             String    @id @default(cuid())
+  source_user_id String
+  target_user_id String
+  phone_number   String? // 被合并过来的手机号（源账号原手机号）
+  snapshot       Json // 合并前源账号全部数据 + 会被改动的目标行
+  status         String    @default("MERGED") // MERGED | REVERSED
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  reversed_at    DateTime? @db.Timestamptz(6)
+
+  @@index([source_user_id])
+  @@index([target_user_id])
+}
+
 enum UserStatus {
   ACTIVE
   PENDING_DELETE
   DELETED
+  MERGED
 }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

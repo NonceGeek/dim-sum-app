@@ -162,11 +162,13 @@ const sendBindCode = async (
 
 const bindPhone = async (
   phoneNumber: string,
-  code: string
+  code: string,
+  confirmMerge?: boolean
 ): Promise<BindPhoneResponse> => {
   return api.post<BindPhoneResponse>("/api/user/phone/bind", {
     phoneNumber,
     code,
+    confirmMerge,
   });
 };
 
@@ -187,10 +189,12 @@ export const useBindPhone = () => {
     mutationFn: ({
       phoneNumber,
       code,
+      confirmMerge,
     }: {
       phoneNumber: string;
       code: string;
-    }) => bindPhone(phoneNumber, code),
+      confirmMerge?: boolean;
+    }) => bindPhone(phoneNumber, code, confirmMerge),
     onSuccess: () => {
       // Invalidate and refetch user profile
       queryClient.invalidateQueries({ queryKey: ["user", "profile"] });

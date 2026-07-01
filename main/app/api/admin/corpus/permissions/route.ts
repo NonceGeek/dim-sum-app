@@ -116,9 +116,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check all users existence
+    // Check all users existence（排除已合并/软删除账号，禁止给其分配权限）
     const users = await prisma.user.findMany({
-      where: { id: { in: targetUsers } }
+      where: { id: { in: targetUsers }, status: { not: "MERGED" } }
     });
 
     if (users.length !== targetUsers.length) {

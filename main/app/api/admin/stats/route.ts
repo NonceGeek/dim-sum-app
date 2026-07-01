@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
     try {
       // 并行查询所有统计数据以提高性能
       const [totalUsers, totalCorpusEntries, recentActiveUsers] = await Promise.all([
-        // 总用户数
-        prisma.user.count(),
+        // 总用户数（排除已合并/软删除账号）
+        prisma.user.count({ where: { status: { not: "MERGED" } } }),
 
         // 总语料数据条目数
         prisma.cantonese_corpus_all.count(),
