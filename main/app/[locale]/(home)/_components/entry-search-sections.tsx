@@ -350,6 +350,7 @@ function SharePreview({
     recommendedTags: string;
     media: MediaLabels;
     tags: string;
+    contributors: string;
   };
   onOpenChange: (open: boolean) => void;
 }) {
@@ -360,10 +361,11 @@ function SharePreview({
 
   const sourceName =
     entry.source.categoryDisplayName || entry.source.categoryName;
-  const categoryName = displayCategory(entry);
+  const categoryName = [entry.category.primary?.name, entry.category.secondary?.name].filter(Boolean).join(" / ");
   const shareUrl = absoluteUrl(entry.share.seoUrl);
   const hasTags =
     entry.tags.related.length > 0 || entry.tags.recommended.length > 0;
+  const contributorId = entry.source.contributorIds.filter(Boolean).join(", ");
 
   async function handleDownloadImage() {
     if (!previewRef.current || !entry) return;
@@ -481,6 +483,12 @@ function SharePreview({
                       </Badge>
                     ))}
                   </div>
+                </ShareMetaRow>
+              )}
+
+              {contributorId && (
+                <ShareMetaRow label={labels.contributors}>
+                  {contributorId}
                 </ShareMetaRow>
               )}
             </dl>
@@ -988,6 +996,7 @@ export function EntrySearchSections({
           tags: t("tags"),
           keyTags: t("keyTags"),
           recommendedTags: t("recommendedTags"),
+          contributors: t("contributors"),
           media: mediaLabels,
         }}
         onOpenChange={(open) => {
