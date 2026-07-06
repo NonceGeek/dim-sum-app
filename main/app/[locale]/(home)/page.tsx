@@ -275,8 +275,7 @@ export default function HomePage() {
 
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-                {/* Beta 按钮暂时隐藏 */}
-                {/* <button
+                <button
                   type="button"
                   aria-pressed={useLegacySearch}
                   onClick={() => setUseLegacySearch((value) => !value)}
@@ -287,8 +286,8 @@ export default function HomePage() {
                       : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
-                  {t("entrySearchBeta")}
-                </button> */}
+                  {t("legacySearch")}
+                </button>
 
                 <div className="flex items-center justify-end gap-2 ml-auto">
                   {/* Dataset selector */}
