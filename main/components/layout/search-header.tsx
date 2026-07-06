@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import type { SearchResult } from "@/lib/api/search";
+import { getCategoryNickname } from "@/lib/api/category";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -446,7 +447,7 @@ function SearchInputField({
                     <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="flex-1 truncate">{result.data}</span>
                     <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {result.category}
+                      {getCategoryNickname(categories, result.category)}
                     </span>
                   </div>
                 ))

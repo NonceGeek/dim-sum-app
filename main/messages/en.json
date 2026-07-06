@@ -304,12 +304,17 @@
     "recommendedTags": "Recommended tags",
     "copied": "Copied",
     "jyutping": "Jyutping",
+    "singer": "Singer",
     "meaning": "Meaning",
+    "introduction": "Introduction",
     "tags": "Tags",
     "audio": "Audio",
     "video": "Video",
     "image": "Image",
-    "audioPlayFailed": "Failed to play audio"
+    "audioPlayFailed": "Failed to play audio",
+    "emotion": "Emotion",
+    "emotionIntensity": "Emotion Intensity",
+    "other": "Other"
   },
   "EntryDetail": {
     "notFoundTitle": "Entry not found",
