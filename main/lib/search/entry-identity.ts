@@ -43,6 +43,7 @@ export type EntryIdentity = {
     seoUrl: string;
   };
   raw: {
+    note: unknown;
     structuredNote: unknown;
   };
   status: string;
@@ -336,6 +337,7 @@ export function buildEntryIdentity(
       seoUrl: `/entries/${entryId}`,
     },
     raw: {
+      note: row.note ?? null,
       structuredNote: row.structured_note ?? null,
     },
     status: row.lifecycle_stage,
