@@ -305,12 +305,17 @@
     "recommendedTags": "推荐标签",
     "copied": "已复制",
     "jyutping": "粤拼",
+    "singer": "歌手",
     "meaning": "释义",
+    "introduction": "介绍",
     "tags": "关键词标签",
     "audio": "音频",
     "video": "视频",
     "image": "图片",
-    "audioPlayFailed": "音频播放失败"
+    "audioPlayFailed": "音频播放失败",
+    "emotion": "情感",
+    "emotionIntensity": "情感强度",
+    "other": "其他"
   },
   "EntryDetail": {
     "notFoundTitle": "词条不存在",

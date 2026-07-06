@@ -38,7 +38,10 @@ export function useCategoryEditableLevel(categoryName: string | null) {
 }
 
 /** 根据 corpus name 获取中文 nickname，找不到则返回原始 name */
-export function getCategoryNickname(categories: CategoryInfo[], name: string): string {
+export function getCategoryNickname(
+  categories: Pick<CategoryInfo, "name" | "nickname">[],
+  name: string,
+): string {
   const cat = categories.find((c) => c.name === name);
   return cat?.nickname || name;
 }
