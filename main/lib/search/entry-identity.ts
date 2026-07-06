@@ -42,6 +42,9 @@ export type EntryIdentity = {
     cardUrl: string;
     seoUrl: string;
   };
+  raw: {
+    structuredNote: unknown;
+  };
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -331,6 +334,9 @@ export function buildEntryIdentity(
     share: {
       cardUrl: `https://card.app.aidimsum.com/?uuid=${entryId}`,
       seoUrl: `/entries/${entryId}`,
+    },
+    raw: {
+      structuredNote: row.structured_note ?? null,
     },
     status: row.lifecycle_stage,
     createdAt: asIso(row.created_at),
