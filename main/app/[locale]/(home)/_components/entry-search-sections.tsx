@@ -15,7 +15,7 @@ import { Copy, ImageIcon, RefreshCcw, Share2, Video, Volume2 } from "lucide-reac
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -66,6 +66,161 @@ function absoluteUrl(pathOrUrl: string): string {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
   if (typeof window === "undefined") return pathOrUrl;
   return new URL(pathOrUrl, window.location.origin).toString();
+}
+
+type SharePronunciation = {
+  jyutping: string | null;
+  singer: string | null;
+  meaning: string | null;
+  introduction: string | null;
+  emotion: string | null;
+  emotionIntensity: string | null;
+  other: string | null;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function blockText(blocks: Record<string, unknown>[], type: string): string | null {
+  const values = blocks
+    .filter((block) => block.type === type)
+    .map((block) => block.content)
+    .filter(
+      (content): content is string =>
+        typeof content === "string" && content.trim().length > 0,
+    )
+    .map((content) => content.trim());
+
+  return values.length ? values.join("\n") : null;
+}
+
+function contextText(context: Record<string, unknown> | null, keys: string[]): string | null {
+  if (!context) return null;
+
+  for (const key of keys) {
+    const value = context[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (Array.isArray(value)) {
+      const text = value
+        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        .map((item) => item.trim())
+        .join("、");
+      if (text) return text;
+    }
+  }
+
+  return null;
+}
+
+function getNoteContext(note: unknown): Record<string, unknown> | null {
+  if (!isRecord(note) || !isRecord(note.context)) return null;
+  return note.context;
+}
+
+function structuredJyutping(structuredNote: unknown): string | null {
+  if (!isRecord(structuredNote) || !Array.isArray(structuredNote.data)) return null;
+
+  const values = structuredNote.data
+    .filter(isRecord)
+    .map((item) => item.jyutping)
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim());
+  const uniqueValues = Array.from(new Set(values));
+
+  return uniqueValues.length ? uniqueValues.join(" / ") : null;
+}
+
+function primaryJyutping(entry: EntryIdentity): string | null {
+  return (
+    structuredJyutping(entry.raw.structuredNote) ||
+    contextText(getNoteContext(entry.raw.note), ["pinyin", "song_name_pin"]) ||
+    entry.jyutping
+  );
+}
+
+function getSharePronunciations(entry: EntryIdentity): SharePronunciation[] {
+  const structuredNote = entry.raw.structuredNote;
+  if (isRecord(structuredNote) && Array.isArray(structuredNote.data)) {
+    const pronunciations = structuredNote.data
+      .filter(isRecord)
+      .map((item) => {
+        const jyutping =
+          typeof item.jyutping === "string" && item.jyutping.trim()
+            ? item.jyutping.trim()
+            : null;
+        const blocks = (Array.isArray(item.blocks) ? item.blocks : []).filter(isRecord);
+        const meaning = blockText(blocks, "definition");
+        const introduction = blockText(blocks, "introduction");
+        const other = blockText(blocks, "other");
+        const emotionBlock = blocks.find((block) => block.type === "emotion");
+        const emotion =
+          typeof emotionBlock?.category === "string" && emotionBlock.category.trim()
+            ? emotionBlock.category.trim()
+            : blockText(blocks, "emotion");
+        const emotionIntensity =
+          typeof emotionBlock?.intensity === "string" && emotionBlock.intensity.trim()
+            ? emotionBlock.intensity.trim()
+            : null;
+
+        return jyutping || meaning || introduction || emotion || emotionIntensity || other
+          ? {
+              jyutping,
+              singer: null,
+              meaning,
+              introduction,
+              emotion,
+              emotionIntensity,
+              other,
+            }
+          : null;
+      })
+      .filter((item): item is SharePronunciation => item !== null);
+
+    if (pronunciations.length) return pronunciations;
+  }
+
+  const noteContext = getNoteContext(entry.raw.note);
+  const noteJyutping = contextText(noteContext, [
+    "song_name_pin",
+    "pinyin",
+    "jyutping",
+  ]);
+  const singer = contextText(noteContext, ["author"]);
+  const meaning = contextText(noteContext, [
+    "meaning",
+    "definition",
+  ]);
+  const introduction = contextText(noteContext, ["introduction"]);
+  if (noteJyutping || singer || meaning || introduction) {
+    return [
+      {
+        jyutping: noteJyutping,
+        singer,
+        meaning,
+        introduction,
+        emotion: null,
+        emotionIntensity: null,
+        other: null,
+      },
+    ];
+  }
+
+  if (entry.jyutping || entry.meaning) {
+    return [
+      {
+        jyutping: entry.jyutping,
+        singer: null,
+        meaning: entry.meaning,
+        introduction: null,
+        emotion: null,
+        emotionIntensity: null,
+        other: null,
+      },
+    ];
+  }
+
+  return [];
 }
 
 async function copyText(value: string, successMessage: string) {
@@ -343,7 +498,9 @@ function SharePreview({
     copied: string;
 
     jyutping: string;
+    singer: string;
     meaning: string;
+    introduction: string;
     source: string;
     category: string;
     keyTags: string;
@@ -351,6 +508,9 @@ function SharePreview({
     media: MediaLabels;
     tags: string;
     contributors: string;
+    emotion: string;
+    emotionIntensity: string;
+    other: string;
   };
   onOpenChange: (open: boolean) => void;
 }) {
@@ -366,7 +526,7 @@ function SharePreview({
   const hasTags =
     entry.tags.related.length > 0 || entry.tags.recommended.length > 0;
   const contributorId = entry.source.contributorIds.filter(Boolean).join(", ");
-
+  const pronunciations = getSharePronunciations(entry);
   async function handleDownloadImage() {
     if (!previewRef.current || !entry) return;
 
@@ -423,24 +583,59 @@ function SharePreview({
             </h3>
 
             <dl className="space-y-1.5">
-              {entry.jyutping && (
-                <>
-                  {/* <ShareMetaRow label={labels.pronunciation}>
-                    {entry.jyutping}
-                  </ShareMetaRow> */}
-                  <ShareMetaRow label={labels.jyutping}>
-                    {entry.jyutping}
-                  </ShareMetaRow>
-                </>
-              )}
+              {pronunciations.map((pronunciation, index) => (
+                <Fragment key={`${pronunciation.jyutping ?? "meaning"}-${index}`}>
+                  {pronunciation.jyutping && (
+                    <ShareMetaRow label={labels.jyutping}>
+                      {pronunciation.jyutping}
+                    </ShareMetaRow>
+                  )}
 
-              {entry.meaning && (
-                <ShareMetaRow label={labels.meaning}>
-                  <span className="line-clamp-3">{entry.meaning}</span>
-                </ShareMetaRow>
-              )}
+                  {pronunciation.singer && (
+                    <ShareMetaRow label={labels.singer}>
+                      {pronunciation.singer}
+                    </ShareMetaRow>
+                  )}
 
-              {(sourceName || categoryName || hasTags) && (
+                  {pronunciation.meaning && (
+                    <ShareMetaRow label={labels.meaning}>
+                      <span className="line-clamp-3">
+                        {pronunciation.meaning}
+                      </span>
+                    </ShareMetaRow>
+                  )}
+
+                  {pronunciation.introduction && (
+                    <ShareMetaRow label={labels.introduction}>
+                      <span className="line-clamp-3">
+                        {pronunciation.introduction}
+                      </span>
+                    </ShareMetaRow>
+                  )}
+
+                  {pronunciation.emotion && (
+                    <ShareMetaRow label={labels.emotion}>
+                      {pronunciation.emotion}
+                    </ShareMetaRow>
+                  )}
+
+                  {pronunciation.emotionIntensity && (
+                    <ShareMetaRow label={labels.emotionIntensity}>
+                      {pronunciation.emotionIntensity}
+                    </ShareMetaRow>
+                  )}
+
+                  {pronunciation.other && (
+                    <ShareMetaRow label={labels.other}>
+                      <span className="line-clamp-3">
+                        {pronunciation.other}
+                      </span>
+                    </ShareMetaRow>
+                  )}
+                </Fragment>
+              ))}
+
+              {(sourceName || categoryName || hasTags || contributorId) && (
                 <div className="my-3 border-t border-primary" />
               )}
 
@@ -565,7 +760,8 @@ function PrimaryEntry({
   onShare: (entry: EntryIdentity) => void;
   returnQuery?: string;
 }) {
-  const hasMetadata = Boolean(entry.jyutping);
+  const displayJyutping = primaryJyutping(entry);
+  const hasMetadata = Boolean(displayJyutping);
 
   return (
     <section className="border-b border-border/60 px-4 py-8 sm:px-0">
@@ -611,9 +807,9 @@ function PrimaryEntry({
         <div className="mt-3 text-sm text-muted-foreground">
           {hasMetadata && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {entry.jyutping && (
+              {displayJyutping && (
                 <span className="font-medium leading-6 text-muted-foreground/90">
-                  {entry.jyutping}
+                  {displayJyutping}
                 </span>
               )}
             </div>
@@ -717,6 +913,8 @@ function EntryTile({
   dense?: boolean;
   returnQuery?: string;
 }) {
+  const displayJyutping = primaryJyutping(entry);
+
   return (
     <article className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
       <Link href={entryHref(entry, returnQuery)} className="mb-4 block min-w-0">
@@ -726,9 +924,9 @@ function EntryTile({
         <h3 className="line-clamp-2 min-w-0 break-words text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
           {entry.entryName}
         </h3>
-        {entry.jyutping && (
+        {displayJyutping && (
           <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-muted-foreground">
-            {entry.jyutping}
+            {displayJyutping}
           </p>
         )}
         {entry.meaning && (
@@ -990,7 +1188,9 @@ export function EntrySearchSections({
           openCard: t("openCard"),
           copied: t("copied"),
           jyutping: t("jyutping"),
+          singer: t("singer"),
           meaning: t("meaning"),
+          introduction: t("introduction"),
           source: t("source"),
           category: t("category"),
           tags: t("tags"),
@@ -998,6 +1198,9 @@ export function EntrySearchSections({
           recommendedTags: t("recommendedTags"),
           contributors: t("contributors"),
           media: mediaLabels,
+          emotion: t("emotion"),
+          emotionIntensity: t("emotionIntensity"),
+          other: t("other"),
         }}
         onOpenChange={(open) => {
           if (!open) setShareEntry(null);
