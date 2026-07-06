@@ -106,6 +106,9 @@ GET /api/entries/81972ccc-ef47-434c-a572-be44bb69d93d
       "seoUrl": "/entries/81972ccc-ef47-434c-a572-be44bb69d93d"
     },
     "raw": {
+      "note": {
+        "context": {}
+      },
       "structuredNote": {
         "data": []
       }
@@ -266,6 +269,7 @@ type EntryIdentity = {
     seoUrl: string;
   };
   raw: {
+    note: unknown;
     structuredNote: unknown;
   };
   status: string;
@@ -320,6 +324,7 @@ type EntryTag = {
 | `stats` | 浏览、收藏、点赞等统计 |
 | `share.cardUrl` | 分享卡片地址 |
 | `share.seoUrl` | 站内详情页地址 |
+| `raw.note` | 原始 `cantonese_corpus_all.note` JSON |
 | `raw.structuredNote` | 原始 `cantonese_corpus_all.structured_note` JSON |
 | `status` | `lifecycle_stage` |
 
@@ -426,6 +431,7 @@ structured_note > note.context > null
 - `note.context` 只用于旧数据展示 fallback。
 - 分类、标签、推荐标签不以 `note.context` 为正式来源。
 - 新标签治理以 `tags`、`corpus_tags`、`tag_related` 为准。
+- `raw.note` 是旧结构原文，外部应用可以用它做兼容展示，但不要把它当作新标签或新身份字段来源。
 - `raw.structuredNote` 是原始结构化内容，外部应用可以用它做更完整的展示，但不要把它当作标签来源。
 
 ## 十、权限和安全
