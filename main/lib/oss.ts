@@ -1,6 +1,14 @@
 import OSS from "ali-oss";
 
 let client: any = null;
+const DEFAULT_OSS_TIMEOUT_MS = 180_000;
+
+function getOssTimeoutMs() {
+  const configured = Number(process.env.ALIYUN_OSS_TIMEOUT_MS);
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : DEFAULT_OSS_TIMEOUT_MS;
+}
 
 export function getOssClient() {
   if (!client) {
@@ -10,6 +18,7 @@ export function getOssClient() {
       accessKeySecret: process.env.ALIYUN_OSS_ACCESS_KEY_SECRET!,
       bucket: process.env.ALIYUN_OSS_BUCKET!,
       secure: true,
+      timeout: getOssTimeoutMs(),
     });
   }
   return client;

@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import OSS from 'ali-oss';
-
-const client = new OSS({
-  region: process.env.ALIYUN_OSS_REGION,
-  accessKeyId: process.env.ALIYUN_OSS_ACCESS_KEY_ID!,
-  accessKeySecret: process.env.ALIYUN_OSS_ACCESS_KEY_SECRET!,
-  bucket: process.env.ALIYUN_OSS_BUCKET!,
-  secure: true, // 使用 HTTPS
-});
+import { uploadBufferToOss } from "@/lib/oss";
 
 // 允许的文件类型
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -46,19 +38,12 @@ export async function POST(req: NextRequest) {
 
       const buffer = await file.arrayBuffer();
       const filename = `${userId}/${Date.now()}-${file.name}`;
-      
-      const result = await client.put(filename, Buffer.from(buffer), {
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-      
-      // 确保返回 HTTPS URL
-      const url = result.url.replace('http://', 'https://');
-      
+
+      const uploaded = await uploadBufferToOss(filename, Buffer.from(buffer), file.type);
+
       return NextResponse.json({
-        url,
-        name: filename
+        url: uploaded.url,
+        name: uploaded.name
       });
     } catch (error) {
       console.error('Upload error:', error);
@@ -68,4 +53,4 @@ export async function POST(req: NextRequest) {
       );
     }
   });
-} 
+}
