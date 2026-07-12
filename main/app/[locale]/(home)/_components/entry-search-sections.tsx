@@ -418,7 +418,7 @@ function ShareMetaRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[4.5rem_1fr] gap-2 text-sm leading-6 sm:grid-cols-[5.5rem_1fr] sm:gap-3">
+    <div className="grid grid-cols-[6.5rem_1fr] gap-4 text-sm leading-6 sm:grid-cols-[6.75rem_1fr] sm:gap-5">
       <dt className="font-semibold text-foreground">{label}</dt>
       <dd className="min-w-0 text-foreground">{children}</dd>
     </div>
@@ -554,7 +554,7 @@ function SharePreview({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] gap-0 overflow-y-auto p-0 sm:max-w-xl">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] gap-0 overflow-y-auto p-0 sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="px-4 pt-5 pr-10 text-xl font-semibold sm:px-7 sm:pt-7 sm:text-2xl">
             {labels.title}
