@@ -49,7 +49,7 @@ export default function HomePage() {
   const [datasetInputValue, setDatasetInputValue] = useState("");
   const [luckyHovered, setLuckyHovered] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [useEntryMode, setUseEntryMode] = useState(false);
+  const [useLegacySearch, setUseLegacySearch] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useAllCategories();
@@ -83,10 +83,10 @@ export default function HomePage() {
       const params = new URLSearchParams();
       params.set("q", term.trim());
       params.set("dataset", selectedDataset.join(","));
-      if (useEntryMode) params.set("mode", "entry");
+      if (!useLegacySearch) params.set("mode", "entry");
       router.push(`/search?${params.toString()}`);
     },
-    [router, selectedDataset, useEntryMode],
+    [router, selectedDataset, useLegacySearch],
   );
 
   const {
@@ -275,20 +275,19 @@ export default function HomePage() {
 
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-                {/* Beta 按钮暂时隐藏 */}
-                {/* <button
+                <button
                   type="button"
-                  aria-pressed={useEntryMode}
-                  onClick={() => setUseEntryMode((value) => !value)}
+                  aria-pressed={useLegacySearch}
+                  onClick={() => setUseLegacySearch((value) => !value)}
                   className={cn(
                     "inline-flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors",
-                    useEntryMode
+                    useLegacySearch
                       ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
                       : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
-                  {t("entrySearchBeta")}
-                </button> */}
+                  {t("legacySearch")}
+                </button>
 
                 <div className="flex items-center justify-end gap-2 ml-auto">
                   {/* Dataset selector */}

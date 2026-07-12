@@ -105,6 +105,14 @@ GET /api/entries/81972ccc-ef47-434c-a572-be44bb69d93d
       "cardUrl": "https://card.app.aidimsum.com/?uuid=81972ccc-ef47-434c-a572-be44bb69d93d",
       "seoUrl": "/entries/81972ccc-ef47-434c-a572-be44bb69d93d"
     },
+    "raw": {
+      "note": {
+        "context": {}
+      },
+      "structuredNote": {
+        "data": []
+      }
+    },
     "status": "normalized",
     "createdAt": "2026-01-27T13:30:14.373Z",
     "updatedAt": "2026-03-30T02:39:31.859Z"
@@ -260,6 +268,10 @@ type EntryIdentity = {
     cardUrl: string;
     seoUrl: string;
   };
+  raw: {
+    note: unknown;
+    structuredNote: unknown;
+  };
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -312,6 +324,8 @@ type EntryTag = {
 | `stats` | 浏览、收藏、点赞等统计 |
 | `share.cardUrl` | 分享卡片地址 |
 | `share.seoUrl` | 站内详情页地址 |
+| `raw.note` | 原始 `cantonese_corpus_all.note` JSON |
+| `raw.structuredNote` | 原始 `cantonese_corpus_all.structured_note` JSON |
 | `status` | `lifecycle_stage` |
 
 ## 七、底层 RPC 聚合来源
@@ -338,7 +352,64 @@ other    = 0.4
 
 当前最多返回 6 个 recommended tags。
 
-## 八、Fallback 规则
+## 八、标签来源和类型
+
+接口中的标签不直接读取旧 `note` 字段，而是来自三张正式标签表：
+
+| 字段 | 来源 | 含义 |
+|------|------|------|
+| `tags.related` | `corpus_tags` + `tags` | 这条语料实际拥有的标签 |
+| `tags.recommended` | `corpus_tags` + `tag_related` + `tags` | 基于已有标签扩展出的推荐标签 |
+| `tags.precise` | 当前 P0 固定为空数组 | 预留给后续精准标签 / 运营规则 |
+
+`tags` 表中的 `facet` 表示标签维护维度，目前后端约束的可选值为：
+
+```text
+kind
+media
+language
+source
+scene
+topic
+region
+dialect
+other
+```
+
+常见含义：
+
+| facet | 含义 | 示例 |
+|-------|------|------|
+| `kind` | 语料类型 / 内容类型 | 习语、word、口语 |
+| `media` | 媒体形态 | 音频、视频、动画 |
+| `language` | 语言相关 | 粤语、普通话、英语 |
+| `source` | 来源或 IP | 小猪佩奇、功夫熊猫 |
+| `scene` | 场景 | 逛街场景、求职场景 |
+| `topic` | 主题 | 购物、租屋 |
+| `region` | 地域 | 广东话、香港 |
+| `dialect` | 方言 / 口音 | 广府话 |
+| `other` | 未归类标签 | 其他 |
+
+`tags.related` 当前统一输出为：
+
+```ts
+role: "related"
+relevanceLevel: "medium"
+```
+
+`tags.recommended` 的生成逻辑：
+
+```text
+语料已有 tags.related
+  -> tag_related
+  -> 找相关标签
+  -> 排除语料已有标签
+  -> 只保留 active 且 corpus_count >= 3 的标签
+  -> 按 method 权重和 score 排序
+  -> 取前 6 个
+```
+
+## 九、Fallback 规则
 
 为了兼容旧数据，Next 聚合层会按以下优先级取展示字段：
 
@@ -360,8 +431,10 @@ structured_note > note.context > null
 - `note.context` 只用于旧数据展示 fallback。
 - 分类、标签、推荐标签不以 `note.context` 为正式来源。
 - 新标签治理以 `tags`、`corpus_tags`、`tag_related` 为准。
+- `raw.note` 是旧结构原文，外部应用可以用它做兼容展示，但不要把它当作新标签或新身份字段来源。
+- `raw.structuredNote` 是原始结构化内容，外部应用可以用它做更完整的展示，但不要把它当作标签来源。
 
-## 九、权限和安全
+## 十、权限和安全
 
 - 浏览器不要直接调用 Supabase service role key。
 - 页面展示可通过 `/entries/{entryId}` 访问。
@@ -371,7 +444,7 @@ structured_note > note.context > null
 - 跨项目服务端调用优先调用 Supabase RPC `get_entry_identities`。
 - `/api/entries/{entryId}` 内部复用同一个 `fetchEntryIdentityByUniqueId`，不要在其他接口重新写一套聚合逻辑。
 
-## 十、错误处理
+## 十一、错误处理
 
 Next helper 行为：
 
