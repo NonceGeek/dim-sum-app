@@ -124,10 +124,11 @@ Next /api/search/entries
   -> 使用 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
   -> 服务端调用 Supabase RPC search_cantonese_corpus
   -> 合并繁简结果并去重
-  -> 按 dataset 过滤现有 category
+  -> primary 在候选排序前按 dataset 过滤现有 category
   -> 通过 content_categories / corpus_category 读取一级/二级身份分类
   -> 通过 tags / corpus_tags / tag_related 读取标签和相关标签
   -> exact match 进入 primary
+  -> similar / recommended 保持全库召回，不受 dataset 限制
   -> 标签相同 / 语义分类相同进入 similar
   -> 推荐标签进入 recommended
 ```

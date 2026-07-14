@@ -60,6 +60,7 @@ type SearchParams = {
 
 type EntrySearchParams = {
   keyword: string;
+  datasets?: string[];
   similarCursor?: string | null;
   recommendedCursor?: string | null;
   section?: "all" | "primary" | "semantic";
@@ -195,6 +196,7 @@ export function useSearchQuery(keyword: string, category: string, enabled = true
 
 async function fetchEntrySearch({
   keyword,
+  datasets,
   section,
   similarCursor,
   recommendedCursor,
@@ -202,6 +204,9 @@ async function fetchEntrySearch({
 }: EntrySearchParams): Promise<EntrySearchResponse> {
   const params = new URLSearchParams();
   params.set("q", keyword);
+  if (datasets?.length && !datasets.includes("all")) {
+    params.set("dataset", datasets.join(","));
+  }
   if (section) params.set("section", section);
   if (semanticPart) params.set("semanticPart", semanticPart);
   if (similarCursor) params.set("similarCursor", similarCursor);
@@ -242,12 +247,24 @@ export function useEntrySearchQuery(
   });
 }
 
-export function useEntryPrimarySearchQuery(keyword: string, enabled = true) {
+export function useEntryPrimarySearchQuery(
+  keyword: string,
+  datasets: string[],
+  enabled = true,
+) {
+  const normalizedDatasets = datasets.includes("all")
+    ? ["all"]
+    : Array.from(
+        new Set(datasets.map((dataset) => dataset.trim()).filter(Boolean)),
+      ).sort();
+  const datasetKey = normalizedDatasets.join(",") || "all";
+
   return useQuery<EntrySearchResponse>({
-    queryKey: ["entry-search", "primary", keyword],
+    queryKey: ["entry-search", "primary", keyword, datasetKey],
     queryFn: () =>
       fetchEntrySearch({
         keyword,
+        datasets: normalizedDatasets,
         section: "primary",
       }),
     enabled: enabled && !!keyword.trim(),

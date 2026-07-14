@@ -80,7 +80,11 @@ export default function SearchPage() {
     isPending: entryPrimaryPending,
     isFetching: entryPrimaryFetching,
     error: entryPrimarySearchError,
-  } = useEntryPrimarySearchQuery(urlKeyword, !!urlKeyword && useEntryMode);
+  } = useEntryPrimarySearchQuery(
+    urlKeyword,
+    datasetName.length ? datasetName : ["all"],
+    !!urlKeyword && useEntryMode,
+  );
   const {
     data: entrySimilarResult,
     isPending: entrySimilarPending,
@@ -218,6 +222,18 @@ export default function SearchPage() {
     { id: "all", name: "all", nickname: globalSearchLabel },
     ...(categories || []).filter((cat) => cat.if_in_all_data),
   ], [categories, globalSearchLabel]);
+  const primaryDatasetLabel = useMemo(() => {
+    if (!datasetName.length || datasetName.includes("all")) return undefined;
+    const categoryMap = new Map(
+      (categories || []).map((category) => [
+        category.name,
+        category.nickname || category.name,
+      ]),
+    );
+    return datasetName
+      .map((dataset) => categoryMap.get(dataset) || dataset)
+      .join(", ");
+  }, [categories, urlDataset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Observe category tabs to trigger header shadow only when tabs are hidden behind header
   useEffect(() => {
@@ -428,6 +444,7 @@ export default function SearchPage() {
               <div className="flex-1 max-w-5xl">
                 <EntrySearchSections
                   result={entryResult}
+                  primaryDatasetLabel={primaryDatasetLabel}
                   isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
                   isLoadingSimilar={isInitialSimilarLoading}
                   isLoadingRecommended={isInitialRecommendedLoading}
@@ -448,6 +465,7 @@ export default function SearchPage() {
             <div className="sm:hidden">
               <EntrySearchSections
                 result={entryResult}
+                primaryDatasetLabel={primaryDatasetLabel}
                 isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
                 isLoadingSimilar={isInitialSimilarLoading}
                 isLoadingRecommended={isInitialRecommendedLoading}

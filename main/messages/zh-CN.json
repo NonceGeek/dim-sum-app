@@ -280,10 +280,12 @@
   },
   "EntrySearch": {
     "primaryTitle": "精准匹配",
+    "primaryDatasetScope": "限定于 {dataset}",
     "similarTitle": "相关表达",
     "recommendedTitle": "继续探索",
     "refresh": "换一批",
     "emptyPrimary": "未找到完全匹配词条",
+    "emptyPrimaryInDataset": "在「{dataset}」中未找到完全匹配词条",
     "emptyResults": "暂无结果",
     "share": "分享",
     "sharePreviewTitle": "分享卡片预览",

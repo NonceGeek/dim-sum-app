@@ -290,7 +290,7 @@ Next 负责用 `opencc-js` 生成繁简/HK-CN 查询变体，数据库函数负�
 - [ ] 确认 `corpus_category.source` 是否已包含 `ai/import/rule/manual`。
 - [x] 前端提供批量查询 entryIdentity 的内部服务边界。
 - [x] 批量 entryIdentity 聚合已下沉为 Supabase RPC：`public.get_entry_identities(uuid[])`。
-- [x] primary 精准搜索已下沉为 Supabase RPC：`public.search_entry_primary(text[])`。
+- [x] primary 精准搜索已下沉为 Supabase RPC：`public.search_entry_primary(text[], text[])`；第二个参数是可选来源语料集 category 数组，仅约束 primary。
 - [x] 提供 `corpus_field_embeddings` 可用索引和查询示例。
 
 ### 后续 RPC
