@@ -18,6 +18,23 @@ interface WeChatProfile {
   headimgurl?: string;
 }
 
+// 微信账号查找条件：优先按 unionid 匹配（同一微信在 Web / 小程序的 openid 不同，
+// unionid 才是跨端唯一标识），openid 作为兜底以兼容早期未存 unionId 的记录。
+function wechatAccountWhere(profile: WeChatProfile) {
+  return profile.unionid
+    ? {
+        provider: "wechat",
+        OR: [
+          { unionId: profile.unionid },
+          { providerAccountId: profile.openid },
+        ],
+      }
+    : {
+        provider: "wechat",
+        providerAccountId: profile.openid,
+      };
+}
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -98,10 +115,7 @@ export const authOptions: AuthOptions = {
         if (!token.role && !token.id) {
           // console.log('Fetching user role...');
           const dbAccount = await prisma.account.findFirst({
-            where: {
-              provider: "wechat",
-              providerAccountId: wechatProfile.openid,
-            },
+            where: wechatAccountWhere(wechatProfile),
             select: {
               user: {
                 select: {
@@ -174,12 +188,10 @@ export const authOptions: AuthOptions = {
           // 使用事务来确保数据一致性
           await prisma.$transaction(async (tx) => {
             const existingAccount = await tx.account.findFirst({
-              where: {
-                provider: "wechat",
-                providerAccountId: wechatProfile.openid,
-              },
+              where: wechatAccountWhere(wechatProfile),
               select: {
                 id: true,
+                unionId: true,
                 user: {
                   select: {
                     id: true,
@@ -222,6 +234,15 @@ export const authOptions: AuthOptions = {
               });
               // console.log('New user and account created');
               return newUser;
+            }
+
+            // 早期记录未存 unionId 时（按 openid 兜底命中），回填 unionId，
+            // 之后跨端（小程序）登录即可按 unionid 命中同一账号
+            if (!existingAccount.unionId && wechatProfile.unionid) {
+              await tx.account.update({
+                where: { id: existingAccount.id },
+                data: { unionId: wechatProfile.unionid },
+              });
             }
 
             // 如果用户存在但微信头像为空，更新微信头像
