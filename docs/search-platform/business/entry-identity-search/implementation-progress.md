@@ -150,7 +150,8 @@ P0 聚合字段：
 - [x] 搜索结果卡片已基于 `assets.audioUrl/videoUrl/coverImage` 展示媒体入口；音频支持点击播放。
 - [x] 新增 `/entries/{unique_id}` SEO 词条页，复用 entryIdentity 聚合结果生成页面和 metadata。
 - [x] 新增 `entry-query` 内部聚合服务，并切到 `public.get_entry_identities(uuid[])` Supabase RPC。
-- [x] primary 精准搜索支持繁简/HK-CN 查询变体和 PGroonga 全文匹配，并已下沉为 `public.search_entry_primary(text[])` Supabase RPC。
+- [x] primary 精准搜索支持繁简/HK-CN 查询变体和 PGroonga 全文匹配，并已下沉为 `public.search_entry_primary(text[], text[])` Supabase RPC。
+- [x] primary 精准搜索支持按来源语料集 `cantonese_corpus_all.category` 过滤；similar / recommended 保持全库召回。
 
 ### 后端 / 数据配合
 
@@ -163,7 +164,7 @@ P0 聚合字段：
 - [x] 三级推荐已从二级 similar 结果的 `doc` 向量继续扩散，并低权重融合 query/primary 语义候选。
 - [x] 新增 query embedding 接入点：`DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY` 配置后，semantic section 会调阿里云 `qwen3-vl-embedding` 获取用户 query 向量。
 - [x] 批量 `entryIdentity` 聚合已下沉为 Supabase RPC。
-- [x] primary 精准搜索已下沉为 Supabase RPC。
+- [x] primary 精准搜索已下沉为 Supabase RPC，并支持可选来源语料集过滤。
 - [ ] `search_entry_similar`、`search_entry_recommended`、`list_entries_by_category`、`list_entries_by_tag` 后续再做。
 
 ---

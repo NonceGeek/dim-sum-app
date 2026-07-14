@@ -25,6 +25,7 @@ import domtoimage from "dom-to-image";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
+  primaryDatasetLabel?: string;
   isLoadingPrimary?: boolean;
   isLoadingSimilar?: boolean;
   isLoadingRecommended?: boolean;
@@ -744,6 +745,7 @@ function PrimaryEntry({
   entry: EntryIdentity;
   labels: {
     title: string;
+    datasetScope?: string;
     share: string;
     edit: string;
     editing: string;
@@ -769,6 +771,11 @@ function PrimaryEntry({
         <div className="mb-4 flex items-center gap-2">
           <span className="h-5 w-1 rounded-full bg-primary/70" />
           <p className="text-sm font-semibold text-primary">{labels.title}</p>
+          {labels.datasetScope && (
+            <span className="text-xs text-muted-foreground">
+              {labels.datasetScope}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
@@ -1082,6 +1089,7 @@ type MediaLabels = {
 
 export function EntrySearchSections({
   result,
+  primaryDatasetLabel,
   isLoadingPrimary,
   isLoadingSimilar,
   isLoadingRecommended,
@@ -1135,6 +1143,9 @@ export function EntrySearchSections({
           entry={result.primary}
           labels={{
             title: t("primaryTitle"),
+            datasetScope: primaryDatasetLabel
+              ? t("primaryDatasetScope", { dataset: primaryDatasetLabel })
+              : undefined,
             share: t("share"),
             edit: t("edit"),
             editing: t("editing"),
@@ -1152,7 +1163,13 @@ export function EntrySearchSections({
           returnQuery={result.query}
         />
       ) : (
-        <EmptyPrimary text={t("emptyPrimary")} />
+        <EmptyPrimary
+          text={
+            primaryDatasetLabel
+              ? t("emptyPrimaryInDataset", { dataset: primaryDatasetLabel })
+              : t("emptyPrimary")
+          }
+        />
       )}
       <ResultSection
         title={t("similarTitle")}

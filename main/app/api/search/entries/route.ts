@@ -35,6 +35,16 @@ function parseCursor(value: string | null): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
+function parseDatasets(value: string | null): string[] | null {
+  if (!value) return null;
+
+  const datasets = Array.from(
+    new Set(value.split(",").map((dataset) => dataset.trim()).filter(Boolean)),
+  );
+
+  return !datasets.length || datasets.includes("all") ? null : datasets;
+}
+
 function normalizeTags(value: CorpusTagRow[] | null): CorpusTagRow[] {
   return Array.isArray(value) ? value : [];
 }
@@ -134,13 +144,22 @@ function buildResponse(params: {
   };
 }
 
-async function fetchPrimarySearchRows(query: string): Promise<AggregatedSearchRow[]> {
+async function fetchPrimarySearchRows(
+  query: string,
+  datasets: string[] | null,
+): Promise<AggregatedSearchRow[]> {
   const terms = getPrimarySearchTerms(query);
+  const datasetFilter = datasets?.length
+    ? Prisma.sql`array[${Prisma.join(datasets)}]::text[]`
+    : Prisma.sql`null::text[]`;
   return prisma.$queryRaw<AggregatedSearchRow[]>(
     Prisma.sql`
       with primary_match as (
         select unique_id
-        from public.search_entry_primary(array[${Prisma.join(terms)}]::text[])
+        from public.search_entry_primary(
+          array[${Prisma.join(terms)}]::text[],
+          ${datasetFilter}
+        )
       )
       select
         'primary'::text as section,
@@ -817,6 +836,7 @@ export async function GET(req: NextRequest) {
   return publicApi(req, async () => {
     const { searchParams } = new URL(req.url);
     const query = (searchParams.get("q") ?? "").trim();
+    const datasets = parseDatasets(searchParams.get("dataset"));
     const sectionParam = searchParams.get("section");
     const section: EntrySearchSection =
       sectionParam === "primary" || sectionParam === "semantic"
@@ -890,7 +910,7 @@ export async function GET(req: NextRequest) {
     };
 
     if (section === "primary") {
-      const primaryRows = await fetchPrimarySearchRows(query);
+      const primaryRows = await fetchPrimarySearchRows(query, datasets);
       return NextResponse.json(
         buildResponse({
           query,
@@ -916,7 +936,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [primaryRows, semantic] = await Promise.all([
-      fetchPrimarySearchRows(query),
+      fetchPrimarySearchRows(query, datasets),
       fetchSemantic(),
     ]);
 

@@ -49,7 +49,8 @@ export default function HomePage() {
   const [datasetInputValue, setDatasetInputValue] = useState("");
   const [luckyHovered, setLuckyHovered] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [useLegacySearch, setUseLegacySearch] = useState(false);
+  // 经典搜索入口暂时隐藏；保留常量便于以后恢复切换按钮。
+  const useLegacySearch = false;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = useAllCategories();
@@ -275,19 +276,7 @@ export default function HomePage() {
 
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
-                <button
-                  type="button"
-                  aria-pressed={useLegacySearch}
-                  onClick={() => setUseLegacySearch((value) => !value)}
-                  className={cn(
-                    "inline-flex h-7 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors",
-                    useLegacySearch
-                      ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
-                      : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  {t("legacySearch")}
-                </button>
+                {/* 经典搜索切换按钮暂时隐藏，默认使用新版 entry 搜索。 */}
 
                 <div className="flex items-center justify-end gap-2 ml-auto">
                   {/* Dataset selector */}

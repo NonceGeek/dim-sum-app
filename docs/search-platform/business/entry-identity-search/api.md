@@ -97,7 +97,7 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |--------|------|------|--------|------|
 | `q` | string | 是 | - | 搜索关键词 |
-| `dataset` | string | 否 | `all` | 现有 Search URL 中的 dataset，逗号分隔 |
+| `dataset` | string | 否 | `all` | 现有 Search URL 中的 dataset，逗号分隔；仅约束 primary 精准结果 |
 | `section` | string | 否 | `all` | `all` / `similar` / `recommended`。首次搜索用 `all`，换一批时指定 section |
 | `batchSize` | number | 否 | 按 section | 每批返回数量。`similar` 默认 3，`recommended` 默认 4 |
 | `batchToken` | string | 否 | - | 换一批游标，由上一次响应返回 |
@@ -110,7 +110,7 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
   -> 使用 tify/sify 生成繁简搜索词
   -> Next 服务端调用 Supabase RPC search_cantonese_corpus
   -> 合并繁简结果并按 unique_id 去重
-  -> 根据 dataset 过滤现有语料库 category
+  -> primary 在排序和 limit 前根据 dataset 过滤现有语料库 category
   -> 排除 test category
   -> 读取 content_categories / corpus_category 身份分类
   -> 读取 tags / corpus_tags / tag_related 标签关系
@@ -118,6 +118,7 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
   -> 读取互动统计
   -> 标准化每条结果为 entryIdentity
   -> 按精准命中规则分出 primary
+  -> similar / recommended 保持全库召回，不受 dataset 限制
   -> 按 corpus_tags / tag_related / content_categories 生成 similar
   -> 按 recommended tags / tag_related / 热门词生成 recommended
   -> 返回分层结果
