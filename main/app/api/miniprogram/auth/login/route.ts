@@ -60,6 +60,8 @@ function getMiniprogramConfig(miniprogramApp: MiniprogramApp) {
  * 1. WeChat login:
  *    - code: WeChat login code from wx.login()
  *    - miniprogramApp: optional app enum, defaults to "review-app"
+ *    - Existing wechat account (matched by unionid) -> log in that user
+ *    - Unknown unionid -> auto-create a new user (default LEARNER role) then log in
  *
  * 2. Phone login / free registration:
  *    - phoneNumber: User's phone number
@@ -283,6 +285,15 @@ async function handleWeChatLogin(
   }
 
   // Find user by unionId
+  const userSelect = {
+    id: true,
+    name: true,
+    image: true,
+    wechatAvatar: true,
+    role: true,
+    isSystemAdmin: true,
+  } as const;
+
   const account = await prisma.account.findFirst({
     where: {
       unionId: unionid,
@@ -290,30 +301,52 @@ async function handleWeChatLogin(
     },
     include: {
       user: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          wechatAvatar: true,
-          role: true,
-          isSystemAdmin: true,
-        },
+        select: userSelect,
       },
     },
   });
 
-  if (!account) {
-    return NextResponse.json(
-      {
-        error: "User not found. Please register via web first or use phone login.",
-        openid,
-        unionid,
-      },
-      { status: 404 },
-    );
-  }
+  let user = account?.user ?? null;
 
-  const user = account.user;
+  // 未命中则自动注册：新建用户（默认 LEARNER 角色）并创建 wechat Account 记录，
+  // 与 Web 端微信登录建号 (lib/auth.ts signIn callback) 保持一致。
+  // 小程序 wx.login 拿不到昵称/头像，先用随机昵称，用户可后续自行修改。
+  if (!user) {
+    try {
+      user = await prisma.user.create({
+        data: {
+          name: `用户_${Math.random().toString(36).slice(2, 8)}`,
+          accounts: {
+            create: {
+              type: "oauth",
+              provider: "wechat",
+              providerAccountId: openid,
+              openId: openid,
+              unionId: unionid,
+            },
+          },
+        },
+        select: userSelect,
+      });
+    } catch (createError) {
+      // 并发注册时唯一约束可能冲突，回读一次已存在的用户
+      const existingAccount = await prisma.account.findFirst({
+        where: {
+          unionId: unionid,
+          provider: "wechat",
+        },
+        include: {
+          user: {
+            select: userSelect,
+          },
+        },
+      });
+      user = existingAccount?.user ?? null;
+      if (!user) {
+        throw createError;
+      }
+    }
+  }
 
   // Generate tokens
   const tokenPayload = {
