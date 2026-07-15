@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import {
   listPublicSubmissions,
   parsePositiveInt,
@@ -12,15 +11,13 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get("type");
   const tag = searchParams.get("tag");
 
-  return requireMiniprogramAuth(req, async () => {
-    return NextResponse.json(
-      await listPublicSubmissions({
-        page,
-        pageSize,
-        type,
-        tag,
-        featured: true,
-      })
-    );
-  });
+  return NextResponse.json(
+    await listPublicSubmissions({
+      page,
+      pageSize,
+      type,
+      tag,
+      featured: true,
+    })
+  );
 }

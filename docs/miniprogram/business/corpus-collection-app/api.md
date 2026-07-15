@@ -13,7 +13,7 @@
 - **协议**: HTTPS
 - **数据格式**: JSON
 - **字符编码**: UTF-8
-- **认证方式**: JWT Bearer Token
+- **认证方式**: 公开读取接口无需登录；投稿、互动和个人数据接口使用 JWT Bearer Token
 - **生产环境**: `https://search.aidimsum.com/api`
 - **URL 前缀**: `/api/miniprogram/corpus_collection`
 
@@ -29,7 +29,7 @@
 
 - **URL**: `/api/miniprogram/corpus_collection/home`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 无需登录
 
 #### 请求示例
 
@@ -37,9 +37,6 @@
 const response = await wx.request({
   url: 'https://search.aidimsum.com/api/miniprogram/corpus_collection/home',
   method: 'GET',
-  header: {
-    'Authorization': `Bearer ${accessToken}`
-  }
 });
 ```
 
@@ -77,16 +74,6 @@ const response = await wx.request({
 
 `latestSubmissions` 为首页轻量卡片结构；作品详情请通过 `id` 调用投稿详情接口。
 
-#### 错误响应
-
-**401 Unauthorized**
-
-```json
-{
-  "error": "Invalid or expired token"
-}
-```
-
 ### 1.2 获取首页投稿流
 
 首页投稿流用于小红书式瀑布流/无限滚动展示。该接口只返回已审核通过且公开的投稿，和 `GET /home` 分离，前端首屏可先调用 `/home` 获取 Banner、活动和快捷入口，再按页调用本接口加载投稿卡片。
@@ -95,7 +82,7 @@ const response = await wx.request({
 
 - **URL**: `/api/miniprogram/corpus_collection/home/submissions`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 无需登录；可选 Bearer Token，用于返回当前用户的 `liked` 状态
 
 #### 请求参数 (Query String)
 
@@ -175,18 +162,8 @@ const response = await wx.request({
 | `coverUrl` | 瀑布流卡片主图，优先取投稿 `coverUrl`，未设置时取第一张图片；都没有时为 `null` 或空字符串，前端可显示占位图 |
 | `coverWidth` / `coverHeight` | 上传媒体元数据中存在宽高时返回，否则为 `null` |
 | `coverAspectRatio` | `coverWidth / coverHeight`，前端可用于预占瀑布流高度 |
-| `liked` | 当前登录用户是否已点赞 |
+| `liked` | 当前登录用户是否已点赞；匿名访问固定为 `false` |
 | `hasMore` | 是否还有下一页，适合 `onReachBottom` 或虚拟列表继续加载 |
-
-#### 错误响应
-
-**401 Unauthorized**
-
-```json
-{
-  "error": "Invalid or expired token"
-}
-```
 
 ---
 
@@ -198,13 +175,13 @@ const response = await wx.request({
 
 - **URL**: `/api/miniprogram/corpus_collection/activities`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 无需登录
 
 #### 请求参数 (Query String)
 
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |-------|------|-----|-------|------|
-| `status` | string | 否 | `published` | 活动状态 |
+| `status` | string | 否 | `published` | 公开接口只允许 `published`；其他值返回 400 |
 | `timeStatus` | string | 否 | - | 活动时间状态：`not_started` 未开始、`ongoing` 进行中、`ended` 已结束 |
 | `keyword` / `q` | string | 否 | - | 活动标题、介绍模糊搜索关键词 |
 | `includeExpired` | boolean | 否 | `false` | 是否包含已过期活动；默认仅返回未过期活动 |
@@ -286,7 +263,7 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
 
 - **URL**: `/api/miniprogram/corpus_collection/activities/{id}`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 无需登录；仅返回 `published` 活动
 
 #### 成功响应 (200)
 
@@ -372,7 +349,7 @@ video 最多 1 个，durationSec <= 30
 
 - **URL**: `/api/miniprogram/corpus_collection/activities/{id}/works`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 无需登录；仅返回已发布活动下审核通过且公开的作品
 
 #### 请求参数 (Query String)
 
@@ -822,7 +799,7 @@ visibility = private
 
 - **URL**: `/api/miniprogram/corpus_collection/featured`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 无需登录；仅返回审核通过且公开的精选投稿
 
 #### 请求参数 (Query String)
 

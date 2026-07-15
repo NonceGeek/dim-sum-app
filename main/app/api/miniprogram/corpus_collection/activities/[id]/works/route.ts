@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
-import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
+import { prisma } from "@/lib/prisma";
 import {
   listPublicSubmissions,
   parseBigIntId,
@@ -18,23 +18,29 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
   const isFeatured = searchParams.get("isFeatured");
   const awardStatus = searchParams.get("awardStatus");
 
-  return requireMiniprogramAuth(req, async () => {
-    const activityId = parseBigIntId(await getStringRouteParam(context, "id"));
-    if (!activityId) {
-      return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
-    }
+  const activityId = parseBigIntId(await getStringRouteParam(context, "id"));
+  if (!activityId) {
+    return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
+  }
 
-    return NextResponse.json(
-      await listPublicSubmissions({
-        activityId,
-        page,
-        pageSize,
-        sort,
-        type: submissionType,
-        tag,
-        featured: isFeatured === null ? undefined : isFeatured === "true",
-        awardStatus,
-      })
-    );
+  const activity = await prisma.corpus_collection_activities.findFirst({
+    where: { id: activityId, status: "published" },
+    select: { id: true },
   });
+  if (!activity) {
+    return NextResponse.json({ error: "Activity not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(
+    await listPublicSubmissions({
+      activityId,
+      page,
+      pageSize,
+      sort,
+      type: submissionType,
+      tag,
+      featured: isFeatured === null ? undefined : isFeatured === "true",
+      awardStatus,
+    })
+  );
 }

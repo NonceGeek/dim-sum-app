@@ -49,6 +49,23 @@ export async function requireMiniprogramAuth(
 }
 
 /**
+ * Resolve miniprogram user context for public read endpoints.
+ * Missing, invalid, or expired tokens are treated as anonymous access.
+ */
+export async function getOptionalMiniprogramUser(
+  req: NextRequest
+): Promise<MiniprogramTokenPayload | null> {
+  const token = extractToken(req);
+  if (!token) return null;
+
+  try {
+    return await verifyMiniprogramToken(token);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Miniprogram authentication with role check
  * Requires specific roles to access
  */

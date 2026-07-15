@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
+import { getOptionalMiniprogramUser } from "@/lib/miniprogram-auth";
 import {
   listHomeFeedSubmissions,
   parseBigIntId,
@@ -29,27 +29,26 @@ export async function GET(req: NextRequest) {
   const featured = parseOptionalBoolean(searchParams.get("isFeatured"));
   const showOnHome = parseOptionalBoolean(searchParams.get("showOnHome"));
 
-  return requireMiniprogramAuth(req, async (_req, user) => {
-    try {
-      return NextResponse.json(
-        await listHomeFeedSubmissions({
-          activityId,
-          featured,
-          showOnHome,
-          type,
-          tag,
-          page,
-          pageSize,
-          sort,
-          viewerId: user.userId,
-        })
-      );
-    } catch (error) {
-      console.error("[CorpusCollection] Failed to load home submissions", error);
-      return NextResponse.json(
-        { error: "Failed to load home submissions" },
-        { status: 500 }
-      );
-    }
-  });
+  const user = await getOptionalMiniprogramUser(req);
+  try {
+    return NextResponse.json(
+      await listHomeFeedSubmissions({
+        activityId,
+        featured,
+        showOnHome,
+        type,
+        tag,
+        page,
+        pageSize,
+        sort,
+        viewerId: user?.userId,
+      })
+    );
+  } catch (error) {
+    console.error("[CorpusCollection] Failed to load home submissions", error);
+    return NextResponse.json(
+      { error: "Failed to load home submissions" },
+      { status: 500 }
+    );
+  }
 }
