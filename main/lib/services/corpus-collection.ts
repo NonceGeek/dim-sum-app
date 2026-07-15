@@ -6,6 +6,10 @@ export const PUBLIC_SUBMISSION_WHERE = {
   visibility: "public",
 } as const;
 
+export const PUBLIC_SUBMISSION_COUNT = {
+  where: PUBLIC_SUBMISSION_WHERE,
+} as const;
+
 export function parsePositiveInt(value: string | null, fallback: number, max = 100) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
@@ -225,6 +229,16 @@ export function serializeActivity(activity: any) {
   };
 }
 
+export function serializePublicActivity(activity: any) {
+  const serialized = serializeActivity(activity);
+  return {
+    ...serialized,
+    works: activity.submissions
+      ? activity.submissions.map((item: any) => serializePublicSubmission(item))
+      : undefined,
+  };
+}
+
 export function getSubmissionEditState(submission: any, viewerId?: string) {
   if (!viewerId || submission.user_id !== viewerId || submission.is_locked) {
     return { canEdit: false, editableUntil: null as string | null };
@@ -303,6 +317,31 @@ export function serializeSubmission(
   };
 }
 
+export function serializePublicSubmission(submission: any) {
+  const serialized = serializeSubmission(submission);
+  return {
+    id: serialized.id,
+    title: serialized.title,
+    intro: serialized.intro,
+    submissionType: serialized.submissionType,
+    tags: serialized.tags,
+    isFeatured: serialized.isFeatured,
+    likeCount: serialized.likeCount,
+    commentCount: serialized.commentCount,
+    shareCount: serialized.shareCount,
+    viewCount: serialized.viewCount,
+    isAwarded: serialized.isAwarded,
+    awardStatus: serialized.awardStatus,
+    coverUrl: serialized.coverUrl,
+    imageUrls: serialized.imageUrls,
+    activity: serialized.activity,
+    author: serialized.author,
+    media: serialized.media,
+    createdAt: serialized.createdAt,
+    updatedAt: serialized.updatedAt,
+  };
+}
+
 export function serializeHomeSubmission(submission: any) {
   const author = serializeUser(submission.user);
   const imageUrls = getSubmissionImages(submission);
@@ -374,6 +413,7 @@ export function buildPublicSubmissionWhere(options: {
 }) {
   return {
     ...PUBLIC_SUBMISSION_WHERE,
+    OR: [{ activity_id: null }, { activity: { status: "published" } }],
     activity_id: options.activityId ?? undefined,
     is_featured: options.featured === undefined ? undefined : options.featured,
     show_on_home: options.showOnHome === undefined ? undefined : options.showOnHome,
@@ -428,7 +468,7 @@ export async function listPublicSubmissions(options: {
   ]);
 
   return {
-    items: items.map((item) => serializeSubmission(item)),
+    items: items.map((item) => serializePublicSubmission(item)),
     ...(options.includeRaw ? { rawItems: items } : {}),
     pagination: { page: options.page, pageSize: options.pageSize, total },
   };
