@@ -2,8 +2,7 @@
   "tasks": {
     "dev": "deno run --allow-net --allow-env --allow-read --watch main.tsx",
     "start": "deno run --allow-net --allow-env --allow-read main.tsx",
-    "compile": "deno compile --target x86_64-unknown-linux-gnu --allow-net --allow-read -o backend-linux main.tsx",
-    "deploy": "deployctl deploy --prod main.tsx"
+    "compile": "deno compile --target x86_64-unknown-linux-gnu --allow-net --allow-read -o backend-linux main.tsx"
   },
   "compilerOptions": {
     "allowJs": true,
@@ -26,11 +25,8 @@
     "@deno/gfm": "jsr:@deno/gfm@^0.11.0"
   },
   "deploy": {
-    "project": "a055f504-8e69-49bf-a92e-9f2c51a9ce84",
-    "exclude": [
-      "**/node_modules"
-    ],
-    "include": [],
-    "entrypoint": "main.tsx"
+    "org": "leeduckgo",
+    "app": "ai-dim-sum"
   }
 }
+

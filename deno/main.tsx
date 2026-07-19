@@ -1430,9 +1430,54 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
 
 const app = new Application();
 
+app.use(async (context, next) => {
+  try {
+    await next();
+  } catch (err) {
+    console.error("Error:", err);
+    context.response.status = 500;
+    context.response.body = {
+      success: false,
+      error: "Internal server error",
+    };
+  }
+});
+
+app.use(async (context, next) => {
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  console.log(`${context.request.method} ${context.request.url} - ${ms}ms`);
+});
+
 app.use(oakCors()); // Enable CORS for All Routes
 app.use(router.routes());
+app.use(router.allowedMethods());
 app.use(aliOSSRouter.routes());
+app.use(aliOSSRouter.allowedMethods());
 
-console.info("CORS-enabled web server listening on port 8000");
-await app.listen({ port: 8000 });
+const port = Number(Deno.env.get("PORT") || "8000");
+
+const isDeploy =
+  Boolean(Deno.env.get("DENO_DEPLOYMENT_ID")) ||
+  Boolean(Deno.env.get("DENO_REGION"));
+
+// Deno Deploy does not support Oak's app.listen(); use Deno.serve + app.handle.
+// Prefer isDeploy over import.meta.main so the handler still registers if the
+// entrypoint is loaded without being treated as the main module.
+if (isDeploy) {
+  console.info("Server started (Deno Deploy)");
+  Deno.serve({
+    handler: async (req) => {
+      const resp = await app.handle(req);
+      return resp ?? new Response("Not Found", { status: 404 });
+    },
+  });
+} else if (import.meta.main) {
+  console.info(`
+CORS-enabled web server listening on port ${port}
+
+Visit: http://localhost:${port}
+`);
+  await app.listen({ port });
+}
