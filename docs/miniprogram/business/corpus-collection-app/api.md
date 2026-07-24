@@ -679,9 +679,9 @@ GET /api/miniprogram/corpus_collection/submissions/mine?withoutActivity=true
 
 - **URL**: `/api/miniprogram/corpus_collection/submissions/{id}`
 - **方法**: `GET`
-- **认证**: 需要 Bearer Token
+- **认证**: 可选 Bearer Token
 
-作者本人可以查看自己的全部投稿状态；非作者只能查看 `reviewStatus = approved` 且 `visibility = public` 的投稿。
+游客和非作者可以查看 `reviewStatus = approved` 且 `visibility = public` 的投稿；作者携带 Bearer Token 后可以查看自己的全部投稿状态。
 
 #### 成功响应 (200)
 
