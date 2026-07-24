@@ -258,7 +258,7 @@ GET /api/miniprogram/corpus_collection/submissions/{id}
 
 ```text
 作者本人：可以查看自己的全部投稿状态，包括 pending_review、rejected、approved。
-非作者：只能查看 reviewStatus = approved 且 visibility = public 的投稿。
+游客和非作者：只能查看 reviewStatus = approved 且 visibility = public 的投稿。
 ```
 
 已补充字段：
