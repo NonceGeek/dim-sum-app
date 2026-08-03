@@ -73,6 +73,7 @@ export function EmailProvider() {
           image: user.image,
           role: user.role,
           isSystemAdmin: user.isSystemAdmin,
+          isSuperAdmin: user.isSuperAdmin,
         };
       } catch (error) {
         console.error('Email provider error:', error);
@@ -80,4 +81,4 @@ export function EmailProvider() {
       }
     }
   };
-} 
+}
