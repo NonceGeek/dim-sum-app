@@ -338,6 +338,52 @@
     "updatedAt": "最近更新",
     "copied": "已复制"
   },
+  "AdminAdministrators": {
+    "menuTitle": "管理员管理",
+    "title": "管理员管理",
+    "description": "授予或撤销后台管理员权限。此页面仅超级管理员可见。",
+    "searchTitle": "查找账号",
+    "searchDescription": "可按姓名、邮箱或手机号搜索，最多显示 100 个账号。",
+    "searchPlaceholder": "姓名、邮箱或手机号",
+    "searchButton": "搜索",
+    "listTitle": "账号列表",
+    "listDescription": "超级管理员权限不能在此页面撤销。",
+    "loading": "加载中…",
+    "loadFailed": "无法加载账号，请稍后重试。",
+    "unnamedUser": "未命名用户",
+    "superAdmin": "超级管理员",
+    "administrator": "管理员",
+    "regularAccount": "普通账号",
+    "cannotModify": "不可修改",
+    "grantAdministrator": "设为管理员",
+    "revokeAdministrator": "取消管理员",
+    "empty": "没有找到匹配账号。",
+    "grantSuccess": "已设为管理员",
+    "revokeSuccess": "已取消管理员权限",
+    "updateFailed": "更新管理员权限失败，请稍后重试。",
+    "columns": {
+      "account": "账号",
+      "contact": "联系方式",
+      "role": "角色",
+      "permission": "权限",
+      "action": "操作"
+    },
+    "roles": {
+      "learner": "学习者",
+      "taggerPartner": "合作标注员",
+      "taggerOutsourcing": "外包标注员",
+      "researcher": "研究员"
+    },
+    "dialog": {
+      "grantTitle": "授予管理员权限？",
+      "revokeTitle": "取消管理员权限？",
+      "grantDescription": "授予后，{user} 将可以访问管理后台并使用管理员功能。",
+      "revokeDescription": "取消后，{user} 将无法继续访问管理后台。此操作不会删除该账号。",
+      "cancel": "取消",
+      "confirmGrant": "确认授予",
+      "confirmRevoke": "确认取消"
+    }
+  },
   "Validation": {
     "enterCharacter": "请输入字符",
     "atLeastOnePronunciation": "请至少输入一个粤音",
