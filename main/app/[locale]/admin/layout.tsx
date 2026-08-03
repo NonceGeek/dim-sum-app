@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { useRouter, usePathname, Link } from "@/i18n/navigation";
 import {
   LayoutDashboard,
@@ -36,7 +37,8 @@ const adminNavItems = [
     icon: Users,
   },
   {
-    title: "管理员管理",
+    title: "Administrator Management",
+    titleKey: "menuTitle",
     href: "/admin/administrators",
     icon: Shield,
     superAdminOnly: true,
@@ -93,6 +95,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
+  const tAdministrators = useTranslations("AdminAdministrators");
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -231,7 +234,11 @@ export default function AdminLayout({
                 onClick={() => setSidebarOpen(false)}
               >
                 <item.icon className="w-5 h-5" />
-                <span>{item.title}</span>
+                <span>
+                  {"titleKey" in item
+                    ? tAdministrators(item.titleKey)
+                    : item.title}
+                </span>
               </Link>
             );
           })}

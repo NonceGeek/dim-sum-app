@@ -2,15 +2,40 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface AdministratorCandidate {
   id: string;
@@ -23,12 +48,22 @@ interface AdministratorCandidate {
   isSuperAdmin: boolean;
 }
 
+const roleTranslationKeys: Record<string, string> = {
+  LEARNER: "roles.learner",
+  TAGGER_PARTNER: "roles.taggerPartner",
+  TAGGER_OUTSOURCING: "roles.taggerOutsourcing",
+  RESEARCHER: "roles.researcher",
+};
+
 export default function AdministratorsPage() {
+  const t = useTranslations("AdminAdministrators");
   const { data: session, status } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [pendingUser, setPendingUser] =
+    useState<AdministratorCandidate | null>(null);
 
   useEffect(() => {
     if (status !== "loading" && !session?.user?.isSuperAdmin) {
@@ -36,7 +71,9 @@ export default function AdministratorsPage() {
     }
   }, [router, session, status]);
 
-  const { data, isLoading, isError } = useQuery<{ users: AdministratorCandidate[] }>({
+  const { data, isLoading, isError } = useQuery<{
+    users: AdministratorCandidate[];
+  }>({
     queryKey: ["administrator-management", search],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -49,46 +86,65 @@ export default function AdministratorsPage() {
   });
 
   const updateAdministrator = useMutation({
-    mutationFn: async ({ userId, isSystemAdmin }: { userId: string; isSystemAdmin: boolean }) => {
+    mutationFn: async ({
+      userId,
+      isSystemAdmin,
+    }: {
+      userId: string;
+      isSystemAdmin: boolean;
+    }) => {
       const response = await fetch("/api/admin/administrators", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, isSystemAdmin }),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "更新失败");
-      return result;
+      if (!response.ok) throw new Error("Failed to update administrator");
+      return response.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["administrator-management"] });
+      queryClient.invalidateQueries({
+        queryKey: ["administrator-management"],
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success(variables.isSystemAdmin ? "已设为管理员" : "已取消管理员权限");
+      toast.success(
+        variables.isSystemAdmin ? t("grantSuccess") : t("revokeSuccess")
+      );
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => toast.error(t("updateFailed")),
   });
 
   if (status === "loading" || !session?.user?.isSuperAdmin) return null;
 
-  const changeAccess = (user: AdministratorCandidate) => {
-    const nextValue = !user.isSystemAdmin;
-    const action = nextValue ? "设为管理员" : "取消管理员权限";
-    const identifier = user.name || user.email || user.phoneNumber || user.id;
-    if (window.confirm(`确定要将 ${identifier} ${action}吗？`)) {
-      updateAdministrator.mutate({ userId: user.id, isSystemAdmin: nextValue });
-    }
+  const confirmAccessChange = () => {
+    if (!pendingUser) return;
+    updateAdministrator.mutate({
+      userId: pendingUser.id,
+      isSystemAdmin: !pendingUser.isSystemAdmin,
+    });
+    setPendingUser(null);
   };
+
+  const pendingIdentifier = pendingUser
+    ? pendingUser.name ||
+      pendingUser.email ||
+      pendingUser.phoneNumber ||
+      pendingUser.id
+    : "";
+  const isGranting = pendingUser ? !pendingUser.isSystemAdmin : false;
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">管理员管理</h2>
-        <p className="mt-2 text-muted-foreground">授予或撤销后台管理员权限。此页面仅超级管理员可见。</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+          {t("title")}
+        </h2>
+        <p className="mt-2 text-muted-foreground">{t("description")}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>查找账号</CardTitle>
-          <CardDescription>可按姓名、邮箱或手机号搜索，最多显示 100 个账号。</CardDescription>
+          <CardTitle>{t("searchTitle")}</CardTitle>
+          <CardDescription>{t("searchDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form
@@ -104,74 +160,137 @@ export default function AdministratorsPage() {
                 className="pl-10"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="姓名、邮箱或手机号"
+                placeholder={t("searchPlaceholder")}
               />
             </div>
-            <Button type="submit">搜索</Button>
+            <Button type="submit">{t("searchButton")}</Button>
           </form>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>账号列表</CardTitle>
-          <CardDescription>超级管理员权限不能在此页面撤销。</CardDescription>
+          <CardTitle>{t("listTitle")}</CardTitle>
+          <CardDescription>{t("listDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="py-8 text-center text-muted-foreground">加载中…</p>
+            <p className="py-8 text-center text-muted-foreground">
+              {t("loading")}
+            </p>
           ) : isError ? (
-            <p className="py-8 text-center text-destructive">无法加载账号，请稍后重试。</p>
+            <p className="py-8 text-center text-destructive">
+              {t("loadFailed")}
+            </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>账号</TableHead>
-                  <TableHead>联系方式</TableHead>
-                  <TableHead>角色</TableHead>
-                  <TableHead>权限</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead>{t("columns.account")}</TableHead>
+                  <TableHead>{t("columns.contact")}</TableHead>
+                  <TableHead>{t("columns.role")}</TableHead>
+                  <TableHead>{t("columns.permission")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("columns.action")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data?.users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name || "未命名用户"}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email || user.phoneNumber || "—"}</TableCell>
-                    <TableCell><Badge variant="secondary">{user.role}</Badge></TableCell>
+                    <TableCell className="font-medium">
+                      {user.name || t("unnamedUser")}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {user.email || user.phoneNumber || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {roleTranslationKeys[user.role]
+                          ? t(roleTranslationKeys[user.role])
+                          : user.role}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       {user.isSuperAdmin ? (
-                        <Badge className="gap-1"><ShieldCheck className="h-3.5 w-3.5" />超级管理员</Badge>
+                        <Badge className="gap-1">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          {t("superAdmin")}
+                        </Badge>
                       ) : user.isSystemAdmin ? (
-                        <Badge variant="secondary" className="gap-1"><Shield className="h-3.5 w-3.5" />管理员</Badge>
+                        <Badge variant="secondary" className="gap-1">
+                          <Shield className="h-3.5 w-3.5" />
+                          {t("administrator")}
+                        </Badge>
                       ) : (
-                        <span className="text-sm text-muted-foreground">普通账号</span>
+                        <span className="text-sm text-muted-foreground">
+                          {t("regularAccount")}
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
                         size="sm"
                         variant={user.isSystemAdmin ? "outline" : "default"}
-                        disabled={user.isSuperAdmin || updateAdministrator.isPending}
-                        onClick={() => changeAccess(user)}
+                        disabled={
+                          user.isSuperAdmin || updateAdministrator.isPending
+                        }
+                        onClick={() => setPendingUser(user)}
                       >
                         {user.isSuperAdmin
-                          ? "不可修改"
+                          ? t("cannotModify")
                           : user.isSystemAdmin
-                            ? "取消管理员"
-                            : "设为管理员"}
+                            ? t("revokeAdministrator")
+                            : t("grantAdministrator")}
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
                 {data?.users.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">没有找到匹配账号。</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      {t("empty")}
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={Boolean(pendingUser)}
+        onOpenChange={(open) => !open && setPendingUser(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isGranting ? t("dialog.grantTitle") : t("dialog.revokeTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isGranting
+                ? t("dialog.grantDescription", { user: pendingIdentifier })
+                : t("dialog.revokeDescription", { user: pendingIdentifier })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className={cn(
+                !isGranting &&
+                  "bg-destructive text-white hover:bg-destructive/90"
+              )}
+              onClick={confirmAccessChange}
+            >
+              {isGranting ? t("dialog.confirmGrant") : t("dialog.confirmRevoke")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

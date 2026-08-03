@@ -337,6 +337,52 @@
     "updatedAt": "Updated",
     "copied": "Copied"
   },
+  "AdminAdministrators": {
+    "menuTitle": "Administrator Management",
+    "title": "Administrator Management",
+    "description": "Grant or revoke access to the admin panel. This page is only available to super administrators.",
+    "searchTitle": "Find an account",
+    "searchDescription": "Search by name, email, or phone number. Up to 100 accounts are shown.",
+    "searchPlaceholder": "Name, email, or phone number",
+    "searchButton": "Search",
+    "listTitle": "Accounts",
+    "listDescription": "Super administrator access cannot be revoked on this page.",
+    "loading": "Loading…",
+    "loadFailed": "Unable to load accounts. Please try again later.",
+    "unnamedUser": "Unnamed user",
+    "superAdmin": "Super administrator",
+    "administrator": "Administrator",
+    "regularAccount": "Regular account",
+    "cannotModify": "Cannot modify",
+    "grantAdministrator": "Make administrator",
+    "revokeAdministrator": "Remove administrator",
+    "empty": "No matching accounts found.",
+    "grantSuccess": "Administrator access granted",
+    "revokeSuccess": "Administrator access revoked",
+    "updateFailed": "Unable to update administrator access. Please try again later.",
+    "columns": {
+      "account": "Account",
+      "contact": "Contact",
+      "role": "Role",
+      "permission": "Access",
+      "action": "Action"
+    },
+    "roles": {
+      "learner": "Learner",
+      "taggerPartner": "Partner tagger",
+      "taggerOutsourcing": "Outsourced tagger",
+      "researcher": "Researcher"
+    },
+    "dialog": {
+      "grantTitle": "Grant administrator access?",
+      "revokeTitle": "Revoke administrator access?",
+      "grantDescription": "After confirmation, {user} will be able to access the admin panel and administrator features.",
+      "revokeDescription": "After confirmation, {user} will no longer be able to access the admin panel. The account will not be deleted.",
+      "cancel": "Cancel",
+      "confirmGrant": "Grant access",
+      "confirmRevoke": "Revoke access"
+    }
+  },
   "Validation": {
     "enterCharacter": "Please enter a character",
     "atLeastOnePronunciation": "Please enter at least one pronunciation",
