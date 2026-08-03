@@ -46,6 +46,7 @@ declare module "next-auth" {
       image?: string | null;
       role?: Role;
       isSystemAdmin?: boolean;
+      isSuperAdmin?: boolean;
     };
   }
 }
@@ -58,6 +59,7 @@ declare module "next-auth/jwt" {
     role?: Role;
     image?: string | null;
     isSystemAdmin?: boolean;
+    isSuperAdmin?: boolean;
   }
 }
 
@@ -123,6 +125,7 @@ export const authOptions: AuthOptions = {
                   role: true,
                   image: true,
                   isSystemAdmin: true,
+                  isSuperAdmin: true,
                 },
               },
             },
@@ -133,10 +136,12 @@ export const authOptions: AuthOptions = {
             token.role = dbAccount.user.role;
             token.image = dbAccount.user.image || wechatProfile.headimgurl;
             token.isSystemAdmin = dbAccount.user.isSystemAdmin;
+            token.isSuperAdmin = dbAccount.user.isSuperAdmin;
           } else {
             // 使用从 URL 中获取的角色，如果没有则默认为 LEARNER
             token.role = (account.role as Role) || Role.LEARNER;
             token.isSystemAdmin = false;
+            token.isSuperAdmin = false;
           }
           // console.log('User role fetched:', token.role);
         }
@@ -146,6 +151,7 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.role = (user as any).role;
         token.isSystemAdmin = (user as any).isSystemAdmin;
+        token.isSuperAdmin = (user as any).isSuperAdmin;
       }
 
       // console.log('JWT Callback end:', {
@@ -165,6 +171,7 @@ export const authOptions: AuthOptions = {
         session.user.role = token.role;
         session.user.image = token.image;
         session.user.isSystemAdmin = token.isSystemAdmin;
+        session.user.isSuperAdmin = token.isSuperAdmin;
       }
 
       // console.log('Session Callback end:', {
@@ -447,6 +454,35 @@ export async function requireAdmin(
   if (!session.user.isSystemAdmin) {
     return NextResponse.json(
       { error: "Permission denied. Admin access required." },
+      { status: 403 }
+    );
+  }
+
+  return handler(req, session.user.id);
+}
+
+// 超级管理员权限检查。始终读取数据库，避免权限变更后旧 JWT 继续越权。
+export async function requireSuperAdmin(
+  req: NextRequest,
+  handler: (req: NextRequest, userId: string) => Promise<NextResponse>
+) {
+  const session = await getAuthSession();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isSuperAdmin: true, status: true },
+  });
+
+  if (!user?.isSuperAdmin || user.status !== "ACTIVE") {
+    return NextResponse.json(
+      { error: "Permission denied. Super admin access required." },
       { status: 403 }
     );
   }

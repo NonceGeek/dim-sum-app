@@ -45,6 +45,7 @@ model User {
   role                                                                                      Role                               @default(LEARNER)
   bio                                                                                       String?
   isSystemAdmin                                                                             Boolean                            @default(false)
+  isSuperAdmin                                                                              Boolean                            @default(false)
   ethAddress                                                                                String?                            @unique
   createdAt                                                                                 DateTime                           @default(now()) @db.Timestamptz(6)
   updatedAt                                                                                 DateTime                           @default(now()) @updatedAt @db.Timestamptz(6)

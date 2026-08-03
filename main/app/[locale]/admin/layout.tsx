@@ -36,6 +36,12 @@ const adminNavItems = [
     icon: Users,
   },
   {
+    title: "管理员管理",
+    href: "/admin/administrators",
+    icon: Shield,
+    superAdminOnly: true,
+  },
+  {
     title: "Categories",
     href: "/admin/categories",
     icon: FolderOpen,
@@ -143,6 +149,14 @@ export default function AdminLayout({
 
         <nav className="flex-1 px-4 py-6 space-y-2">
           {adminNavItems.map((item) => {
+            if (
+              "superAdminOnly" in item &&
+              item.superAdminOnly &&
+              !session.user.isSuperAdmin
+            ) {
+              return null;
+            }
+
             const isSectionActive =
               pathname === item.href ||
               (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
@@ -235,7 +249,9 @@ export default function AdminLayout({
                 {session.user.name}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                System Administrator
+                {session.user.isSuperAdmin
+                  ? "Super Administrator"
+                  : "System Administrator"}
               </p>
             </div>
           </div>

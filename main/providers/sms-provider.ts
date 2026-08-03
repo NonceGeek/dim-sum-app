@@ -70,6 +70,7 @@ export function SmsProvider() {
           image: user.image,
           role: user.role,
           isSystemAdmin: user.isSystemAdmin,
+          isSuperAdmin: user.isSuperAdmin,
         };
       } catch (error) {
         console.error("SMS provider error:", error);

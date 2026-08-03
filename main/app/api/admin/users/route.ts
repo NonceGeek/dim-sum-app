@@ -112,9 +112,16 @@ export async function PATCH(req: NextRequest) {
         );
       }
 
+      // 管理员任免只能通过超级管理员专用接口完成。
+      if (isSystemAdmin !== undefined) {
+        return NextResponse.json(
+          { error: "Only super admins can manage administrator access" },
+          { status: 403 }
+        );
+      }
+
       const updateData: any = {};
       if (role !== undefined) updateData.role = role;
-      if (isSystemAdmin !== undefined) updateData.isSystemAdmin = isSystemAdmin;
 
       const updatedUser = await prisma.user.update({
         where: { id: userId },
