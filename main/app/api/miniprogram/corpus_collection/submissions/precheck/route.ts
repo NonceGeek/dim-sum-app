@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       const body = await req.json();
       const images = Array.isArray(body.images) ? body.images : [];
 
-      if (!body.title || !body.intro) {
+      if (!body.title || !body.intro || images.length > 9) {
         return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
       }
 
