@@ -19,6 +19,22 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
+const DATABASE_HEALTH_CHECK_TIMEOUT_MS = 5_000;
+
+async function checkDatabaseHealth(): Promise<void> {
+  const { error } = await supabase
+    .from("cantonese_corpus_all")
+    .select("id")
+    .limit(1)
+    .abortSignal(AbortSignal.timeout(DATABASE_HEALTH_CHECK_TIMEOUT_MS));
+
+  if (error) {
+    throw new Error(
+      `Database health check failed (${error.code ?? "unknown"})`,
+    );
+  }
+}
+
 // Admin password verification function
 // ADMIN_PWD_HASH should be the SHA-256 hex digest of the actual admin password
 // how could I generate the ADMIN_PWD_HASH? echo -n "your_actual_password" | shasum -a 256
@@ -289,6 +305,35 @@ const router = new Router();
 router
   .get("/", async (context) => {
     context.response.body = { result: "Hello, Devs for AI Dimsum!" };
+  })
+  .get("/health/ready", async (context) => {
+    const startedAt = performance.now();
+    context.response.headers.set("Cache-Control", "no-store");
+
+    try {
+      await checkDatabaseHealth();
+
+      context.response.status = 200;
+      context.response.body = {
+        status: "ok",
+        checks: {
+          database: "ok",
+        },
+        response_time_ms: Math.round(performance.now() - startedAt),
+        time: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Database health check failed:", error);
+      context.response.status = 503;
+      context.response.body = {
+        status: "error",
+        checks: {
+          database: "unavailable",
+        },
+        response_time_ms: Math.round(performance.now() - startedAt),
+        time: new Date().toISOString(),
+      };
+    }
   })
   .get("/docs", async (context) =>{
     try {
