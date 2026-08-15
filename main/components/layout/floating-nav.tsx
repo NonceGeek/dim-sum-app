@@ -148,14 +148,16 @@ export function FloatingNav() {
             </SheetHeader>
             <div className="flex flex-col h-full">
               <div className="flex h-14 items-center border-b px-4">
-                <Image
-                  src="/logo.png"
-                  alt="DimSum AI Labs Logo"
-                  width={24}
-                  height={24}
-                  className="rounded-sm"
-                />
-                <span className="ml-2 text-sm font-medium">DimSum AI</span>
+                <Link href="/" className="flex items-center gap-2">
+                  <Image
+                    src="/logo.png"
+                    alt="DimSum AI Labs Logo"
+                    width={24}
+                    height={24}
+                    className="rounded-sm"
+                  />
+                  <span className="ml-2 text-sm font-medium">DimSum AI</span>
+                </Link>
               </div>
               <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
                 <HamburgerMenuContent onNavClick={() => setMobileOpen(false)} />
