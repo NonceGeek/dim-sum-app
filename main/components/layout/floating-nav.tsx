@@ -148,7 +148,7 @@ export function FloatingNav() {
             </SheetHeader>
             <div className="flex flex-col h-full">
               <div className="flex h-14 items-center border-b px-4">
-                <Link href="/" className="flex items-center gap-2">
+                <Link href="/" className="flex items-center">
                   <Image
                     src="/logo.png"
                     alt="DimSum AI Labs Logo"
