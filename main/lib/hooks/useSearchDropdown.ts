@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SearchResult } from '@/lib/api/search';
+import { backendFetch } from '@/lib/api/backend';
 import { useSearchHistoryStore } from '@/lib/store/useSearchHistoryStore';
 
 const DEBOUNCE_MS = 300;
@@ -87,11 +88,10 @@ export function useSearchDropdown({
             ? ['cantonese_corpus_all']
             : JSON.stringify(selectedDataset);
 
-        const url =
-          process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(query.trim())}`;
-
-        const res = await fetch(url, { signal: controller.signal });
+        const res = await backendFetch(
+          `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(query.trim())}`,
+          { signal: controller.signal },
+        );
         if (!res.ok) throw new Error('suggestion fetch failed');
         const data: SearchResult[] = await res.json();
         setSuggestions(data.slice(0, MAX_SUGGESTIONS));
