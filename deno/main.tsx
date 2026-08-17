@@ -28,11 +28,17 @@ async function checkDatabaseHealth(): Promise<void> {
     .limit(1)
     .abortSignal(AbortSignal.timeout(DATABASE_HEALTH_CHECK_TIMEOUT_MS));
 
-  if (error) {
-    throw new Error(
-      `Database health check failed (${error.code ?? "unknown"})`,
-    );
-  }
+    if (error) {
+      console.error("Supabase error:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+
+      throw error;
+    }
+   
 }
 
 // Admin password verification function
