@@ -232,13 +232,6 @@ async function textSearchV2Handler(context: any) {
   // const column = queryParams.get("column");
   const limitStr = queryParams.get("limit");
   const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-  const supabase_url =
-    queryParams.get("supabase_url") || Deno.env.get("SUPABASE_URL") || "";
-  // 使用模块级单例（避免每次重建连接），仅当传入了不同的 supabase_url 时才临时创建
-  const searchSupabase =
-    supabase_url === (Deno.env.get("SUPABASE_URL") ?? "")
-      ? supabase
-      : createClient(supabase_url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
   try {
     // const searchableTables = ["cantonese_corpus_all"];
 
@@ -252,10 +245,10 @@ async function textSearchV2Handler(context: any) {
     // }
     // Search for both traditional and simplified versions
     const [traditionalResults, simplifiedResults] = await Promise.all([
-      searchSupabase
+      supabase
         .rpc("search_cantonese_corpus", { search_term: traditionalKey })
         .order("id", { ascending: false }),
-      searchSupabase
+      supabase
         .rpc("search_cantonese_corpus", { search_term: simplifiedKey })
         .order("id", { ascending: false }),
     ]);
