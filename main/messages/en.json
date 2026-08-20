@@ -337,6 +337,134 @@
     "updatedAt": "Updated",
     "copied": "Copied"
   },
+  "QuestionnaireInsights": {
+    "title": "Questionnaire Insights",
+    "description": "Pre-participation registration, conversion paths, and de-identified audience profiles.",
+    "activityComparison": "Compare activities",
+    "exportUnavailable": "Aggregate export will be available in Phase 5",
+    "exportReport": "Export aggregate report",
+    "refresh": "Refresh",
+    "loadFailed": "Unable to load data. Please try again.",
+    "reload": "Reload",
+    "noData": "No data for the current filters.",
+    "insufficientSample": "Insufficient sample",
+    "filters": {
+      "dateRange": "Date range", "today": "Today", "sevenDays": "Last 7 days", "thirtyDays": "Last 30 days", "quarter": "This quarter",
+      "activity": "Activity filter", "allActivities": "All activities",
+      "submissionStatus": "Submission status", "allSubmissionStatuses": "All submission statuses", "submitted": "Submitted", "notSubmitted": "Not submitted",
+      "registrationType": "Registration type", "allRegistrationTypes": "All registration types", "firstTime": "First-time registration", "reused": "Reused profile"
+    },
+    "kpis": {
+      "completed": { "label": "Completed registrations", "description": "Users who completed registration for the first time during the selected period" },
+      "submissionRate": { "label": "Post-registration submission rate", "description": "Registered users who submitted within the attribution window" },
+      "reuseRate": { "label": "Profile reuse rate", "description": "Users who reused an existing profile when participating again" }
+    },
+    "conversion": {
+      "title": "Participation Conversion Paths", "description": "First-time registration and profile reuse are measured separately to avoid mixing funnel definitions.", "viewDetails": "View drop-off details",
+      "firstTimeTitle": "First-time registration funnel", "firstTimeDescription": "Complete the questionnaire and submit after clicking the submission call to action",
+      "reusedTitle": "Profile reuse path", "reusedDescription": "Users with an existing profile proceed directly to submission"
+    },
+    "profile": {
+      "title": "Audience Profile", "description": "Only de-identified aggregates are shown. Exact conversion rates are hidden for groups smaller than {count} users.",
+      "ageDetails": "Age details", "regionDetails": "Region details", "interestDetails": "Interest details",
+      "ageTitle": "Age range", "ageDescription": "Age distribution of registered users",
+      "regionTitle": "Language and culture region", "regionDescription": "User counts by questionnaire region option",
+      "interestTitle": "Interest types", "interestDescription": "Optional, multi-select user interests"
+    },
+    "activityTable": {
+      "title": "Activity × Audience Performance", "description": "Activity tags come from activity settings and remain separate from user interests.",
+      "activity": "Activity", "registrations": "Registrations", "submissionRate": "Submission rate", "topAge": "Top age range", "region": "Region preference", "tag": "Activity tag",
+      "empty": "There is not enough data to build an audience profile for the current filters."
+    },
+    "funnelDialog": {
+      "title": "Questionnaire Drop-off Details", "description": "First-time and reuse paths are calculated separately; all counts are unique users.",
+      "maximumLoss": "Largest drop-off step", "lossCount": "{count} users dropped off", "firstTime": "First-time registration", "reused": "Profile reuse",
+      "step": "Step", "people": "Users", "completionRate": "Completion rate", "lossFromPrevious": "Drop-off from previous step"
+    },
+    "profileDialog": {
+      "title": "Audience Profile Details", "description": "Only aggregate data is shown. Small groups do not return exact submission rates.",
+      "sampleSize": "Profile sample size", "leadingGroup": "Leading group", "group": "Group", "people": "Users", "share": "Share", "submissionRate": "Submission rate"
+    },
+    "comparisonDialog": {
+      "title": "Activity Comparison Details", "description": "Ongoing and ended activities are ranked separately by post-registration submission rate, with up to five shown.",
+      "ongoing": "Ongoing activities · Top 5", "ended": "Ended activities · Top 5", "activity": "Activity", "registrations": "Registrations",
+      "completionRate": "Questionnaire completion rate", "submissionRate": "Submission rate", "topAge": "Top age range", "region": "Region preference",
+      "endsAt": "Ends {date}", "longRunning": "No end date", "empty": "No activities"
+    }
+  },
+  "QuestionnaireDefinition": {
+    "title": "Questionnaire Definition",
+    "description": "The current published version is v{version}. Publishing creates a new version and never overwrites history.",
+    "loadFailed": "Unable to load questionnaire definition",
+    "publishFailed": "Unable to publish questionnaire",
+    "publishSuccess": "Questionnaire version {version} published",
+    "unavailable": "The questionnaire definition could not be loaded or has not been initialized.",
+    "reload": "Reload",
+    "publish": "Publish new version",
+    "newOption": "New option",
+    "singleChoice": "Single choice",
+    "multipleChoice": "Multiple choice",
+    "required": "Required",
+    "optional": "Optional",
+    "questionDescription": "Question fields, types, and required rules are bound to the existing data structure. Only copy and options can be edited.",
+    "questionTitle": "Question title",
+    "questionHelp": "Help text",
+    "options": "Options",
+    "addOption": "Add option",
+    "optionCodeLabel": "Option code for {question}",
+    "optionNameLabel": "Option label for {question}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "delete": "Delete",
+    "questions": { "ageRange": "Age range", "cultureRegion": "Language and culture region", "interestTypes": "Activity interests" },
+    "basic": {
+      "title": "Basic Information",
+      "description": "Edits stay on this page until you publish a new version. Only newly started questionnaires use the new version.",
+      "name": "Questionnaire name"
+    },
+    "history": {
+      "title": "Version History",
+      "description": "Questionnaires already in progress continue using the version recorded when they started.",
+      "version": "Version",
+      "name": "Name",
+      "status": "Status",
+      "publishedAt": "Published",
+      "current": "Current",
+      "archived": "Archived"
+    },
+    "dialog": {
+      "title": "Publish a new questionnaire version?",
+      "description": "Version v{version} will be created and the current version archived. Existing journeys keep their original version; new journeys use the new version.",
+      "cancel": "Cancel",
+      "publishing": "Publishing…",
+      "confirm": "Publish"
+    }
+  },
+  "QuestionnaireSettings": {
+    "title": "Questionnaire Gate Settings",
+    "description": "Choose whether activity submissions require the pre-participation questionnaire. Existing and new activities are enabled by default.",
+    "enableAll": "Enable all",
+    "disableAll": "Disable all",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "gateLabel": "Questionnaire gate for {activity}",
+    "summary": { "total": "Total activities", "enabled": "Gate enabled", "disabled": "Gate disabled" },
+    "list": {
+      "title": "Configure by Activity",
+      "description": "When disabled, that activity temporarily follows the legacy submission flow. Submissions without an activity are never affected.",
+      "loadFailed": "Unable to load gate settings.",
+      "reload": "Reload",
+      "empty": "No activities found.",
+      "columns": { "activity": "Activity", "status": "Status", "tag": "Activity tag", "gate": "Require questionnaire" }
+    },
+    "toast": {
+      "activityEnabled": "Questionnaire gate enabled for this activity",
+      "activityDisabled": "Questionnaire gate disabled for this activity",
+      "allEnabled": "Questionnaire gate enabled for all activities",
+      "allDisabled": "Questionnaire gate disabled for all activities",
+      "failed": "Unable to update questionnaire gate settings"
+    }
+  },
   "QuestionnairePermissions": {
     "title": "Questionnaire Permissions",
     "description": "Configure which questionnaire insights each activity operator can access.",

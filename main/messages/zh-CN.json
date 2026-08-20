@@ -338,6 +338,134 @@
     "updatedAt": "最近更新",
     "copied": "已复制"
   },
+  "QuestionnaireInsights": {
+    "title": "问卷洞察",
+    "description": "参赛前登记、转化路径与去标识化用户画像。",
+    "activityComparison": "活动对比",
+    "exportUnavailable": "聚合导出将在 Phase 5 开放",
+    "exportReport": "导出聚合报表",
+    "refresh": "刷新",
+    "loadFailed": "数据加载失败，请重试。",
+    "reload": "重新加载",
+    "noData": "当前筛选范围内暂无数据。",
+    "insufficientSample": "样本量不足",
+    "filters": {
+      "dateRange": "时间范围", "today": "今天", "sevenDays": "近 7 天", "thirtyDays": "近 30 天", "quarter": "本季度",
+      "activity": "活动筛选", "allActivities": "全部活动",
+      "submissionStatus": "投稿状态", "allSubmissionStatuses": "全部投稿状态", "submitted": "已投稿", "notSubmitted": "未投稿",
+      "registrationType": "登记方式", "allRegistrationTypes": "全部登记方式", "firstTime": "首次登记", "reused": "复用资料"
+    },
+    "kpis": {
+      "completed": { "label": "已完成参赛前登记", "description": "筛选期间首次完成登记的用户" },
+      "submissionRate": { "label": "登记后投稿率", "description": "已登记用户在归因窗口内投稿" },
+      "reuseRate": { "label": "资料复用率", "description": "再次参与时复用已有资料" }
+    },
+    "conversion": {
+      "title": "参与转化路径", "description": "首次登记与资料复用独立统计，避免漏斗口径混合。", "viewDetails": "查看流失详情",
+      "firstTimeTitle": "首次登记漏斗", "firstTimeDescription": "点击投稿后完成问卷并提交作品",
+      "reusedTitle": "资料复用路径", "reusedDescription": "已有档案用户直接进入投稿"
+    },
+    "profile": {
+      "title": "用户画像", "description": "只展示去标识化聚合数据；少于 {count} 人不展示精确转化率。",
+      "ageDetails": "年龄详情", "regionDetails": "地区详情", "interestDetails": "兴趣详情",
+      "ageTitle": "年龄区间", "ageDescription": "完成登记用户的年龄分布",
+      "regionTitle": "语言文化地区偏好", "regionDescription": "问卷地区选项人数排行",
+      "interestTitle": "兴趣类型", "interestDescription": "选填、多选的用户兴趣"
+    },
+    "activityTable": {
+      "title": "活动 × 人群效果", "description": "活动标签来自活动配置，与用户兴趣类型保持独立。",
+      "activity": "活动", "registrations": "登记人数", "submissionRate": "投稿转化率", "topAge": "主要年龄段", "region": "地区偏好", "tag": "活动标签",
+      "empty": "当前筛选范围内暂无足够数据形成画像。"
+    },
+    "funnelDialog": {
+      "title": "问卷流失详情", "description": "首次登记与资料复用路径分别计算，所有人数均为去重用户。",
+      "maximumLoss": "最大流失步骤", "lossCount": "流失 {count} 人", "firstTime": "首次登记", "reused": "资料复用",
+      "step": "步骤", "people": "人数", "completionRate": "完成率", "lossFromPrevious": "较上一步流失"
+    },
+    "profileDialog": {
+      "title": "用户画像详情", "description": "仅展示聚合数据，小样本分组不返回精确投稿率。",
+      "sampleSize": "画像样本数", "leadingGroup": "核心分组", "group": "分组", "people": "人数", "share": "占比", "submissionRate": "投稿率"
+    },
+    "comparisonDialog": {
+      "title": "活动对比详情", "description": "进行中与已结束活动分别按登记后投稿率排序，最多展示 5 条。",
+      "ongoing": "进行中活动 · Top 5", "ended": "已结束活动 · Top 5", "activity": "活动", "registrations": "登记人数",
+      "completionRate": "问卷完成率", "submissionRate": "投稿率", "topAge": "主要年龄", "region": "地区偏好",
+      "endsAt": "截止 {date}", "longRunning": "长期活动", "empty": "暂无活动"
+    }
+  },
+  "QuestionnaireDefinition": {
+    "title": "问卷定义",
+    "description": "当前发布版本为 v{version}。发布会生成新版本，已发布历史不会被覆盖。",
+    "loadFailed": "问卷定义加载失败",
+    "publishFailed": "问卷发布失败",
+    "publishSuccess": "问卷版本 {version} 已发布",
+    "unavailable": "问卷定义加载失败或尚未初始化。",
+    "reload": "重新加载",
+    "publish": "发布新版本",
+    "newOption": "新选项",
+    "singleChoice": "单选",
+    "multipleChoice": "多选",
+    "required": "必填",
+    "optional": "选填",
+    "questionDescription": "题目字段、题型和必填规则与现有数据结构绑定，后台只允许修改文案和选项。",
+    "questionTitle": "题目标题",
+    "questionHelp": "辅助说明",
+    "options": "选项",
+    "addOption": "新增选项",
+    "optionCodeLabel": "{question}选项 code",
+    "optionNameLabel": "{question}选项名称",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "delete": "删除",
+    "questions": { "ageRange": "年龄区间", "cultureRegion": "语言文化地区", "interestTypes": "兴趣活动类型" },
+    "basic": {
+      "title": "基本信息",
+      "description": "修改内容只保存在当前页面，点击“发布新版本”后才会影响新进入问卷的用户。",
+      "name": "问卷名称"
+    },
+    "history": {
+      "title": "版本记录",
+      "description": "进行中的填写会继续使用进入问卷时记录的版本。",
+      "version": "版本",
+      "name": "名称",
+      "status": "状态",
+      "publishedAt": "发布时间",
+      "current": "当前发布",
+      "archived": "已归档"
+    },
+    "dialog": {
+      "title": "发布问卷新版本？",
+      "description": "将生成 v{version} 并归档当前版本。已经开始填写的用户仍使用原版本，新进入的用户使用新版本。",
+      "cancel": "取消",
+      "publishing": "发布中…",
+      "confirm": "确认发布"
+    }
+  },
+  "QuestionnaireSettings": {
+    "title": "问卷门禁设置",
+    "description": "配置活动投稿是否强制完成参赛前问卷。现有活动和新活动默认全部开启。",
+    "enableAll": "全部开启",
+    "disableAll": "全部关闭",
+    "enabled": "已开启",
+    "disabled": "已关闭",
+    "gateLabel": "{activity}问卷门禁",
+    "summary": { "total": "活动总数", "enabled": "门禁已开启", "disabled": "门禁已关闭" },
+    "list": {
+      "title": "按活动配置",
+      "description": "关闭后，该活动投稿暂时兼容旧流程；普通非活动投稿始终不受问卷门禁影响。",
+      "loadFailed": "门禁配置加载失败。",
+      "reload": "重新加载",
+      "empty": "暂无活动。",
+      "columns": { "activity": "活动", "status": "状态", "tag": "活动标签", "gate": "强制问卷门禁" }
+    },
+    "toast": {
+      "activityEnabled": "该活动问卷门禁已开启",
+      "activityDisabled": "该活动问卷门禁已关闭",
+      "allEnabled": "全部活动问卷门禁已开启",
+      "allDisabled": "全部活动问卷门禁已关闭",
+      "failed": "门禁设置更新失败"
+    }
+  },
   "QuestionnairePermissions": {
     "title": "问卷权限",
     "description": "配置活动运营可访问的问卷洞察活动范围。",

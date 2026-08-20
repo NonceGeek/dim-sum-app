@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp, Database, Plus, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -36,13 +37,9 @@ type DefinitionData = {
   versions: Array<Omit<Questionnaire, "questions">>;
 };
 
-const questionLabels: Record<QuestionKey, string> = {
-  ageRange: "年龄区间",
-  cultureRegion: "语言文化地区",
-  interestTypes: "兴趣活动类型",
-};
-
 export default function QuestionnaireDefinitionPage() {
+  const t = useTranslations("QuestionnaireDefinition");
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -51,7 +48,7 @@ export default function QuestionnaireDefinitionPage() {
     queryKey: ["questionnaire-definition"],
     queryFn: async () => {
       const response = await fetch("/api/admin/corpus-collection/questionnaire-definition");
-      if (!response.ok) throw new Error("问卷定义加载失败");
+      if (!response.ok) throw new Error(t("loadFailed"));
       return response.json();
     },
   });
@@ -73,15 +70,15 @@ export default function QuestionnaireDefinitionPage() {
         body: JSON.stringify({ name, definition: { questions } }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message ?? "问卷发布失败");
+      if (!response.ok) throw new Error(t("publishFailed"));
       return result;
     },
     onSuccess: (result) => {
       setConfirmOpen(false);
-      toast.success(`问卷版本 ${result.questionnaire.schemaVersion} 已发布`);
+      toast.success(t("publishSuccess", { version: result.questionnaire.schemaVersion }));
       queryClient.invalidateQueries({ queryKey: ["questionnaire-definition"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "问卷发布失败"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("publishFailed")),
   });
 
   const updateQuestion = (index: number, patch: Partial<Question>) => {
@@ -111,7 +108,7 @@ export default function QuestionnaireDefinitionPage() {
   const addOption = (questionIndex: number) => {
     setQuestions((current) => current.map((question, currentQuestionIndex) =>
       currentQuestionIndex === questionIndex
-        ? { ...question, options: [...question.options, { code: `option_${Date.now()}`, label: "新选项" }] }
+        ? { ...question, options: [...question.options, { code: `option_${Date.now()}`, label: t("newOption") }] }
         : question));
   };
   const removeOption = (questionIndex: number, optionIndex: number) => {
@@ -127,8 +124,8 @@ export default function QuestionnaireDefinitionPage() {
   if (isError || !data?.current) {
     return (
       <Card><CardContent className="flex flex-col items-center gap-3 py-16">
-        <p className="text-sm text-muted-foreground">问卷定义加载失败或尚未初始化</p>
-        <Button variant="outline" onClick={() => refetch()}>重新加载</Button>
+        <p className="text-sm text-muted-foreground">{t("unavailable")}</p>
+        <Button variant="outline" onClick={() => refetch()}>{t("reload")}</Button>
       </CardContent></Card>
     );
   }
@@ -137,23 +134,21 @@ export default function QuestionnaireDefinitionPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Questionnaire Definition</h2>
-          <p className="mt-2 text-muted-foreground">
-            当前发布版本为 v{data.current.schemaVersion}。发布会生成新版本，已发布历史不会被覆盖。
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight">{t("title")}</h2>
+          <p className="mt-2 text-muted-foreground">{t("description", { version: data.current.schemaVersion })}</p>
         </div>
         <Button onClick={() => setConfirmOpen(true)} disabled={!name.trim() || questions.length !== 3}>
-          <Send className="mr-2 h-4 w-4" />发布新版本
+          <Send className="mr-2 h-4 w-4" />{t("publish")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>基本信息</CardTitle>
-          <CardDescription>修改内容只保存在当前页面，点击“发布新版本”后才会影响新进入问卷的用户。</CardDescription>
+          <CardTitle>{t("basic.title")}</CardTitle>
+          <CardDescription>{t("basic.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Label htmlFor="questionnaire-name">问卷名称</Label>
+          <Label htmlFor="questionnaire-name">{t("basic.name")}</Label>
           <Input id="questionnaire-name" value={name} maxLength={80} onChange={(event) => setName(event.target.value)} />
         </CardContent>
       </Card>
@@ -162,32 +157,32 @@ export default function QuestionnaireDefinitionPage() {
         <Card key={question.key}>
           <CardHeader>
             <div className="flex flex-wrap items-center gap-2">
-              <CardTitle>{questionIndex + 1}. {questionLabels[question.key]}</CardTitle>
-              <Badge variant="secondary">{question.type === "single_choice" ? "单选" : "多选"}</Badge>
-              <Badge variant={question.required ? "default" : "outline"}>{question.required ? "必填" : "选填"}</Badge>
+              <CardTitle>{questionIndex + 1}. {t(`questions.${question.key}`)}</CardTitle>
+              <Badge variant="secondary">{question.type === "single_choice" ? t("singleChoice") : t("multipleChoice")}</Badge>
+              <Badge variant={question.required ? "default" : "outline"}>{question.required ? t("required") : t("optional")}</Badge>
               <Badge variant="outline" className="font-mono">{question.key}</Badge>
             </div>
-            <CardDescription>题目字段、题型和必填规则与现有数据结构绑定，后台只允许修改文案和选项。</CardDescription>
+            <CardDescription>{t("questionDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label>题目标题</Label>
+              <Label>{t("questionTitle")}</Label>
               <Input value={question.title} maxLength={100} onChange={(event) => updateQuestion(questionIndex, { title: event.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>辅助说明</Label>
+              <Label>{t("questionHelp")}</Label>
               <Textarea
                 value={question.description ?? ""}
                 maxLength={200}
-                placeholder="选填"
+                placeholder={t("optional")}
                 onChange={(event) => updateQuestion(questionIndex, { description: event.target.value || undefined })}
               />
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>选项</Label>
+                <Label>{t("options")}</Label>
                 <Button variant="outline" size="sm" onClick={() => addOption(questionIndex)} disabled={question.options.length >= 30}>
-                  <Plus className="mr-2 h-4 w-4" />新增选项
+                  <Plus className="mr-2 h-4 w-4" />{t("addOption")}
                 </Button>
               </div>
               {question.options.map((option, optionIndex) => (
@@ -196,23 +191,23 @@ export default function QuestionnaireDefinitionPage() {
                     className="font-mono text-sm"
                     value={option.code}
                     maxLength={64}
-                    aria-label={`${questionLabels[question.key]}选项 code`}
+                    aria-label={t("optionCodeLabel", { question: t(`questions.${question.key}`) })}
                     onChange={(event) => updateOption(questionIndex, optionIndex, "code", event.target.value)}
                   />
                   <Input
                     value={option.label}
                     maxLength={40}
-                    aria-label={`${questionLabels[question.key]}选项名称`}
+                    aria-label={t("optionNameLabel", { question: t(`questions.${question.key}`) })}
                     onChange={(event) => updateOption(questionIndex, optionIndex, "label", event.target.value)}
                   />
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => moveOption(questionIndex, optionIndex, -1)} disabled={optionIndex === 0} aria-label="上移">
+                    <Button variant="ghost" size="icon" onClick={() => moveOption(questionIndex, optionIndex, -1)} disabled={optionIndex === 0} aria-label={t("moveUp")}>
                       <ArrowUp className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => moveOption(questionIndex, optionIndex, 1)} disabled={optionIndex === question.options.length - 1} aria-label="下移">
+                    <Button variant="ghost" size="icon" onClick={() => moveOption(questionIndex, optionIndex, 1)} disabled={optionIndex === question.options.length - 1} aria-label={t("moveDown")}>
                       <ArrowDown className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeOption(questionIndex, optionIndex)} disabled={question.options.length <= 1} aria-label="删除">
+                    <Button variant="ghost" size="icon" onClick={() => removeOption(questionIndex, optionIndex)} disabled={question.options.length <= 1} aria-label={t("delete")}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -225,19 +220,19 @@ export default function QuestionnaireDefinitionPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5" />版本记录</CardTitle>
-          <CardDescription>进行中的填写会继续使用进入问卷时记录的版本。</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5" />{t("history.title")}</CardTitle>
+          <CardDescription>{t("history.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>版本</TableHead><TableHead>名称</TableHead><TableHead>状态</TableHead><TableHead>发布时间</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t("history.version")}</TableHead><TableHead>{t("history.name")}</TableHead><TableHead>{t("history.status")}</TableHead><TableHead>{t("history.publishedAt")}</TableHead></TableRow></TableHeader>
             <TableBody>
               {data.versions.map((version) => (
                 <TableRow key={version.schemaVersion}>
                   <TableCell className="font-mono">v{version.schemaVersion}</TableCell>
                   <TableCell>{version.name}</TableCell>
-                  <TableCell><Badge variant={version.status === "published" ? "default" : "secondary"}>{version.status === "published" ? "当前发布" : "已归档"}</Badge></TableCell>
-                  <TableCell>{version.publishedAt ? new Date(version.publishedAt).toLocaleString("zh-CN") : "—"}</TableCell>
+                  <TableCell><Badge variant={version.status === "published" ? "default" : "secondary"}>{version.status === "published" ? t("history.current") : t("history.archived")}</Badge></TableCell>
+                  <TableCell>{version.publishedAt ? new Date(version.publishedAt).toLocaleString(locale) : "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -248,15 +243,13 @@ export default function QuestionnaireDefinitionPage() {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>发布问卷新版本？</DialogTitle>
-            <DialogDescription>
-              将生成 v{data.current.schemaVersion + 1} 并归档当前版本。已经开始填写的用户仍使用原版本，新进入的用户使用新版本。
-            </DialogDescription>
+            <DialogTitle>{t("dialog.title")}</DialogTitle>
+            <DialogDescription>{t("dialog.description", { version: data.current.schemaVersion + 1 })}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>取消</Button>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>{t("dialog.cancel")}</Button>
             <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending}>
-              {publishMutation.isPending ? "发布中…" : "确认发布"}
+              {publishMutation.isPending ? t("dialog.publishing") : t("dialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
