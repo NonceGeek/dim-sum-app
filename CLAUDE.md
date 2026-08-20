@@ -20,10 +20,19 @@ cd main/
 ### Database Commands
 
 - `npm run db:generate` - Generate Prisma client
-- `npm run db:migrate` - Run database migrations
+- `npm run db:migrate` - Legacy migration command; do not use for the current database workflow
 - `npm run db:studio` - Open Prisma Studio for database management
 - `npm run db:push` - Push schema changes to database
 - `npm run db:pull` - Pull schema from database
+
+Current database iteration workflow:
+
+1. Run `npm run db:pull` before editing to synchronize the database source of truth.
+2. Update `prisma/schema.prisma`.
+3. Review the live database-to-schema diff.
+4. Run `npm run db:push` to update the database.
+
+Do not add a Prisma migration for normal feature schema changes unless the team explicitly changes this workflow.
 
 ## Architecture Overview
 
@@ -59,7 +68,7 @@ This is a Next.js 15 application for a Cantonese language learning platform with
 - `app/` - Next.js App Router pages and API routes
 - `components/` - Reusable UI components organized by type
 - `lib/` - Utilities, API clients, auth configuration, and stores
-- `prisma/` - Database schema and migrations
+- `prisma/` - Database schema; current feature changes use db pull/db push
 - `providers/` - Authentication and query providers
 
 ### API Structure

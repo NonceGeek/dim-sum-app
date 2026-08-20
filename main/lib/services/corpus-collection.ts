@@ -1,5 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  assertQuestionnaireSubmissionGate,
+} from "@/lib/services/questionnaire-journey";
 
 export const PUBLIC_SUBMISSION_WHERE = {
   review_status: "approved",
@@ -594,24 +597,65 @@ export async function createCorpusSubmission(userId: string, body: any) {
 
   const activityId = parseBigIntId(body.activityId);
   const coverUrl = normalizeCoverUrl(body.coverUrl);
+  const enabledIds = new Set(
+    (process.env.QUESTIONNAIRE_GATE_ACTIVITY_IDS ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  const gateEnabled =
+    Boolean(activityId) &&
+    (process.env.QUESTIONNAIRE_GATE_ENABLED === "true" ||
+      enabledIds.has(activityId!.toString()));
 
-  return prisma.corpus_collection_submissions.create({
-    data: {
-      user_id: userId,
-      activity_id: activityId,
-      submission_type: body.submissionType,
-      title: body.title,
-      intro: body.intro,
-      tags: body.tags as Prisma.InputJsonValue,
-      cover_url: coverUrl ?? null,
-      precheck_result: jsonInput(body.precheckResult),
-      review_status: "pending_review",
-      visibility: "private",
-      media: {
-        create: buildSubmissionMediaCreateInput(media),
+  return prisma.$transaction(async (tx) => {
+    const journey =
+      gateEnabled
+        ? await assertQuestionnaireSubmissionGate(
+            tx,
+            userId,
+            activityId!,
+            typeof body.questionnaireJourneyId === "string"
+              ? body.questionnaireJourneyId
+              : "",
+          )
+        : null;
+    const submission = await tx.corpus_collection_submissions.create({
+      data: {
+        user_id: userId,
+        activity_id: activityId,
+        submission_type: body.submissionType,
+        title: body.title,
+        intro: body.intro,
+        tags: body.tags as Prisma.InputJsonValue,
+        cover_url: coverUrl ?? null,
+        precheck_result: jsonInput(body.precheckResult),
+        review_status: "pending_review",
+        visibility: "private",
+        media: {
+          create: buildSubmissionMediaCreateInput(media),
+        },
       },
-    },
-    include: submissionInclude,
+      include: submissionInclude,
+    });
+    if (journey) {
+      await tx.corpus_collection_questionnaire_journeys.update({
+        where: { id: journey.id },
+        data: { status: "submitted", submission_id: submission.id },
+      });
+      await tx.corpus_collection_questionnaire_events.create({
+        data: {
+          event_id: crypto.randomUUID(),
+          journey_id: journey.id,
+          user_id: userId,
+          activity_id: activityId!,
+          event_name: "submit_submission_success",
+          flow_type: journey.flow_type,
+          metadata: { submissionId: submission.id.toString() },
+        },
+      });
+    }
+    return submission;
   });
 }
 

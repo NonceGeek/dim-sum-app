@@ -4,6 +4,7 @@ import {
   createCorpusSubmission,
   serializeSubmission,
 } from "@/lib/services/corpus-collection";
+import { questionnaireErrorResponse } from "@/lib/services/questionnaire-schema";
 
 export async function POST(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
@@ -20,6 +21,10 @@ export async function POST(req: NextRequest) {
         { status: 201 }
       );
     } catch (error) {
+      const questionnaireError = questionnaireErrorResponse(error);
+      if (questionnaireError.status !== 500) {
+        return NextResponse.json(questionnaireError.body, { status: questionnaireError.status });
+      }
       const message = error instanceof Error ? error.message : "Failed to create submission";
       const status = message === "Invalid media requirements" ? 422 : 400;
       return NextResponse.json({ error: message }, { status });
