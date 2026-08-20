@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Globe, Lock, Users, Database } from "lucide-react";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 interface Category {
@@ -43,6 +43,8 @@ interface CategoriesResponse {
 }
 
 export default function AdminCategoriesPage() {
+  const t = useTranslations("AdminCategories");
+  const locale = useLocale();
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
@@ -52,7 +54,7 @@ export default function AdminCategoriesPage() {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       const response = await fetch(`/api/admin/categories?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch categories");
+      if (!response.ok) throw new Error(t("errors.fetch"));
       return response.json();
     },
   });
@@ -70,15 +72,15 @@ export default function AdminCategoriesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, is_public }),
       });
-      if (!response.ok) throw new Error("Failed to update category");
+      if (!response.ok) throw new Error(t("errors.update"));
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
-      toast.success("Category visibility updated");
+      toast.success(t("messages.updated"));
     },
     onError: () => {
-      toast.error("Failed to update category");
+      toast.error(t("errors.update"));
     },
   });
 
@@ -91,24 +93,24 @@ export default function AdminCategoriesPage() {
       {/* Header */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          Categories
+          {t("title")}
         </h2>
         <p className="text-muted-foreground mt-2">
-          Manage corpus categories and visibility settings.
+          {t("description")}
         </p>
       </div>
 
       {/* Search */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Search Categories</CardTitle>
+          <CardTitle className="text-foreground">{t("search.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search by name or nickname..."
+                placeholder={t("search.placeholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -119,7 +121,7 @@ export default function AdminCategoriesPage() {
               onClick={handleSearch}
               className="bg-primary hover:bg-primary/90"
             >
-              Search
+              {t("search.button")}
             </Button>
           </div>
         </CardContent>
@@ -131,10 +133,10 @@ export default function AdminCategoriesPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-foreground">
-                Categories List ({data?.categories.length || 0})
+                {t("list.title", { count: data?.categories.length || 0 })}
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                Toggle visibility for each category
+                {t("list.description")}
               </CardDescription>
             </div>
           </div>
@@ -169,23 +171,23 @@ export default function AdminCategoriesPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border">
-                  <TableHead className="text-muted-foreground">Name</TableHead>
-                  <TableHead className="text-muted-foreground">Nickname</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.name")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.nickname")}</TableHead>
                   <TableHead className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Database className="h-4 w-4" />
-                      Entries
+                      {t("columns.entries")}
                     </div>
                   </TableHead>
                   <TableHead className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      Permissions
+                      {t("columns.permissions")}
                     </div>
                   </TableHead>
-                  <TableHead className="text-muted-foreground">Status</TableHead>
-                  <TableHead className="text-muted-foreground">Public</TableHead>
-                  <TableHead className="text-muted-foreground">Created</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.status")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.public")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.created")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -235,7 +237,7 @@ export default function AdminCategoriesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(new Date(category.created_at), "MMM d, yyyy")}
+                      {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(category.created_at))}
                     </TableCell>
                   </TableRow>
                 ))}

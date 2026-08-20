@@ -28,7 +28,7 @@ import {
   ChevronDown,
   User as UserIcon,
 } from "lucide-react";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 
 interface AuditLog {
   id: number;
@@ -60,6 +60,8 @@ interface AuditLogsResponse {
 }
 
 export default function AdminAuditLogsPage() {
+  const t = useTranslations("AdminAuditLogs");
+  const locale = useLocale();
   const [operatorId, setOperatorId] = useState("");
   const [targetUserId, setTargetUserId] = useState("");
   const [categoryName, setCategoryName] = useState("");
@@ -94,7 +96,7 @@ export default function AdminAuditLogsPage() {
       if (categoryName) params.append("category_name", categoryName);
 
       const response = await fetch(`/api/admin/audit-logs?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch audit logs");
+      if (!response.ok) throw new Error(t("errors.fetch"));
       return response.json();
     },
   });
@@ -117,13 +119,13 @@ export default function AdminAuditLogsPage() {
   const getActionLabel = (action: string) => {
     switch (action) {
       case "GRANT":
-        return "Granted";
+        return t("actions.granted");
       case "REVOKE":
-        return "Revoked";
+        return t("actions.revoked");
       case "MODIFY":
-        return "Modified";
+        return t("actions.modified");
       case "ROLE_CHANGE":
-        return "Role Changed";
+        return t("actions.roleChanged");
       default:
         return action;
     }
@@ -131,9 +133,9 @@ export default function AdminAuditLogsPage() {
 
   const formatValue = (value: any) => {
     if (!value) return "-";
-    if (value.permission) return `Permission: ${value.permission}`;
-    if (value.is_public !== undefined) return `Public: ${value.is_public}`;
-    if (value.role) return `Role: ${value.role}`;
+    if (value.permission) return t("values.permission", { value: value.permission });
+    if (value.is_public !== undefined) return t("values.public", { value: String(value.is_public) });
+    if (value.role) return t("values.role", { value: value.role });
     return JSON.stringify(value);
   };
 
@@ -145,37 +147,37 @@ export default function AdminAuditLogsPage() {
       {/* Header */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          Audit Logs
+          {t("title")}
         </h2>
         <p className="text-muted-foreground mt-2">
-          View permission change history and user activity.
+          {t("description")}
         </p>
       </div>
 
       {/* Search and Filter */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Filter Logs</CardTitle>
+          <CardTitle className="text-foreground">{t("filter.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Operator ID..."
+                placeholder={t("filter.operator")}
                 value={operatorId}
                 onChange={(e) => setOperatorId(e.target.value)}
                 className="pl-10 bg-secondary border-border text-foreground"
               />
             </div>
             <Input
-              placeholder="Target User ID..."
+              placeholder={t("filter.targetUser")}
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
               className="w-48 bg-secondary border-border text-foreground"
             />
             <Input
-              placeholder="Category..."
+              placeholder={t("filter.category")}
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               className="w-48 bg-secondary border-border text-foreground"
@@ -184,7 +186,7 @@ export default function AdminAuditLogsPage() {
               onClick={() => setOffset(0)}
               className="bg-primary hover:bg-primary/90"
             >
-              Search
+              {t("filter.search")}
             </Button>
           </div>
         </CardContent>
@@ -194,10 +196,10 @@ export default function AdminAuditLogsPage() {
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">
-            Audit Logs ({data?.total || 0})
+            {t("list.title", { count: data?.total || 0 })}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Permission and role change history
+            {t("list.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -237,11 +239,11 @@ export default function AdminAuditLogsPage() {
                 <TableHeader>
                   <TableRow className="border-border">
                     <TableHead className="text-muted-foreground w-8"></TableHead>
-                    <TableHead className="text-muted-foreground">Time</TableHead>
-                    <TableHead className="text-muted-foreground">Operator</TableHead>
-                    <TableHead className="text-muted-foreground">Target User</TableHead>
-                    <TableHead className="text-muted-foreground">Action</TableHead>
-                    <TableHead className="text-muted-foreground">Category</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.time")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.operator")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.targetUser")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.action")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.category")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -260,7 +262,7 @@ export default function AdminAuditLogsPage() {
                           />
                         </TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">
-                          {format(new Date(log.created_at), "MMM d, HH:mm")}
+                          {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(log.created_at))}
                         </TableCell>
                         <TableCell className="text-foreground">
                           <div className="flex items-center gap-2">
@@ -268,7 +270,7 @@ export default function AdminAuditLogsPage() {
                               <UserIcon className="w-3 h-3 text-muted-foreground" />
                             </div>
                             <span className="text-sm">
-                              {log.operator.name || log.operator.email || "Admin"}
+                              {log.operator.name || log.operator.email || t("fallback.admin")}
                             </span>
                           </div>
                         </TableCell>
@@ -279,7 +281,7 @@ export default function AdminAuditLogsPage() {
                             </div>
                             <div>
                               <div className="text-sm">
-                                {log.target_user.name || "N/A"}
+                                {log.target_user.name || t("fallback.na")}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {log.target_user.role}
@@ -301,11 +303,11 @@ export default function AdminAuditLogsPage() {
                           <TableCell colSpan={6} className="py-3 px-6">
                             <div className="flex gap-8 text-sm">
                               <div>
-                                <span className="text-muted-foreground font-medium">Before: </span>
+                                <span className="text-muted-foreground font-medium">{t("details.before")}</span>
                                 <span className="text-foreground">{formatValue(log.old_value)}</span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground font-medium">After: </span>
+                                <span className="text-muted-foreground font-medium">{t("details.after")}</span>
                                 <span className="text-foreground">{formatValue(log.new_value)}</span>
                               </div>
                             </div>
@@ -321,7 +323,7 @@ export default function AdminAuditLogsPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                    {t("pagination", { page: currentPage, total: totalPages })}
                   </div>
                   <div className="flex gap-2">
                     <Button

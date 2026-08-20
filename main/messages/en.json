@@ -628,6 +628,40 @@
       "confirmRevoke": "Revoke access"
     }
   },
+  "AdminSettings": { "title": "Settings", "description": "Configure system parameters and administrative settings.", "placeholder": "System Settings" },
+  "AdminAuditLogs": {
+    "title": "Audit Logs", "description": "View permission change history and user activity.",
+    "filter": { "title": "Filter Logs", "operator": "Operator ID...", "targetUser": "Target User ID...", "category": "Category...", "search": "Search" },
+    "list": { "title": "Audit Logs ({count})", "description": "Permission and role change history" },
+    "columns": { "time": "Time", "operator": "Operator", "targetUser": "Target User", "action": "Action", "category": "Category" },
+    "actions": { "granted": "Granted", "revoked": "Revoked", "modified": "Modified", "roleChanged": "Role Changed" },
+    "values": { "permission": "Permission: {value}", "public": "Public: {value}", "role": "Role: {value}" },
+    "details": { "before": "Before: ", "after": "After: " }, "fallback": { "admin": "Admin", "na": "N/A" },
+    "pagination": "Page {page} of {total}", "errors": { "fetch": "Failed to fetch audit logs" }
+  },
+  "AdminCategories": {
+    "title": "Categories", "description": "Manage corpus categories and visibility settings.",
+    "search": { "title": "Search Categories", "placeholder": "Search by name or nickname...", "button": "Search" },
+    "list": { "title": "Categories List ({count})", "description": "Toggle visibility for each category" },
+    "columns": { "name": "Name", "nickname": "Nickname", "entries": "Entries", "permissions": "Permissions", "status": "Status", "public": "Public", "created": "Created" },
+    "messages": { "updated": "Category visibility updated" }, "errors": { "fetch": "Failed to fetch categories", "update": "Failed to update category" }
+  },
+  "AdminCorpus": {
+    "title": "Corpus Data", "description": "Manage Cantonese language corpus entries and annotations.",
+    "search": { "title": "Search Corpus", "placeholder": "Search corpus data...", "categoryPlaceholder": "Filter by category...", "button": "Search" },
+    "list": { "title": "Corpus Entries ({count})", "description": "View and manage corpus data entries" },
+    "columns": { "data": "Data", "category": "Category", "views": "Views", "likes": "Likes", "bookmarks": "Bookmarks", "created": "Created" },
+    "fallback": { "na": "N/A" }, "loading": "Loading corpus data...", "pagination": "Page {page} of {total}", "errors": { "fetch": "Failed to fetch corpus" }
+  },
+  "AdminUsers": {
+    "title": "Users", "description": "Manage user accounts and permissions.",
+    "search": { "title": "Search Users", "placeholder": "Search by name, email or phone...", "rolePlaceholder": "Filter by role", "button": "Search" },
+    "list": { "title": "Users List ({count})", "description": "Manage user roles and permissions" },
+    "columns": { "user": "User", "email": "Email", "phone": "Phone", "role": "Role", "admin": "Admin", "interactions": "Interactions", "joined": "Joined", "actions": "Actions" },
+    "roles": { "all": "All Roles", "learner": "Learner", "taggerPartner": "Tagger Partner", "taggerOutsourcing": "Tagger Outsourcing", "researcher": "Researcher" },
+    "fallback": { "user": "User", "na": "N/A" }, "pagination": "Page {page} of {total}",
+    "messages": { "updated": "User updated successfully" }, "errors": { "fetch": "Failed to fetch users", "update": "Failed to update user" }
+  },
   "AdminDashboard": {
     "title": "Dashboard", "description": "Welcome to the admin panel. Here is an overview of your system.", "quickActions": "Quick Actions", "manage": "Manage",
     "stats": { "totalUsers": "Total Users", "registeredUsers": "Registered users", "corpusEntries": "Corpus Entries", "totalCorpusEntries": "Total corpus data entries" },

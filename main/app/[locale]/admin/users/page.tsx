@@ -29,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ChevronLeft, ChevronRight, Shield, User as UserIcon } from "lucide-react";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Role } from "@prisma/client";
 
@@ -56,6 +56,8 @@ interface UsersResponse {
 }
 
 export default function AdminUsersPage() {
+  const t = useTranslations("AdminUsers");
+  const locale = useLocale();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -72,7 +74,7 @@ export default function AdminUsersPage() {
       if (roleFilter) params.append("role", roleFilter);
 
       const response = await fetch(`/api/admin/users?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) throw new Error(t("errors.fetch"));
       return response.json();
     },
   });
@@ -92,16 +94,16 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, role, isSystemAdmin }),
       });
-      if (!response.ok) throw new Error("Failed to update user");
+      if (!response.ok) throw new Error(t("errors.update"));
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
-      toast.success("User updated successfully");
+      toast.success(t("messages.updated"));
     },
     onError: () => {
-      toast.error("Failed to update user");
+      toast.error(t("errors.update"));
     },
   });
 
@@ -124,27 +126,36 @@ export default function AdminUsersPage() {
     }
   };
 
+  const getRoleLabel = (role: Role) => {
+    switch (role) {
+      case "LEARNER": return t("roles.learner");
+      case "TAGGER_PARTNER": return t("roles.taggerPartner");
+      case "TAGGER_OUTSOURCING": return t("roles.taggerOutsourcing");
+      case "RESEARCHER": return t("roles.researcher");
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Users</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
         <p className="text-muted-foreground mt-2">
-          Manage user accounts and permissions.
+          {t("description")}
         </p>
       </div>
 
       {/* Search and Filter */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Search Users</CardTitle>
+          <CardTitle className="text-foreground">{t("search.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search by name, email or phone..."
+                placeholder={t("search.placeholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -153,23 +164,23 @@ export default function AdminUsersPage() {
             </div>
             <Select value={roleFilter || undefined} onValueChange={(value) => setRoleFilter(value === "all" ? "" : value)}>
               <SelectTrigger className="w-48 bg-secondary border-border text-foreground">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder={t("search.rolePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="LEARNER">Learner</SelectItem>
-                <SelectItem value="TAGGER_PARTNER">Tagger Partner</SelectItem>
+                <SelectItem value="all">{t("roles.all")}</SelectItem>
+                <SelectItem value="LEARNER">{t("roles.learner")}</SelectItem>
+                <SelectItem value="TAGGER_PARTNER">{t("roles.taggerPartner")}</SelectItem>
                 <SelectItem value="TAGGER_OUTSOURCING">
-                  Tagger Outsourcing
+                  {t("roles.taggerOutsourcing")}
                 </SelectItem>
-                <SelectItem value="RESEARCHER">Researcher</SelectItem>
+                <SelectItem value="RESEARCHER">{t("roles.researcher")}</SelectItem>
               </SelectContent>
             </Select>
             <Button
               onClick={handleSearch}
               className="bg-primary hover:bg-primary/90"
             >
-              Search
+              {t("search.button")}
             </Button>
           </div>
         </CardContent>
@@ -181,10 +192,10 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-foreground">
-                Users List ({data?.pagination.total || 0})
+                {t("list.title", { count: data?.pagination.total || 0 })}
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                Manage user roles and permissions
+                {t("list.description")}
               </CardDescription>
             </div>
           </div>
@@ -225,16 +236,16 @@ export default function AdminUsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
-                    <TableHead className="text-muted-foreground">User</TableHead>
-                    <TableHead className="text-muted-foreground">Email</TableHead>
-                    <TableHead className="text-muted-foreground">Phone</TableHead>
-                    <TableHead className="text-muted-foreground">Role</TableHead>
-                    <TableHead className="text-muted-foreground">Admin</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.user")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.email")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.phone")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.role")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.admin")}</TableHead>
                     <TableHead className="text-muted-foreground">
-                      Interactions
+                      {t("columns.interactions")}
                     </TableHead>
-                    <TableHead className="text-muted-foreground">Joined</TableHead>
-                    <TableHead className="text-muted-foreground">Actions</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.joined")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -245,7 +256,7 @@ export default function AdminUsersPage() {
                           {user.avatar ? (
                             <img
                               src={user.avatar}
-                              alt={user.name || "User"}
+                              alt={user.name || t("fallback.user")}
                               className="w-8 h-8 rounded-full object-cover"
                             />
                           ) : (
@@ -253,11 +264,11 @@ export default function AdminUsersPage() {
                               <UserIcon className="w-5 h-5 text-muted-foreground" />
                             </div>
                           )}
-                          <span>{user.name || "N/A"}</span>
+                          <span>{user.name || t("fallback.na")}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {user.email || "N/A"}
+                        {user.email || t("fallback.na")}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {user.phoneNumber || "-"}
@@ -266,7 +277,7 @@ export default function AdminUsersPage() {
                         <Badge
                           className={getRoleBadgeColor(user.role)}
                         >
-                          {user.role}
+                          {getRoleLabel(user.role)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -278,7 +289,7 @@ export default function AdminUsersPage() {
                         {user.interactionsCount}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {format(new Date(user.createdAt), "MMM d, yyyy")}
+                        {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(user.createdAt))}
                       </TableCell>
                       <TableCell>
                         <Select
@@ -294,15 +305,15 @@ export default function AdminUsersPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="LEARNER">Learner</SelectItem>
+                            <SelectItem value="LEARNER">{t("roles.learner")}</SelectItem>
                             <SelectItem value="TAGGER_PARTNER">
-                              Tagger Partner
+                              {t("roles.taggerPartner")}
                             </SelectItem>
                             <SelectItem value="TAGGER_OUTSOURCING">
-                              Tagger Outsourcing
+                              {t("roles.taggerOutsourcing")}
                             </SelectItem>
                             <SelectItem value="RESEARCHER">
-                              Researcher
+                              {t("roles.researcher")}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -316,8 +327,7 @@ export default function AdminUsersPage() {
               {data && data.pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Page {data.pagination.page} of{" "}
-                    {data.pagination.totalPages}
+                    {t("pagination", { page: data.pagination.page, total: data.pagination.totalPages })}
                   </div>
                   <div className="flex gap-2">
                     <Button

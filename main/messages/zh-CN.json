@@ -629,6 +629,40 @@
       "confirmRevoke": "确认取消"
     }
   },
+  "AdminSettings": { "title": "系统设置", "description": "配置系统参数和后台管理设置。", "placeholder": "系统设置" },
+  "AdminAuditLogs": {
+    "title": "审计日志", "description": "查看权限变更记录和用户操作。",
+    "filter": { "title": "筛选日志", "operator": "操作人 ID...", "targetUser": "目标用户 ID...", "category": "分类...", "search": "搜索" },
+    "list": { "title": "审计日志（{count}）", "description": "权限及角色变更记录" },
+    "columns": { "time": "时间", "operator": "操作人", "targetUser": "目标用户", "action": "操作", "category": "分类" },
+    "actions": { "granted": "已授予", "revoked": "已撤销", "modified": "已修改", "roleChanged": "角色已变更" },
+    "values": { "permission": "权限：{value}", "public": "公开：{value}", "role": "角色：{value}" },
+    "details": { "before": "变更前：", "after": "变更后：" }, "fallback": { "admin": "管理员", "na": "暂无" },
+    "pagination": "第 {page} 页，共 {total} 页", "errors": { "fetch": "获取审计日志失败" }
+  },
+  "AdminCategories": {
+    "title": "分类管理", "description": "管理语料分类及其可见性设置。",
+    "search": { "title": "搜索分类", "placeholder": "按名称或别名搜索...", "button": "搜索" },
+    "list": { "title": "分类列表（{count}）", "description": "设置每个分类的公开可见性" },
+    "columns": { "name": "名称", "nickname": "别名", "entries": "条目数", "permissions": "权限数", "status": "状态", "public": "公开", "created": "创建时间" },
+    "messages": { "updated": "分类可见性已更新" }, "errors": { "fetch": "获取分类失败", "update": "更新分类失败" }
+  },
+  "AdminCorpus": {
+    "title": "语料数据", "description": "管理粤语语料条目及标注。",
+    "search": { "title": "搜索语料", "placeholder": "搜索语料内容...", "categoryPlaceholder": "按分类筛选...", "button": "搜索" },
+    "list": { "title": "语料条目（{count}）", "description": "查看和管理语料数据条目" },
+    "columns": { "data": "语料内容", "category": "分类", "views": "浏览", "likes": "点赞", "bookmarks": "收藏", "created": "创建时间" },
+    "fallback": { "na": "暂无" }, "loading": "正在加载语料数据...", "pagination": "第 {page} 页，共 {total} 页", "errors": { "fetch": "获取语料数据失败" }
+  },
+  "AdminUsers": {
+    "title": "用户管理", "description": "管理用户账号及权限。",
+    "search": { "title": "搜索用户", "placeholder": "按姓名、邮箱或手机号搜索...", "rolePlaceholder": "按角色筛选", "button": "搜索" },
+    "list": { "title": "用户列表（{count}）", "description": "管理用户角色及权限" },
+    "columns": { "user": "用户", "email": "邮箱", "phone": "手机号", "role": "角色", "admin": "管理员", "interactions": "互动数", "joined": "注册时间", "actions": "操作" },
+    "roles": { "all": "全部角色", "learner": "学习者", "taggerPartner": "合作标注员", "taggerOutsourcing": "外包标注员", "researcher": "研究员" },
+    "fallback": { "user": "用户", "na": "暂无" }, "pagination": "第 {page} 页，共 {total} 页",
+    "messages": { "updated": "用户更新成功" }, "errors": { "fetch": "获取用户失败", "update": "更新用户失败" }
+  },
   "AdminDashboard": {
     "title": "管理概览", "description": "欢迎进入管理后台，这里展示系统的整体情况。", "quickActions": "快捷入口", "manage": "进入管理",
     "stats": { "totalUsers": "用户总数", "registeredUsers": "已注册用户", "corpusEntries": "语料条目", "totalCorpusEntries": "语料数据总条目数" },
