@@ -303,7 +303,7 @@ export default function CorpusCollectionActivitiesPage() {
                 <Input
                   value={form.tag}
                   maxLength={textLimits.tag}
-                  placeholder="饮食文化"
+                  placeholder={t("fields.tagPlaceholder")}
                   onChange={(e) => setForm({ ...form, tag: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -392,7 +392,7 @@ export default function CorpusCollectionActivitiesPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="粤语童谣月光光主题活动，温馨童趣，荔湾骑楼..."
+              placeholder={t("banner.promptPlaceholder")}
               value={coverPrompt}
               onChange={(e) => setCoverPrompt(e.target.value)}
             />

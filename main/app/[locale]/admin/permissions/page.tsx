@@ -56,7 +56,7 @@ import {
   Check,
   ChevronsUpDown,
 } from "lucide-react";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Command,
@@ -116,6 +116,8 @@ interface UsersResponse {
 }
 
 export default function AdminPermissionsPage() {
+  const t = useTranslations("AdminPermissions");
+  const locale = useLocale();
   const [selectedUserId, setSelectedUserId] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -160,7 +162,7 @@ export default function AdminPermissionsPage() {
       if (selectedUserId) params.append("user_id", selectedUserId);
       if (categoryFilter) params.append("category_name", categoryFilter);
       const response = await fetch(`/api/admin/corpus/permissions?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch permissions");
+      if (!response.ok) throw new Error(t("errors.permissions"));
       return response.json();
     },
   });
@@ -170,7 +172,7 @@ export default function AdminPermissionsPage() {
     queryKey: ["admin-categories-list"],
     queryFn: async () => {
       const response = await fetch("/api/admin/categories");
-      if (!response.ok) throw new Error("Failed to fetch categories");
+      if (!response.ok) throw new Error(t("errors.categories"));
       return response.json();
     },
   });
@@ -187,7 +189,7 @@ export default function AdminPermissionsPage() {
         params.append("limit", "100"); // 默认显示100个
       }
       const response = await fetch(`/api/admin/users?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) throw new Error(t("errors.users"));
       return response.json();
     },
   });
@@ -226,7 +228,7 @@ export default function AdminPermissionsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to add permission");
+      if (!response.ok) throw new Error(t("errors.add"));
       return response.json();
     },
     onSuccess: (data) => {
@@ -234,10 +236,10 @@ export default function AdminPermissionsPage() {
       setIsAddDialogOpen(false);
       setNewPermission({ user_ids: [], category_names: [], permission: "READ" });
       setUserSearchQuery("");
-      toast.success(`Successfully added ${data.count || 1} permissions`);
+      toast.success(t("messages.added", { count: data.count || 1 }));
     },
     onError: () => {
-      toast.error("Failed to add permission");
+      toast.error(t("errors.add"));
     },
   });
 
@@ -256,16 +258,16 @@ export default function AdminPermissionsPage() {
       const response = await fetch(`/api/admin/corpus/permissions?${params}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete permission");
+      if (!response.ok) throw new Error(t("errors.delete"));
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-permissions"] });
       setDeleteTarget(null);
-      toast.success("Permission revoked");
+      toast.success(t("messages.revoked"));
     },
     onError: () => {
-      toast.error("Failed to revoke permission");
+      toast.error(t("errors.delete"));
     },
   });
 
@@ -281,17 +283,20 @@ export default function AdminPermissionsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to update permission");
+      if (!response.ok) throw new Error(t("errors.update"));
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-permissions"] });
-      toast.success("Permission updated");
+      toast.success(t("messages.updated"));
     },
     onError: () => {
-      toast.error("Failed to update permission");
+      toast.error(t("errors.update"));
     },
   });
+
+  const getPermissionLabel = (value: string) => t(`permission.${value}`);
+  const getRoleLabel = (value: string) => t(`role.${value}`);
 
   const getPermissionBadgeColor = (permission: string) => {
     switch (permission) {
@@ -320,17 +325,17 @@ export default function AdminPermissionsPage() {
       {/* ... existing header ... */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          Permissions
+          {t("title")}
         </h2>
         <p className="text-muted-foreground mt-2">
-          Manage user access to corpus categories.
+          {t("description")}
         </p>
       </div>
 
       {/* Search and Filter */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Filter Permissions</CardTitle>
+          <CardTitle className="text-foreground">{t("filter.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 flex-wrap">
@@ -342,34 +347,34 @@ export default function AdminPermissionsPage() {
               }
             >
               <SelectTrigger className="w-64 bg-secondary border-border text-foreground">
-                <SelectValue placeholder="Select user to view permissions" />
+                <SelectValue placeholder={t("filter.userPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 <div className="px-2 py-1.5">
                   <Input
-                    placeholder="Search users..."
+                    placeholder={t("filter.searchUsers")}
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     className="h-8 bg-muted border-border text-foreground"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
-                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="all">{t("filter.allUsers")}</SelectItem>
                 {isLoadingUsers ? (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
+                    <span className="ml-2 text-sm text-muted-foreground">{t("searching")}</span>
                   </div>
                 ) : filteredUsers.length === 0 ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">
-                    No users found
+                    {t("noUsers")}
                   </div>
                 ) : (
                   filteredUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       <div className="flex items-center gap-2">
                         <span>{user.name || user.email || user.id}</span>
-                        <span className="text-xs text-muted-foreground">{user.role}</span>
+                        <span className="text-xs text-muted-foreground">{getRoleLabel(user.role)}</span>
                       </div>
                     </SelectItem>
                   ))
@@ -385,10 +390,10 @@ export default function AdminPermissionsPage() {
               }
             >
               <SelectTrigger className="w-48 bg-secondary border-border text-foreground">
-                <SelectValue placeholder="Filter by category" />
+                <SelectValue placeholder={t("filter.categoryPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t("filter.allCategories")}</SelectItem>
                 {categoriesData?.categories.map((cat) => (
                   <SelectItem key={cat.name} value={cat.name}>
                     {cat.nickname || cat.name}
@@ -408,7 +413,7 @@ export default function AdminPermissionsPage() {
                 className="bg-secondary border-border text-foreground"
               >
                 <X className="h-4 w-4 mr-2" />
-                Clear Filters
+                {t("filter.clear")}
               </Button>
             )}
 
@@ -417,22 +422,22 @@ export default function AdminPermissionsPage() {
               <DialogTrigger asChild>
                 <Button className="bg-primary hover:bg-primary/90 ml-auto">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Permission
+                  {t("add.button")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border overflow-visible">
                 <DialogHeader>
                   <DialogTitle className="text-foreground">
-                    Add New Permission
+                    {t("add.title")}
                   </DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    Grant a user access to corpus categories.
+                    {t("add.description")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   {/* 用户多选 */}
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Users</label>
+                    <label className="text-sm text-muted-foreground">{t("add.users")}</label>
                     <Popover open={userPopoverOpen} onOpenChange={setUserPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -442,15 +447,15 @@ export default function AdminPermissionsPage() {
                           className="w-full justify-between bg-secondary border-border text-foreground hover:bg-accent hover:text-foreground"
                         >
                           {newPermission.user_ids.length > 0
-                            ? `${newPermission.user_ids.length} selected`
-                            : "Select users..."}
+                            ? t("selected", { count: newPermission.user_ids.length })
+                            : t("add.selectUsers")}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0 bg-card border-border max-h-[400px]">
                         <Command className="bg-card border-border" shouldFilter={false}>
                           <CommandInput
-                            placeholder="Search user..."
+                            placeholder={t("add.searchUser")}
                             className="text-foreground"
                             value={userSearchQuery}
                             onValueChange={setUserSearchQuery}
@@ -459,11 +464,11 @@ export default function AdminPermissionsPage() {
                             {isLoadingUsers ? (
                               <div className="flex items-center justify-center py-6">
                                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                <span className="ml-2 text-sm text-muted-foreground">Searching users...</span>
+                                <span className="ml-2 text-sm text-muted-foreground">{t("searchingUsers")}</span>
                               </div>
                             ) : (
                               <>
-                                <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">No user found.</CommandEmpty>
+                                <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">{t("noUser")}</CommandEmpty>
                                 <CommandGroup>
                                   {filteredUsers.map((user) => (
                                     <CommandItem
@@ -499,9 +504,9 @@ export default function AdminPermissionsPage() {
                                           <Check className={cn("h-4 w-4")} />
                                         </div>
                                         <div className="flex-1">
-                                          <div className="text-sm">{user.name || "N/A"}</div>
+                                          <div className="text-sm">{user.name || t("na")}</div>
                                           <div className="text-xs text-muted-foreground">
-                                            {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {user.role}
+                                            {user.email} {user.phoneNumber && `· ${user.phoneNumber}`} · {getRoleLabel(user.role)}
                                           </div>
                                         </div>
                                       </div>
@@ -543,7 +548,7 @@ export default function AdminPermissionsPage() {
 
                   {/* 分类多选 */}
                   <div className="space-y-2">
-                    <label className="text-sm text-muted-foreground">Categories</label>
+                    <label className="text-sm text-muted-foreground">{t("add.categories")}</label>
                     <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -553,16 +558,16 @@ export default function AdminPermissionsPage() {
                           className="w-full justify-between bg-secondary border-border text-foreground hover:bg-accent hover:text-foreground"
                         >
                           {newPermission.category_names.length > 0
-                            ? `${newPermission.category_names.length} selected`
-                            : "Select categories..."}
+                            ? t("selected", { count: newPermission.category_names.length })
+                            : t("add.selectCategories")}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0 bg-card border-border max-h-[400px]">
                         <Command className="bg-card border-border" shouldFilter={false}>
-                          <CommandInput placeholder="Search category..." className="text-foreground" />
+                          <CommandInput placeholder={t("add.searchCategory")} className="text-foreground" />
                           <CommandList onWheel={(e) => e.stopPropagation()}>
-                            <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">No category found.</CommandEmpty>
+                            <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">{t("noCategory")}</CommandEmpty>
                             <CommandGroup>
                               {categoriesData?.categories.map((cat) => (
                                 <CommandItem
@@ -636,13 +641,13 @@ export default function AdminPermissionsPage() {
                   {/* 权限级别（根据角色自动确定） */}
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">
-                      Permission Level
+                      {t("add.level")}
                     </label>
                     {newPermission.user_ids.length > 0 ? (
                       <div className="p-3 bg-secondary rounded border border-border space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">
-                            Auto-set based on each user's role
+                            {t("add.autoRole")}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground space-y-1 max-h-32 overflow-y-auto">
@@ -653,7 +658,7 @@ export default function AdminPermissionsPage() {
                             return (
                               <div key={userId} className="flex justify-between items-center">
                                 <span className="text-foreground">{user.name || user.email}</span>
-                                <Badge className="bg-info text-xs">{permLevel}</Badge>
+                                <Badge className="bg-info text-xs">{getPermissionLabel(permLevel)}</Badge>
                               </div>
                             );
                           })}
@@ -661,7 +666,7 @@ export default function AdminPermissionsPage() {
                       </div>
                     ) : (
                       <div className="p-3 bg-secondary rounded border border-border text-muted-foreground text-sm">
-                        Select users to see their permission levels
+                        {t("add.selectUsersForLevel")}
                       </div>
                     )}
                   </div>
@@ -676,7 +681,7 @@ export default function AdminPermissionsPage() {
                     }}
                     className="bg-secondary border-border text-foreground"
                   >
-                    Cancel
+                    {t("cancel")}
                   </Button>
                   <Button
                     onClick={() => addPermissionMutation.mutate(newPermission)}
@@ -690,10 +695,10 @@ export default function AdminPermissionsPage() {
                     {addPermissionMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Adding...
+                        {t("add.adding")}
                       </>
                     ) : (
-                      "Add Permissions"
+                      t("add.submit")
                     )}
                   </Button>
                 </DialogFooter>
@@ -710,11 +715,11 @@ export default function AdminPermissionsPage() {
             <div className="flex items-center gap-3">
               <UserIcon className="h-5 w-5 text-primary" />
               <span className="text-foreground">
-                Viewing permissions for:{" "}
+                {t("viewingFor")}
                 <strong>{getSelectedUserName(selectedUserId)}</strong>
               </span>
               <Badge className="bg-primary">
-                {data?.permissions.length || 0} permissions
+                {t("permissionCount", { count: data?.permissions.length || 0 })}
               </Badge>
             </div>
           </CardContent>
@@ -725,31 +730,31 @@ export default function AdminPermissionsPage() {
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">
-            Permissions List ({data?.permissions.length || 0})
+            {t("list.title", { count: data?.permissions.length || 0 })}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            User-corpus permission bindings
+            {t("list.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading permissions...</div>
+              <div className="text-muted-foreground">{t("loading")}</div>
             </div>
           ) : data?.permissions.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
-              No permissions found. Click "Add Permission" to create one.
+              {t("empty")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow className="border-border">
-                  <TableHead className="text-muted-foreground">User</TableHead>
-                  <TableHead className="text-muted-foreground">Role</TableHead>
-                  <TableHead className="text-muted-foreground">Category</TableHead>
-                  <TableHead className="text-muted-foreground">Permission</TableHead>
-                  <TableHead className="text-muted-foreground">Created</TableHead>
-                  <TableHead className="text-muted-foreground">Actions</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.user")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.role")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.category")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.permission")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.created")}</TableHead>
+                  <TableHead className="text-muted-foreground">{t("columns.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -767,7 +772,7 @@ export default function AdminPermissionsPage() {
                           <UserIcon className="w-4 h-4 text-muted-foreground" />
                         </div>
                         <div className="text-left">
-                          <div>{perm.user.name || "N/A"}</div>
+                          <div>{perm.user.name || t("na")}</div>
                           <div className="text-xs text-muted-foreground">
                             {perm.user.email}
                           </div>
@@ -775,7 +780,7 @@ export default function AdminPermissionsPage() {
                       </button>
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-info">{perm.user.role}</Badge>
+                      <Badge className="bg-info">{getRoleLabel(perm.user.role)}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {perm.category.nickname || perm.category_name}
@@ -797,15 +802,15 @@ export default function AdminPermissionsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="READ">READ</SelectItem>
-                          <SelectItem value="WRITE">WRITE</SelectItem>
-                          <SelectItem value="CREATE">CREATE</SelectItem>
-                          <SelectItem value="FULL">FULL</SelectItem>
+                          <SelectItem value="READ">{getPermissionLabel("READ")}</SelectItem>
+                          <SelectItem value="WRITE">{getPermissionLabel("WRITE")}</SelectItem>
+                          <SelectItem value="CREATE">{getPermissionLabel("CREATE")}</SelectItem>
+                          <SelectItem value="FULL">{getPermissionLabel("FULL")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(new Date(perm.created_at), "MMM d, yyyy")}
+                      {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(perm.created_at))}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -842,18 +847,18 @@ export default function AdminPermissionsPage() {
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-foreground">
-              Confirm Delete
+              {t("delete.title")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to revoke permission for{" "}
+              {t("delete.prefix")}
               <strong className="text-foreground">{deleteTarget?.userName}</strong>{" "}
-              on{" "}
+              {t("delete.on")}
               <strong className="text-foreground">
                 {deleteTarget?.categoryName}
               </strong>
               ?
               <br />
-              This action cannot be undone.
+              {t("delete.warning")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -861,7 +866,7 @@ export default function AdminPermissionsPage() {
               disabled={deletePermissionMutation.isPending}
               className="bg-secondary border-border text-foreground hover:bg-accent"
             >
-              Cancel
+              {t("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={deletePermissionMutation.isPending}
@@ -878,10 +883,10 @@ export default function AdminPermissionsPage() {
               {deletePermissionMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  {t("delete.deleting")}
                 </>
               ) : (
-                "Delete"
+                t("delete.confirm")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
