@@ -628,6 +628,58 @@
       "confirmRevoke": "Revoke access"
     }
   },
+  "AdminDashboard": {
+    "title": "Dashboard", "description": "Welcome to the admin panel. Here is an overview of your system.", "quickActions": "Quick Actions", "manage": "Manage",
+    "stats": { "totalUsers": "Total Users", "registeredUsers": "Registered users", "corpusEntries": "Corpus Entries", "totalCorpusEntries": "Total corpus data entries" },
+    "actions": {
+      "users": { "title": "Manage Users", "description": "View and manage user accounts" },
+      "categories": { "title": "Categories", "description": "Manage corpus categories and visibility" },
+      "permissions": { "title": "Permissions", "description": "Manage user-corpus access bindings" },
+      "corpus": { "title": "Corpus Data", "description": "Manage language corpus entries" },
+      "collection": { "title": "Corpus Collection", "description": "Manage collection activities, submissions, and AI review" },
+      "audit": { "title": "Audit Logs", "description": "View permission change history" },
+      "rules": { "title": "Rule Ops", "description": "Compile rules and trigger Agent runs" },
+      "settings": { "title": "System Settings", "description": "Configure system parameters" }
+    },
+    "errors": { "stats": "Failed to fetch statistics" }
+  },
+  "CorpusCollectionOverview": {
+    "title": "Corpus Collection", "description": "Manage Liwan cultural submissions, activities, AI review, and public display.", "manage": "Manage",
+    "stats": { "totalSubmissions": "Total Submissions", "pendingReview": "Pending Review", "approved": "Approved", "rejected": "Rejected", "activities": "Activities", "publishedActivities": "Published Activities", "likes": "Likes", "comments": "Comments" },
+    "modules": {
+      "activities": { "title": "Activities", "description": "Create, publish, and manage collection campaigns." },
+      "submissions": { "title": "Submissions", "description": "Review user submissions and manage featured content." },
+      "categories": { "title": "Categories", "description": "Configure submission types and public tags." },
+      "reviewBatches": { "title": "AI Review Batches", "description": "Track batch review progress and webhook results." },
+      "analytics": { "title": "Analytics", "description": "View submission trends, activity metrics, and interactions." }
+    }
+  },
+  "CorpusCollectionActivities": {
+    "title": "Activities",
+    "description": "Create collection campaigns, generate banners, and manage publishing state.",
+    "create": { "title": "Create Activity", "description": "Configure a new public collection campaign." },
+    "fields": {
+      "title": "Title", "tag": "Activity Tag", "tagHelp": "Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺",
+      "description": "Description", "rules": "Rules", "startsAt": "Starts At", "endsAt": "Ends At", "bannerUrl": "Banner URL",
+      "requiredMediaTypes": "Required Media Types", "mediaHelp": "The miniprogram uses this to decide which upload controls to show."
+    },
+    "media": {
+      "image": { "label": "Images", "description": "This activity requires images." },
+      "video": { "label": "Video", "description": "This activity requires video." },
+      "audio": { "label": "Audio", "description": "This activity requires recordings." }
+    },
+    "banner": { "title": "AI Banner", "description": "Generate temporary candidates, then upload the selected image to OSS to get a permanent URL.", "candidateAlt": "Candidate {index}", "candidate": "Candidate {index}", "expires": "Expires {date}", "permanentUrl": "Permanent OSS URL", "urlHelp": "This URL has been filled into the Banner URL field and can also be copied here." },
+    "list": { "title": "Activity List", "description": "Filter and publish collection campaigns." },
+    "filters": { "uuidPlaceholder": "Activity UUID fragment", "titlePlaceholder": "Search activity title", "titleContains": "Title contains", "activityUuid": "Activity UUID" },
+    "status": { "all": "All Statuses", "draft": "Draft", "published": "Published", "offline": "Offline", "archived": "Archived" },
+    "columns": { "title": "Title", "uuid": "UUID", "status": "Status", "window": "Window", "submissions": "Submissions", "actions": "Actions" },
+    "actions": { "create": "Create", "generate": "Generate", "uploadOss": "Upload to OSS for URL", "preview": "Preview", "publish": "Publish", "offline": "Offline" },
+    "window": { "anytime": "Anytime", "open": "Open" },
+    "validation": { "titleRequired": "Title is required", "titleLength": "Title must be {count} characters or less", "tagRequired": "Activity tag is required", "tagLength": "Activity tag must be exactly {count} characters", "descriptionLength": "Description must be {count} characters or less", "rulesLength": "Rules must be {count} characters or less", "dateOrder": "Start time must be earlier than end time", "mediaRequired": "Select at least one media type" },
+    "messages": { "created": "Activity created", "statusUpdated": "Activity status updated", "generated": "Cover candidates generated", "uploaded": "Cover uploaded to OSS", "copied": "URL copied" },
+    "errors": { "load": "Failed to load activities", "create": "Failed to create activity", "status": "Failed to update activity status", "generate": "Failed to generate cover candidates", "upload": "Failed to upload cover" },
+    "loading": "Loading...", "empty": "No activities found."
+  },
   "Validation": {
     "enterCharacter": "Please enter a character",
     "atLeastOnePronunciation": "Please enter at least one pronunciation",

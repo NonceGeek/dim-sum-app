@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 type Summary = {
   totalSubmissions: number;
@@ -15,35 +16,15 @@ type Summary = {
   totalComments: number;
 };
 
-const modules = [
-  {
-    title: "Activities",
-    description: "Create, publish, and manage collection campaigns.",
-    href: "/admin/corpus-collection/activities",
-  },
-  {
-    title: "Submissions",
-    description: "Review user submissions and manage featured content.",
-    href: "/admin/corpus-collection/submissions",
-  },
-  {
-    title: "Categories",
-    description: "Configure submission types and public tags.",
-    href: "/admin/corpus-collection/categories",
-  },
-  {
-    title: "AI Review Batches",
-    description: "Track batch review progress and webhook results.",
-    href: "/admin/corpus-collection/review-batches",
-  },
-  {
-    title: "Analytics",
-    description: "View submission trends, activity metrics, and interactions.",
-    href: "/admin/corpus-collection/analytics",
-  },
-];
-
 export default function CorpusCollectionAdminPage() {
+  const t = useTranslations("CorpusCollectionOverview");
+  const modules = [
+    { title: t("modules.activities.title"), description: t("modules.activities.description"), href: "/admin/corpus-collection/activities" },
+    { title: t("modules.submissions.title"), description: t("modules.submissions.description"), href: "/admin/corpus-collection/submissions" },
+    { title: t("modules.categories.title"), description: t("modules.categories.description"), href: "/admin/corpus-collection/categories" },
+    { title: t("modules.reviewBatches.title"), description: t("modules.reviewBatches.description"), href: "/admin/corpus-collection/review-batches" },
+    { title: t("modules.analytics.title"), description: t("modules.analytics.description"), href: "/admin/corpus-collection/analytics" },
+  ];
   const [summary, setSummary] = useState<Summary | null>(null);
 
   useEffect(() => {
@@ -54,14 +35,14 @@ export default function CorpusCollectionAdminPage() {
   }, []);
 
   const stats = [
-    ["Total Submissions", summary?.totalSubmissions ?? 0],
-    ["Pending Review", summary?.pendingSubmissions ?? 0],
-    ["Approved", summary?.approvedSubmissions ?? 0],
-    ["Rejected", summary?.rejectedSubmissions ?? 0],
-    ["Activities", summary?.totalActivities ?? 0],
-    ["Published Activities", summary?.publishedActivities ?? 0],
-    ["Likes", summary?.totalLikes ?? 0],
-    ["Comments", summary?.totalComments ?? 0],
+    [t("stats.totalSubmissions"), summary?.totalSubmissions ?? 0],
+    [t("stats.pendingReview"), summary?.pendingSubmissions ?? 0],
+    [t("stats.approved"), summary?.approvedSubmissions ?? 0],
+    [t("stats.rejected"), summary?.rejectedSubmissions ?? 0],
+    [t("stats.activities"), summary?.totalActivities ?? 0],
+    [t("stats.publishedActivities"), summary?.publishedActivities ?? 0],
+    [t("stats.likes"), summary?.totalLikes ?? 0],
+    [t("stats.comments"), summary?.totalComments ?? 0],
   ];
 
   return (
@@ -71,7 +52,7 @@ export default function CorpusCollectionAdminPage() {
           Corpus Collection
         </h2>
         <p className="text-muted-foreground mt-2">
-          Manage Liwan cultural submissions, activities, AI review, and public display.
+          {t("description")}
         </p>
       </div>
 
@@ -90,7 +71,7 @@ export default function CorpusCollectionAdminPage() {
             <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
             <Button asChild variant="outline" className="mt-4">
-              <Link href={item.href}>Manage</Link>
+              <Link href={item.href}>{t("manage")}</Link>
             </Button>
           </div>
         ))}

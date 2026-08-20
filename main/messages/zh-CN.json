@@ -629,6 +629,58 @@
       "confirmRevoke": "确认取消"
     }
   },
+  "AdminDashboard": {
+    "title": "管理概览", "description": "欢迎进入管理后台，这里展示系统的整体情况。", "quickActions": "快捷入口", "manage": "进入管理",
+    "stats": { "totalUsers": "用户总数", "registeredUsers": "已注册用户", "corpusEntries": "语料条目", "totalCorpusEntries": "语料数据总条目数" },
+    "actions": {
+      "users": { "title": "用户管理", "description": "查看并管理用户账号" },
+      "categories": { "title": "分类管理", "description": "管理语料分类及其可见性" },
+      "permissions": { "title": "权限管理", "description": "管理用户与语料的访问绑定" },
+      "corpus": { "title": "语料数据", "description": "管理语言语料条目" },
+      "collection": { "title": "语料采集", "description": "管理采集活动、投稿和 AI 审核" },
+      "audit": { "title": "审计日志", "description": "查看权限变更记录" },
+      "rules": { "title": "规则运维", "description": "编译规则并触发 Agent 运行" },
+      "settings": { "title": "系统设置", "description": "配置系统参数" }
+    },
+    "errors": { "stats": "获取统计数据失败" }
+  },
+  "CorpusCollectionOverview": {
+    "title": "语料采集", "description": "管理荔湾文化投稿、活动、AI 审核及公开展示。", "manage": "进入管理",
+    "stats": { "totalSubmissions": "投稿总数", "pendingReview": "待审核", "approved": "已通过", "rejected": "已驳回", "activities": "活动数", "publishedActivities": "已发布活动", "likes": "点赞数", "comments": "评论数" },
+    "modules": {
+      "activities": { "title": "活动管理", "description": "创建、发布并管理采集活动。" },
+      "submissions": { "title": "投稿管理", "description": "审核用户投稿并管理精选内容。" },
+      "categories": { "title": "采集分类", "description": "配置投稿类型和公开标签。" },
+      "reviewBatches": { "title": "AI 审核批次", "description": "跟踪批量审核进度和回调结果。" },
+      "analytics": { "title": "数据分析", "description": "查看投稿趋势、活动指标和互动数据。" }
+    }
+  },
+  "CorpusCollectionActivities": {
+    "title": "活动管理",
+    "description": "创建采集活动、生成活动封面并管理发布状态。",
+    "create": { "title": "创建活动", "description": "配置新的公开采集活动。" },
+    "fields": {
+      "title": "活动标题", "tag": "活动标签", "tagHelp": "请正好填写 4 个字。例如：饮食文化、粤语表达、城市记忆、传统技艺",
+      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间", "endsAt": "结束时间", "bannerUrl": "封面地址",
+      "requiredMediaTypes": "必需媒体类型", "mediaHelp": "小程序将根据此配置显示对应的上传控件。"
+    },
+    "media": {
+      "image": { "label": "图片", "description": "该活动需要上传图片。" },
+      "video": { "label": "视频", "description": "该活动需要上传视频。" },
+      "audio": { "label": "音频", "description": "该活动需要上传录音。" }
+    },
+    "banner": { "title": "AI 活动封面", "description": "生成临时封面候选图，然后将选中的图片上传到 OSS，获得永久地址。", "candidateAlt": "候选图 {index}", "candidate": "候选图 {index}", "expires": "{date} 过期", "permanentUrl": "永久 OSS 地址", "urlHelp": "该地址已自动填入封面地址字段，也可以在此复制。" },
+    "list": { "title": "活动列表", "description": "筛选并发布采集活动。" },
+    "filters": { "uuidPlaceholder": "活动 UUID 片段", "titlePlaceholder": "搜索活动标题", "titleContains": "标题包含", "activityUuid": "活动 UUID" },
+    "status": { "all": "全部状态", "draft": "草稿", "published": "已发布", "offline": "已下线", "archived": "已归档" },
+    "columns": { "title": "标题", "uuid": "UUID", "status": "状态", "window": "活动时间", "submissions": "投稿数", "actions": "操作" },
+    "actions": { "create": "创建", "generate": "生成", "uploadOss": "上传到 OSS 并获取地址", "preview": "预览", "publish": "发布", "offline": "下线" },
+    "window": { "anytime": "不限开始时间", "open": "长期开放" },
+    "validation": { "titleRequired": "请填写活动标题", "titleLength": "活动标题不能超过 {count} 个字", "tagRequired": "请填写活动标签", "tagLength": "活动标签必须正好为 {count} 个字", "descriptionLength": "活动简介不能超过 {count} 个字", "rulesLength": "活动规则不能超过 {count} 个字", "dateOrder": "开始时间必须早于结束时间", "mediaRequired": "请至少选择一种媒体类型" },
+    "messages": { "created": "活动已创建", "statusUpdated": "活动状态已更新", "generated": "封面候选图已生成", "uploaded": "封面已上传到 OSS", "copied": "地址已复制" },
+    "errors": { "load": "加载活动失败", "create": "创建活动失败", "status": "更新活动状态失败", "generate": "生成封面候选图失败", "upload": "上传封面失败" },
+    "loading": "加载中...", "empty": "未找到活动。"
+  },
   "Validation": {
     "enterCharacter": "请输入字符",
     "atLeastOnePronunciation": "请至少输入一个粤音",
