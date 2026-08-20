@@ -338,6 +338,251 @@
     "updatedAt": "最近更新",
     "copied": "已复制"
   },
+  "CorpusCollectionCategories": {
+    "title": "采集分类", "description": "配置投稿类型和公开标签。", "created": "分类已创建", "createFailed": "分类创建失败", "updated": "分类已更新", "updateFailed": "分类更新失败", "deleted": "分类已删除", "deleteFailed": "分类删除失败", "nameRequired": "分类名称不能为空",
+    "name": "名称", "type": "类型", "sort": "排序", "status": "状态", "actions": "操作", "submissionType": "投稿类型", "tag": "标签", "allTypes": "全部类型", "active": "启用", "inactive": "停用", "enable": "启用", "disable": "停用", "delete": "删除分类", "loading": "加载中…", "empty": "暂无分类。",
+    "add": { "title": "新增分类", "description": "此处配置的标签会显示在投稿表单中。", "button": "新增" },
+    "list": { "title": "分类列表", "description": "启用、停用或删除分类。" }
+  },
+  "CorpusCollectionComments": {
+    "title": "评论管理", "description": "在评论公开显示前进行审核。", "search": "搜索评论", "updated": "评论已更新", "updateFailed": "评论更新失败",
+    "statuses": { "all": "全部状态", "pending": "待审核", "approved": "已通过", "rejected": "已拒绝" },
+    "queue": "评论队列（{count}）", "queueDescription": "通过评论后会重新计算投稿的评论数量。",
+    "columns": { "comment": "评论", "work": "作品", "author": "作者", "status": "状态", "created": "创建时间", "actions": "操作" },
+    "loading": "加载中…", "unknown": "未知用户", "approve": "通过评论", "reject": "拒绝评论", "empty": "暂无评论。"
+  },
+  "CorpusCollectionAnalytics": {
+    "title": "数据分析", "description": "投稿、活动与互动指标。",
+    "cards": { "totalSubmissions": "投稿总数", "pending": "待审核", "approved": "已通过", "rejected": "已拒绝", "activities": "活动总数", "published": "已发布", "likes": "点赞", "comments": "评论" },
+    "health": { "title": "审核概况", "description": "审核完成情况的总体快照。", "approvalRate": "通过率", "backlog": "待审核积压", "interactions": "互动总数" },
+    "trends": { "title": "投稿趋势", "description": "最近 30 天每日审核状态变化。", "date": "日期", "total": "总数", "approved": "已通过", "pending": "待审核", "rejected": "已拒绝", "empty": "暂无趋势数据。" },
+    "breakdown": { "title": "分类分布", "description": "按投稿类型和热门标签统计投稿量。", "types": "类型", "topTags": "热门标签" },
+    "detail": { "title": "活动详情", "description": "输入活动 ID 查看活动级互动和审核状态。", "activityId": "活动 ID", "activity": "活动", "views": "浏览", "shares": "分享", "reviewStates": "审核状态" }
+  },
+  "QuestionnaireInsights": {
+    "title": "问卷洞察",
+    "description": "参赛前登记、转化路径与去标识化用户画像。",
+    "activityComparison": "活动对比",
+    "exportUnavailable": "聚合导出将在 Phase 5 开放",
+    "exportReport": "导出聚合报表",
+    "refresh": "刷新",
+    "loadFailed": "数据加载失败，请重试。",
+    "reload": "重新加载",
+    "noData": "当前筛选范围内暂无数据。",
+    "insufficientSample": "样本量不足",
+    "filters": {
+      "dateRange": "时间范围", "today": "今天", "sevenDays": "近 7 天", "thirtyDays": "近 30 天", "quarter": "本季度",
+      "activity": "活动筛选", "allActivities": "全部活动",
+      "submissionStatus": "投稿状态", "allSubmissionStatuses": "全部投稿状态", "submitted": "已投稿", "notSubmitted": "未投稿",
+      "registrationType": "登记方式", "allRegistrationTypes": "全部登记方式", "firstTime": "首次登记", "reused": "复用资料"
+    },
+    "kpis": {
+      "completed": { "label": "已完成参赛前登记", "description": "筛选期间首次完成登记的用户" },
+      "submissionRate": { "label": "登记后投稿率", "description": "已登记用户在归因窗口内投稿" },
+      "reuseRate": { "label": "资料复用率", "description": "再次参与时复用已有资料" }
+    },
+    "conversion": {
+      "title": "参与转化路径", "description": "首次登记与资料复用独立统计，避免漏斗口径混合。", "viewDetails": "查看流失详情",
+      "firstTimeTitle": "首次登记漏斗", "firstTimeDescription": "点击投稿后完成问卷并提交作品",
+      "reusedTitle": "资料复用路径", "reusedDescription": "已有档案用户直接进入投稿"
+    },
+    "profile": {
+      "title": "用户画像", "description": "只展示去标识化聚合数据；少于 {count} 人不展示精确转化率。",
+      "ageDetails": "年龄详情", "regionDetails": "地区详情", "interestDetails": "兴趣详情",
+      "ageTitle": "年龄区间", "ageDescription": "完成登记用户的年龄分布",
+      "regionTitle": "语言文化地区偏好", "regionDescription": "问卷地区选项人数排行",
+      "interestTitle": "兴趣类型", "interestDescription": "选填、多选的用户兴趣"
+    },
+    "activityTable": {
+      "title": "活动 × 人群效果", "description": "活动标签来自活动配置，与用户兴趣类型保持独立。",
+      "activity": "活动", "registrations": "登记人数", "submissionRate": "投稿转化率", "topAge": "主要年龄段", "region": "地区偏好", "tag": "活动标签",
+      "empty": "当前筛选范围内暂无足够数据形成画像。"
+    },
+    "funnelDialog": {
+      "title": "问卷流失详情", "description": "首次登记与资料复用路径分别计算，所有人数均为去重用户。",
+      "maximumLoss": "最大流失步骤", "lossCount": "流失 {count} 人", "firstTime": "首次登记", "reused": "资料复用",
+      "step": "步骤", "people": "人数", "completionRate": "完成率", "lossFromPrevious": "较上一步流失"
+    },
+    "profileDialog": {
+      "title": "用户画像详情", "description": "仅展示聚合数据，小样本分组不返回精确投稿率。",
+      "sampleSize": "画像样本数", "leadingGroup": "核心分组", "group": "分组", "people": "人数", "share": "占比", "submissionRate": "投稿率"
+    },
+    "comparisonDialog": {
+      "title": "活动对比详情", "description": "进行中与已结束活动分别按登记后投稿率排序，最多展示 5 条。",
+      "ongoing": "进行中活动 · Top 5", "ended": "已结束活动 · Top 5", "activity": "活动", "registrations": "登记人数",
+      "completionRate": "问卷完成率", "submissionRate": "投稿率", "topAge": "主要年龄", "region": "地区偏好",
+      "endsAt": "截止 {date}", "longRunning": "长期活动", "empty": "暂无活动"
+    }
+  },
+  "QuestionnaireDefinition": {
+    "title": "问卷定义",
+    "description": "当前发布版本为 v{version}。发布会生成新版本，已发布历史不会被覆盖。",
+    "loadFailed": "问卷定义加载失败",
+    "publishFailed": "问卷发布失败",
+    "publishSuccess": "问卷版本 {version} 已发布",
+    "unavailable": "问卷定义加载失败或尚未初始化。",
+    "reload": "重新加载",
+    "publish": "发布新版本",
+    "newOption": "新选项",
+    "singleChoice": "单选",
+    "multipleChoice": "多选",
+    "required": "必填",
+    "optional": "选填",
+    "questionDescription": "题目字段、题型和必填规则与现有数据结构绑定，后台只允许修改文案和选项。",
+    "questionTitle": "题目标题",
+    "questionHelp": "辅助说明",
+    "options": "选项",
+    "addOption": "新增选项",
+    "optionCodeLabel": "{question}选项 code",
+    "optionNameLabel": "{question}选项名称",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "delete": "删除",
+    "questions": { "ageRange": "年龄区间", "cultureRegion": "语言文化地区", "interestTypes": "兴趣活动类型" },
+    "basic": {
+      "title": "基本信息",
+      "description": "修改内容只保存在当前页面，点击“发布新版本”后才会影响新进入问卷的用户。",
+      "name": "问卷名称"
+    },
+    "history": {
+      "title": "版本记录",
+      "description": "进行中的填写会继续使用进入问卷时记录的版本。",
+      "version": "版本",
+      "name": "名称",
+      "status": "状态",
+      "publishedAt": "发布时间",
+      "current": "当前发布",
+      "archived": "已归档"
+    },
+    "dialog": {
+      "title": "发布问卷新版本？",
+      "description": "将生成 v{version} 并归档当前版本。已经开始填写的用户仍使用原版本，新进入的用户使用新版本。",
+      "cancel": "取消",
+      "publishing": "发布中…",
+      "confirm": "确认发布"
+    }
+  },
+  "QuestionnaireSettings": {
+    "title": "问卷门禁设置",
+    "description": "配置活动投稿是否强制完成参赛前问卷。现有活动和新活动默认全部开启。",
+    "enableAll": "全部开启",
+    "disableAll": "全部关闭",
+    "enabled": "已开启",
+    "disabled": "已关闭",
+    "gateLabel": "{activity}问卷门禁",
+    "summary": { "total": "活动总数", "enabled": "门禁已开启", "disabled": "门禁已关闭" },
+    "list": {
+      "title": "按活动配置",
+      "description": "关闭后，该活动投稿暂时兼容旧流程；普通非活动投稿始终不受问卷门禁影响。",
+      "loadFailed": "门禁配置加载失败。",
+      "reload": "重新加载",
+      "empty": "暂无活动。",
+      "columns": { "activity": "活动", "status": "状态", "tag": "活动标签", "gate": "强制问卷门禁" }
+    },
+    "toast": {
+      "activityEnabled": "该活动问卷门禁已开启",
+      "activityDisabled": "该活动问卷门禁已关闭",
+      "allEnabled": "全部活动问卷门禁已开启",
+      "allDisabled": "全部活动问卷门禁已关闭",
+      "failed": "门禁设置更新失败"
+    }
+  },
+  "QuestionnairePermissions": {
+    "title": "问卷权限",
+    "description": "配置活动运营可访问的问卷洞察活动范围。",
+    "unnamedUser": "未命名用户",
+    "activityStatus": {
+      "draft": "草稿",
+      "published": "已发布",
+      "offline": "已下线"
+    },
+    "form": {
+      "title": "配置活动授权",
+      "description": "相同账号和活动重复保存时更新原授权；导出权限不会自动授予查看范围外的数据。",
+      "operator": "活动运营账号",
+      "selectOperator": "选择账号",
+      "searchOperator": "按姓名、邮箱或手机号搜索…",
+      "noOperator": "没有找到匹配账号。",
+      "activity": "授权活动",
+      "selectActivity": "选择活动",
+      "viewInsights": "查看问卷洞察",
+      "viewInsightsDescription": "只允许访问该活动的去标识化聚合数据。",
+      "exportInsights": "导出聚合报表",
+      "exportInsightsDescription": "导出仍执行小样本保护和专用审计。",
+      "saving": "保存中…",
+      "save": "保存授权",
+      "clear": "清空"
+    },
+    "list": {
+      "title": "现有活动授权",
+      "description": "系统管理员拥有全部活动权限，不需要出现在此列表中。",
+      "loadFailed": "授权列表加载失败。",
+      "reload": "重新加载",
+      "allowed": "允许",
+      "disabled": "停用",
+      "notAllowed": "不允许",
+      "editLabel": "编辑授权",
+      "revokeLabel": "撤销授权",
+      "empty": "暂无活动运营授权。",
+      "columns": {
+        "operator": "活动运营",
+        "activity": "活动",
+        "view": "查看洞察",
+        "export": "导出",
+        "updatedAt": "更新时间",
+        "action": "操作"
+      }
+    },
+    "toast": {
+      "saved": "活动授权已保存",
+      "saveFailed": "保存失败，请稍后重试。",
+      "revoked": "活动授权已撤销",
+      "revokeFailed": "撤销失败，请稍后重试。"
+    },
+    "dialog": {
+      "title": "撤销该活动授权？",
+      "description": "撤销后，该运营账号将立即失去“{activity}”的问卷洞察访问权限。",
+      "cancel": "取消",
+      "confirm": "确认撤销"
+    }
+  },
+  "AdminLayout": {
+    "panelTitle": "管理后台",
+    "dashboardTitle": "管理后台",
+    "welcomeBack": "欢迎回来，{name}",
+    "unnamedUser": "管理员",
+    "backToMainApp": "返回主应用",
+    "nav": {
+      "dashboard": "概览",
+      "users": "用户管理",
+      "administrators": "管理员管理",
+      "categories": "分类管理",
+      "permissions": "权限管理",
+      "corpusData": "语料数据",
+      "corpusCollection": "语料采集",
+      "auditLogs": "审计日志",
+      "ruleOps": "规则运维",
+      "settings": "系统设置"
+    },
+    "corpusNav": {
+      "overview": "采集概览",
+      "activities": "活动管理",
+      "submissions": "投稿管理",
+      "comments": "评论管理",
+      "categories": "采集分类",
+      "reviewBatches": "AI 审核批次",
+      "analytics": "数据分析",
+      "questionnaireInsights": "问卷洞察",
+      "questionnairePermissions": "问卷权限",
+      "questionnaireSettings": "问卷门禁",
+      "questionnaireDefinition": "问卷定义"
+    },
+    "roles": {
+      "superAdministrator": "超级管理员",
+      "systemAdministrator": "系统管理员",
+      "activityOperator": "活动运营"
+    }
+  },
   "AdminAdministrators": {
     "menuTitle": "管理员管理",
     "title": "管理员管理",
@@ -383,6 +628,106 @@
       "confirmGrant": "确认授予",
       "confirmRevoke": "确认取消"
     }
+  },
+  "AdminPermissions": { "title": "权限管理", "description": "管理用户对语料分类的访问权限。", "filter": { "title": "筛选权限", "userPlaceholder": "选择用户查看权限", "searchUsers": "搜索用户...", "allUsers": "全部用户", "categoryPlaceholder": "按分类筛选", "allCategories": "全部分类", "clear": "清除筛选" }, "add": { "button": "添加权限", "title": "新增权限", "description": "为用户授予语料分类访问权限。", "users": "用户", "selectUsers": "选择用户...", "searchUser": "搜索用户...", "categories": "分类", "selectCategories": "选择分类...", "searchCategory": "搜索分类...", "level": "权限级别", "autoRole": "根据每位用户的角色自动设置", "selectUsersForLevel": "选择用户后显示对应权限级别", "adding": "添加中...", "submit": "添加权限" }, "searching": "搜索中...", "searchingUsers": "正在搜索用户...", "noUsers": "未找到用户", "noUser": "未找到用户。", "noCategory": "未找到分类。", "selected": "已选择 {count} 项", "cancel": "取消", "na": "暂无", "viewingFor": "正在查看权限：", "permissionCount": "{count} 项权限", "list": { "title": "权限列表（{count}）", "description": "用户与语料分类权限绑定" }, "loading": "正在加载权限...", "empty": "暂无权限，请点击添加权限创建。", "columns": { "user": "用户", "role": "角色", "category": "分类", "permission": "权限", "created": "创建时间", "actions": "操作" }, "permission": { "READ": "读取", "WRITE": "编辑", "CREATE": "创建", "FULL": "完整权限" }, "role": { "LEARNER": "学习者", "TAGGER_PARTNER": "合作标注员", "TAGGER_OUTSOURCING": "外包标注员", "RESEARCHER": "研究员" }, "delete": { "title": "确认删除", "prefix": "确定要撤销", "on": "在以下分类的权限：", "warning": "此操作无法撤销。", "deleting": "删除中...", "confirm": "删除" }, "messages": { "added": "已成功添加 {count} 项权限", "revoked": "权限已撤销", "updated": "权限已更新" }, "errors": { "permissions": "获取权限失败", "categories": "获取分类失败", "users": "获取用户失败", "add": "添加权限失败", "delete": "撤销权限失败", "update": "更新权限失败" } },
+  "AdminRules": { "title": "规则与 Agent 管理", "description": "对接 Agent 服务，支持规则编译校验、运行触发与运行历史查询。", "compile": { "title": "规则编译检查", "description": "验证自然语言规则是否能被 Agent 理解。", "placeholder": "请输入要编译的规则...", "submit": "开始编译", "result": "编译结果：", "passed": "通过", "rejected": "未通过" }, "run": { "title": "手动触发规则", "description": "调用 /rules/run 接口立即创建一次运行。", "autoAgent": "自动选择 Agent", "auto": "自动选择", "rulePlaceholder": "请输入自然语言规则...", "submit": "调用 /rules/run", "ruleIdExample": "例如 grammar_check_rule", "versionExample": "v1.0.0", "corpusExample": "zyzdv2" }, "fields": { "ruleText": "规则文本", "ruleId": "规则 ID", "version": "规则版本（可选）", "corpus": "语料库名称", "corpusShort": "语料库", "agent": "Agent（可选）", "status": "状态" }, "status": { "all": "全部状态", "pending": "等待中", "running": "运行中", "completed": "已完成", "failed": "失败", "cancelled": "已取消" }, "history": { "title": "运行历史", "description": "查看 Agent 返回的运行列表。", "refresh": "刷新", "rulePlaceholder": "按规则 ID 筛选", "corpusPlaceholder": "按语料库筛选", "pageSize": "每页数量", "violations": "违规数", "started": "开始时间", "ended": "结束时间", "loading": "正在加载...", "empty": "暂无运行记录", "pagination": "第 {page}／{pages} 页，共 {total} 条", "previous": "上一页", "next": "下一页" }, "agents": { "title": "可用 Agents", "description": "/agents 接口返回的数据。", "empty": "暂无 Agent" }, "messages": { "enterCompile": "请输入要编译的规则文本", "compileFailed": "编译失败", "compilePassed": "规则编译通过", "compileRejected": "规则编译未通过", "completeForm": "请完整填写规则信息", "runFailed": "触发规则失败", "runStarted": "已触发规则运行" } },
+  "SubmissionDetail": { "noData": "暂无数据", "audio": "音频", "loading": "正在加载投稿...", "back": "返回", "backToSubmissions": "返回投稿列表", "featured": "精选", "home": "首页", "openJson": "打开 JSON", "media": { "title": "媒体", "count": "已上传 {count} 个文件", "empty": "未上传媒体。" }, "review": { "title": "审核数据", "description": "自动检查和 AI 审核结果。", "precheck": "预检查结果", "ai": "AI 审核结果" }, "submission": "投稿", "unknown": "未知用户", "fields": { "type": "类型", "activity": "活动", "created": "创建时间", "updated": "更新时间" }, "noTags": "暂无标签", "stats": { "title": "数据", "likes": "点赞", "comments": "评论", "shares": "分享", "views": "浏览" }, "files": { "title": "文件", "images": "图片", "audio": "音频", "video": "视频" }, "activityWindow": "活动时间", "status": { "pending_review": "待审核", "ai_reviewing": "AI 审核中", "review_needed": "需人工复核", "approved": "已通过", "rejected": "已驳回" }, "visibility": { "public": "公开", "private": "私密", "hidden": "隐藏" }, "errors": { "load": "加载投稿失败", "notFound": "未找到投稿" } },
+  "SubmissionsAdmin": { "title": "投稿管理", "description": "审核用户投稿、管理展示状态并发起 AI 批量审核。", "filters": { "uuidPlaceholder": "活动 UUID 片段", "contentPlaceholder": "搜索标题或简介", "content": "标题/简介包含", "uuid": "活动 UUID", "activity": "活动", "allActivities": "全部活动", "withoutActivity": "未关联活动" }, "status": { "all": "全部状态", "pending_review": "待审核", "ai_reviewing": "AI 审核中", "review_needed": "需人工复核", "approved": "已通过", "rejected": "已驳回" }, "sendReview": "发送 AI 审核（{count}）", "list": { "title": "投稿列表（{count}）", "selected": "已选择 {count} 条进行批量审核。", "hint": "请选择待审核投稿。" }, "columns": { "submission": "投稿", "activity": "活动", "status": "状态", "media": "媒体", "display": "展示", "stats": "数据", "actions": "操作" }, "display": { "featured": "精选", "home": "首页" }, "stats": { "likes": "点赞：{count}", "comments": "评论：{count}" }, "actions": { "view": "查看详情", "approve": "通过", "reject": "驳回", "reviewNeeded": "标记需复核", "removeAward": "取消获奖", "markAwarded": "标记获奖" }, "prompts": { "reject": "请输入驳回原因", "review": "请输入复核备注" }, "messages": { "updated": "投稿已更新", "awardUpdated": "获奖状态已更新", "batchCreated": "AI 审核批次已创建" }, "errors": { "activities": "加载活动失败", "submissions": "加载投稿失败", "action": "操作失败", "award": "更新获奖状态失败", "batch": "创建 AI 审核批次失败" }, "unknown": "未知用户", "loading": "加载中...", "empty": "未找到投稿。" },
+  "ReviewBatches": { "title": "AI 审核批次", "description": "跟踪异步 AI 审核任务及回调结果。", "list": { "title": "批次列表", "description": "由选中的待审核投稿创建。" }, "status": { "all": "全部状态", "queued": "排队中", "running": "运行中", "completed": "已完成", "failed": "失败", "cancelled": "已取消" }, "columns": { "batch": "批次", "status": "状态", "count": "数量", "progress": "进度", "created": "创建时间", "actions": "操作", "submission": "投稿", "result": "结果" }, "loading": "加载中...", "noAgentId": "尚无 Agent ID", "inspect": "查看", "empty": "未找到审核批次。", "detail": { "title": "批次详情" }, "errors": { "load": "加载审核批次失败", "loadDetail": "加载批次详情失败" } },
+  "ActivityPreview": {
+    "loading": "正在加载活动预览...", "back": "返回", "backToActivities": "返回活动列表", "canSubmit": "可投稿", "noDescription": "暂无简介", "activityUuid": "活动 UUID", "noBanner": "暂无封面", "noData": "暂无数据",
+    "publicCopy": { "title": "公开文案", "description": "用户投稿前会看到的活动内容。" },
+    "configuration": { "title": "活动配置", "description": "奖励和媒体要求配置。" },
+    "fields": { "description": "活动简介", "rules": "活动规则", "rewardConfig": "奖励配置", "mediaRequirements": "媒体要求", "activity": "活动", "slug": "别名", "category": "分类", "window": "活动时间", "submissions": "投稿数", "tags": "标签", "submissionTypes": "投稿类型" },
+    "status": { "draft": "草稿", "published": "已发布", "offline": "已下线", "archived": "已归档" },
+    "timeStatus": { "upcoming": "未开始", "active": "进行中", "ended": "已结束" },
+    "errors": { "load": "加载活动失败", "notFound": "未找到活动" }
+  },
+  "AdminSettings": { "title": "系统设置", "description": "配置系统参数和后台管理设置。", "placeholder": "系统设置" },
+  "AdminAuditLogs": {
+    "title": "审计日志", "description": "查看权限变更记录和用户操作。",
+    "filter": { "title": "筛选日志", "operator": "操作人 ID...", "targetUser": "目标用户 ID...", "category": "分类...", "search": "搜索" },
+    "list": { "title": "审计日志（{count}）", "description": "权限及角色变更记录" },
+    "columns": { "time": "时间", "operator": "操作人", "targetUser": "目标用户", "action": "操作", "category": "分类" },
+    "actions": { "granted": "已授予", "revoked": "已撤销", "modified": "已修改", "roleChanged": "角色已变更" },
+    "values": { "permission": "权限：{value}", "public": "公开：{value}", "role": "角色：{value}" },
+    "details": { "before": "变更前：", "after": "变更后：" }, "fallback": { "admin": "管理员", "na": "暂无" },
+    "pagination": "第 {page} 页，共 {total} 页", "errors": { "fetch": "获取审计日志失败" }
+  },
+  "AdminCategories": {
+    "title": "分类管理", "description": "管理语料分类及其可见性设置。",
+    "search": { "title": "搜索分类", "placeholder": "按名称或别名搜索...", "button": "搜索" },
+    "list": { "title": "分类列表（{count}）", "description": "设置每个分类的公开可见性" },
+    "columns": { "name": "名称", "nickname": "别名", "entries": "条目数", "permissions": "权限数", "status": "状态", "public": "公开", "created": "创建时间" },
+    "messages": { "updated": "分类可见性已更新" }, "errors": { "fetch": "获取分类失败", "update": "更新分类失败" }
+  },
+  "AdminCorpus": {
+    "title": "语料数据", "description": "管理粤语语料条目及标注。",
+    "search": { "title": "搜索语料", "placeholder": "搜索语料内容...", "categoryPlaceholder": "按分类筛选...", "button": "搜索" },
+    "list": { "title": "语料条目（{count}）", "description": "查看和管理语料数据条目" },
+    "columns": { "data": "语料内容", "category": "分类", "views": "浏览", "likes": "点赞", "bookmarks": "收藏", "created": "创建时间" },
+    "fallback": { "na": "暂无" }, "loading": "正在加载语料数据...", "pagination": "第 {page} 页，共 {total} 页", "errors": { "fetch": "获取语料数据失败" }
+  },
+  "AdminUsers": {
+    "title": "用户管理", "description": "管理用户账号及权限。",
+    "search": { "title": "搜索用户", "placeholder": "按姓名、邮箱或手机号搜索...", "rolePlaceholder": "按角色筛选", "button": "搜索" },
+    "list": { "title": "用户列表（{count}）", "description": "管理用户角色及权限" },
+    "columns": { "user": "用户", "email": "邮箱", "phone": "手机号", "role": "角色", "admin": "管理员", "interactions": "互动数", "joined": "注册时间", "actions": "操作" },
+    "roles": { "all": "全部角色", "learner": "学习者", "taggerPartner": "合作标注员", "taggerOutsourcing": "外包标注员", "researcher": "研究员" },
+    "fallback": { "user": "用户", "na": "暂无" }, "pagination": "第 {page} 页，共 {total} 页",
+    "messages": { "updated": "用户更新成功" }, "errors": { "fetch": "获取用户失败", "update": "更新用户失败" }
+  },
+  "AdminDashboard": {
+    "title": "管理概览", "description": "欢迎进入管理后台，这里展示系统的整体情况。", "quickActions": "快捷入口", "manage": "进入管理",
+    "stats": { "totalUsers": "用户总数", "registeredUsers": "已注册用户", "corpusEntries": "语料条目", "totalCorpusEntries": "语料数据总条目数" },
+    "actions": {
+      "users": { "title": "用户管理", "description": "查看并管理用户账号" },
+      "categories": { "title": "分类管理", "description": "管理语料分类及其可见性" },
+      "permissions": { "title": "权限管理", "description": "管理用户与语料的访问绑定" },
+      "corpus": { "title": "语料数据", "description": "管理语言语料条目" },
+      "collection": { "title": "语料采集", "description": "管理采集活动、投稿和 AI 审核" },
+      "audit": { "title": "审计日志", "description": "查看权限变更记录" },
+      "rules": { "title": "规则运维", "description": "编译规则并触发 Agent 运行" },
+      "settings": { "title": "系统设置", "description": "配置系统参数" }
+    },
+    "errors": { "stats": "获取统计数据失败" }
+  },
+  "CorpusCollectionOverview": {
+    "title": "语料采集", "description": "管理荔湾文化投稿、活动、AI 审核及公开展示。", "manage": "进入管理",
+    "stats": { "totalSubmissions": "投稿总数", "pendingReview": "待审核", "approved": "已通过", "rejected": "已驳回", "activities": "活动数", "publishedActivities": "已发布活动", "likes": "点赞数", "comments": "评论数" },
+    "modules": {
+      "activities": { "title": "活动管理", "description": "创建、发布并管理采集活动。" },
+      "submissions": { "title": "投稿管理", "description": "审核用户投稿并管理精选内容。" },
+      "categories": { "title": "采集分类", "description": "配置投稿类型和公开标签。" },
+      "reviewBatches": { "title": "AI 审核批次", "description": "跟踪批量审核进度和回调结果。" },
+      "analytics": { "title": "数据分析", "description": "查看投稿趋势、活动指标和互动数据。" }
+    }
+  },
+  "CorpusCollectionActivities": {
+    "title": "活动管理",
+    "description": "创建采集活动、生成活动封面并管理发布状态。",
+    "create": { "title": "创建活动", "description": "配置新的公开采集活动。" },
+    "fields": {
+      "title": "活动标题", "tag": "活动标签", "tagPlaceholder": "饮食文化", "tagHelp": "请正好填写 4 个字。例如：饮食文化、粤语表达、城市记忆、传统技艺",
+      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间", "endsAt": "结束时间", "bannerUrl": "封面地址",
+      "requiredMediaTypes": "必需媒体类型", "mediaHelp": "小程序将根据此配置显示对应的上传控件。"
+    },
+    "media": {
+      "image": { "label": "图片", "description": "该活动需要上传图片。" },
+      "video": { "label": "视频", "description": "该活动需要上传视频。" },
+      "audio": { "label": "音频", "description": "该活动需要上传录音。" }
+    },
+    "banner": { "title": "AI 活动封面", "promptPlaceholder": "粤语童谣月光光主题活动，温馨童趣，荔湾骑楼...", "description": "生成临时封面候选图，然后将选中的图片上传到 OSS，获得永久地址。", "candidateAlt": "候选图 {index}", "candidate": "候选图 {index}", "expires": "{date} 过期", "permanentUrl": "永久 OSS 地址", "urlHelp": "该地址已自动填入封面地址字段，也可以在此复制。" },
+    "list": { "title": "活动列表", "description": "筛选并发布采集活动。" },
+    "filters": { "uuidPlaceholder": "活动 UUID 片段", "titlePlaceholder": "搜索活动标题", "titleContains": "标题包含", "activityUuid": "活动 UUID" },
+    "status": { "all": "全部状态", "draft": "草稿", "published": "已发布", "offline": "已下线", "archived": "已归档" },
+    "columns": { "title": "标题", "uuid": "UUID", "status": "状态", "window": "活动时间", "submissions": "投稿数", "actions": "操作" },
+    "actions": { "create": "创建", "generate": "生成", "uploadOss": "上传到 OSS 并获取地址", "preview": "预览", "publish": "发布", "offline": "下线" },
+    "window": { "anytime": "不限开始时间", "open": "长期开放" },
+    "validation": { "titleRequired": "请填写活动标题", "titleLength": "活动标题不能超过 {count} 个字", "tagRequired": "请填写活动标签", "tagLength": "活动标签必须正好为 {count} 个字", "descriptionLength": "活动简介不能超过 {count} 个字", "rulesLength": "活动规则不能超过 {count} 个字", "dateOrder": "开始时间必须早于结束时间", "mediaRequired": "请至少选择一种媒体类型" },
+    "messages": { "created": "活动已创建", "statusUpdated": "活动状态已更新", "generated": "封面候选图已生成", "uploaded": "封面已上传到 OSS", "copied": "地址已复制" },
+    "errors": { "load": "加载活动失败", "create": "创建活动失败", "status": "更新活动状态失败", "generate": "生成封面候选图失败", "upload": "上传封面失败" },
+    "loading": "加载中...", "empty": "未找到活动。"
   },
   "Validation": {
     "enterCharacter": "请输入字符",

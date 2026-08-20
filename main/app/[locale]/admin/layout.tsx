@@ -24,70 +24,70 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 const adminNavItems = [
   {
-    title: "Dashboard",
+    titleKey: "nav.dashboard",
     href: "/admin",
     icon: LayoutDashboard,
   },
   {
-    title: "Users",
+    titleKey: "nav.users",
     href: "/admin/users",
     icon: Users,
   },
   {
-    title: "Administrator Management",
-    titleKey: "menuTitle",
+    titleKey: "nav.administrators",
     href: "/admin/administrators",
     icon: Shield,
     superAdminOnly: true,
   },
   {
-    title: "Categories",
+    titleKey: "nav.categories",
     href: "/admin/categories",
     icon: FolderOpen,
   },
   {
-    title: "Permissions",
+    titleKey: "nav.permissions",
     href: "/admin/permissions",
     icon: Shield,
   },
   {
-    title: "Corpus Data",
+    titleKey: "nav.corpusData",
     href: "/admin/corpus",
     icon: Database,
   },
   {
-    title: "Corpus Collection",
+    titleKey: "nav.corpusCollection",
     href: "/admin/corpus-collection",
     icon: ClipboardList,
     children: [
-      { title: "Overview", href: "/admin/corpus-collection" },
-      { title: "Activities", href: "/admin/corpus-collection/activities" },
-      { title: "Submissions", href: "/admin/corpus-collection/submissions" },
-      { title: "Comments", href: "/admin/corpus-collection/comments" },
-      { title: "Categories", href: "/admin/corpus-collection/categories" },
-      { title: "AI Review Batches", href: "/admin/corpus-collection/review-batches" },
-      { title: "Analytics", href: "/admin/corpus-collection/analytics" },
-      { title: "Questionnaire Insights", href: "/admin/corpus-collection/questionnaire-insights" },
-      { title: "Questionnaire Permissions", href: "/admin/corpus-collection/questionnaire-permissions" },
-      { title: "Questionnaire Settings", href: "/admin/corpus-collection/questionnaire-settings" },
-      { title: "Questionnaire Definition", href: "/admin/corpus-collection/questionnaire-definition" },
+      { titleKey: "corpusNav.overview", href: "/admin/corpus-collection" },
+      { titleKey: "corpusNav.activities", href: "/admin/corpus-collection/activities" },
+      { titleKey: "corpusNav.submissions", href: "/admin/corpus-collection/submissions" },
+      { titleKey: "corpusNav.comments", href: "/admin/corpus-collection/comments" },
+      { titleKey: "corpusNav.categories", href: "/admin/corpus-collection/categories" },
+      { titleKey: "corpusNav.reviewBatches", href: "/admin/corpus-collection/review-batches" },
+      { titleKey: "corpusNav.analytics", href: "/admin/corpus-collection/analytics" },
+      { titleKey: "corpusNav.questionnaireInsights", href: "/admin/corpus-collection/questionnaire-insights" },
+      { titleKey: "corpusNav.questionnairePermissions", href: "/admin/corpus-collection/questionnaire-permissions" },
+      { titleKey: "corpusNav.questionnaireSettings", href: "/admin/corpus-collection/questionnaire-settings" },
+      { titleKey: "corpusNav.questionnaireDefinition", href: "/admin/corpus-collection/questionnaire-definition" },
     ],
   },
   {
-    title: "Audit Logs",
+    titleKey: "nav.auditLogs",
     href: "/admin/audit-logs",
     icon: FileText,
   },
   {
-    title: "Rule Ops",
+    titleKey: "nav.ruleOps",
     href: "/admin/rules",
     icon: Code,
   },
   {
-    title: "Settings",
+    titleKey: "nav.settings",
     href: "/admin/settings",
     icon: Settings,
   },
@@ -99,7 +99,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const tAdministrators = useTranslations("AdminAdministrators");
+  const t = useTranslations("AdminLayout");
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -161,7 +161,7 @@ export default function AdminLayout({
           <div className="flex items-center space-x-2">
             <Settings className="w-6 h-6 text-primary" />
             <span className="font-semibold text-lg text-foreground">
-              Admin Panel
+              {t("panelTitle")}
             </span>
           </div>
           <Button
@@ -211,7 +211,7 @@ export default function AdminLayout({
                   >
                     <span className="flex items-center space-x-3">
                       <item.icon className="w-5 h-5" />
-                      <span>{item.title}</span>
+                      <span>{t(item.titleKey)}</span>
                     </span>
                     <ChevronDown
                       className={cn(
@@ -242,7 +242,7 @@ export default function AdminLayout({
                             )}
                             onClick={() => setSidebarOpen(false)}
                           >
-                            {child.title}
+                            {t(child.titleKey)}
                           </Link>
                         );
                       })}
@@ -267,9 +267,7 @@ export default function AdminLayout({
               >
                 <item.icon className="w-5 h-5" />
                 <span>
-                  {"titleKey" in item
-                    ? tAdministrators(item.titleKey)
-                    : item.title}
+                  {t(item.titleKey)}
                 </span>
               </Link>
             );
@@ -289,10 +287,10 @@ export default function AdminLayout({
               </p>
               <p className="text-xs text-muted-foreground truncate">
                 {session.user.isSuperAdmin
-                  ? "Super Administrator"
+                  ? t("roles.superAdministrator")
                   : session.user.isSystemAdmin
-                    ? "System Administrator"
-                    : "Activity Operator"}
+                    ? t("roles.systemAdministrator")
+                    : t("roles.activityOperator")}
               </p>
             </div>
           </div>
@@ -305,7 +303,7 @@ export default function AdminLayout({
             onClick={() => router.push("/")}
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Back to Main App
+            {t("backToMainApp")}
           </Button>
         </div>
       </div>
@@ -333,14 +331,15 @@ export default function AdminLayout({
                 <Menu className="w-5 h-5" />
               </Button>
               <h1 className="text-xl font-semibold text-foreground">
-                Admin Dashboard
+                {t("dashboardTitle")}
               </h1>
             </div>
 
             <div className="flex items-center space-x-3">
+              <LocaleSwitcher />
               <ThemeToggle />
               <span className="text-sm text-muted-foreground">
-                Welcome back, {session.user.name}
+                {t("welcomeBack", { name: session.user.name ?? t("unnamedUser") })}
               </span>
             </div>
           </div>

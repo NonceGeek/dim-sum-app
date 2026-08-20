@@ -1,9 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { CalendarDays, Check, Copy, Eye, Image, Loader2, Plus, Search, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -69,12 +68,6 @@ const textLimits = {
   rules: 100,
 } as const;
 
-const mediaTypeOptions: Array<{ value: MediaType; label: string; description: string }> = [
-  { value: "image", label: "Images", description: "Tell the miniprogram this activity needs images." },
-  { value: "video", label: "Video", description: "Tell the miniprogram this activity needs video." },
-  { value: "audio", label: "Audio", description: "Tell the miniprogram this activity needs recording." },
-];
-
 const statusColor: Record<string, string> = {
   draft: "bg-secondary text-secondary-foreground",
   published: "bg-success text-success-foreground",
@@ -87,9 +80,15 @@ function countCharacters(value: string) {
 }
 
 export default function CorpusCollectionActivitiesPage() {
+  const t = useTranslations("CorpusCollectionActivities");
+  const locale = useLocale();
   const queryClient = useQueryClient();
-  const params = useParams<{ locale: string }>();
-  const locale = Array.isArray(params.locale) ? params.locale[0] : params.locale;
+  const dateLocale = locale === "zh-CN" ? "zh-CN" : "en-US";
+  const mediaTypeOptions: Array<{ value: MediaType; label: string; description: string }> = [
+    { value: "image", label: t("media.image.label"), description: t("media.image.description") },
+    { value: "video", label: t("media.video.label"), description: t("media.video.description") },
+    { value: "audio", label: t("media.audio.label"), description: t("media.audio.description") },
+  ];
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
   const [qMode, setQMode] = useState("title");
@@ -116,7 +115,7 @@ export default function CorpusCollectionActivitiesPage() {
       if (q) params.set("q", q);
       if (q) params.set("qMode", qMode);
       const response = await fetch(`/api/admin/corpus-collection/activities?${params}`);
-      if (!response.ok) throw new Error("Failed to load activities");
+      if (!response.ok) throw new Error(t("errors.load"));
       return response.json();
     },
   });
@@ -139,12 +138,12 @@ export default function CorpusCollectionActivitiesPage() {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || "Failed to create activity");
+        throw new Error(payload.error || t("errors.create"));
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success("Activity created");
+      toast.success(t("messages.created"));
       setForm({
         title: "",
         tag: "",
@@ -157,7 +156,7 @@ export default function CorpusCollectionActivitiesPage() {
       });
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-activities"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to create activity"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.create")),
   });
 
   const setStatusMutation = useMutation({
@@ -165,14 +164,14 @@ export default function CorpusCollectionActivitiesPage() {
       const response = await fetch(`/api/admin/corpus-collection/activities/${id}/${action}`, {
         method: "POST",
       });
-      if (!response.ok) throw new Error("Failed to update status");
+      if (!response.ok) throw new Error(t("errors.status"));
       return response.json();
     },
     onSuccess: () => {
-      toast.success("Activity status updated");
+      toast.success(t("messages.statusUpdated"));
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-activities"] });
     },
-    onError: () => toast.error("Failed to update activity status"),
+    onError: () => toast.error(t("errors.status")),
   });
 
   const coverMutation = useMutation({
@@ -182,15 +181,15 @@ export default function CorpusCollectionActivitiesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: coverPrompt }),
       });
-      if (!response.ok) throw new Error("Failed to generate covers");
+      if (!response.ok) throw new Error(t("errors.generate"));
       return response.json() as Promise<CoverResponse>;
     },
     onSuccess: (result) => {
       setCovers(result);
       setSavedCoverUrls({});
-      toast.success("Cover candidates generated");
+      toast.success(t("messages.generated"));
     },
-    onError: () => toast.error("Failed to generate cover candidates"),
+    onError: () => toast.error(t("errors.generate")),
   });
 
   const selectCoverMutation = useMutation({
@@ -201,15 +200,15 @@ export default function CorpusCollectionActivitiesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      if (!response.ok) throw new Error("Failed to select cover");
+      if (!response.ok) throw new Error(t("errors.upload"));
       return response.json() as Promise<{ url: string }>;
     },
     onSuccess: (result, sourceUrl) => {
       setForm((current) => ({ ...current, bannerUrl: result.url }));
       setSavedCoverUrls((current) => ({ ...current, [sourceUrl]: result.url }));
-      toast.success("Cover uploaded to OSS");
+      toast.success(t("messages.uploaded"));
     },
-    onError: () => toast.error("Failed to upload cover"),
+    onError: () => toast.error(t("errors.upload")),
     onSettled: () => setUploadingCoverUrl(null),
   });
 
@@ -224,41 +223,41 @@ export default function CorpusCollectionActivitiesPage() {
 
   const copyUrl = async (url: string) => {
     await navigator.clipboard.writeText(url);
-    toast.success("URL copied");
+    toast.success(t("messages.copied"));
   };
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.title.trim()) {
-      toast.error("Title is required");
+      toast.error(t("validation.titleRequired"));
       return;
     }
     if (countCharacters(form.title) > textLimits.title) {
-      toast.error(`Title must be ${textLimits.title} characters or less`);
+      toast.error(t("validation.titleLength", { count: textLimits.title }));
       return;
     }
     if (!form.tag.trim()) {
-      toast.error("Activity tag is required");
+      toast.error(t("validation.tagRequired"));
       return;
     }
     if (countCharacters(form.tag) !== textLimits.tag) {
-      toast.error(`Activity tag must be exactly ${textLimits.tag} characters`);
+      toast.error(t("validation.tagLength", { count: textLimits.tag }));
       return;
     }
     if (countCharacters(form.description) > textLimits.description) {
-      toast.error(`Description must be ${textLimits.description} characters or less`);
+      toast.error(t("validation.descriptionLength", { count: textLimits.description }));
       return;
     }
     if (countCharacters(form.rules) > textLimits.rules) {
-      toast.error(`Rules must be ${textLimits.rules} characters or less`);
+      toast.error(t("validation.rulesLength", { count: textLimits.rules }));
       return;
     }
     if (form.startsAt && form.endsAt && new Date(form.startsAt) >= new Date(form.endsAt)) {
-      toast.error("Start time must be earlier than end time");
+      toast.error(t("validation.dateOrder"));
       return;
     }
     if (form.requiredMediaTypes.length < 1) {
-      toast.error("Select at least one media type");
+      toast.error(t("validation.mediaRequired"));
       return;
     }
     createMutation.mutate();
@@ -267,23 +266,23 @@ export default function CorpusCollectionActivitiesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Activities</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
         <p className="text-muted-foreground mt-2">
-          Create collection campaigns, generate banners, and manage publishing state.
+          {t("description")}
         </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Create Activity</CardTitle>
-            <CardDescription>Configure a new public collection campaign.</CardDescription>
+            <CardTitle>{t("create.title")}</CardTitle>
+            <CardDescription>{t("create.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>Title</Label>
+                  <Label>{t("fields.title")}</Label>
                   <span className="text-xs text-muted-foreground">
                     {countCharacters(form.title)}/{textLimits.title}
                   </span>
@@ -296,7 +295,7 @@ export default function CorpusCollectionActivitiesPage() {
               </div>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>Activity Tag</Label>
+                  <Label>{t("fields.tag")}</Label>
                   <span className="text-xs text-muted-foreground">
                     {countCharacters(form.tag)}/{textLimits.tag}
                   </span>
@@ -304,16 +303,16 @@ export default function CorpusCollectionActivitiesPage() {
                 <Input
                   value={form.tag}
                   maxLength={textLimits.tag}
-                  placeholder="饮食文化"
+                  placeholder={t("fields.tagPlaceholder")}
                   onChange={(e) => setForm({ ...form, tag: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺
+                  {t("fields.tagHelp")}
                 </p>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>Description</Label>
+                  <Label>{t("fields.description")}</Label>
                   <span className="text-xs text-muted-foreground">
                     {countCharacters(form.description)}/{textLimits.description}
                   </span>
@@ -326,7 +325,7 @@ export default function CorpusCollectionActivitiesPage() {
               </div>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>Rules</Label>
+                  <Label>{t("fields.rules")}</Label>
                   <span className="text-xs text-muted-foreground">
                     {countCharacters(form.rules)}/{textLimits.rules}
                   </span>
@@ -338,22 +337,22 @@ export default function CorpusCollectionActivitiesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Starts At</Label>
+                <Label>{t("fields.startsAt")}</Label>
                 <Input type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Ends At</Label>
+                <Label>{t("fields.endsAt")}</Label>
                 <Input type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Banner URL</Label>
+                <Label>{t("fields.bannerUrl")}</Label>
                 <Input value={form.bannerUrl} onChange={(e) => setForm({ ...form, bannerUrl: e.target.value })} />
               </div>
               <div className="space-y-3 md:col-span-2">
                 <div>
-                  <Label>Required Media Types</Label>
+                  <Label>{t("fields.requiredMediaTypes")}</Label>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    The miniprogram uses this to decide which upload controls to show.
+                    {t("fields.mediaHelp")}
                   </p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
@@ -377,7 +376,7 @@ export default function CorpusCollectionActivitiesPage() {
               <div className="md:col-span-2">
                 <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                  Create
+                  {t("actions.create")}
                 </Button>
               </div>
             </form>
@@ -386,20 +385,20 @@ export default function CorpusCollectionActivitiesPage() {
 
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>AI Banner</CardTitle>
+            <CardTitle>{t("banner.title")}</CardTitle>
             <CardDescription>
-              Generate temporary candidates, then upload the selected image to OSS to get a permanent URL.
+              {t("banner.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="粤语童谣月光光主题活动，温馨童趣，荔湾骑楼..."
+              placeholder={t("banner.promptPlaceholder")}
               value={coverPrompt}
               onChange={(e) => setCoverPrompt(e.target.value)}
             />
             <Button onClick={() => coverMutation.mutate()} disabled={!coverPrompt || coverMutation.isPending}>
               {coverMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Image className="mr-2 h-4 w-4" />}
-              Generate
+              {t("actions.generate")}
             </Button>
             {covers && (
               <div className="grid gap-3">
@@ -409,13 +408,13 @@ export default function CorpusCollectionActivitiesPage() {
                     <div key={image.index} className="overflow-hidden rounded-md border bg-background">
                       <div className="bg-muted">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image.url} alt={`Candidate ${image.index}`} className="aspect-video w-full object-cover" />
+                        <img src={image.url} alt={t("banner.candidateAlt", { index: image.index + 1 })} className="aspect-video w-full object-cover" />
                       </div>
                       <div className="space-y-3 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div className="text-sm font-medium text-foreground">Candidate {image.index + 1}</div>
-                            <div className="text-xs text-muted-foreground">Expires {format(new Date(image.expiresAt), "MMM d, HH:mm")}</div>
+                            <div className="text-sm font-medium text-foreground">{t("banner.candidate", { index: image.index + 1 })}</div>
+                            <div className="text-xs text-muted-foreground">{t("banner.expires", { date: new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(image.expiresAt)) })}</div>
                           </div>
                           <Button
                             type="button"
@@ -429,14 +428,14 @@ export default function CorpusCollectionActivitiesPage() {
                             ) : (
                               <Upload className="mr-2 h-4 w-4" />
                             )}
-                            Upload to OSS for URL
+                            {t("actions.uploadOss")}
                           </Button>
                         </div>
                         {uploadedUrl && (
                           <div className="space-y-2 rounded-md border bg-muted/30 p-3">
                             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                               <Check className="h-4 w-4 text-success" />
-                              Permanent OSS URL
+                              {t("banner.permanentUrl")}
                             </div>
                             <div className="flex gap-2">
                               <Input readOnly value={uploadedUrl} className="font-mono text-xs" />
@@ -445,7 +444,7 @@ export default function CorpusCollectionActivitiesPage() {
                               </Button>
                             </div>
                             <p className="text-xs leading-5 text-muted-foreground">
-                              This uploaded URL has been filled into the Banner URL field and can be copied here.
+                              {t("banner.urlHelp")}
                             </p>
                           </div>
                         )}
@@ -461,8 +460,8 @@ export default function CorpusCollectionActivitiesPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Activity List</CardTitle>
-          <CardDescription>Filter and publish collection campaigns.</CardDescription>
+          <CardTitle>{t("list.title")}</CardTitle>
+          <CardDescription>{t("list.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-3">
@@ -472,7 +471,7 @@ export default function CorpusCollectionActivitiesPage() {
                 className="pl-10"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder={qMode === "activityUuid" ? "Activity UUID fragment" : "Search activity title"}
+                placeholder={qMode === "activityUuid" ? t("filters.uuidPlaceholder") : t("filters.titlePlaceholder")}
               />
             </div>
             <Select value={qMode} onValueChange={setQMode}>
@@ -480,8 +479,8 @@ export default function CorpusCollectionActivitiesPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="title">Title contains</SelectItem>
-                <SelectItem value="activityUuid">Activity UUID</SelectItem>
+                <SelectItem value="title">{t("filters.titleContains")}</SelectItem>
+                <SelectItem value="activityUuid">{t("filters.activityUuid")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
@@ -489,11 +488,11 @@ export default function CorpusCollectionActivitiesPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="offline">Offline</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value="all">{t("status.all")}</SelectItem>
+                <SelectItem value="draft">{t("status.draft")}</SelectItem>
+                <SelectItem value="published">{t("status.published")}</SelectItem>
+                <SelectItem value="offline">{t("status.offline")}</SelectItem>
+                <SelectItem value="archived">{t("status.archived")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -501,17 +500,17 @@ export default function CorpusCollectionActivitiesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>UUID</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Window</TableHead>
-                <TableHead>Submissions</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t("columns.title")}</TableHead>
+                <TableHead>{t("columns.uuid")}</TableHead>
+                <TableHead>{t("columns.status")}</TableHead>
+                <TableHead>{t("columns.window")}</TableHead>
+                <TableHead>{t("columns.submissions")}</TableHead>
+                <TableHead>{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6}>{t("loading")}</TableCell></TableRow>
               ) : data?.items.length ? (
                 data.items.map((activity) => (
                   <TableRow key={activity.id}>
@@ -528,12 +527,12 @@ export default function CorpusCollectionActivitiesPage() {
                       <code className="text-xs text-muted-foreground">{activity.displayUuid}</code>
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColor[activity.status] ?? "bg-secondary"}>{activity.status}</Badge>
+                      <Badge className={statusColor[activity.status] ?? "bg-secondary"}>{t(`status.`)}</Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4" />
-                        {activity.startsAt ? format(new Date(activity.startsAt), "MMM d") : "Anytime"} - {activity.endsAt ? format(new Date(activity.endsAt), "MMM d") : "Open"}
+                        {activity.startsAt ? new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric" }).format(new Date(activity.startsAt)) : t("window.anytime")} - {activity.endsAt ? new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric" }).format(new Date(activity.endsAt)) : t("window.open")}
                       </div>
                     </TableCell>
                     <TableCell>{activity.submissionCount ?? 0}</TableCell>
@@ -545,16 +544,16 @@ export default function CorpusCollectionActivitiesPage() {
                           onClick={() => window.open(`/${locale}/admin/corpus-collection/activities/${activity.id}/preview`, "_blank")}
                         >
                           <Eye className="mr-2 h-4 w-4" />
-                          Preview
+                          {t("actions.preview")}
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "publish" })}>Publish</Button>
-                        <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "offline" })}>Offline</Button>
+                        <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "publish" })}>{t("actions.publish")}</Button>
+                        <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "offline" })}>{t("status.offline")}</Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={6}>No activities found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6}>{t("empty")}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

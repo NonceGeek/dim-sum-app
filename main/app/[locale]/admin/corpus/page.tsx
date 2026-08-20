@@ -28,7 +28,7 @@ import {
   Heart,
   Star,
 } from "lucide-react";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 
 interface CorpusEntry {
   id: number;
@@ -56,6 +56,8 @@ interface CorpusResponse {
 }
 
 export default function AdminCorpusPage() {
+  const t = useTranslations("AdminCorpus");
+  const locale = useLocale();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -71,7 +73,7 @@ export default function AdminCorpusPage() {
       if (categoryFilter) params.append("category", categoryFilter);
 
       const response = await fetch(`/api/admin/corpus?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch corpus");
+      if (!response.ok) throw new Error(t("errors.fetch"));
       return response.json();
     },
   });
@@ -85,24 +87,24 @@ export default function AdminCorpusPage() {
       {/* Header */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          Corpus Data
+          {t("title")}
         </h2>
         <p className="text-muted-foreground mt-2">
-          Manage Cantonese language corpus entries and annotations.
+          {t("description")}
         </p>
       </div>
 
       {/* Search and Filter */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Search Corpus</CardTitle>
+          <CardTitle className="text-foreground">{t("search.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search corpus data..."
+                placeholder={t("search.placeholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -110,7 +112,7 @@ export default function AdminCorpusPage() {
               />
             </div>
             <Input
-              placeholder="Filter by category..."
+              placeholder={t("search.categoryPlaceholder")}
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-48 bg-secondary border-border text-foreground"
@@ -119,7 +121,7 @@ export default function AdminCorpusPage() {
               onClick={handleSearch}
               className="bg-primary hover:bg-primary/90"
             >
-              Search
+              {t("search.button")}
             </Button>
           </div>
         </CardContent>
@@ -131,10 +133,10 @@ export default function AdminCorpusPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-foreground">
-                Corpus Entries ({data?.pagination.total || 0})
+                {t("list.title", { count: data?.pagination.total || 0 })}
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                View and manage corpus data entries
+                {t("list.description")}
               </CardDescription>
             </div>
           </div>
@@ -142,34 +144,34 @@ export default function AdminCorpusPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading corpus data...</div>
+              <div className="text-muted-foreground">{t("loading")}</div>
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
-                    <TableHead className="text-muted-foreground">Data</TableHead>
-                    <TableHead className="text-muted-foreground">Category</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.data")}</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.category")}</TableHead>
                     <TableHead className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
-                        Views
+                        {t("columns.views")}
                       </div>
                     </TableHead>
                     <TableHead className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Heart className="h-4 w-4" />
-                        Likes
+                        {t("columns.likes")}
                       </div>
                     </TableHead>
                     <TableHead className="text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4" />
-                        Bookmarks
+                        {t("columns.bookmarks")}
                       </div>
                     </TableHead>
-                    <TableHead className="text-muted-foreground">Created</TableHead>
+                    <TableHead className="text-muted-foreground">{t("columns.created")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -186,7 +188,7 @@ export default function AdminCorpusPage() {
                             {entry.category}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">N/A</span>
+                          <span className="text-muted-foreground">{t("fallback.na")}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -199,7 +201,7 @@ export default function AdminCorpusPage() {
                         {entry.bookmarkNum}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {format(new Date(entry.createdAt), "MMM d, yyyy")}
+                        {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(entry.createdAt))}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -210,8 +212,7 @@ export default function AdminCorpusPage() {
               {data && data.pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Page {data.pagination.page} of{" "}
-                    {data.pagination.totalPages}
+                    {t("pagination", { page: data.pagination.page, total: data.pagination.totalPages })}
                   </div>
                   <div className="flex gap-2">
                     <Button

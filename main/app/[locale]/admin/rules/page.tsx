@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, RefreshCw } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 type AgentRunListResponse = {
   items: {
@@ -63,15 +64,6 @@ type RuleRunFormState = {
   ruleText: string;
   agentId: string;
 };
-
-const STATUS_OPTIONS = [
-  { label: "全部状态", value: "all" },
-  { label: "Pending", value: "pending" },
-  { label: "Running", value: "running" },
-  { label: "Completed", value: "completed" },
-  { label: "Failed", value: "failed" },
-  { label: "Cancelled", value: "cancelled" },
-];
 
 async function fetchRuns(params: Record<string, string | number | undefined>) {
   const searchParams = new URLSearchParams();
@@ -121,6 +113,10 @@ const initialFilters: FiltersState = {
 };
 
 export default function AdminRulesPage() {
+  const t = useTranslations("AdminRules");
+  const locale = useLocale();
+  const statusLabel = (value: string) => t(`status.${value}`);
+  const statusOptions = ["all", "pending", "running", "completed", "failed", "cancelled"].map((value) => ({ value, label: t(`status.${value}`) }));
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<FiltersState>(initialFilters);
   const [compileText, setCompileText] = useState("");
@@ -150,7 +146,7 @@ export default function AdminRulesPage() {
   const handleCompile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!compileText.trim()) {
-      toast.error("请输入要编译的规则文本");
+      toast.error(t("messages.enterCompile"));
       return;
     }
 
@@ -168,15 +164,15 @@ export default function AdminRulesPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "编译失败");
+        throw new Error(errorData.error || t("messages.compileFailed"));
       }
 
       const result = (await response.json()) as { pass: boolean; failureReason?: string };
       setCompileResult(result);
-      toast.success(result.pass ? "规则编译通过" : "规则编译未通过");
+      toast.success(result.pass ? t("messages.compilePassed") : t("messages.compileRejected"));
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : "编译失败");
+      toast.error(error instanceof Error ? error.message : t("messages.compileFailed"));
     } finally {
       setIsCompiling(false);
     }
@@ -185,7 +181,7 @@ export default function AdminRulesPage() {
   const handleRunSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!runForm.ruleId || !runForm.corpusName || !runForm.ruleText) {
-      toast.error("请完整填写规则信息");
+      toast.error(t("messages.completeForm"));
       return;
     }
 
@@ -208,10 +204,10 @@ export default function AdminRulesPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "触发规则失败");
+        throw new Error(errorData.error || t("messages.runFailed"));
       }
 
-      toast.success("已触发规则运行");
+      toast.success(t("messages.runStarted"));
       queryClient.invalidateQueries({ queryKey: ["admin-rule-runs"] });
       setRunForm({
         ruleId: "",
@@ -222,7 +218,7 @@ export default function AdminRulesPage() {
       });
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : "触发规则失败");
+      toast.error(error instanceof Error ? error.message : t("messages.runFailed"));
     } finally {
       setIsTriggeringRun(false);
     }
@@ -243,45 +239,45 @@ export default function AdminRulesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">规则与 Agent 管理</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t("title")}</h1>
         <p className="text-muted-foreground mt-2">
-          对接 Agent 服务，支持规则编译校验、运行触发与运行历史查询。
+          {t("description")}
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>规则编译检查</CardTitle>
-            <CardDescription>验证自然语言规则是否能被 Agent 理解。</CardDescription>
+            <CardTitle>{t("compile.title")}</CardTitle>
+            <CardDescription>{t("compile.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={handleCompile}>
               <div className="space-y-2">
-                <Label htmlFor="compile-ruleText">规则文本</Label>
+                <Label htmlFor="compile-ruleText">{t("fields.ruleText")}</Label>
                 <Textarea
                   id="compile-ruleText"
                   value={compileText}
                   onChange={(event) => setCompileText(event.target.value)}
-                  placeholder="请输入要编译的规则..."
+                  placeholder={t("compile.placeholder")}
                   rows={6}
                   className="bg-background border-border"
                 />
               </div>
               <Button type="submit" disabled={isCompiling} className="w-full">
                 {isCompiling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                开始编译
+                {t("compile.submit")}
               </Button>
             </form>
             {compileResult && (
               <div className="mt-4 rounded-md border border-border bg-background p-4">
                 <p className="text-sm">
-                  编译结果：
+                  {t("compile.result")}
                   <Badge
                     variant={compileResult.pass ? "default" : "destructive"}
                     className="ml-2"
                   >
-                    {compileResult.pass ? "通过" : "未通过"}
+                    {compileResult.pass ? t("compile.passed") : t("compile.rejected")}
                   </Badge>
                 </p>
                 {!compileResult.pass && compileResult.failureReason && (
@@ -296,49 +292,49 @@ export default function AdminRulesPage() {
 
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>手动触发规则</CardTitle>
-            <CardDescription>调用 `/rules/run` 接口立即创建一次运行。</CardDescription>
+            <CardTitle>{t("run.title")}</CardTitle>
+            <CardDescription>{t("run.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={handleRunSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="rule-id">规则 ID</Label>
+                <Label htmlFor="rule-id">{t("fields.ruleId")}</Label>
                 <Input
                   id="rule-id"
                   value={runForm.ruleId}
                   onChange={(event) =>
                     setRunForm((prev) => ({ ...prev, ruleId: event.target.value }))
                   }
-                  placeholder="例如 grammar_check_rule"
+                  placeholder={t("run.ruleIdExample")}
                   className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rule-version">规则版本 (可选)</Label>
+                <Label htmlFor="rule-version">{t("fields.version")}</Label>
                 <Input
                   id="rule-version"
                   value={runForm.ruleVersion}
                   onChange={(event) =>
                     setRunForm((prev) => ({ ...prev, ruleVersion: event.target.value }))
                   }
-                  placeholder="v1.0.0"
+                  placeholder={t("run.versionExample")}
                   className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="corpus-name">语料库名称</Label>
+                <Label htmlFor="corpus-name">{t("fields.corpus")}</Label>
                 <Input
                   id="corpus-name"
                   value={runForm.corpusName}
                   onChange={(event) =>
                     setRunForm((prev) => ({ ...prev, corpusName: event.target.value }))
                   }
-                  placeholder="zyzdv2"
+                  placeholder={t("run.corpusExample")}
                   className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rule-agent">Agent (可选)</Label>
+                <Label htmlFor="rule-agent">{t("fields.agent")}</Label>
                 <Select
                   value={runForm.agentId || "auto"}
                   onValueChange={(value) =>
@@ -349,10 +345,10 @@ export default function AdminRulesPage() {
                   }
                 >
                   <SelectTrigger className="bg-background border-border">
-                    <SelectValue placeholder="自动选择 Agent" />
+                    <SelectValue placeholder={t("run.autoAgent")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="auto">自动选择</SelectItem>
+                    <SelectItem value="auto">{t("run.auto")}</SelectItem>
                     {agents.map((agent) => (
                       <SelectItem key={agent.id} value={agent.id}>
                         {agent.name}
@@ -362,7 +358,7 @@ export default function AdminRulesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rule-text">规则文本</Label>
+                <Label htmlFor="rule-text">{t("fields.ruleText")}</Label>
                 <Textarea
                   id="rule-text"
                   value={runForm.ruleText}
@@ -370,7 +366,7 @@ export default function AdminRulesPage() {
                     setRunForm((prev) => ({ ...prev, ruleText: event.target.value }))
                   }
                   rows={6}
-                  placeholder="请输入自然语言规则..."
+                  placeholder={t("run.rulePlaceholder")}
                   className="bg-background border-border"
                 />
               </div>
@@ -378,7 +374,7 @@ export default function AdminRulesPage() {
                 {isTriggeringRun && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                调用 /rules/run
+                {t("run.submit")}
               </Button>
             </form>
           </CardContent>
@@ -388,8 +384,8 @@ export default function AdminRulesPage() {
       <Card className="bg-card border-border">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle>运行历史</CardTitle>
-            <CardDescription>查看 Agent 返回的 run 列表。</CardDescription>
+            <CardTitle>{t("history.title")}</CardTitle>
+            <CardDescription>{t("history.description")}</CardDescription>
           </div>
           <Button
             variant="outline"
@@ -397,42 +393,42 @@ export default function AdminRulesPage() {
             onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-rule-runs"] })}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            刷新
+            {t("history.refresh")}
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="filter-rule-id">规则 ID</Label>
+              <Label htmlFor="filter-rule-id">{t("fields.ruleId")}</Label>
               <Input
                 id="filter-rule-id"
                 value={filters.ruleId}
                 onChange={(event) => updateFilters({ ruleId: event.target.value })}
-                placeholder="按规则 ID 筛选"
+                placeholder={t("history.rulePlaceholder")}
                 className="bg-background border-border"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="filter-corpus-name">语料库</Label>
+              <Label htmlFor="filter-corpus-name">{t("fields.corpusShort")}</Label>
               <Input
                 id="filter-corpus-name"
                 value={filters.corpusName}
                 onChange={(event) => updateFilters({ corpusName: event.target.value })}
-                placeholder="按语料库筛选"
+                placeholder={t("history.corpusPlaceholder")}
                 className="bg-background border-border"
               />
             </div>
             <div className="space-y-2">
-              <Label>状态</Label>
+              <Label>{t("fields.status")}</Label>
               <Select
                 value={filters.status || "all"}
                 onValueChange={(value) => updateFilters({ status: value === "all" ? "" : value })}
               >
                 <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="全部状态" />
+                  <SelectValue placeholder={t("status.all")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
+                  {statusOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -441,7 +437,7 @@ export default function AdminRulesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="page-size">每页数量</Label>
+              <Label htmlFor="page-size">{t("history.pageSize")}</Label>
               <Input
                 id="page-size"
                 type="number"
@@ -460,12 +456,12 @@ export default function AdminRulesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>规则 ID</TableHead>
-                  <TableHead>语料库</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>违规数</TableHead>
-                  <TableHead>开始时间</TableHead>
-                  <TableHead>结束时间</TableHead>
+                  <TableHead>{t("fields.ruleId")}</TableHead>
+                  <TableHead>{t("fields.corpusShort")}</TableHead>
+                  <TableHead>{t("fields.status")}</TableHead>
+                  <TableHead>{t("history.violations")}</TableHead>
+                  <TableHead>{t("history.started")}</TableHead>
+                  <TableHead>{t("history.ended")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -474,7 +470,7 @@ export default function AdminRulesPage() {
                     <TableCell colSpan={7} className="text-center">
                       <div className="flex items-center justify-center gap-2 py-6">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        正在加载...
+                        {t("history.loading")}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -482,7 +478,7 @@ export default function AdminRulesPage() {
                 {!runsLoading && pagedRuns?.items.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      暂无运行记录
+                      {t("history.empty")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -492,16 +488,16 @@ export default function AdminRulesPage() {
                     <TableCell>{run.ruleId || "-"}</TableCell>
                     <TableCell>{run.corpusName || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{run.status}</Badge>
+                      <Badge variant="outline">{statusLabel(run.status)}</Badge>
                     </TableCell>
                     <TableCell>
                       {run.totalViolations ?? run.recordsWithViolations ?? 0}
                     </TableCell>
                     <TableCell>
-                      {new Date(run.createdAt).toLocaleString()}
+                      {new Date(run.createdAt).toLocaleString(locale)}
                     </TableCell>
                     <TableCell>
-                      {run.endedAt ? new Date(run.endedAt).toLocaleString() : "-"}
+                      {run.endedAt ? new Date(run.endedAt).toLocaleString(locale) : "-"}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -511,7 +507,7 @@ export default function AdminRulesPage() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              第 {filters.page} / {totalPages || 1} 页，共 {pagedRuns?.pagination.total ?? 0} 条
+              {t("history.pagination", { page: filters.page, pages: totalPages || 1, total: pagedRuns?.pagination.total ?? 0 })}
             </p>
             <div className="space-x-2">
               <Button
@@ -520,7 +516,7 @@ export default function AdminRulesPage() {
                 disabled={filters.page <= 1}
                 onClick={() => updateFilters({ page: Math.max(1, filters.page - 1) })}
               >
-                上一页
+                {t("history.previous")}
               </Button>
               <Button
                 variant="outline"
@@ -530,7 +526,7 @@ export default function AdminRulesPage() {
                   updateFilters({ page: Math.min(totalPages, filters.page + 1) })
                 }
               >
-                下一页
+                {t("history.next")}
               </Button>
             </div>
           </div>
@@ -539,12 +535,12 @@ export default function AdminRulesPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>可用 Agents</CardTitle>
-          <CardDescription>/agents 接口返回的数据。</CardDescription>
+          <CardTitle>{t("agents.title")}</CardTitle>
+          <CardDescription>{t("agents.description")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           {agents.length === 0 && (
-            <p className="text-sm text-muted-foreground">暂无 Agent</p>
+            <p className="text-sm text-muted-foreground">{t("agents.empty")}</p>
           )}
           {agents.map((agent) => (
             <div

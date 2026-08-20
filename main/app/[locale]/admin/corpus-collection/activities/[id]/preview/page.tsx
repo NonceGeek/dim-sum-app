@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft,
   CalendarDays,
@@ -51,18 +51,19 @@ const statusColor: Record<string, string> = {
   archived: "bg-muted text-muted-foreground",
 };
 
-function formatDate(value?: string | null) {
+function formatDate(value: string | null | undefined, locale: string) {
   if (!value) return "-";
-  return format(new Date(value), "MMM d, yyyy HH:mm");
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function JsonBlock({ value }: { value: unknown }) {
+  const t = useTranslations("ActivityPreview");
   if (
     value === undefined ||
     value === null ||
     (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0)
   ) {
-    return <div className="text-sm text-muted-foreground">No data</div>;
+    return <div className="text-sm text-muted-foreground">{t("noData")}</div>;
   }
 
   return (
@@ -73,6 +74,8 @@ function JsonBlock({ value }: { value: unknown }) {
 }
 
 export default function CorpusCollectionActivityPreviewPage() {
+  const t = useTranslations("ActivityPreview");
+  const locale = useLocale();
   const params = useParams<{ id: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -82,7 +85,7 @@ export default function CorpusCollectionActivityPreviewPage() {
       const response = await fetch(`/api/admin/corpus-collection/activities/${id}`);
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || "Failed to load activity");
+        throw new Error(payload.error || t("errors.load"));
       }
       return response.json();
     },
@@ -91,11 +94,11 @@ export default function CorpusCollectionActivityPreviewPage() {
 
   const activityWindow = useMemo(() => {
     if (!data) return "-";
-    return `${formatDate(data.startsAt)} - ${formatDate(data.endsAt)}`;
-  }, [data]);
+    return `${formatDate(data.startsAt, locale)} - ${formatDate(data.endsAt, locale)}`;
+  }, [data, locale]);
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading activity preview...</div>;
+    return <div className="text-sm text-muted-foreground">{t("loading")}</div>;
   }
 
   if (error || !data) {
@@ -104,12 +107,12 @@ export default function CorpusCollectionActivityPreviewPage() {
         <Button asChild variant="outline">
           <Link href="/admin/corpus-collection/activities">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t("back")}
           </Link>
         </Button>
         <Card>
           <CardContent className="pt-6 text-sm text-destructive">
-            {error instanceof Error ? error.message : "Activity not found"}
+            {error instanceof Error ? error.message : t("errors.notFound")}
           </CardContent>
         </Card>
       </div>
@@ -123,21 +126,21 @@ export default function CorpusCollectionActivityPreviewPage() {
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/corpus-collection/activities">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to activities
+              {t("backToActivities")}
             </Link>
           </Button>
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge className={statusColor[data.status] ?? "bg-secondary"}>{data.status}</Badge>
-              {data.timeStatus && <Badge variant="outline">{data.timeStatus}</Badge>}
-              {data.canSubmit && <Badge variant="outline">Can submit</Badge>}
+              <Badge className={statusColor[data.status] ?? "bg-secondary"}>{t(`status.${data.status}`)}</Badge>
+              {data.timeStatus && <Badge variant="outline">{t(`timeStatus.${data.timeStatus}`)}</Badge>}
+              {data.canSubmit && <Badge variant="outline">{t("canSubmit")}</Badge>}
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">{data.title}</h2>
-            <p className="mt-2 max-w-3xl text-muted-foreground">{data.description || "No description"}</p>
+            <p className="mt-2 max-w-3xl text-muted-foreground">{data.description || t("noDescription")}</p>
           </div>
         </div>
         <div className="rounded-md border bg-muted/30 px-3 py-2 text-right">
-          <div className="text-xs text-muted-foreground">Activity UUID</div>
+          <div className="text-xs text-muted-foreground">{t("activityUuid")}</div>
           <code className="text-xs text-foreground">{data.displayUuid}</code>
         </div>
       </div>
@@ -151,7 +154,7 @@ export default function CorpusCollectionActivityPreviewPage() {
         ) : (
           <div className="flex aspect-[16/7] items-center justify-center bg-muted text-muted-foreground">
             <ImageIcon className="mr-2 h-5 w-5" />
-            No banner
+            {t("noBanner")}
           </div>
         )}
       </Card>
@@ -160,14 +163,14 @@ export default function CorpusCollectionActivityPreviewPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Public Copy</CardTitle>
-              <CardDescription>Text users will read before submitting.</CardDescription>
+              <CardTitle>{t("publicCopy.title")}</CardTitle>
+              <CardDescription>{t("publicCopy.description")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <FileText className="h-4 w-4" />
-                  Description
+                  {t("fields.description")}
                 </div>
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">{data.description || "-"}</p>
               </div>
@@ -175,7 +178,7 @@ export default function CorpusCollectionActivityPreviewPage() {
               <div>
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <ClipboardList className="h-4 w-4" />
-                  Rules
+                  {t("fields.rules")}
                 </div>
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">{data.rules || "-"}</p>
               </div>
@@ -184,21 +187,21 @@ export default function CorpusCollectionActivityPreviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Configuration</CardTitle>
-              <CardDescription>Reward and media requirement payloads.</CardDescription>
+              <CardTitle>{t("configuration.title")}</CardTitle>
+              <CardDescription>{t("configuration.description")}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Trophy className="h-4 w-4" />
-                  Reward Config
+                  {t("fields.rewardConfig")}
                 </div>
                 <JsonBlock value={data.rewardConfig} />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Settings className="h-4 w-4" />
-                  Media Requirements
+                  {t("fields.mediaRequirements")}
                 </div>
                 <JsonBlock value={data.mediaRequirements} />
               </div>
@@ -209,7 +212,7 @@ export default function CorpusCollectionActivityPreviewPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Activity</CardTitle>
+              <CardTitle>{t("fields.activity")}</CardTitle>
               <CardDescription>ID {data.id}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
@@ -218,24 +221,24 @@ export default function CorpusCollectionActivityPreviewPage() {
                 <code className="text-xs">{data.displayUuid}</code>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Slug</span>
+                <span className="text-muted-foreground">{t("fields.slug")}</span>
                 <span>{data.slug || "-"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Category</span>
+                <span className="text-muted-foreground">{t("fields.category")}</span>
                 <span>{data.category || "-"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <CalendarDays className="h-4 w-4" />
-                  Window
+                  {t("fields.window")}
                 </span>
                 <span className="text-right">{activityWindow}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Users className="h-4 w-4" />
-                  Submissions
+                  {t("fields.submissions")}
                 </span>
                 <span>{data.submissionCount ?? 0}</span>
               </div>
@@ -243,14 +246,14 @@ export default function CorpusCollectionActivityPreviewPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Hash className="h-4 w-4" />
-                  Tags
+                  {t("fields.tags")}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {data.tags?.length ? data.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>) : <span className="text-muted-foreground">-</span>}
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="text-muted-foreground">Submission Types</div>
+                <div className="text-muted-foreground">{t("fields.submissionTypes")}</div>
                 <div className="flex flex-wrap gap-2">
                   {data.submissionTypes?.length ? data.submissionTypes.map((type) => <Badge key={type} variant="outline">{type}</Badge>) : <span className="text-muted-foreground">-</span>}
                 </div>

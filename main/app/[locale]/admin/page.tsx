@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 interface DashboardStats {
   totalUsers: number;
@@ -28,13 +29,14 @@ interface DashboardStats {
 }
 
 export default function AdminDashboardPage() {
+  const t = useTranslations("AdminDashboard");
   const { data: stats, isLoading: loading } = useQuery<DashboardStats>({
     queryKey: ["admin-stats"],
     queryFn: async () => {
       const response = await fetch("/api/admin/stats");
 
       if (!response.ok) {
-        throw new Error("Failed to fetch statistics");
+        throw new Error(t("errors.stats"));
       }
 
       return response.json();
@@ -43,67 +45,67 @@ export default function AdminDashboardPage() {
 
   const statCards = [
     {
-      title: "Total Users",
+      title: t("stats.totalUsers"),
       value: stats?.totalUsers?.toLocaleString() || "0",
       icon: Users,
-      description: "Registered users",
+      description: t("stats.registeredUsers"),
       href: "/admin/users",
     },
     {
-      title: "Corpus Entries",
+      title: t("stats.corpusEntries"),
       value: stats?.totalCorpusEntries?.toLocaleString() || "0",
       icon: Database,
-      description: "Total corpus data entries",
+      description: t("stats.totalCorpusEntries"),
       href: "/admin/corpus",
     },
   ];
 
   const quickActions = [
     {
-      title: "Manage Users",
-      description: "View and manage user accounts",
+      title: t("actions.users.title"),
+      description: t("actions.users.description"),
       href: "/admin/users",
       icon: Users,
     },
     {
-      title: "Categories",
-      description: "Manage corpus categories and visibility",
+      title: t("actions.categories.title"),
+      description: t("actions.categories.description"),
       href: "/admin/categories",
       icon: FolderOpen,
     },
     {
-      title: "Permissions",
-      description: "Manage user-corpus access bindings",
+      title: t("actions.permissions.title"),
+      description: t("actions.permissions.description"),
       href: "/admin/permissions",
       icon: Shield,
     },
     {
-      title: "Corpus Data",
-      description: "Manage language corpus entries",
+      title: t("actions.corpus.title"),
+      description: t("actions.corpus.description"),
       href: "/admin/corpus",
       icon: Database,
     },
     {
-      title: "Corpus Collection",
-      description: "Manage collection activities, submissions, and AI review",
+      title: t("actions.collection.title"),
+      description: t("actions.collection.description"),
       href: "/admin/corpus-collection",
       icon: ClipboardList,
     },
     {
-      title: "Audit Logs",
-      description: "View permission change history",
+      title: t("actions.audit.title"),
+      description: t("actions.audit.description"),
       href: "/admin/audit-logs",
       icon: FileText,
     },
     {
-      title: "Rule Ops",
-      description: "Compile rules and trigger Agent runs",
+      title: t("actions.rules.title"),
+      description: t("actions.rules.description"),
       href: "/admin/rules",
       icon: ListChecks,
     },
     {
-      title: "System Settings",
-      description: "Configure system parameters",
+      title: t("actions.settings.title"),
+      description: t("actions.settings.description"),
       href: "/admin/settings",
       icon: CheckCircle,
     },
@@ -138,7 +140,7 @@ export default function AdminDashboardPage() {
           Dashboard
         </h2>
         <p className="text-muted-foreground mt-2">
-          Welcome to the admin panel. Here's an overview of your system.
+          {t("description")}
         </p>
       </div>
 
@@ -172,7 +174,7 @@ export default function AdminDashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Quick Actions</h3>
+        <h3 className="text-lg font-semibold mb-4 text-foreground">{t("quickActions")}</h3>
         <div className="grid gap-4 md:grid-cols-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -198,7 +200,7 @@ export default function AdminDashboardPage() {
                     size="sm"
                     className="w-full bg-primary hover:bg-primary/90"
                   >
-                    <Link href={action.href}>Manage</Link>
+                    <Link href={action.href}>{t("manage")}</Link>
                   </Button>
                 </CardContent>
               </Card>

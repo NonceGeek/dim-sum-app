@@ -2,9 +2,8 @@
 
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import { Award, Bot, Check, Eye, Loader2, Search, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -67,9 +66,10 @@ const statusColor: Record<string, string> = {
 };
 
 export default function CorpusCollectionSubmissionsPage() {
+  const t = useTranslations("SubmissionsAdmin");
+  const locale = useLocale();
   const queryClient = useQueryClient();
-  const params = useParams<{ locale: string }>();
-  const locale = Array.isArray(params.locale) ? params.locale[0] : params.locale;
+  const statusLabel = (value: string) => t(`status.${value}`);
   const [q, setQ] = useState("");
   const [qMode, setQMode] = useState("content");
   const [reviewStatus, setReviewStatus] = useState("all");
@@ -80,7 +80,7 @@ export default function CorpusCollectionSubmissionsPage() {
     queryKey: ["corpus-collection-activities-for-submission-filter"],
     queryFn: async () => {
       const response = await fetch("/api/admin/corpus-collection/activities?pageSize=100");
-      if (!response.ok) throw new Error("Failed to load activities");
+      if (!response.ok) throw new Error(t("errors.activities"));
       return response.json();
     },
   });
@@ -98,7 +98,7 @@ export default function CorpusCollectionSubmissionsPage() {
         params.set("activityId", activityFilter);
       }
       const response = await fetch(`/api/admin/corpus-collection/submissions?${params}`);
-      if (!response.ok) throw new Error("Failed to load submissions");
+      if (!response.ok) throw new Error(t("errors.submissions"));
       return response.json();
     },
   });
@@ -117,15 +117,15 @@ export default function CorpusCollectionSubmissionsPage() {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || "Action failed");
+        throw new Error(payload.error || t("errors.action"));
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success("Submission updated");
+      toast.success(t("messages.updated"));
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Action failed"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.action")),
   });
 
   const awardMutation = useMutation({
@@ -137,15 +137,15 @@ export default function CorpusCollectionSubmissionsPage() {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || "Failed to update award status");
+        throw new Error(payload.error || t("errors.award"));
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success("Award status updated");
+      toast.success(t("messages.awardUpdated"));
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to update award status"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.award")),
   });
 
   const batchMutation = useMutation({
@@ -163,16 +163,16 @@ export default function CorpusCollectionSubmissionsPage() {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || "Failed to create AI review batch");
+        throw new Error(payload.error || t("errors.batch"));
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success("AI review batch created");
+      toast.success(t("messages.batchCreated"));
       setSelected([]);
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to create batch"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.batch")),
   });
 
   const toggleSelected = (id: string) => {
@@ -180,13 +180,13 @@ export default function CorpusCollectionSubmissionsPage() {
   };
 
   const reject = (id: string) => {
-    const reason = window.prompt("Reject reason");
+    const reason = window.prompt(t("prompts.reject"));
     if (!reason) return;
     actionMutation.mutate({ id, action: "reject", body: { reason } });
   };
 
   const markReviewNeeded = (id: string) => {
-    const reason = window.prompt("Review note") || undefined;
+    const reason = window.prompt(t("prompts.review")) || undefined;
     actionMutation.mutate({ id, action: "mark-review-needed", body: { reason } });
   };
 
@@ -225,9 +225,9 @@ export default function CorpusCollectionSubmissionsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Submissions</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
         <p className="text-muted-foreground mt-2">
-          Review user submissions, manage display, and send batches to AI review.
+          {t("description")}
         </p>
       </div>
 
@@ -238,7 +238,7 @@ export default function CorpusCollectionSubmissionsPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-10"
-                placeholder={qMode === "activityUuid" ? "Activity UUID fragment" : "Search title or intro"}
+                placeholder={qMode === "activityUuid" ? t("filters.uuidPlaceholder") : t("filters.contentPlaceholder")}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
@@ -246,24 +246,24 @@ export default function CorpusCollectionSubmissionsPage() {
             <Select value={qMode} onValueChange={setQMode}>
               <SelectTrigger className="w-full lg:w-52"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="content">Title/Intro contains</SelectItem>
-                <SelectItem value="activityUuid">Activity UUID</SelectItem>
+                <SelectItem value="content">{t("filters.content")}</SelectItem>
+                <SelectItem value="activityUuid">{t("filters.uuid")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={reviewStatus} onValueChange={setReviewStatus}>
               <SelectTrigger className="w-full lg:w-56"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">{t("status.all")}</SelectItem>
                 {reviewStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                  <SelectItem key={status} value={status}>{statusLabel(status)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={activityFilter} onValueChange={setActivityFilter}>
-              <SelectTrigger className="w-full lg:w-64"><SelectValue placeholder="Activity" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-64"><SelectValue placeholder={t("filters.activity")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Activities</SelectItem>
-                <SelectItem value="none">Without Activity</SelectItem>
+                <SelectItem value="all">{t("filters.allActivities")}</SelectItem>
+                <SelectItem value="none">{t("filters.withoutActivity")}</SelectItem>
                 {activitiesData?.items.map((activity) => (
                   <SelectItem key={activity.id} value={activity.id}>{activity.title} · {activity.displayUuid}</SelectItem>
                 ))}
@@ -271,7 +271,7 @@ export default function CorpusCollectionSubmissionsPage() {
             </Select>
             <Button disabled={selected.length === 0 || batchMutation.isPending} onClick={() => batchMutation.mutate()}>
               {batchMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-              Send AI Review ({selected.length})
+              {t("sendReview", { count: selected.length })}
             </Button>
           </div>
         </CardContent>
@@ -279,9 +279,9 @@ export default function CorpusCollectionSubmissionsPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Submission List ({data?.pagination.total ?? 0})</CardTitle>
+          <CardTitle>{t("list.title", { count: data?.pagination.total ?? 0 })}</CardTitle>
           <CardDescription>
-            {selectedItems.length > 0 ? `${selectedItems.length} selected for batch review.` : "Select pending items for AI review."}
+            {selectedItems.length > 0 ? t("list.selected", { count: selectedItems.length }) : t("list.hint")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -289,18 +289,18 @@ export default function CorpusCollectionSubmissionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10" />
-                <TableHead>Submission</TableHead>
-                <TableHead>Activity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Media</TableHead>
-                <TableHead>Display</TableHead>
-                <TableHead>Stats</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t("columns.submission")}</TableHead>
+                <TableHead>{t("columns.activity")}</TableHead>
+                <TableHead>{t("columns.status")}</TableHead>
+                <TableHead>{t("columns.media")}</TableHead>
+                <TableHead>{t("columns.display")}</TableHead>
+                <TableHead>{t("columns.stats")}</TableHead>
+                <TableHead>{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}>{t("loading")}</TableCell></TableRow>
               ) : data?.items.length ? (
                 data.items.map((submission) => (
                   <TableRow key={submission.id}>
@@ -319,7 +319,7 @@ export default function CorpusCollectionSubmissionsPage() {
                         {submission.isAwarded && <Badge className="bg-success text-success-foreground">{submission.awardStatus}</Badge>}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {submission.author?.name || "Unknown"} · {format(new Date(submission.createdAt), "MMM d, yyyy")}
+                        {submission.author?.name || t("unknown")} · {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(submission.createdAt))}
                       </div>
                     </TableCell>
                     <TableCell className="max-w-48 text-sm text-muted-foreground">
@@ -333,7 +333,7 @@ export default function CorpusCollectionSubmissionsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColor[submission.reviewStatus] ?? "bg-secondary"}>{submission.reviewStatus}</Badge>
+                      <Badge className={statusColor[submission.reviewStatus] ?? "bg-secondary"}>{statusLabel(submission.reviewStatus)}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -351,30 +351,30 @@ export default function CorpusCollectionSubmissionsPage() {
                             checked={submission.isFeatured}
                             onCheckedChange={(checked) => actionMutation.mutate({ id: submission.id, action: "display", body: { isFeatured: checked } })}
                           />
-                          Featured
+                          {t("display.featured")}
                         </label>
                         <label className="flex items-center gap-2 text-sm">
                           <Switch
                             checked={submission.showOnHome}
                             onCheckedChange={(checked) => actionMutation.mutate({ id: submission.id, action: "display", body: { showOnHome: checked } })}
                           />
-                          Home
+                          {t("display.home")}
                         </label>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      <div>Likes: {submission.likeCount}</div>
-                      <div>Comments: {submission.commentCount}</div>
+                      <div>{t("stats.likes", { count: submission.likeCount })}</div>
+                      <div>{t("stats.comments", { count: submission.commentCount })}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         {renderActionButton(
-                          "View details",
+                          t("actions.view"),
                           <Eye className="h-4 w-4" />,
                           () => window.open(`/${locale}/admin/corpus-collection/submissions/${submission.id}`, "_blank")
                         )}
                         {renderActionButton(
-                          "Approve",
+                          t("actions.approve"),
                           <Check className="h-4 w-4" />,
                           () => actionMutation.mutate({ id: submission.id, action: "approve" }),
                           {
@@ -383,7 +383,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           }
                         )}
                         {renderActionButton(
-                          "Reject",
+                          t("actions.reject"),
                           <X className="h-4 w-4" />,
                           () => reject(submission.id),
                           {
@@ -392,7 +392,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           }
                         )}
                         {renderActionButton(
-                          "Mark review needed",
+                          t("actions.reviewNeeded"),
                           <Star className="h-4 w-4" />,
                           () => markReviewNeeded(submission.id),
                           {
@@ -401,7 +401,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           }
                         )}
                         {renderActionButton(
-                          submission.isAwarded ? "Remove award" : "Mark awarded",
+                          submission.isAwarded ? t("actions.removeAward") : t("actions.markAwarded"),
                           <Award className="h-4 w-4" />,
                           () =>
                             awardMutation.mutate({
@@ -419,7 +419,7 @@ export default function CorpusCollectionSubmissionsPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={8}>No submissions found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}>{t("empty")}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

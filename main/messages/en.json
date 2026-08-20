@@ -337,6 +337,251 @@
     "updatedAt": "Updated",
     "copied": "Copied"
   },
+  "CorpusCollectionCategories": {
+    "title": "Categories", "description": "Configure submission types and public tags.", "created": "Category created", "createFailed": "Unable to create category", "updated": "Category updated", "updateFailed": "Unable to update category", "deleted": "Category deleted", "deleteFailed": "Unable to delete category", "nameRequired": "Name is required",
+    "name": "Name", "type": "Type", "sort": "Sort", "status": "Status", "actions": "Actions", "submissionType": "Submission Type", "tag": "Tag", "allTypes": "All Types", "active": "Active", "inactive": "Inactive", "enable": "Enable", "disable": "Disable", "delete": "Delete category", "loading": "Loading…", "empty": "No categories found.",
+    "add": { "title": "Add Category", "description": "Tags configured here are shown in submission forms.", "button": "Add" },
+    "list": { "title": "Category List", "description": "Enable, disable, or remove categories." }
+  },
+  "CorpusCollectionComments": {
+    "title": "Comments", "description": "Review user comments before they appear publicly.", "search": "Search comments", "updated": "Comment updated", "updateFailed": "Unable to update comment",
+    "statuses": { "all": "All Statuses", "pending": "Pending Review", "approved": "Approved", "rejected": "Rejected" },
+    "queue": "Comment Queue ({count})", "queueDescription": "Approving a comment recalculates the submission comment count.",
+    "columns": { "comment": "Comment", "work": "Work", "author": "Author", "status": "Status", "created": "Created", "actions": "Actions" },
+    "loading": "Loading…", "unknown": "Unknown", "approve": "Approve comment", "reject": "Reject comment", "empty": "No comments found."
+  },
+  "CorpusCollectionAnalytics": {
+    "title": "Analytics", "description": "Submission, activity, and interaction metrics.",
+    "cards": { "totalSubmissions": "Total Submissions", "pending": "Pending Review", "approved": "Approved", "rejected": "Rejected", "activities": "Activities", "published": "Published", "likes": "Likes", "comments": "Comments" },
+    "health": { "title": "Review Health", "description": "High-level review completion snapshot.", "approvalRate": "Approval Rate", "backlog": "Review Backlog", "interactions": "Interaction Total" },
+    "trends": { "title": "Submission Trends", "description": "Daily review state movement over the last 30 days.", "date": "Date", "total": "Total", "approved": "Approved", "pending": "Pending", "rejected": "Rejected", "empty": "No trend data." },
+    "breakdown": { "title": "Category Breakdown", "description": "Submission volume by type and top tags.", "types": "Types", "topTags": "Top Tags" },
+    "detail": { "title": "Activity Detail", "description": "Enter an activity ID to inspect activity-level interactions and review state.", "activityId": "Activity ID", "activity": "Activity", "views": "Views", "shares": "Shares", "reviewStates": "Review States" }
+  },
+  "QuestionnaireInsights": {
+    "title": "Questionnaire Insights",
+    "description": "Pre-participation registration, conversion paths, and de-identified audience profiles.",
+    "activityComparison": "Compare activities",
+    "exportUnavailable": "Aggregate export will be available in Phase 5",
+    "exportReport": "Export aggregate report",
+    "refresh": "Refresh",
+    "loadFailed": "Unable to load data. Please try again.",
+    "reload": "Reload",
+    "noData": "No data for the current filters.",
+    "insufficientSample": "Insufficient sample",
+    "filters": {
+      "dateRange": "Date range", "today": "Today", "sevenDays": "Last 7 days", "thirtyDays": "Last 30 days", "quarter": "This quarter",
+      "activity": "Activity filter", "allActivities": "All activities",
+      "submissionStatus": "Submission status", "allSubmissionStatuses": "All submission statuses", "submitted": "Submitted", "notSubmitted": "Not submitted",
+      "registrationType": "Registration type", "allRegistrationTypes": "All registration types", "firstTime": "First-time registration", "reused": "Reused profile"
+    },
+    "kpis": {
+      "completed": { "label": "Completed registrations", "description": "Users who completed registration for the first time during the selected period" },
+      "submissionRate": { "label": "Post-registration submission rate", "description": "Registered users who submitted within the attribution window" },
+      "reuseRate": { "label": "Profile reuse rate", "description": "Users who reused an existing profile when participating again" }
+    },
+    "conversion": {
+      "title": "Participation Conversion Paths", "description": "First-time registration and profile reuse are measured separately to avoid mixing funnel definitions.", "viewDetails": "View drop-off details",
+      "firstTimeTitle": "First-time registration funnel", "firstTimeDescription": "Complete the questionnaire and submit after clicking the submission call to action",
+      "reusedTitle": "Profile reuse path", "reusedDescription": "Users with an existing profile proceed directly to submission"
+    },
+    "profile": {
+      "title": "Audience Profile", "description": "Only de-identified aggregates are shown. Exact conversion rates are hidden for groups smaller than {count} users.",
+      "ageDetails": "Age details", "regionDetails": "Region details", "interestDetails": "Interest details",
+      "ageTitle": "Age range", "ageDescription": "Age distribution of registered users",
+      "regionTitle": "Language and culture region", "regionDescription": "User counts by questionnaire region option",
+      "interestTitle": "Interest types", "interestDescription": "Optional, multi-select user interests"
+    },
+    "activityTable": {
+      "title": "Activity × Audience Performance", "description": "Activity tags come from activity settings and remain separate from user interests.",
+      "activity": "Activity", "registrations": "Registrations", "submissionRate": "Submission rate", "topAge": "Top age range", "region": "Region preference", "tag": "Activity tag",
+      "empty": "There is not enough data to build an audience profile for the current filters."
+    },
+    "funnelDialog": {
+      "title": "Questionnaire Drop-off Details", "description": "First-time and reuse paths are calculated separately; all counts are unique users.",
+      "maximumLoss": "Largest drop-off step", "lossCount": "{count} users dropped off", "firstTime": "First-time registration", "reused": "Profile reuse",
+      "step": "Step", "people": "Users", "completionRate": "Completion rate", "lossFromPrevious": "Drop-off from previous step"
+    },
+    "profileDialog": {
+      "title": "Audience Profile Details", "description": "Only aggregate data is shown. Small groups do not return exact submission rates.",
+      "sampleSize": "Profile sample size", "leadingGroup": "Leading group", "group": "Group", "people": "Users", "share": "Share", "submissionRate": "Submission rate"
+    },
+    "comparisonDialog": {
+      "title": "Activity Comparison Details", "description": "Ongoing and ended activities are ranked separately by post-registration submission rate, with up to five shown.",
+      "ongoing": "Ongoing activities · Top 5", "ended": "Ended activities · Top 5", "activity": "Activity", "registrations": "Registrations",
+      "completionRate": "Questionnaire completion rate", "submissionRate": "Submission rate", "topAge": "Top age range", "region": "Region preference",
+      "endsAt": "Ends {date}", "longRunning": "No end date", "empty": "No activities"
+    }
+  },
+  "QuestionnaireDefinition": {
+    "title": "Questionnaire Definition",
+    "description": "The current published version is v{version}. Publishing creates a new version and never overwrites history.",
+    "loadFailed": "Unable to load questionnaire definition",
+    "publishFailed": "Unable to publish questionnaire",
+    "publishSuccess": "Questionnaire version {version} published",
+    "unavailable": "The questionnaire definition could not be loaded or has not been initialized.",
+    "reload": "Reload",
+    "publish": "Publish new version",
+    "newOption": "New option",
+    "singleChoice": "Single choice",
+    "multipleChoice": "Multiple choice",
+    "required": "Required",
+    "optional": "Optional",
+    "questionDescription": "Question fields, types, and required rules are bound to the existing data structure. Only copy and options can be edited.",
+    "questionTitle": "Question title",
+    "questionHelp": "Help text",
+    "options": "Options",
+    "addOption": "Add option",
+    "optionCodeLabel": "Option code for {question}",
+    "optionNameLabel": "Option label for {question}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "delete": "Delete",
+    "questions": { "ageRange": "Age range", "cultureRegion": "Language and culture region", "interestTypes": "Activity interests" },
+    "basic": {
+      "title": "Basic Information",
+      "description": "Edits stay on this page until you publish a new version. Only newly started questionnaires use the new version.",
+      "name": "Questionnaire name"
+    },
+    "history": {
+      "title": "Version History",
+      "description": "Questionnaires already in progress continue using the version recorded when they started.",
+      "version": "Version",
+      "name": "Name",
+      "status": "Status",
+      "publishedAt": "Published",
+      "current": "Current",
+      "archived": "Archived"
+    },
+    "dialog": {
+      "title": "Publish a new questionnaire version?",
+      "description": "Version v{version} will be created and the current version archived. Existing journeys keep their original version; new journeys use the new version.",
+      "cancel": "Cancel",
+      "publishing": "Publishing…",
+      "confirm": "Publish"
+    }
+  },
+  "QuestionnaireSettings": {
+    "title": "Questionnaire Gate Settings",
+    "description": "Choose whether activity submissions require the pre-participation questionnaire. Existing and new activities are enabled by default.",
+    "enableAll": "Enable all",
+    "disableAll": "Disable all",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "gateLabel": "Questionnaire gate for {activity}",
+    "summary": { "total": "Total activities", "enabled": "Gate enabled", "disabled": "Gate disabled" },
+    "list": {
+      "title": "Configure by Activity",
+      "description": "When disabled, that activity temporarily follows the legacy submission flow. Submissions without an activity are never affected.",
+      "loadFailed": "Unable to load gate settings.",
+      "reload": "Reload",
+      "empty": "No activities found.",
+      "columns": { "activity": "Activity", "status": "Status", "tag": "Activity tag", "gate": "Require questionnaire" }
+    },
+    "toast": {
+      "activityEnabled": "Questionnaire gate enabled for this activity",
+      "activityDisabled": "Questionnaire gate disabled for this activity",
+      "allEnabled": "Questionnaire gate enabled for all activities",
+      "allDisabled": "Questionnaire gate disabled for all activities",
+      "failed": "Unable to update questionnaire gate settings"
+    }
+  },
+  "QuestionnairePermissions": {
+    "title": "Questionnaire Permissions",
+    "description": "Configure which questionnaire insights each activity operator can access.",
+    "unnamedUser": "Unnamed user",
+    "activityStatus": {
+      "draft": "Draft",
+      "published": "Published",
+      "offline": "Offline"
+    },
+    "form": {
+      "title": "Configure Activity Access",
+      "description": "Saving the same account and activity updates the existing access. Export access never extends the activity scope.",
+      "operator": "Activity operator account",
+      "selectOperator": "Select an account",
+      "searchOperator": "Search by name, email, or phone number…",
+      "noOperator": "No matching account found.",
+      "activity": "Activity",
+      "selectActivity": "Select an activity",
+      "viewInsights": "View questionnaire insights",
+      "viewInsightsDescription": "Allows access only to de-identified aggregate data for this activity.",
+      "exportInsights": "Export aggregate reports",
+      "exportInsightsDescription": "Exports still enforce small-sample protection and dedicated auditing.",
+      "saving": "Saving…",
+      "save": "Save access",
+      "clear": "Clear"
+    },
+    "list": {
+      "title": "Existing Activity Access",
+      "description": "System administrators already have access to every activity and do not appear in this list.",
+      "loadFailed": "Unable to load activity access.",
+      "reload": "Reload",
+      "allowed": "Allowed",
+      "disabled": "Disabled",
+      "notAllowed": "Not allowed",
+      "editLabel": "Edit access",
+      "revokeLabel": "Revoke access",
+      "empty": "No activity operator access configured.",
+      "columns": {
+        "operator": "Activity operator",
+        "activity": "Activity",
+        "view": "View insights",
+        "export": "Export",
+        "updatedAt": "Updated",
+        "action": "Action"
+      }
+    },
+    "toast": {
+      "saved": "Activity access saved",
+      "saveFailed": "Unable to save access. Please try again later.",
+      "revoked": "Activity access revoked",
+      "revokeFailed": "Unable to revoke access. Please try again later."
+    },
+    "dialog": {
+      "title": "Revoke this activity access?",
+      "description": "The operator will immediately lose access to questionnaire insights for “{activity}”.",
+      "cancel": "Cancel",
+      "confirm": "Revoke access"
+    }
+  },
+  "AdminLayout": {
+    "panelTitle": "Admin Panel",
+    "dashboardTitle": "Admin Dashboard",
+    "welcomeBack": "Welcome back, {name}",
+    "unnamedUser": "Administrator",
+    "backToMainApp": "Back to Main App",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "administrators": "Administrator Management",
+      "categories": "Categories",
+      "permissions": "Permissions",
+      "corpusData": "Corpus Data",
+      "corpusCollection": "Corpus Collection",
+      "auditLogs": "Audit Logs",
+      "ruleOps": "Rule Ops",
+      "settings": "Settings"
+    },
+    "corpusNav": {
+      "overview": "Overview",
+      "activities": "Activities",
+      "submissions": "Submissions",
+      "comments": "Comments",
+      "categories": "Categories",
+      "reviewBatches": "AI Review Batches",
+      "analytics": "Analytics",
+      "questionnaireInsights": "Questionnaire Insights",
+      "questionnairePermissions": "Questionnaire Permissions",
+      "questionnaireSettings": "Questionnaire Settings",
+      "questionnaireDefinition": "Questionnaire Definition"
+    },
+    "roles": {
+      "superAdministrator": "Super Administrator",
+      "systemAdministrator": "System Administrator",
+      "activityOperator": "Activity Operator"
+    }
+  },
   "AdminAdministrators": {
     "menuTitle": "Administrator Management",
     "title": "Administrator Management",
@@ -382,6 +627,106 @@
       "confirmGrant": "Grant access",
       "confirmRevoke": "Revoke access"
     }
+  },
+  "AdminPermissions": { "title": "Permissions", "description": "Manage user access to corpus categories.", "filter": { "title": "Filter Permissions", "userPlaceholder": "Select user to view permissions", "searchUsers": "Search users...", "allUsers": "All Users", "categoryPlaceholder": "Filter by category", "allCategories": "All Categories", "clear": "Clear Filters" }, "add": { "button": "Add Permission", "title": "Add New Permission", "description": "Grant users access to corpus categories.", "users": "Users", "selectUsers": "Select users...", "searchUser": "Search user...", "categories": "Categories", "selectCategories": "Select categories...", "searchCategory": "Search category...", "level": "Permission Level", "autoRole": "Auto-set based on each user role", "selectUsersForLevel": "Select users to see their permission levels", "adding": "Adding...", "submit": "Add Permissions" }, "searching": "Searching...", "searchingUsers": "Searching users...", "noUsers": "No users found", "noUser": "No user found.", "noCategory": "No category found.", "selected": "{count} selected", "cancel": "Cancel", "na": "N/A", "viewingFor": "Viewing permissions for:", "permissionCount": "{count} permissions", "list": { "title": "Permissions List ({count})", "description": "User-corpus permission bindings" }, "loading": "Loading permissions...", "empty": "No permissions found. Click Add Permission to create one.", "columns": { "user": "User", "role": "Role", "category": "Category", "permission": "Permission", "created": "Created", "actions": "Actions" }, "permission": { "READ": "Read", "WRITE": "Write", "CREATE": "Create", "FULL": "Full" }, "role": { "LEARNER": "Learner", "TAGGER_PARTNER": "Partner Tagger", "TAGGER_OUTSOURCING": "Outsourced Tagger", "RESEARCHER": "Researcher" }, "delete": { "title": "Confirm Delete", "prefix": "Are you sure you want to revoke permission for", "on": "on", "warning": "This action cannot be undone.", "deleting": "Deleting...", "confirm": "Delete" }, "messages": { "added": "Successfully added {count} permissions", "revoked": "Permission revoked", "updated": "Permission updated" }, "errors": { "permissions": "Failed to fetch permissions", "categories": "Failed to fetch categories", "users": "Failed to fetch users", "add": "Failed to add permission", "delete": "Failed to revoke permission", "update": "Failed to update permission" } },
+  "AdminRules": { "title": "Rules & Agent Management", "description": "Connect to Agent services for rule compilation, run triggering, and history.", "compile": { "title": "Rule Compilation", "description": "Validate whether an Agent can understand a natural-language rule.", "placeholder": "Enter a rule to compile...", "submit": "Compile", "result": "Result: ", "passed": "Passed", "rejected": "Rejected" }, "run": { "title": "Trigger Rule Manually", "description": "Call the /rules/run endpoint to create a run immediately.", "autoAgent": "Select Agent automatically", "auto": "Automatic", "rulePlaceholder": "Enter a natural-language rule...", "submit": "Call /rules/run", "ruleIdExample": "e.g. grammar_check_rule", "versionExample": "v1.0.0", "corpusExample": "zyzdv2" }, "fields": { "ruleText": "Rule Text", "ruleId": "Rule ID", "version": "Rule Version (optional)", "corpus": "Corpus Name", "corpusShort": "Corpus", "agent": "Agent (optional)", "status": "Status" }, "status": { "all": "All Statuses", "pending": "Pending", "running": "Running", "completed": "Completed", "failed": "Failed", "cancelled": "Cancelled" }, "history": { "title": "Run History", "description": "View runs returned by the Agent.", "refresh": "Refresh", "rulePlaceholder": "Filter by rule ID", "corpusPlaceholder": "Filter by corpus", "pageSize": "Page Size", "violations": "Violations", "started": "Started", "ended": "Ended", "loading": "Loading...", "empty": "No runs found", "pagination": "Page {page} of {pages}, {total} total", "previous": "Previous", "next": "Next" }, "agents": { "title": "Available Agents", "description": "Data returned by the /agents endpoint.", "empty": "No agents available" }, "messages": { "enterCompile": "Enter a rule to compile", "compileFailed": "Compilation failed", "compilePassed": "Rule compilation passed", "compileRejected": "Rule compilation did not pass", "completeForm": "Complete all required rule fields", "runFailed": "Failed to trigger rule", "runStarted": "Rule run started" } },
+  "SubmissionDetail": { "noData": "No data", "audio": "Audio", "loading": "Loading submission...", "back": "Back", "backToSubmissions": "Back to submissions", "featured": "Featured", "home": "Home", "openJson": "Open JSON", "media": { "title": "Media", "count": "{count, plural, one {# uploaded file} other {# uploaded files}}", "empty": "No media uploaded." }, "review": { "title": "Review Data", "description": "Automated checks and AI review results.", "precheck": "Precheck Result", "ai": "AI Review Result" }, "submission": "Submission", "unknown": "Unknown", "fields": { "type": "Type", "activity": "Activity", "created": "Created", "updated": "Updated" }, "noTags": "No tags", "stats": { "title": "Stats", "likes": "Likes", "comments": "Comments", "shares": "Shares", "views": "Views" }, "files": { "title": "Files", "images": "Images", "audio": "Audio", "video": "Video" }, "activityWindow": "Activity Window", "status": { "pending_review": "Pending Review", "ai_reviewing": "AI Reviewing", "review_needed": "Review Needed", "approved": "Approved", "rejected": "Rejected" }, "visibility": { "public": "Public", "private": "Private", "hidden": "Hidden" }, "errors": { "load": "Failed to load submission", "notFound": "Submission not found" } },
+  "SubmissionsAdmin": { "title": "Submissions", "description": "Review user submissions, manage display, and send batches to AI review.", "filters": { "uuidPlaceholder": "Activity UUID fragment", "contentPlaceholder": "Search title or intro", "content": "Title/Intro contains", "uuid": "Activity UUID", "activity": "Activity", "allActivities": "All Activities", "withoutActivity": "Without Activity" }, "status": { "all": "All Statuses", "pending_review": "Pending Review", "ai_reviewing": "AI Reviewing", "review_needed": "Review Needed", "approved": "Approved", "rejected": "Rejected" }, "sendReview": "Send AI Review ({count})", "list": { "title": "Submission List ({count})", "selected": "{count} selected for batch review.", "hint": "Select pending items for AI review." }, "columns": { "submission": "Submission", "activity": "Activity", "status": "Status", "media": "Media", "display": "Display", "stats": "Stats", "actions": "Actions" }, "display": { "featured": "Featured", "home": "Home" }, "stats": { "likes": "Likes: {count}", "comments": "Comments: {count}" }, "actions": { "view": "View details", "approve": "Approve", "reject": "Reject", "reviewNeeded": "Mark review needed", "removeAward": "Remove award", "markAwarded": "Mark awarded" }, "prompts": { "reject": "Reject reason", "review": "Review note" }, "messages": { "updated": "Submission updated", "awardUpdated": "Award status updated", "batchCreated": "AI review batch created" }, "errors": { "activities": "Failed to load activities", "submissions": "Failed to load submissions", "action": "Action failed", "award": "Failed to update award status", "batch": "Failed to create AI review batch" }, "unknown": "Unknown", "loading": "Loading...", "empty": "No submissions found." },
+  "ReviewBatches": { "title": "AI Review Batches", "description": "Track asynchronous AI review jobs and webhook results.", "list": { "title": "Batch List", "description": "Created from selected pending submissions." }, "status": { "all": "All Statuses", "queued": "Queued", "running": "Running", "completed": "Completed", "failed": "Failed", "cancelled": "Cancelled" }, "columns": { "batch": "Batch", "status": "Status", "count": "Count", "progress": "Progress", "created": "Created", "actions": "Actions", "submission": "Submission", "result": "Result" }, "loading": "Loading...", "noAgentId": "No agent id yet", "inspect": "Inspect", "empty": "No batches found.", "detail": { "title": "Batch Detail" }, "errors": { "load": "Failed to load batches", "loadDetail": "Failed to load batch" } },
+  "ActivityPreview": {
+    "loading": "Loading activity preview...", "back": "Back", "backToActivities": "Back to activities", "canSubmit": "Can submit", "noDescription": "No description", "activityUuid": "Activity UUID", "noBanner": "No banner", "noData": "No data",
+    "publicCopy": { "title": "Public Copy", "description": "Text users will read before submitting." },
+    "configuration": { "title": "Configuration", "description": "Reward and media requirement payloads." },
+    "fields": { "description": "Description", "rules": "Rules", "rewardConfig": "Reward Config", "mediaRequirements": "Media Requirements", "activity": "Activity", "slug": "Slug", "category": "Category", "window": "Window", "submissions": "Submissions", "tags": "Tags", "submissionTypes": "Submission Types" },
+    "status": { "draft": "Draft", "published": "Published", "offline": "Offline", "archived": "Archived" },
+    "timeStatus": { "upcoming": "Upcoming", "active": "Active", "ended": "Ended" },
+    "errors": { "load": "Failed to load activity", "notFound": "Activity not found" }
+  },
+  "AdminSettings": { "title": "Settings", "description": "Configure system parameters and administrative settings.", "placeholder": "System Settings" },
+  "AdminAuditLogs": {
+    "title": "Audit Logs", "description": "View permission change history and user activity.",
+    "filter": { "title": "Filter Logs", "operator": "Operator ID...", "targetUser": "Target User ID...", "category": "Category...", "search": "Search" },
+    "list": { "title": "Audit Logs ({count})", "description": "Permission and role change history" },
+    "columns": { "time": "Time", "operator": "Operator", "targetUser": "Target User", "action": "Action", "category": "Category" },
+    "actions": { "granted": "Granted", "revoked": "Revoked", "modified": "Modified", "roleChanged": "Role Changed" },
+    "values": { "permission": "Permission: {value}", "public": "Public: {value}", "role": "Role: {value}" },
+    "details": { "before": "Before: ", "after": "After: " }, "fallback": { "admin": "Admin", "na": "N/A" },
+    "pagination": "Page {page} of {total}", "errors": { "fetch": "Failed to fetch audit logs" }
+  },
+  "AdminCategories": {
+    "title": "Categories", "description": "Manage corpus categories and visibility settings.",
+    "search": { "title": "Search Categories", "placeholder": "Search by name or nickname...", "button": "Search" },
+    "list": { "title": "Categories List ({count})", "description": "Toggle visibility for each category" },
+    "columns": { "name": "Name", "nickname": "Nickname", "entries": "Entries", "permissions": "Permissions", "status": "Status", "public": "Public", "created": "Created" },
+    "messages": { "updated": "Category visibility updated" }, "errors": { "fetch": "Failed to fetch categories", "update": "Failed to update category" }
+  },
+  "AdminCorpus": {
+    "title": "Corpus Data", "description": "Manage Cantonese language corpus entries and annotations.",
+    "search": { "title": "Search Corpus", "placeholder": "Search corpus data...", "categoryPlaceholder": "Filter by category...", "button": "Search" },
+    "list": { "title": "Corpus Entries ({count})", "description": "View and manage corpus data entries" },
+    "columns": { "data": "Data", "category": "Category", "views": "Views", "likes": "Likes", "bookmarks": "Bookmarks", "created": "Created" },
+    "fallback": { "na": "N/A" }, "loading": "Loading corpus data...", "pagination": "Page {page} of {total}", "errors": { "fetch": "Failed to fetch corpus" }
+  },
+  "AdminUsers": {
+    "title": "Users", "description": "Manage user accounts and permissions.",
+    "search": { "title": "Search Users", "placeholder": "Search by name, email or phone...", "rolePlaceholder": "Filter by role", "button": "Search" },
+    "list": { "title": "Users List ({count})", "description": "Manage user roles and permissions" },
+    "columns": { "user": "User", "email": "Email", "phone": "Phone", "role": "Role", "admin": "Admin", "interactions": "Interactions", "joined": "Joined", "actions": "Actions" },
+    "roles": { "all": "All Roles", "learner": "Learner", "taggerPartner": "Tagger Partner", "taggerOutsourcing": "Tagger Outsourcing", "researcher": "Researcher" },
+    "fallback": { "user": "User", "na": "N/A" }, "pagination": "Page {page} of {total}",
+    "messages": { "updated": "User updated successfully" }, "errors": { "fetch": "Failed to fetch users", "update": "Failed to update user" }
+  },
+  "AdminDashboard": {
+    "title": "Dashboard", "description": "Welcome to the admin panel. Here is an overview of your system.", "quickActions": "Quick Actions", "manage": "Manage",
+    "stats": { "totalUsers": "Total Users", "registeredUsers": "Registered users", "corpusEntries": "Corpus Entries", "totalCorpusEntries": "Total corpus data entries" },
+    "actions": {
+      "users": { "title": "Manage Users", "description": "View and manage user accounts" },
+      "categories": { "title": "Categories", "description": "Manage corpus categories and visibility" },
+      "permissions": { "title": "Permissions", "description": "Manage user-corpus access bindings" },
+      "corpus": { "title": "Corpus Data", "description": "Manage language corpus entries" },
+      "collection": { "title": "Corpus Collection", "description": "Manage collection activities, submissions, and AI review" },
+      "audit": { "title": "Audit Logs", "description": "View permission change history" },
+      "rules": { "title": "Rule Ops", "description": "Compile rules and trigger Agent runs" },
+      "settings": { "title": "System Settings", "description": "Configure system parameters" }
+    },
+    "errors": { "stats": "Failed to fetch statistics" }
+  },
+  "CorpusCollectionOverview": {
+    "title": "Corpus Collection", "description": "Manage Liwan cultural submissions, activities, AI review, and public display.", "manage": "Manage",
+    "stats": { "totalSubmissions": "Total Submissions", "pendingReview": "Pending Review", "approved": "Approved", "rejected": "Rejected", "activities": "Activities", "publishedActivities": "Published Activities", "likes": "Likes", "comments": "Comments" },
+    "modules": {
+      "activities": { "title": "Activities", "description": "Create, publish, and manage collection campaigns." },
+      "submissions": { "title": "Submissions", "description": "Review user submissions and manage featured content." },
+      "categories": { "title": "Categories", "description": "Configure submission types and public tags." },
+      "reviewBatches": { "title": "AI Review Batches", "description": "Track batch review progress and webhook results." },
+      "analytics": { "title": "Analytics", "description": "View submission trends, activity metrics, and interactions." }
+    }
+  },
+  "CorpusCollectionActivities": {
+    "title": "Activities",
+    "description": "Create collection campaigns, generate banners, and manage publishing state.",
+    "create": { "title": "Create Activity", "description": "Configure a new public collection campaign." },
+    "fields": {
+      "title": "Title", "tag": "Activity Tag", "tagPlaceholder": "饮食文化", "tagHelp": "Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺",
+      "description": "Description", "rules": "Rules", "startsAt": "Starts At", "endsAt": "Ends At", "bannerUrl": "Banner URL",
+      "requiredMediaTypes": "Required Media Types", "mediaHelp": "The miniprogram uses this to decide which upload controls to show."
+    },
+    "media": {
+      "image": { "label": "Images", "description": "This activity requires images." },
+      "video": { "label": "Video", "description": "This activity requires video." },
+      "audio": { "label": "Audio", "description": "This activity requires recordings." }
+    },
+    "banner": { "title": "AI Banner", "promptPlaceholder": "A warm, playful Cantonese nursery-rhyme event set among Liwan arcades...", "description": "Generate temporary candidates, then upload the selected image to OSS to get a permanent URL.", "candidateAlt": "Candidate {index}", "candidate": "Candidate {index}", "expires": "Expires {date}", "permanentUrl": "Permanent OSS URL", "urlHelp": "This URL has been filled into the Banner URL field and can also be copied here." },
+    "list": { "title": "Activity List", "description": "Filter and publish collection campaigns." },
+    "filters": { "uuidPlaceholder": "Activity UUID fragment", "titlePlaceholder": "Search activity title", "titleContains": "Title contains", "activityUuid": "Activity UUID" },
+    "status": { "all": "All Statuses", "draft": "Draft", "published": "Published", "offline": "Offline", "archived": "Archived" },
+    "columns": { "title": "Title", "uuid": "UUID", "status": "Status", "window": "Window", "submissions": "Submissions", "actions": "Actions" },
+    "actions": { "create": "Create", "generate": "Generate", "uploadOss": "Upload to OSS for URL", "preview": "Preview", "publish": "Publish", "offline": "Offline" },
+    "window": { "anytime": "Anytime", "open": "Open" },
+    "validation": { "titleRequired": "Title is required", "titleLength": "Title must be {count} characters or less", "tagRequired": "Activity tag is required", "tagLength": "Activity tag must be exactly {count} characters", "descriptionLength": "Description must be {count} characters or less", "rulesLength": "Rules must be {count} characters or less", "dateOrder": "Start time must be earlier than end time", "mediaRequired": "Select at least one media type" },
+    "messages": { "created": "Activity created", "statusUpdated": "Activity status updated", "generated": "Cover candidates generated", "uploaded": "Cover uploaded to OSS", "copied": "URL copied" },
+    "errors": { "load": "Failed to load activities", "create": "Failed to create activity", "status": "Failed to update activity status", "generate": "Failed to generate cover candidates", "upload": "Failed to upload cover" },
+    "loading": "Loading...", "empty": "No activities found."
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

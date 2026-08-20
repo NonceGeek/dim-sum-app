@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, ShieldCheck, Trash2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Check, ChevronsUpDown, Edit3, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -17,11 +18,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 type Permission = {
   id: string;
@@ -37,7 +41,7 @@ type Permission = {
 
 type PermissionData = {
   permissions: Permission[];
-  users: Array<{ id: string; name: string | null; email: string | null }>;
+  users: Array<{ id: string; name: string | null; email: string | null; phoneNumber: string | null }>;
   activities: Array<{ id: string; title: string; status: string }>;
 };
 
@@ -49,8 +53,11 @@ const emptyForm = {
 };
 
 export default function QuestionnairePermissionsPage() {
+  const t = useTranslations("QuestionnairePermissions");
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(emptyForm);
+  const [userPickerOpen, setUserPickerOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Permission | null>(null);
   const { data, isLoading, isError, refetch } = useQuery<PermissionData>({
     queryKey: ["questionnaire-permissions"],
@@ -72,11 +79,11 @@ export default function QuestionnairePermissionsPage() {
       return response.json();
     },
     onSuccess: () => {
-      toast.success("活动授权已保存");
+      toast.success(t("toast.saved"));
       setForm(emptyForm);
       queryClient.invalidateQueries({ queryKey: ["questionnaire-permissions"] });
     },
-    onError: () => toast.error("保存失败，请稍后重试"),
+    onError: () => toast.error(t("toast.saveFailed")),
   });
 
   const deleteMutation = useMutation({
@@ -89,11 +96,11 @@ export default function QuestionnairePermissionsPage() {
       if (!response.ok) throw new Error("Failed to revoke permission");
     },
     onSuccess: () => {
-      toast.success("活动授权已撤销");
+      toast.success(t("toast.revoked"));
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: ["questionnaire-permissions"] });
     },
-    onError: () => toast.error("撤销失败，请稍后重试"),
+    onError: () => toast.error(t("toast.revokeFailed")),
   });
 
   const edit = (permission: Permission) => {
@@ -106,13 +113,21 @@ export default function QuestionnairePermissionsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const selectedUser = data?.users.find((user) => user.id === form.userId);
+  const userLabel = (user: PermissionData["users"][number]) =>
+    user.name || user.email || user.phoneNumber || t("unnamedUser");
+  const activityStatusLabel = (status: string) => {
+    if (status === "draft") return t("activityStatus.draft");
+    if (status === "published") return t("activityStatus.published");
+    if (status === "offline") return t("activityStatus.offline");
+    return status;
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Questionnaire Permissions</h2>
-        <p className="mt-2 text-muted-foreground">
-          由系统管理员配置活动运营可访问的问卷洞察活动范围。
-        </p>
+        <h2 className="text-3xl font-bold tracking-tight">{t("title")}</h2>
+        <p className="mt-2 text-muted-foreground">{t("description")}</p>
       </div>
 
       <Card>
@@ -122,36 +137,68 @@ export default function QuestionnairePermissionsPage() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>配置活动授权</CardTitle>
-              <CardDescription className="mt-1">
-                相同账号和活动重复保存时更新原授权；导出权限不会自动授予查看范围外的数据。
-              </CardDescription>
+              <CardTitle>{t("form.title")}</CardTitle>
+              <CardDescription className="mt-1">{t("form.description")}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="operator-select">活动运营账号</Label>
-              <Select value={form.userId} onValueChange={(userId) => setForm((current) => ({ ...current, userId }))}>
-                <SelectTrigger id="operator-select"><SelectValue placeholder="选择账号" /></SelectTrigger>
-                <SelectContent>
-                  {data?.users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email || "未命名用户"}{user.email && user.name ? ` · ${user.email}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="operator-select">{t("form.operator")}</Label>
+              <Popover open={userPickerOpen} onOpenChange={setUserPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="operator-select"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={userPickerOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className={cn("truncate", !selectedUser && "text-muted-foreground")}>
+                      {selectedUser ? userLabel(selectedUser) : t("form.selectOperator")}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t("form.searchOperator")} />
+                    <CommandList>
+                      <CommandEmpty>{t("form.noOperator")}</CommandEmpty>
+                      <CommandGroup>
+                        {data?.users.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={`${user.name ?? ""} ${user.email ?? ""} ${user.phoneNumber ?? ""} ${user.id}`}
+                            onSelect={() => {
+                              setForm((current) => ({ ...current, userId: user.id }));
+                              setUserPickerOpen(false);
+                            }}
+                          >
+                            <Check className={cn("h-4 w-4", form.userId === user.id ? "opacity-100" : "opacity-0")} />
+                            <div className="min-w-0">
+                              <div className="truncate">{userLabel(user)}</div>
+                              <div className="truncate text-xs text-muted-foreground">
+                                {[user.email, user.phoneNumber].filter(Boolean).join(" · ") || user.id}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="activity-select">授权活动</Label>
+              <Label htmlFor="activity-select">{t("form.activity")}</Label>
               <Select value={form.activityId} onValueChange={(activityId) => setForm((current) => ({ ...current, activityId }))}>
-                <SelectTrigger id="activity-select"><SelectValue placeholder="选择活动" /></SelectTrigger>
+                <SelectTrigger id="activity-select"><SelectValue placeholder={t("form.selectActivity")} /></SelectTrigger>
                 <SelectContent>
                   {data?.activities.map((activity) => (
                     <SelectItem key={activity.id} value={activity.id}>
-                      {activity.title} · {activity.status}
+                      {activity.title} · {activityStatusLabel(activity.status)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -162,8 +209,8 @@ export default function QuestionnairePermissionsPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
-                <Label htmlFor="view-insights">查看问卷洞察</Label>
-                <p className="mt-1 text-xs text-muted-foreground">只允许访问该活动的去标识化聚合数据。</p>
+                <Label htmlFor="view-insights">{t("form.viewInsights")}</Label>
+                <p className="mt-1 text-xs text-muted-foreground">{t("form.viewInsightsDescription")}</p>
               </div>
               <Switch
                 id="view-insights"
@@ -179,8 +226,8 @@ export default function QuestionnairePermissionsPage() {
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
-                <Label htmlFor="export-insights">导出聚合报表</Label>
-                <p className="mt-1 text-xs text-muted-foreground">导出仍执行小样本保护和专用审计。</p>
+                <Label htmlFor="export-insights">{t("form.exportInsights")}</Label>
+                <p className="mt-1 text-xs text-muted-foreground">{t("form.exportInsightsDescription")}</p>
               </div>
               <Switch
                 id="export-insights"
@@ -198,17 +245,17 @@ export default function QuestionnairePermissionsPage() {
               disabled={!form.userId || !form.activityId || saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
             >
-              {saveMutation.isPending ? "保存中…" : "保存授权"}
+              {saveMutation.isPending ? t("form.saving") : t("form.save")}
             </Button>
-            <Button variant="outline" onClick={() => setForm(emptyForm)}>清空</Button>
+            <Button variant="outline" onClick={() => setForm(emptyForm)}>{t("form.clear")}</Button>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>现有活动授权</CardTitle>
-          <CardDescription>系统管理员拥有全部活动权限，不需要出现在此列表中。</CardDescription>
+          <CardTitle>{t("list.title")}</CardTitle>
+          <CardDescription>{t("list.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -219,48 +266,48 @@ export default function QuestionnairePermissionsPage() {
             </div>
           ) : isError ? (
             <div className="flex flex-col items-center gap-3 py-10">
-              <p className="text-sm text-muted-foreground">授权列表加载失败</p>
-              <Button variant="outline" onClick={() => refetch()}>重新加载</Button>
+              <p className="text-sm text-muted-foreground">{t("list.loadFailed")}</p>
+              <Button variant="outline" onClick={() => refetch()}>{t("list.reload")}</Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>活动运营</TableHead>
-                  <TableHead>活动</TableHead>
-                  <TableHead>查看洞察</TableHead>
-                  <TableHead>导出</TableHead>
-                  <TableHead>更新时间</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead>{t("list.columns.operator")}</TableHead>
+                  <TableHead>{t("list.columns.activity")}</TableHead>
+                  <TableHead>{t("list.columns.view")}</TableHead>
+                  <TableHead>{t("list.columns.export")}</TableHead>
+                  <TableHead>{t("list.columns.updatedAt")}</TableHead>
+                  <TableHead className="text-right">{t("list.columns.action")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data?.permissions.map((permission) => (
                   <TableRow key={permission.id}>
                     <TableCell>
-                      <div className="font-medium">{permission.userName || "未命名用户"}</div>
+                      <div className="font-medium">{permission.userName || t("unnamedUser")}</div>
                       <div className="text-xs text-muted-foreground">{permission.userEmail || permission.userId}</div>
                     </TableCell>
                     <TableCell>{permission.activityTitle}</TableCell>
                     <TableCell>
                       <Badge variant={permission.canViewInsights ? "default" : "secondary"}>
-                        {permission.canViewInsights ? "允许" : "停用"}
+                        {permission.canViewInsights ? t("list.allowed") : t("list.disabled")}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={permission.canExportInsights ? "default" : "outline"}>
-                        {permission.canExportInsights ? "允许" : "不允许"}
+                        {permission.canExportInsights ? t("list.allowed") : t("list.notAllowed")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(permission.updatedAt).toLocaleString()}
+                      {new Date(permission.updatedAt).toLocaleString(locale)}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => edit(permission)} aria-label="编辑授权">
+                        <Button variant="ghost" size="icon" onClick={() => edit(permission)} aria-label={t("list.editLabel")}>
                           <Edit3 className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(permission)} aria-label="撤销授权">
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(permission)} aria-label={t("list.revokeLabel")}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -270,7 +317,7 @@ export default function QuestionnairePermissionsPage() {
                 {!data?.permissions.length && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-28 text-center text-muted-foreground">
-                      暂无活动运营授权
+                      {t("list.empty")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -283,18 +330,18 @@ export default function QuestionnairePermissionsPage() {
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>撤销该活动授权？</AlertDialogTitle>
+            <AlertDialogTitle>{t("dialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              撤销后，该运营账号将立即失去“{deleteTarget?.activityTitle}”的问卷洞察访问权限。
+              {t("dialog.description", { activity: deleteTarget?.activityTitle ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t("dialog.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
               disabled={deleteMutation.isPending}
             >
-              确认撤销
+              {t("dialog.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

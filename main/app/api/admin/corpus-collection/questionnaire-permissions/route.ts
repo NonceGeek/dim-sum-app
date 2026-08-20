@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.user.findMany({
         where: { status: "ACTIVE" },
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, phoneNumber: true },
         orderBy: [{ name: "asc" }, { createdAt: "desc" }],
         take: 500,
       }),
