@@ -629,6 +629,16 @@
       "confirmRevoke": "确认取消"
     }
   },
+  "ReviewBatches": { "title": "AI 审核批次", "description": "跟踪异步 AI 审核任务及回调结果。", "list": { "title": "批次列表", "description": "由选中的待审核投稿创建。" }, "status": { "all": "全部状态", "queued": "排队中", "running": "运行中", "completed": "已完成", "failed": "失败", "cancelled": "已取消" }, "columns": { "batch": "批次", "status": "状态", "count": "数量", "progress": "进度", "created": "创建时间", "actions": "操作", "submission": "投稿", "result": "结果" }, "loading": "加载中...", "noAgentId": "尚无 Agent ID", "inspect": "查看", "empty": "未找到审核批次。", "detail": { "title": "批次详情" }, "errors": { "load": "加载审核批次失败", "loadDetail": "加载批次详情失败" } },
+  "ActivityPreview": {
+    "loading": "正在加载活动预览...", "back": "返回", "backToActivities": "返回活动列表", "canSubmit": "可投稿", "noDescription": "暂无简介", "activityUuid": "活动 UUID", "noBanner": "暂无封面", "noData": "暂无数据",
+    "publicCopy": { "title": "公开文案", "description": "用户投稿前会看到的活动内容。" },
+    "configuration": { "title": "活动配置", "description": "奖励和媒体要求配置。" },
+    "fields": { "description": "活动简介", "rules": "活动规则", "rewardConfig": "奖励配置", "mediaRequirements": "媒体要求", "activity": "活动", "slug": "别名", "category": "分类", "window": "活动时间", "submissions": "投稿数", "tags": "标签", "submissionTypes": "投稿类型" },
+    "status": { "draft": "草稿", "published": "已发布", "offline": "已下线", "archived": "已归档" },
+    "timeStatus": { "upcoming": "未开始", "active": "进行中", "ended": "已结束" },
+    "errors": { "load": "加载活动失败", "notFound": "未找到活动" }
+  },
   "AdminSettings": { "title": "系统设置", "description": "配置系统参数和后台管理设置。", "placeholder": "系统设置" },
   "AdminAuditLogs": {
     "title": "审计日志", "description": "查看权限变更记录和用户操作。",

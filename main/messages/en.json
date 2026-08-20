@@ -628,6 +628,16 @@
       "confirmRevoke": "Revoke access"
     }
   },
+  "ReviewBatches": { "title": "AI Review Batches", "description": "Track asynchronous AI review jobs and webhook results.", "list": { "title": "Batch List", "description": "Created from selected pending submissions." }, "status": { "all": "All Statuses", "queued": "Queued", "running": "Running", "completed": "Completed", "failed": "Failed", "cancelled": "Cancelled" }, "columns": { "batch": "Batch", "status": "Status", "count": "Count", "progress": "Progress", "created": "Created", "actions": "Actions", "submission": "Submission", "result": "Result" }, "loading": "Loading...", "noAgentId": "No agent id yet", "inspect": "Inspect", "empty": "No batches found.", "detail": { "title": "Batch Detail" }, "errors": { "load": "Failed to load batches", "loadDetail": "Failed to load batch" } },
+  "ActivityPreview": {
+    "loading": "Loading activity preview...", "back": "Back", "backToActivities": "Back to activities", "canSubmit": "Can submit", "noDescription": "No description", "activityUuid": "Activity UUID", "noBanner": "No banner", "noData": "No data",
+    "publicCopy": { "title": "Public Copy", "description": "Text users will read before submitting." },
+    "configuration": { "title": "Configuration", "description": "Reward and media requirement payloads." },
+    "fields": { "description": "Description", "rules": "Rules", "rewardConfig": "Reward Config", "mediaRequirements": "Media Requirements", "activity": "Activity", "slug": "Slug", "category": "Category", "window": "Window", "submissions": "Submissions", "tags": "Tags", "submissionTypes": "Submission Types" },
+    "status": { "draft": "Draft", "published": "Published", "offline": "Offline", "archived": "Archived" },
+    "timeStatus": { "upcoming": "Upcoming", "active": "Active", "ended": "Ended" },
+    "errors": { "load": "Failed to load activity", "notFound": "Activity not found" }
+  },
   "AdminSettings": { "title": "Settings", "description": "Configure system parameters and administrative settings.", "placeholder": "System Settings" },
   "AdminAuditLogs": {
     "title": "Audit Logs", "description": "View permission change history and user activity.",
