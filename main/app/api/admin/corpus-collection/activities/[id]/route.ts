@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   parseActivityMediaRequirements,
+  parseActivityTags,
   parseActivityTextFields,
   parseActivityWindow,
   parseBigIntId,
@@ -36,8 +37,12 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
     let startsAt: Date | null | undefined;
     let endsAt: Date | null | undefined;
     let mediaRequirements: Prisma.InputJsonValue | undefined;
+    let tags: Prisma.InputJsonValue | undefined;
     try {
       textFields = parseActivityTextFields(body);
+      if (body.tags !== undefined) {
+        tags = parseActivityTags(body.tags);
+      }
       if (body.startsAt !== undefined || body.endsAt !== undefined) {
         const parsedWindow = parseActivityWindow(body.startsAt, body.endsAt);
         startsAt = parsedWindow.startsAt;
@@ -57,7 +62,7 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
       description: textFields.description,
       rules: textFields.rules,
       category: body.category,
-      tags: body.tags as Prisma.InputJsonValue | undefined,
+      tags,
       submission_types: body.submissionTypes as Prisma.InputJsonValue | undefined,
       reward_config: body.rewardConfig as Prisma.InputJsonValue | undefined,
       media_requirements: mediaRequirements,

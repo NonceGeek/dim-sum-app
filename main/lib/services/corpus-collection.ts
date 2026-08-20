@@ -35,6 +35,8 @@ export const ACTIVITY_TEXT_LIMITS = {
   rules: 100,
 } as const;
 
+export const ACTIVITY_TAG_LENGTH = 4;
+
 function countCharacters(value: string) {
   return Array.from(value.trim()).length;
 }
@@ -76,6 +78,25 @@ export function parseActivityTextFields(
     description: parseLimitedActivityText(body.description, "description"),
     rules: parseLimitedActivityText(body.rules, "rules"),
   };
+}
+
+export function parseActivityTags(value: unknown, options: { required?: boolean } = {}) {
+  if (value === undefined || value === null) {
+    if (options.required) throw new Error("Activity tag is required");
+    return undefined;
+  }
+
+  if (!Array.isArray(value) || value.length !== 1 || typeof value[0] !== "string") {
+    throw new Error("Activity tag must be a single string");
+  }
+
+  const tag = value[0].trim();
+  if (!tag) throw new Error("Activity tag is required");
+  if (countCharacters(tag) !== ACTIVITY_TAG_LENGTH) {
+    throw new Error(`Activity tag must be exactly ${ACTIVITY_TAG_LENGTH} characters`);
+  }
+
+  return [tag] as Prisma.InputJsonValue;
 }
 
 export function normalizeActivityMediaRequirements(value: unknown) {

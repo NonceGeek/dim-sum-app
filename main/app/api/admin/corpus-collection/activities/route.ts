@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   parseActivityMediaRequirements,
+  parseActivityTags,
   parseActivityTextFields,
   parseActivityWindow,
   parsePositiveInt,
@@ -67,8 +68,10 @@ export async function POST(req: NextRequest) {
     let startsAt: Date | null;
     let endsAt: Date | null;
     let mediaRequirements: Prisma.InputJsonValue;
+    let tags: Prisma.InputJsonValue;
     try {
       textFields = parseActivityTextFields(body, { requireTitle: true });
+      tags = parseActivityTags(body.tags, { required: true }) ?? [];
       const parsedWindow = parseActivityWindow(body.startsAt, body.endsAt);
       startsAt = parsedWindow.startsAt;
       endsAt = parsedWindow.endsAt;
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
       description: textFields.description,
       rules: textFields.rules,
       category: body.category,
-      tags: (body.tags ?? []) as Prisma.InputJsonValue,
+      tags,
       submission_types: (body.submissionTypes ?? []) as Prisma.InputJsonValue,
       reward_config: (body.rewardConfig ?? {}) as Prisma.InputJsonValue,
       media_requirements: mediaRequirements,
