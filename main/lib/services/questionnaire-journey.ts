@@ -1,11 +1,15 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
-  QUESTIONNAIRE_SCHEMA,
-  QUESTIONNAIRE_SCHEMA_VERSION,
   QuestionnaireAnswers,
   QuestionnaireError,
+  validateQuestionnaireAnswers,
 } from "@/lib/services/questionnaire-schema";
+import {
+  getPublishedQuestionnaireSchema,
+  getQuestionnaireDefinitionByVersion,
+  getQuestionnaireSchemaByVersion,
+} from "@/lib/services/questionnaire-definition";
 
 const JOURNEY_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -36,7 +40,7 @@ function entryResponse(journey: {
   registration_type: string;
   expires_at: Date;
   user: { phoneNumber: string | null };
-}) {
+}, questionnaire: Awaited<ReturnType<typeof getPublishedQuestionnaireSchema>> | null) {
   const verified = Boolean(journey.user.phoneNumber);
   const nextAction =
     journey.flow_type === "full_questionnaire"
@@ -54,7 +58,7 @@ function entryResponse(journey: {
       status: verified ? "verified" : "missing",
       maskedPhoneNumber: maskPhone(journey.user.phoneNumber),
     },
-    questionnaire: journey.flow_type === "full_questionnaire" ? QUESTIONNAIRE_SCHEMA : null,
+    questionnaire: journey.flow_type === "full_questionnaire" ? questionnaire : null,
   };
 }
 
@@ -71,7 +75,10 @@ export async function createQuestionnaireJourney(
     if (existing.user_id !== userId || existing.activity_id !== activityId) {
       throw new QuestionnaireError("JOURNEY_STATE_CONFLICT", 409, "幂等键已用于其他参赛旅程");
     }
-    return entryResponse(existing);
+    const questionnaire = existing.flow_type === "full_questionnaire"
+      ? await getQuestionnaireSchemaByVersion(existing.schema_version!)
+      : null;
+    return entryResponse(existing, questionnaire);
   }
 
   const [activity, user, profile] = await Promise.all([
@@ -87,6 +94,9 @@ export async function createQuestionnaireJourney(
   assertSubmittable(activity);
 
   const flowType = profile ? (user.phoneNumber ? "reused" : "phone_only") : "full_questionnaire";
+  const questionnaire = flowType === "full_questionnaire"
+    ? await getPublishedQuestionnaireSchema()
+    : null;
   const now = new Date();
   const journey = await prisma.$transaction(async (tx) => {
     const created = await tx.corpus_collection_questionnaire_journeys.create({
@@ -96,7 +106,7 @@ export async function createQuestionnaireJourney(
         activity_id: activityId,
         flow_type: flowType,
         registration_type: profile ? "reused" : "first_time",
-        schema_version: flowType === "full_questionnaire" ? QUESTIONNAIRE_SCHEMA_VERSION : null,
+        schema_version: questionnaire?.schemaVersion ?? null,
         status: flowType === "reused" ? "completed" : "started",
         completed_at: flowType === "reused" ? now : null,
         expires_at: new Date(now.getTime() + JOURNEY_TTL_MS),
@@ -115,7 +125,7 @@ export async function createQuestionnaireJourney(
     });
     return created;
   });
-  return entryResponse(journey);
+  return entryResponse(journey, questionnaire);
 }
 
 export async function recordQuestionnaireClientEvent(
@@ -166,7 +176,7 @@ export async function recordQuestionnaireClientEvent(
 
 export async function completeQuestionnaireJourney(
   userId: string,
-  input: { journeyId: string; answers?: QuestionnaireAnswers },
+  input: { journeyId: string; schemaVersion?: number; answers?: QuestionnaireAnswers },
 ) {
   const journey = await prisma.corpus_collection_questionnaire_journeys.findFirst({
     where: { id: input.journeyId, user_id: userId },
@@ -190,19 +200,32 @@ export async function completeQuestionnaireJourney(
   if (journey.flow_type === "full_questionnaire" && !input.answers) {
     throw new QuestionnaireError("QUESTIONNAIRE_VALIDATION_FAILED", 400, "请完成必填题目");
   }
+  if (
+    journey.flow_type === "full_questionnaire" &&
+    input.schemaVersion !== undefined &&
+    input.schemaVersion !== journey.schema_version
+  ) {
+    throw new QuestionnaireError("JOURNEY_STATE_CONFLICT", 409, "问卷版本与当前参赛旅程不一致");
+  }
   if (journey.flow_type !== "full_questionnaire" && input.answers) {
     throw new QuestionnaireError("JOURNEY_STATE_CONFLICT", 409, "资料复用流程不能覆盖问卷答案");
   }
+  const validatedAnswers = journey.flow_type === "full_questionnaire"
+    ? validateQuestionnaireAnswers(
+        await getQuestionnaireDefinitionByVersion(journey.schema_version!),
+        input.answers!,
+      )
+    : null;
   const now = new Date();
   const profile = await prisma.$transaction(async (tx) => {
     const savedProfile = journey.flow_type === "full_questionnaire"
       ? await tx.corpus_collection_questionnaire_profiles.create({
           data: {
             user_id: userId,
-            schema_version: QUESTIONNAIRE_SCHEMA_VERSION,
-            age_range: input.answers!.ageRange,
-            culture_region: input.answers!.cultureRegion,
-            interest_types: input.answers!.interestTypes as Prisma.InputJsonValue,
+            schema_version: journey.schema_version!,
+            age_range: validatedAnswers!.ageRange,
+            culture_region: validatedAnswers!.cultureRegion,
+            interest_types: validatedAnswers!.interestTypes as Prisma.InputJsonValue,
             source_activity_id: journey.activity_id,
             completed_at: now,
           },

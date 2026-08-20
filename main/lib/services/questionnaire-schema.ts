@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const QUESTIONNAIRE_SCHEMA_VERSION = 1;
+export const QUESTIONNAIRE_KEYS = ["ageRange", "cultureRegion", "interestTypes"] as const;
 
 export const AGE_OPTIONS = [
   ["under_18", "18岁以下"],
@@ -33,14 +33,49 @@ export const INTEREST_TYPE_OPTIONS = [
   ["other", "其他"],
 ] as const;
 
-const codes = <T extends readonly (readonly [string, string])[]>(options: T) =>
-  options.map(([code]) => code) as [T[number][0], ...T[number][0][]];
-
 export const questionnaireAnswersSchema = z.object({
-  ageRange: z.enum(codes(AGE_OPTIONS)),
-  cultureRegion: z.enum(codes(CULTURE_REGION_OPTIONS)),
-  interestTypes: z.array(z.enum(codes(INTEREST_TYPE_OPTIONS))).max(INTEREST_TYPE_OPTIONS.length).default([]),
+  ageRange: z.string().min(1),
+  cultureRegion: z.string().min(1),
+  interestTypes: z.array(z.string().min(1)).max(30).default([]),
 }).strict();
+
+const questionnaireOptionSchema = z.object({
+  code: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/),
+  label: z.string().trim().min(1).max(40),
+}).strict();
+
+const questionnaireQuestionSchema = z.object({
+  key: z.enum(QUESTIONNAIRE_KEYS),
+  type: z.enum(["single_choice", "multiple_choice"]),
+  required: z.boolean(),
+  title: z.string().trim().min(1).max(100),
+  description: z.string().trim().max(200).optional(),
+  options: z.array(questionnaireOptionSchema).min(1).max(30),
+}).strict().superRefine((question, ctx) => {
+  const optionCodes = question.options.map((option) => option.code);
+  if (new Set(optionCodes).size !== optionCodes.length) {
+    ctx.addIssue({ code: "custom", message: "同一题目的选项 code 不能重复", path: ["options"] });
+  }
+  const expectedType = question.key === "interestTypes" ? "multiple_choice" : "single_choice";
+  if (question.type !== expectedType) {
+    ctx.addIssue({ code: "custom", message: `${question.key} 的题型不能修改`, path: ["type"] });
+  }
+  const expectedRequired = question.key !== "interestTypes";
+  if (question.required !== expectedRequired) {
+    ctx.addIssue({ code: "custom", message: `${question.key} 的必填规则不能修改`, path: ["required"] });
+  }
+});
+
+export const questionnaireDefinitionSchema = z.object({
+  questions: z.array(questionnaireQuestionSchema).length(QUESTIONNAIRE_KEYS.length),
+}).strict().superRefine((definition, ctx) => {
+  const keys = definition.questions.map((question) => question.key);
+  for (const key of QUESTIONNAIRE_KEYS) {
+    if (keys.filter((value) => value === key).length !== 1) {
+      ctx.addIssue({ code: "custom", message: `必须且只能包含一个 ${key} 题目`, path: ["questions"] });
+    }
+  }
+});
 
 export const entryRequestSchema = z.object({
   activityId: z.string().regex(/^\d+$/),
@@ -55,7 +90,7 @@ export const clientEventRequestSchema = z.object({
 
 export const submitQuestionnaireRequestSchema = z.object({
   journeyId: z.string().uuid(),
-  schemaVersion: z.literal(QUESTIONNAIRE_SCHEMA_VERSION).optional(),
+  schemaVersion: z.number().int().positive().optional(),
   answers: questionnaireAnswersSchema.optional(),
   phoneBinding: z.object({
     phoneNumber: z.string(),
@@ -73,8 +108,7 @@ function options(items: readonly (readonly [string, string])[]) {
   return items.map(([code, label]) => ({ code, label }));
 }
 
-export const QUESTIONNAIRE_SCHEMA = {
-  schemaVersion: QUESTIONNAIRE_SCHEMA_VERSION,
+export const INITIAL_QUESTIONNAIRE_DEFINITION = {
   questions: [
     {
       key: "ageRange",
@@ -102,6 +136,7 @@ export const QUESTIONNAIRE_SCHEMA = {
 } as const;
 
 export type QuestionnaireAnswers = z.infer<typeof questionnaireAnswersSchema>;
+export type QuestionnaireDefinition = z.infer<typeof questionnaireDefinitionSchema>;
 
 export class QuestionnaireError extends Error {
   constructor(
@@ -112,6 +147,32 @@ export class QuestionnaireError extends Error {
   ) {
     super(message);
   }
+}
+
+export function validateQuestionnaireAnswers(
+  definition: QuestionnaireDefinition,
+  input: QuestionnaireAnswers,
+) {
+  const answers = questionnaireAnswersSchema.parse(input);
+  const optionCodes = new Map(
+    definition.questions.map((question) => [
+      question.key,
+      new Set(question.options.map((option) => option.code)),
+    ]),
+  );
+  if (!optionCodes.get("ageRange")?.has(answers.ageRange)) {
+    throw new QuestionnaireError("QUESTIONNAIRE_VALIDATION_FAILED", 400, "年龄区间选项无效");
+  }
+  if (!optionCodes.get("cultureRegion")?.has(answers.cultureRegion)) {
+    throw new QuestionnaireError("QUESTIONNAIRE_VALIDATION_FAILED", 400, "语言文化地区选项无效");
+  }
+  if (new Set(answers.interestTypes).size !== answers.interestTypes.length) {
+    throw new QuestionnaireError("QUESTIONNAIRE_VALIDATION_FAILED", 400, "兴趣类型选项不能重复");
+  }
+  if (answers.interestTypes.some((value) => !optionCodes.get("interestTypes")?.has(value))) {
+    throw new QuestionnaireError("QUESTIONNAIRE_VALIDATION_FAILED", 400, "兴趣类型选项无效");
+  }
+  return answers;
 }
 
 export function questionnaireErrorResponse(error: unknown) {

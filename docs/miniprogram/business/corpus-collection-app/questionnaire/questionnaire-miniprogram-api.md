@@ -54,6 +54,8 @@
 
 进入接口在 `flowType = full_questionnaire` 时返回服务端问卷 Schema。客户端应按 `code` 提交，展示文案只用于 UI。
 
+Schema 来自数据库当前已发布版本。客户端必须保存进入接口返回的 `schemaVersion`，提交时原样传回；即使后台随后发布新版本，该旅程仍按原版本校验。下面的版本 1 仅为初始示例，客户端不得写死题目或选项。
+
 ```json
 {
   "schemaVersion": 1,

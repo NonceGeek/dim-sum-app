@@ -71,7 +71,7 @@
 |---|---|---|
 | `id` | BigInt | 主键 |
 | `user_id` | String | FK `User.id`，唯一 |
-| `schema_version` | Int | V1 固定为 1 |
+| `schema_version` | Int | 完成时使用的已发布问卷版本 |
 | `age_range` | String | 必填枚举 |
 | `culture_region` | String | 必填枚举 |
 | `interest_types` | Json | 字符串数组，默认 `[]` |
@@ -88,7 +88,24 @@
 
 档案创建后业务代码不得更新问卷答案。
 
-### 4.2 `corpus_collection_questionnaire_journeys`
+### 4.2 `corpus_collection_questionnaire_schemas`
+
+版本化保存运营发布的问卷定义。
+
+| 字段 | 类型 | 规则 |
+|---|---|---|
+| `id` | BigInt | 主键 |
+| `version` | Int | 唯一、发布时递增 |
+| `name` | String | 问卷名称 |
+| `status` | String | `published`、`archived` |
+| `definition` | Json | 三道题的标题、说明、选项和稳定 code |
+| `published_at` | DateTime? | 发布时间 |
+| `created_by` | String? | 发布人 `User.id` |
+| `created_at` / `updated_at` | DateTime | 审计时间 |
+
+发布新版本与归档旧版本在同一事务完成；旅程通过 `schema_version` 固定引用当时版本，不直接关联可变配置。
+
+### 4.3 `corpus_collection_questionnaire_journeys`
 
 一次点击“我要投稿”对应一个旅程。
 
@@ -100,7 +117,7 @@
 | `activity_id` | BigInt | FK activity |
 | `flow_type` | String | `full_questionnaire`、`phone_only`、`reused` |
 | `registration_type` | String | `first_time`、`reused` |
-| `schema_version` | Int? | 完整问卷旅程为 1 |
+| `schema_version` | Int? | 完整问卷旅程记录进入时的已发布版本 |
 | `status` | String | `started`、`completed`、`entered_submission`、`submitted`、`cancelled`、`expired` |
 | `started_at` | DateTime | 点击时间 |
 | `completed_at` | DateTime? | 资料变完整时间 |
@@ -117,7 +134,7 @@
 - `(activity_id, flow_type, started_at)`
 - `(status, expires_at)`
 
-### 4.3 `corpus_collection_questionnaire_events`
+### 4.4 `corpus_collection_questionnaire_events`
 
 保留旅程事实，不保存手机号、验证码或自由文本。
 
@@ -140,7 +157,7 @@
 - `(user_id, activity_id, event_name, occurred_at)`
 - `(journey_id, occurred_at)`
 
-### 4.4 `corpus_collection_activity_permissions`
+### 4.5 `corpus_collection_activity_permissions`
 
 由管理员配置活动运营的访问范围。
 
@@ -160,7 +177,7 @@
 
 该表同时作为活动运营进入 Corpus Collection Admin 的成员资格。只要用户至少有一条有效活动授权，即可进入 `/admin/corpus-collection/*`，但不能访问用户管理、全局权限和其他系统管理页面。
 
-### 4.5 `corpus_collection_audit_logs`
+### 4.6 `corpus_collection_audit_logs`
 
 不要复用要求 `target_user_id` 的 `permission_audit_logs`。
 
@@ -174,7 +191,7 @@
 | `result_summary` | Json | 行数、任务 ID、成功/失败，不存敏感内容 |
 | `created_at` | DateTime | 操作时间 |
 
-### 4.6 导出任务
+### 4.7 导出任务
 
 若 V1 实现 PRD 中的异步导出，新增 `corpus_collection_export_jobs`：
 
@@ -192,6 +209,7 @@
 
 ```text
 main/lib/services/questionnaire-schema.ts
+main/lib/services/questionnaire-definition.ts
 main/lib/services/questionnaire-journey.ts
 main/lib/services/questionnaire-phone-binding.ts
 main/lib/services/questionnaire-insights.ts
@@ -200,7 +218,8 @@ main/lib/services/corpus-collection-access.ts
 
 职责：
 
-- `questionnaire-schema`：Schema、枚举、请求校验、响应序列化。
+- `questionnaire-schema`：问卷定义结构、初始版本、请求和动态答案校验。
+- `questionnaire-definition`：数据库版本读取、发布、归档和历史选项目录。
 - `questionnaire-journey`：状态判定、幂等、旅程状态机、事件写入、投稿门禁。
 - `questionnaire-phone-binding`：复用短信、验证码与 `mergeUserRelations`，使用小程序 JWT 用户而不是 Web session。
 - `questionnaire-insights`：统一指标 SQL、时间口径、小样本保护和导出数据集。
@@ -307,8 +326,9 @@ GET  /api/admin/corpus-collection/questionnaire-insights/exports/:id
 - 已完成：后台 Questionnaire Insights 页面、四项全局筛选、严格三张 KPI、首次登记/资料复用两条路径、年龄/地区/兴趣画像和活动效果表；漏斗详情、画像详情和活动对比均由服务端聚合接口提供并通过弹层展示。
 - 已完成：系统管理员活动授权配置入口，可配置查看/导出权限；新增、修改和撤销均写入专用审计日志。
 - 已完成：系统管理员问卷门禁配置入口，支持全部开启、全部关闭和按活动设置；数据库字段默认开启，配置变更写入专用审计日志。
+- 已完成：问卷定义已迁移到数据库并初始化发布版本 1；系统管理员可在 Questionnaire Definition 页面编辑和发布递增版本，旅程与提交按进入时版本读取和校验，洞察兼容历史选项。
 - 待实施：聚合导出、5 分钟缓存、自动化领域与指标测试。
-- 已部署：问卷相关 schema 已通过 `prisma db push` 同步到当前数据库；问卷门禁默认对全部活动开启，可由系统管理员在后台按活动调整。
+- 已部署：问卷相关 schema 已通过 `prisma db push` 同步到当前数据库；问卷门禁默认对全部活动开启，问卷定义版本 1 已写入数据库并发布。
 
 ### Phase 0：文档与口径冻结
 
@@ -319,7 +339,7 @@ GET  /api/admin/corpus-collection/questionnaire-insights/exports/:id
 ### Phase 1：数据库与领域服务
 
 - 先 `prisma db pull` 同步数据库真源，更新 Prisma schema 后使用 `prisma db push` 推送；本项目当前不为该功能维护 migration 文件。
-- 问卷 Schema 常量和验证器。
+- 版本化问卷定义表、数据库读取服务和动态验证器。
 - 旅程状态机与事件服务。
 - 小程序手机号绑定领域函数。
 - 用户合并时迁移问卷 profile、journey、event 关系。

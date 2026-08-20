@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { CorpusCollectionAccess } from "@/lib/services/corpus-collection-access";
 import { assertActivityAccess } from "@/lib/services/corpus-collection-access";
-import { AGE_OPTIONS, CULTURE_REGION_OPTIONS, INTEREST_TYPE_OPTIONS } from "@/lib/services/questionnaire-schema";
+import { getQuestionnaireOptionCatalog } from "@/lib/services/questionnaire-definition";
 
 const MIN_SAMPLE = 10;
 
@@ -12,12 +12,6 @@ type InsightsFilters = {
   activityId: bigint | null;
   submissionStatus: "all" | "submitted" | "not_submitted";
   registrationType: "all" | "first_time" | "reused";
-};
-
-const labelMaps = {
-  age: new Map(AGE_OPTIONS),
-  region: new Map(CULTURE_REGION_OPTIONS),
-  interest: new Map(INTEREST_TYPE_OPTIONS),
 };
 
 export function parseInsightsFilters(url: URL, access: CorpusCollectionAccess): InsightsFilters {
@@ -95,7 +89,7 @@ export async function getQuestionnaireOverview(
           ? { not: "submitted" }
           : undefined,
   };
-  const [journeys, availableActivities] = await Promise.all([
+  const [journeys, availableActivities, optionCatalog] = await Promise.all([
     prisma.corpus_collection_questionnaire_journeys.findMany({
       where,
       include: {
@@ -108,7 +102,13 @@ export async function getQuestionnaireOverview(
       select: { id: true, title: true },
       orderBy: { created_at: "desc" },
     }),
+    getQuestionnaireOptionCatalog(),
   ]);
+  const labelMaps = {
+    age: new Map(optionCatalog.age),
+    region: new Map(optionCatalog.region),
+    interest: new Map(optionCatalog.interest),
+  };
   const userIds = [...new Set(journeys.map((journey) => journey.user_id))];
   const profiles = userIds.length
     ? await prisma.corpus_collection_questionnaire_profiles.findMany({
@@ -234,9 +234,9 @@ export async function getQuestionnaireOverview(
     })),
     funnels,
     profile: {
-      ageRanges: dimensionRows(AGE_OPTIONS.map(([code]) => code), labelMaps.age, submittedUsers, ageUsers),
-      cultureRegions: dimensionRows(CULTURE_REGION_OPTIONS.map(([code]) => code), labelMaps.region, submittedUsers, regionUsers),
-      interestTypes: dimensionRows(INTEREST_TYPE_OPTIONS.map(([code]) => code), labelMaps.interest, submittedUsers, interestUsers),
+      ageRanges: dimensionRows(optionCatalog.age.map(([code]) => code), labelMaps.age, submittedUsers, ageUsers),
+      cultureRegions: dimensionRows(optionCatalog.region.map(([code]) => code), labelMaps.region, submittedUsers, regionUsers),
+      interestTypes: dimensionRows(optionCatalog.interest.map(([code]) => code), labelMaps.interest, submittedUsers, interestUsers),
     },
     activities,
     privacy: { minimumSampleSize: MIN_SAMPLE },
