@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "db:pull": "prisma db pull",
+    "db:seed-questionnaire": "tsx scripts/seed-questionnaire-definition.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

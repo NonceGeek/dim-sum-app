@@ -39,6 +39,7 @@ type Activity = {
   id: string;
   displayUuid: string;
   title: string;
+  tags?: string[];
   description?: string | null;
   rules?: string | null;
   bannerUrl?: string | null;
@@ -63,6 +64,7 @@ type MediaType = "image" | "video" | "audio";
 
 const textLimits = {
   title: 20,
+  tag: 4,
   description: 100,
   rules: 100,
 } as const;
@@ -93,6 +95,7 @@ export default function CorpusCollectionActivitiesPage() {
   const [qMode, setQMode] = useState("title");
   const [form, setForm] = useState({
     title: "",
+    tag: "",
     description: "",
     rules: "",
     startsAt: "",
@@ -125,6 +128,8 @@ export default function CorpusCollectionActivitiesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          tags: [form.tag.trim()],
+          tag: undefined,
           startsAt: form.startsAt || undefined,
           endsAt: form.endsAt || undefined,
           bannerUrl: form.bannerUrl || undefined,
@@ -142,6 +147,7 @@ export default function CorpusCollectionActivitiesPage() {
       toast.success("Activity created");
       setForm({
         title: "",
+        tag: "",
         description: "",
         rules: "",
         startsAt: "",
@@ -231,6 +237,14 @@ export default function CorpusCollectionActivitiesPage() {
       toast.error(`Title must be ${textLimits.title} characters or less`);
       return;
     }
+    if (!form.tag.trim()) {
+      toast.error("Activity tag is required");
+      return;
+    }
+    if (countCharacters(form.tag) !== textLimits.tag) {
+      toast.error(`Activity tag must be exactly ${textLimits.tag} characters`);
+      return;
+    }
     if (countCharacters(form.description) > textLimits.description) {
       toast.error(`Description must be ${textLimits.description} characters or less`);
       return;
@@ -279,6 +293,23 @@ export default function CorpusCollectionActivitiesPage() {
                   maxLength={textLimits.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Activity Tag</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {countCharacters(form.tag)}/{textLimits.tag}
+                  </span>
+                </div>
+                <Input
+                  value={form.tag}
+                  maxLength={textLimits.tag}
+                  placeholder="饮食文化"
+                  onChange={(e) => setForm({ ...form, tag: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺
+                </p>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
@@ -486,6 +517,11 @@ export default function CorpusCollectionActivitiesPage() {
                   <TableRow key={activity.id}>
                     <TableCell>
                       <div className="font-medium text-foreground">{activity.title}</div>
+                      {activity.tags?.[0] && (
+                        <Badge variant="secondary" className="mt-1">
+                          {activity.tags[0]}
+                        </Badge>
+                      )}
                       <div className="text-sm text-muted-foreground line-clamp-1">{activity.description || "-"}</div>
                     </TableCell>
                     <TableCell>

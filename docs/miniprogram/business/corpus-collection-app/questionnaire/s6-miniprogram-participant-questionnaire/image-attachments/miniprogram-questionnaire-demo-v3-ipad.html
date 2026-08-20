@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>miniprogram-questionnaire-demo</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+<style>
+:root{--font-body:'General Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--text-xs:12px;--text-sm:14px;--text-base:16px;--text-lg:18px;--text-xl:24px;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--radius-sm:10px;--radius-md:16px;--radius-lg:22px;--radius-full:999px;--color-bg:#f4f5f8;--color-surface:#ffffff;--color-surface-2:#f7f8fb;--color-border:rgba(26,31,44,.09);--color-text:#18202e;--color-muted:#687385;--color-faint:#9ba5b7;--color-primary:#5b6cff;--color-primary-2:#7f4dff;--color-chip:#eef0ff;--color-success:#1f9d67;--shadow-sm:0 6px 20px rgba(43,49,72,.08);--shadow-lg:0 16px 48px rgba(45,53,84,.18);--transition:220ms cubic-bezier(.16,1,.3,1);--iphone17-screen-w:402px;--iphone17-screen-h:874px;--device-bezel:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation}
+html,body{margin:0;min-height:100%;font-family:var(--font-body);background:#e9ebf2;color:var(--color-text)}
+body{display:flex;align-items:flex-start;justify-content:center;min-height:100dvh;padding:19px 24px}
+button,input{font:inherit}
+.stage{width:min(1320px,100%);display:grid;grid-template-columns:440px minmax(320px,1fr);gap:32px;align-items:start}
+.device{width:calc(var(--iphone17-screen-w) + var(--device-bezel)*2);height:calc(var(--iphone17-screen-h) + var(--device-bezel)*2);background:#111318;border-radius:52px;box-shadow:0 30px 80px rgba(20,24,40,.22);border:var(--device-bezel) solid #111318;overflow:hidden;position:relative;margin:0 auto}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:126px;height:36px;border-radius:22px;background:#111318;z-index:50}
+.screen{height:100%;overflow:hidden;position:relative;border-radius:42px;background:linear-gradient(180deg,#f7f8fb 0%,#f2f3f8 100%)}
+.statusbar{display:flex;justify-content:space-between;align-items:center;height:54px;padding:18px 25px 6px;font-size:14px;font-weight:600}
+.appbar{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:8px 20px 14px}
+.back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--color-text)}
+.appbar-title{font-size:20px;font-weight:700}
+.menu-pill{width:82px;height:38px;border-radius:20px;background:rgba(255,255,255,.78);border:1px solid rgba(24,32,46,.06);box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;gap:10px;color:var(--color-text)}
+.hero{margin:0 18px;border-radius:28px;overflow:hidden;position:relative;box-shadow:var(--shadow-sm);height:248px}
+.hero-track{display:flex;height:100%;transition:transform 560ms cubic-bezier(.22,.8,.28,1)}
+.hero-slide{position:relative;min-width:100%;height:100%;overflow:hidden}
+.hero-art,.hero-overlay,.hero-panel{position:absolute;inset:0}
+.hero-art-1{background:radial-gradient(circle at 78% 33%,transparent 0 19px,rgba(255,225,150,.72) 20px 23px,transparent 24px),radial-gradient(circle at 78% 33%,transparent 0 43px,rgba(255,225,150,.52) 44px 47px,transparent 48px),repeating-conic-gradient(from 22deg at 78% 33%,rgba(255,235,178,.8) 0 10deg,transparent 10deg 20deg),linear-gradient(135deg,#6c2028 0%,#bd4b31 52%,#f0b45e 100%)}
+.hero-art-2{background:radial-gradient(ellipse at 77% 34%,#fff2cf 0 13%,#e7a845 13.5% 17%,#7b3328 17.5% 26%,transparent 26.5%),radial-gradient(circle at 71% 28%,#fff9e8 0 4%,#e88d4b 4.5% 7%,transparent 7.5%),radial-gradient(circle at 84% 45%,#fff9e8 0 5%,#c85a39 5.5% 8%,transparent 8.5%),linear-gradient(145deg,#f1d99c 0%,#d77c42 48%,#813b2d 100%)}
+.hero-art-3{background:radial-gradient(ellipse at 76% 36%,#f7f0df 0 20%,#4e9c91 20.5% 23%,#e9b74f 23.5% 26%,transparent 26.5%),repeating-linear-gradient(45deg,rgba(255,245,206,.23) 0 3px,transparent 3px 15px),linear-gradient(135deg,#125e61 0%,#278b83 49%,#e6b84d 100%)}
+.hero-overlay{background:linear-gradient(90deg,rgba(35,18,10,.46),rgba(35,18,10,.05) 72%),linear-gradient(0deg,rgba(18,10,4,.34),transparent 65%)}
+.hero-panel{inset:auto 18px 17px;height:111px;border-radius:20px;background:rgba(76,28,16,.18);backdrop-filter:blur(3px)}
+.hero-copy{position:absolute;left:32px;right:24px;bottom:29px;z-index:2;display:grid;gap:8px}
+.hero-tag{width:fit-content;padding:5px 9px;border-radius:var(--radius-full);background:rgba(255,255,255,.2);backdrop-filter:blur(10px);color:#fff;font-size:12px;font-weight:600}
+.hero-title{font-size:27px;line-height:1.12;font-weight:700;color:#fff9e9;text-shadow:0 2px 8px rgba(43,15,7,.35)}
+.hero-date{color:rgba(255,250,236,.92);font-size:13px;font-weight:600}
+.hero-dots{position:absolute;z-index:4;right:20px;bottom:13px;display:flex;gap:6px}
+.hero-dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.48);transition:width 220ms ease,background 220ms ease;cursor:pointer;display:block}
+.actions{display:flex;justify-content:flex-end;gap:12px;padding:16px 18px 10px}
+.share-pill{background:linear-gradient(135deg,rgba(126,146,196,.94),rgba(173,184,206,.92));color:#fff;border-radius:18px;padding:14px 18px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow-sm);min-width:172px;justify-content:center;font-size:14px;font-weight:500}
+.tabs{display:flex;gap:10px;padding:12px 18px 6px;overflow:hidden}
+.tab{padding:10px 16px;border-radius:16px;color:var(--color-muted);background:transparent;font-weight:600;white-space:nowrap}
+.tab.active{color:#4a3cff;background:#ede9ff;box-shadow:inset 0 -3px 0 #6e55ff}
+.empty{height:220px;display:grid;place-items:center;color:#96a0b3;font-size:18px}
+.bottom-actions{position:absolute;left:18px;right:18px;bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px;z-index:3}
+.cta{height:56px;border:0;color:white;border-radius:28px;font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));box-shadow:0 12px 24px rgba(91,108,255,.28);display:grid;place-items:center;cursor:pointer;text-decoration:none}
+.cta.secondary{background:#ffffff;color:var(--color-primary);border:1px solid rgba(91,108,255,.18);box-shadow:var(--shadow-sm)}
+.overlay{position:absolute;inset:0;background:rgba(9,13,22,.36);opacity:0;pointer-events:none;transition:opacity var(--transition);z-index:20;cursor:pointer}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:21;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-radius:28px 28px 0 0;box-shadow:var(--shadow-lg);transform:translateY(102%);transition:transform var(--transition);padding:10px 18px calc(18px + env(safe-area-inset-bottom));max-height:84%;overflow:auto}
+.handle{width:44px;height:5px;border-radius:999px;background:#d8dce7;margin:8px auto 14px}
+.sheet-head{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.sheet-title{font-size:22px;font-weight:700;line-height:1.15}
+.sheet-close{width:36px;height:36px;border-radius:50%;background:#f3f5fa;border:0;color:#69758a;display:grid;place-items:center;cursor:pointer}
+.sheet-sub{margin-top:10px;color:var(--color-muted);font-size:14px;line-height:1.55}
+.inline-link{color:#4a55ff;font-weight:600;text-decoration:none}
+.privacy-card,.section-card,.success-card{margin-top:18px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:20px;padding:16px;box-shadow:var(--shadow-sm)}
+.privacy-card{background:linear-gradient(180deg,#f7f8ff,#ffffff)}
+.privacy-row{display:flex;gap:12px;align-items:start}
+.privacy-icon{width:40px;height:40px;border-radius:14px;background:#ecf0ff;display:grid;place-items:center;color:#4d5eff;flex:0 0 auto}
+.privacy-title{font-size:15px;font-weight:700}
+.privacy-text{margin-top:6px;color:var(--color-muted);font-size:13px;line-height:1.55}
+.sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.btn{min-height:52px;border-radius:28px;border:0;font-size:15px;font-weight:700;padding:0 18px;display:grid;place-items:center;cursor:pointer;text-align:center}
+.btn.primary{background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));color:#fff}
+.btn.ghost{background:#f3f5fa;color:var(--color-text)}
+.sheet-step{display:none}
+.progress{display:flex;gap:8px;margin:16px 0 4px}
+.progress span{flex:1;height:4px;border-radius:999px;background:#e5e9f3}
+.progress span.active{background:linear-gradient(90deg,var(--color-primary),var(--color-primary-2))}
+.section-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.section-sub{color:var(--color-muted);font-size:13px;line-height:1.5}
+.field{margin-top:16px}
+.label{display:block;font-size:14px;font-weight:700;margin-bottom:10px}
+.required{color:#fb4e6b;margin-right:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:36px;padding:0 13px;border:1px solid transparent;border-radius:var(--radius-full);background:#f4f6fb;color:#46536a;font:inherit;font-size:13px;font-weight:600;line-height:34px;transition:background var(--transition),border-color var(--transition),color var(--transition),box-shadow var(--transition);-webkit-tap-highlight-color:transparent;cursor:pointer;display:inline-flex;align-items:center}
+.radio-list{display:grid;gap:10px;margin-top:2px}
+.radio-item{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:11px 14px;border-radius:16px;border:1px solid var(--color-border);background:#fbfcfe;color:var(--color-text);font:inherit;font-size:14px;font-weight:600;transition:background var(--transition),border-color var(--transition),box-shadow var(--transition);-webkit-tap-highlight-color:transparent;cursor:pointer}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid #c2c8d6;display:grid;place-items:center;transition:border-color var(--transition),transform var(--transition),background var(--transition)}
+.input-wrap{display:flex;align-items:center;gap:10px;padding:14px;border-radius:16px;border:1px solid var(--color-border);background:#fbfcfe}
+.input-wrap input{border:0;outline:0;background:transparent;flex:1;font-size:15px}
+.prefix{color:var(--color-muted);font-weight:700}
+.hint{color:var(--color-muted);font-size:12px;line-height:1.45;margin-top:8px}
+.footer-actions{display:grid;gap:10px;margin-top:20px}
+.full{width:100%}
+.helper-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:16px;background:#f7f8ff;color:#5160ff;margin-top:12px;font-size:13px;font-weight:600}
+.tag{padding:6px 10px;border-radius:999px;background:#ecfff5;color:var(--color-success);font-size:12px;font-weight:700}
+.success-check{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:#eaf8f0;color:var(--color-success);margin-bottom:12px}
+.post-page{display:none;position:absolute;inset:0;z-index:40;flex-direction:column;background:linear-gradient(180deg,#f7f8fb 0%,#f2f3f8 100%);overflow-y:auto}
+.post-head{height:68px;display:grid;grid-template-columns:44px 1fr 82px;align-items:center;padding:8px 18px 12px;background:rgba(247,248,251,.9);color:var(--color-text)}
+.post-back{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;font:inherit;font-size:30px;line-height:1;color:var(--color-text);cursor:pointer}
+.post-head-title{text-align:center;font-size:20px;font-weight:700}
+.post-menu{height:38px;display:grid;place-items:center;border:1px solid rgba(24,32,46,.06);border-radius:20px;background:rgba(255,255,255,.78);box-shadow:var(--shadow-sm);color:var(--color-text);font-size:14px;font-weight:700;letter-spacing:1px}
+.post-form{display:flex;flex:1;flex-direction:column;gap:10px;padding:4px 18px 0;min-height:0}
+.post-input,.post-editor,.post-row,.post-tag-card{border:1px solid var(--color-border);background:var(--color-surface);border-radius:20px;box-shadow:var(--shadow-sm)}
+.post-input{flex:0 0 56px;width:100%;height:56px;padding:0 16px;outline:none;color:var(--color-text);font:inherit;font-size:15px;font-weight:500;transition:border-color var(--transition),box-shadow var(--transition)}
+.post-input::placeholder,.post-editor::placeholder{color:var(--color-faint)}
+.post-input:focus,.post-editor:focus{border-color:rgba(91,108,255,.4);box-shadow:0 0 0 3px rgba(91,108,255,.1)}
+.post-editor-wrap{position:relative;flex:1 1 150px;min-height:150px}
+.post-editor-icon{position:absolute;top:16px;left:16px;z-index:1;width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:12px;background:#ecf0ff;color:var(--color-primary);cursor:pointer}
+.post-editor{display:block;width:100%;height:100%;min-height:150px;resize:none;padding:61px 16px 35px;outline:none;font:inherit;font-size:15px;line-height:1.6;color:var(--color-text);transition:border-color var(--transition),box-shadow var(--transition)}
+.post-count{position:absolute;right:16px;bottom:14px;color:var(--color-faint);font-size:12px;font-weight:600}
+.voice-audio{display:none;position:absolute;z-index:2;top:14px;right:14px;left:14px;min-height:48px;padding:7px 12px;align-items:center;gap:10px;border-radius:16px;background:#f7f8ff;border:1px solid rgba(91,108,255,.13)}
+.voice-play{width:32px;height:32px;flex:0 0 auto;display:grid;place-items:center;border:0;border-radius:50%;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));color:#fff;font-size:12px;cursor:pointer}
+.voice-wave{flex:1;height:20px;opacity:.75;background:repeating-linear-gradient(90deg,transparent 0 3px,#7180e9 3px 5px,transparent 5px 8px,#9d82ea 8px 10px,transparent 10px 14px);border-radius:999px}
+.voice-duration{color:var(--color-muted);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.voice-redo{border:0;background:transparent;color:var(--color-primary);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.post-row{position:relative;flex:0 0 56px;width:100%;min-height:56px;margin-top:0;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--color-text);text-align:left;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.post-placeholder{margin-left:auto;max-width:174px;overflow:hidden;color:var(--color-faint);text-align:right;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
+.post-value{margin-left:auto;max-width:174px;overflow:hidden;color:var(--color-text);text-align:right;white-space:nowrap;text-overflow:ellipsis;font-weight:600}
+.post-chevron{color:var(--color-primary);font-size:19px;font-weight:400}
+.post-option-mask{display:none;position:absolute;inset:0;z-index:5;background:rgba(9,13,22,.36);cursor:pointer}
+.post-options{display:none;position:absolute;z-index:6;right:0;bottom:0;left:0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));border-radius:28px 28px 0 0;background:rgba(255,255,255,.98);box-shadow:var(--shadow-lg)}
+.post-options::before{content:'';display:block;width:44px;height:5px;margin:0 auto 14px;border-radius:999px;background:#d8dce7}
+.post-option{min-height:48px;padding:0 14px;border:1px solid transparent;border-radius:16px;background:#f7f8fb;color:var(--color-text);text-align:left;font:inherit;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:6px;cursor:pointer}
+.post-option:last-child{margin-bottom:0}
+.type-picker{padding:0 0 calc(18px + env(safe-area-inset-bottom))}
+.type-picker::before{display:none}
+.picker-head{display:grid;grid-template-columns:64px 1fr 64px;align-items:center;height:52px;padding:0 14px;border-bottom:1px solid var(--color-border);font-size:14px}
+.picker-head strong{text-align:center;font-size:16px}
+.picker-cancel,.picker-confirm{border:0;background:transparent;font:inherit;font-size:14px;cursor:pointer;padding:10px 0}
+.picker-cancel{color:var(--color-muted);text-align:left}
+.picker-confirm{color:var(--color-primary);text-align:right;font-weight:700}
+.picker-list{max-height:240px;overflow-y:auto;padding:10px 14px}
+.picker-list .post-option{text-align:left}
+.activity-picker{padding:0 0 calc(18px + env(safe-area-inset-bottom))}
+.activity-picker::before{display:none}
+.activity-head{position:relative;display:grid;place-items:center;height:50px;border-bottom:1px solid var(--color-border)}
+.activity-head strong{font-size:15px}
+.activity-close{position:absolute;top:8px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-muted);font:inherit;font-size:22px;font-weight:400;cursor:pointer;display:grid;place-items:center}
+.activity-search{display:flex;align-items:center;gap:8px;height:42px;margin:10px 14px;padding:0 12px;border-radius:10px;background:#f5f7fb;color:var(--color-faint)}
+.activity-search span{font-size:20px;line-height:1}
+.activity-search input{min-width:0;width:100%;border:0;outline:0;background:transparent;color:var(--color-text);font:inherit;font-size:13px}
+.activity-list .post-option{border:0;border-radius:0;border-bottom:1px solid #f0f2f6;background:#fff;padding:0 16px}
+.activity-check{display:none;color:var(--color-primary);font-size:17px;font-weight:700}
+.post-tag-card{flex:0 0 auto;margin-top:0;padding:14px 16px;min-height:88px}
+.post-label{font-size:15px;font-weight:700;color:var(--color-text)}
+.post-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.post-tag{height:32px;padding:0 12px;border:1px solid transparent;border-radius:var(--radius-full);background:#f4f6fb;color:#314055;font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center}
+.post-tag.add{background:#f7f8ff;color:#5160ff}
+.post-submit-bar{flex:0 0 auto;margin:4px -18px 0;padding:14px 18px 20px;background:rgba(247,248,251,.94);backdrop-filter:blur(14px);border-top:1px solid var(--color-border)}
+.post-submit{width:100%;height:54px;border:0;border-radius:28px;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));color:#fff;font:inherit;font-size:15px;font-weight:700;box-shadow:0 12px 24px rgba(91,108,255,.28);display:grid;place-items:center;cursor:pointer}
+.post-success{display:none;position:absolute;inset:0;z-index:8;padding:0 28px;background:rgba(9,13,22,.36);place-items:center;text-align:center}
+.post-success-card{width:100%;padding:28px 20px 20px;border-radius:24px;background:rgba(255,255,255,.98);box-shadow:var(--shadow-lg)}
+.post-success-icon{width:58px;height:58px;margin:0 auto 14px;display:grid;place-items:center;border-radius:18px;background:#eaf8f0;color:var(--color-success);font-size:28px;font-weight:700}
+.post-success-title{font-size:21px;font-weight:700}
+.post-success-text{margin:8px 0 20px;color:var(--color-muted);font-size:14px;line-height:1.55}
+.post-success-btn{width:100%;height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));color:#fff;font:inherit;font-weight:700;display:grid;place-items:center;cursor:pointer}
+.prototype-notes{background:#fff;border-radius:28px;border:1px solid rgba(24,32,46,.08);box-shadow:var(--shadow-sm);padding:26px;min-height:calc(var(--iphone17-screen-h) + var(--device-bezel)*2)}
+.note-title{font-size:28px;font-weight:700;margin:0 0 12px}
+.note-sub{font-size:16px;color:var(--color-muted);line-height:1.6;margin-bottom:22px;max-width:58ch}
+.panel{border:1px solid rgba(24,32,46,.08);border-radius:20px;padding:18px;background:linear-gradient(180deg,#ffffff,#fbfcff);margin-top:16px}
+.panel h3{margin:0 0 10px;font-size:18px}
+.panel p{margin:0;color:var(--color-muted);line-height:1.6;font-size:14px}
+.mini-list{margin:12px 0 0;padding-left:18px;color:var(--color-text)}
+.mini-list li{margin:8px 0;line-height:1.5}
+.control-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.demo-btn{min-height:46px;padding:0 18px;border-radius:999px;border:0;background:#eff2ff;color:#4450ff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center}
+.demo-btn.primary-action{background:linear-gradient(135deg,var(--color-primary),var(--color-primary-2));color:#fff;box-shadow:0 10px 20px rgba(91,108,255,.2)}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.legend .item{padding:14px;border-radius:16px;background:#f7f8fc;font-size:14px;line-height:1.5}
+@media(max-width:1100px){body{padding:19px 16px;align-items:flex-start}.stage{grid-template-columns:1fr}.prototype-notes{min-height:auto}}
+@media(max-width:460px){body{padding:19px 0;background:var(--color-bg)}.stage{width:100%}.device{width:100%;height:calc(100dvh - 38px);border:0;border-radius:0;box-shadow:none}.screen{border-radius:0}.notch{top:0}.prototype-notes{display:none}}
+
+/* ── TOUCH OPTIMISATION ── */
+/* touch-action:manipulation removes the 300ms tap delay without disabling scroll */
+label,
+.cta,.btn,.chip,.radio-item,.hero-dot,
+.demo-btn,.sheet-close,.post-back,.post-row,
+.post-tag,.post-submit,.post-success-btn,
+.post-option,.picker-cancel,.picker-confirm,
+.activity-close,.voice-redo,.reset-fab{
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  cursor:pointer;
+}
+/* Keep scrollable containers scrollable */
+.sheet,.picker-list,.activity-list,.post-form,.post-page{
+  touch-action:pan-y;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+/* Larger tap targets for small controls */
+.sheet-close,.activity-close{min-width:44px;min-height:44px}
+.hero-dot{padding:8px;width:auto;height:auto;background-clip:content-box}
+
+/* ── RESET FAB ─────────── */
+.s{display:none;position:absolute}
+.reset-fab{position:fixed;top:14px;right:14px;z-index:200;background:rgba(255,255,255,.92);border:1px solid rgba(24,32,46,.09);border-radius:16px;padding:8px 13px;font-size:12px;color:#687385;cursor:pointer;box-shadow:0 2px 10px rgba(27,39,56,.12);backdrop-filter:blur(6px);font-family:inherit}
+.reset-fab:active{background:#eef0ff;color:#4450ff}
+
+/* ── HERO CAROUSEL ─────── */
+#h0:checked~.stage .hero-track{transform:translateX(0)}
+#h1:checked~.stage .hero-track{transform:translateX(-100%)}
+#h2:checked~.stage .hero-track{transform:translateX(-200%)}
+#h0:checked~.stage label[for=h0]{width:20px;border-radius:999px;background:#fff8e8}
+#h1:checked~.stage label[for=h1]{width:20px;border-radius:999px;background:#fff8e8}
+#h2:checked~.stage label[for=h2]{width:20px;border-radius:999px;background:#fff8e8}
+
+/* ── SHEET OPEN ────────── */
+#sh1:checked~.stage .overlay,#sh2:checked~.stage .overlay,#sh3:checked~.stage .overlay{opacity:1;pointer-events:auto}
+#sh1:checked~.stage .sheet,#sh2:checked~.stage .sheet,#sh3:checked~.stage .sheet{transform:translateY(0)}
+#sh1:checked~.stage .sheet-step[data-step="1"]{display:block}
+#sh2:checked~.stage .sheet-step[data-step="2"]{display:block}
+#sh3:checked~.stage .sheet-step[data-step="3"]{display:block}
+
+/* ── POST PAGE ─────────── */
+#pg1:checked~.stage .post-page{display:flex}
+#pg1:checked~.stage .overlay{opacity:0!important;pointer-events:none!important}
+#pg1:checked~.stage .sheet{transform:translateY(102%)!important}
+
+/* ── AGE CHIPS ─────────── */
+#age0:checked~.stage label[for=age0],#age1:checked~.stage label[for=age1],#age2:checked~.stage label[for=age2],#age3:checked~.stage label[for=age3],#age4:checked~.stage label[for=age4]{background:linear-gradient(135deg,#f0f0ff,#e8eaff);color:#4b57ee;border-color:rgba(91,108,255,.24);box-shadow:0 4px 10px rgba(91,108,255,.12)}
+#age0:checked~.stage label[for=age0]::before,#age1:checked~.stage label[for=age1]::before,#age2:checked~.stage label[for=age2]::before,#age3:checked~.stage label[for=age3]::before,#age4:checked~.stage label[for=age4]::before{content:'✓ ';font-size:11px;font-weight:700}
+
+/* ── REGION RADIO ──────── */
+#reg0:checked~.stage label[for=reg0],#reg1:checked~.stage label[for=reg1],#reg2:checked~.stage label[for=reg2],#reg3:checked~.stage label[for=reg3],#reg4:checked~.stage label[for=reg4]{border-color:rgba(76,88,255,.26);background:linear-gradient(135deg,#f7f8ff,#f1f2ff);box-shadow:0 4px 12px rgba(91,108,255,.08)}
+#reg0:checked~.stage label[for=reg0] .dot,#reg1:checked~.stage label[for=reg1] .dot,#reg2:checked~.stage label[for=reg2] .dot,#reg3:checked~.stage label[for=reg3] .dot,#reg4:checked~.stage label[for=reg4] .dot{border-color:#5868ff;background:#5868ff;transform:scale(1.06)}
+
+/* ── ACTIVITY TYPE CHIPS ─ */
+#at0:checked~.stage label[for=at0],#at1:checked~.stage label[for=at1],#at2:checked~.stage label[for=at2],#at3:checked~.stage label[for=at3]{background:linear-gradient(135deg,#f0f0ff,#e8eaff);color:#4b57ee;border-color:rgba(91,108,255,.24);box-shadow:0 4px 10px rgba(91,108,255,.12)}
+#at0:checked~.stage label[for=at0]::before,#at1:checked~.stage label[for=at1]::before,#at2:checked~.stage label[for=at2]::before,#at3:checked~.stage label[for=at3]::before{content:'✓ ';font-size:11px;font-weight:700}
+
+/* ── PICKER OPEN ───────── */
+#pck1:checked~.stage #typeOptions{display:block}
+#pck1:checked~.stage .post-option-mask,#pck2:checked~.stage .post-option-mask{display:block}
+#pck2:checked~.stage #activityOptions{display:block}
+
+/* ── POST TYPE OPTIONS ─── */
+#pt0:checked~.stage .type-picker label[for=pt0],#pt1:checked~.stage .type-picker label[for=pt1],#pt2:checked~.stage .type-picker label[for=pt2],#pt3:checked~.stage .type-picker label[for=pt3],#pt4:checked~.stage .type-picker label[for=pt4],#pt5:checked~.stage .type-picker label[for=pt5]{background:#ebecff;color:#4450ff;border-color:rgba(91,108,255,.18)}
+
+/* ── TYPE VALUE DISPLAY ── */
+.tv-none{display:inline}.tv-0,.tv-1,.tv-2,.tv-3,.tv-4,.tv-5{display:none}
+#pt0:checked~.stage .tv-none,#pt1:checked~.stage .tv-none,#pt2:checked~.stage .tv-none,#pt3:checked~.stage .tv-none,#pt4:checked~.stage .tv-none,#pt5:checked~.stage .tv-none{display:none}
+#pt0:checked~.stage .tv-0{display:inline}
+#pt1:checked~.stage .tv-1{display:inline}
+#pt2:checked~.stage .tv-2{display:inline}
+#pt3:checked~.stage .tv-3{display:inline}
+#pt4:checked~.stage .tv-4{display:inline}
+#pt5:checked~.stage .tv-5{display:inline}
+
+/* ── ACTIVITY OPTIONS ──── */
+#pa0:checked~.stage label[for=pa0] .activity-check{display:block}
+#pa1:checked~.stage label[for=pa1] .activity-check{display:block}
+#pa2:checked~.stage label[for=pa2] .activity-check{display:block}
+#pa3:checked~.stage label[for=pa3] .activity-check{display:block}
+
+/* ── ACTIVITY VALUE ─────── */
+.av-0{display:inline}.av-1,.av-2,.av-3{display:none}
+#pa1:checked~.stage .av-0{display:none}#pa1:checked~.stage .av-1{display:inline}
+#pa2:checked~.stage .av-0{display:none}#pa2:checked~.stage .av-2{display:inline}
+#pa3:checked~.stage .av-0{display:none}#pa3:checked~.stage .av-3{display:inline}
+
+/* ── VOICE ─────────────── */
+#vr:checked~.stage .voice-audio{display:flex}
+#vr:checked~.stage .post-editor-icon{display:none}
+#vr:checked~.stage .post-editor{padding-top:77px}
+
+/* ── POST SUCCESS ──────── */
+#psuc1:checked~.stage .post-success{display:grid}
+
+/* ── TAGS ──────────────── */
+#tag0:checked~.stage label[for=tag0],#tag1:checked~.stage label[for=tag1],#tag2:checked~.stage label[for=tag2]{border-color:rgba(68,80,255,.18);background:#ebecff;color:#4450ff}
+
+/* ── SMS VERIFICATION ──── */
+.sms-send-inline{flex:0 0 auto;padding:0 0 0 12px;margin-left:4px;border-left:1px solid var(--color-border);color:var(--color-primary);font-size:13px;font-weight:700;white-space:nowrap;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;transition:opacity var(--transition)}
+.sms-sent-notice{display:none;align-items:center;gap:8px;margin-top:8px;padding:10px 12px;border-radius:12px;background:#eef0ff;font-size:12.5px;font-weight:600;color:#4450ff}
+.sms-sent-notice .sms-countdown{margin-left:auto;color:var(--color-muted);font-size:12px;font-weight:500;white-space:nowrap}
+.sms-code-section{display:none;margin-top:16px}
+.otp-input{width:100%;height:52px;border:1.5px solid var(--color-border);border-radius:14px;background:#fbfcfe;text-align:center;font-size:22px;font-weight:700;letter-spacing:10px;padding:0 14px;color:var(--color-text);outline:none;font-family:inherit;transition:border-color var(--transition),box-shadow var(--transition)}
+.otp-input::placeholder{letter-spacing:0;font-size:14px;font-weight:500;color:var(--color-faint)}
+.otp-input:focus{border-color:rgba(91,108,255,.4);box-shadow:0 0 0 3px rgba(91,108,255,.1)}
+.sms-verify-btn{display:none}
+
+#sms1:checked~.stage .sms-code-section{display:block}
+#sms1:checked~.stage .sms-sent-notice{display:flex}
+#sms1:checked~.stage .sms-send-inline{opacity:.38;pointer-events:none}
+#sms1:checked~.stage .sms-normal-btn{display:none}
+#sms1:checked~.stage .sms-verify-btn{display:grid}
+</style>
+</head>
+<body>
+<form id=df></form>
+<!-- page -->
+<input type=radio class=s name=pg id=pg0 checked form=df>
+<input type=radio class=s name=pg id=pg1 form=df>
+<!-- sheet step -->
+<input type=radio class=s name=sh id=sh0 checked form=df>
+<input type=radio class=s name=sh id=sh1 form=df>
+<input type=radio class=s name=sh id=sh2 form=df>
+<input type=radio class=s name=sh id=sh3 form=df>
+<!-- hero slide -->
+<input type=radio class=s name=hero id=h0 checked form=df>
+<input type=radio class=s name=hero id=h1 form=df>
+<input type=radio class=s name=hero id=h2 form=df>
+<!-- age chip (single) -->
+<input type=radio class=s name=age id=age0 checked form=df>
+<input type=radio class=s name=age id=age1 form=df>
+<input type=radio class=s name=age id=age2 form=df>
+<input type=radio class=s name=age id=age3 form=df>
+<input type=radio class=s name=age id=age4 form=df>
+<!-- region radio -->
+<input type=radio class=s name=reg id=reg0 checked form=df>
+<input type=radio class=s name=reg id=reg1 form=df>
+<input type=radio class=s name=reg id=reg2 form=df>
+<input type=radio class=s name=reg id=reg3 form=df>
+<input type=radio class=s name=reg id=reg4 form=df>
+<!-- activity type chips (multi) -->
+<input type=checkbox class=s id=at0 checked form=df>
+<input type=checkbox class=s id=at1 form=df>
+<input type=checkbox class=s id=at2 form=df>
+<input type=checkbox class=s id=at3 form=df>
+<!-- picker open state -->
+<input type=radio class=s name=pck id=pck0 checked form=df>
+<input type=radio class=s name=pck id=pck1 form=df>
+<input type=radio class=s name=pck id=pck2 form=df>
+<!-- post type (none default) -->
+<input type=radio class=s name=ptype id=pt0 form=df>
+<input type=radio class=s name=ptype id=pt1 form=df>
+<input type=radio class=s name=ptype id=pt2 form=df>
+<input type=radio class=s name=ptype id=pt3 form=df>
+<input type=radio class=s name=ptype id=pt4 form=df>
+<input type=radio class=s name=ptype id=pt5 form=df>
+<!-- post activity -->
+<input type=radio class=s name=pact id=pa0 checked form=df>
+<input type=radio class=s name=pact id=pa1 form=df>
+<input type=radio class=s name=pact id=pa2 form=df>
+<input type=radio class=s name=pact id=pa3 form=df>
+<!-- post success -->
+<input type=radio class=s name=psuc id=psuc0 checked form=df>
+<input type=radio class=s name=psuc id=psuc1 form=df>
+<!-- voice recorded -->
+<input type=checkbox class=s id=vr form=df>
+<!-- post tags -->
+<input type=checkbox class=s id=tag0 form=df>
+<input type=checkbox class=s id=tag1 form=df>
+<input type=checkbox class=s id=tag2 form=df>
+<!-- sms verification state -->
+<input type=radio class=s name=sms id=sms0 checked form=df>
+<input type=radio class=s name=sms id=sms1 form=df>
+
+<button type=reset form=df class=reset-fab>↺ 重置演示数据</button>
+
+<div class="stage">
+  <div class="device">
+    <div class="notch"></div>
+    <div class="screen" id="screen">
+      <div class="statusbar"><span>16:05</span><span>◉◉◉ 74</span></div>
+      <div class="appbar">
+        <div class="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div class="appbar-title">活动详情</div>
+        <div class="menu-pill"><span>•••</span><span>◎</span></div>
+      </div>
+
+      <section class="hero">
+        <div class="hero-track">
+          <article class="hero-slide">
+            <div class="hero-art hero-art-1"></div><div class="hero-overlay"></div><div class="hero-panel"></div>
+            <div class="hero-copy"><div class="hero-tag">岭南食韵</div><div class="hero-title">口口相传粤菜好滋味</div><div class="hero-date">广府饮食文化一二三</div></div>
+          </article>
+          <article class="hero-slide">
+            <div class="hero-art hero-art-2"></div><div class="hero-overlay"></div><div class="hero-panel"></div>
+            <div class="hero-copy"><div class="hero-tag">茶楼点心</div><div class="hero-title">一盅两件，品味广府早茶</div><div class="hero-date">虾饺烧卖里的人情与烟火气</div></div>
+          </article>
+          <article class="hero-slide">
+            <div class="hero-art hero-art-3"></div><div class="hero-overlay"></div><div class="hero-panel"></div>
+            <div class="hero-copy"><div class="hero-tag">家常粤味</div><div class="hero-title">一席家宴，几代人的味觉记忆</div><div class="hero-date">用一道菜讲述属于你的广府故事</div></div>
+          </article>
+        </div>
+        <div class="hero-dots">
+          <label for=h0 class="hero-dot"></label>
+          <label for=h1 class="hero-dot"></label>
+          <label for=h2 class="hero-dot"></label>
+        </div>
+      </section>
+
+      <div class="actions"><div class="share-pill"><span>分享</span><span>|</span><span>详情</span></div></div>
+
+      <div class="tabs">
+        <div class="tab active">全部</div><div class="tab">用语</div><div class="tab">诗歌</div><div class="tab">故事</div><div class="tab">地名解说</div>
+      </div>
+      <div class="empty">没有更多了</div>
+
+      <div class="bottom-actions">
+        <div class="cta secondary">我的参赛作品</div>
+        <label class="cta" for=sh1>我要投稿</label>
+      </div>
+
+      <label class="overlay" for=sh0></label>
+
+      <section class="sheet">
+        <div class="handle"></div>
+
+        <div class="sheet-step" data-step="1">
+          <div class="sheet-head">
+            <div><div class="sheet-title">参赛前信息确认</div><div class="sheet-sub">为完成报名，并便于获奖通知与奖品发放，需要补充少量必要信息，预计 15 秒完成。</div></div>
+            <label class="sheet-close" for=sh0>✕</label>
+          </div>
+          <div class="progress"><span class="active"></span><span></span><span></span></div>
+          <div class="privacy-card">
+            <div class="privacy-row">
+              <div class="privacy-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+              <div><div class="privacy-title">仅用于本次参赛流程</div><div class="privacy-text">信息仅用于参赛登记、活动内容匹配、获奖通知与奖品发放，不用于无关营销。<a href="#" class="inline-link">查看《隐私保护指引》</a></div></div>
+            </div>
+          </div>
+          <div class="helper-bar"><span>浏览活动内容不会触发资料收集，只有点击"我要投稿"后才进入此流程。</span></div>
+          <div class="sheet-actions">
+            <label class="btn ghost" for=sh0>暂不参赛</label>
+            <label class="btn primary" for=sh2>继续参赛</label>
+          </div>
+        </div>
+
+        <div class="sheet-step" data-step="2">
+          <div class="sheet-head">
+            <div><div class="sheet-title">补充参赛信息</div><div class="sheet-sub">先填写基础问卷，再确认联系方式。已填写的信息后续参赛可直接复用。</div></div>
+            <label class="sheet-close" for=sh0>✕</label>
+          </div>
+          <div class="progress"><span class="active"></span><span class="active"></span><span></span></div>
+          <div class="section-card">
+            <div class="section-title">基础问卷</div>
+            <div class="section-sub">字段保持轻量，仅用于活动匹配。</div>
+            <div class="field">
+              <div class="label"><span class="required">*</span>你的年龄区间是？</div>
+              <div class="chips">
+                <label class="chip" for=age0>18岁以下</label>
+                <label class="chip" for=age1>18-24</label>
+                <label class="chip" for=age2>25-34</label>
+                <label class="chip" for=age3>35-44</label>
+                <label class="chip" for=age4>45+</label>
+              </div>
+            </div>
+            <div class="field">
+              <div class="label"><span class="required">*</span>你更熟悉哪个地区的语言文化？</div>
+              <div class="radio-list">
+                <label class="radio-item" for=reg0><span>广州</span><span class="dot"></span></label>
+                <label class="radio-item" for=reg1><span>佛山</span><span class="dot"></span></label>
+                <label class="radio-item" for=reg2><span>江门</span><span class="dot"></span></label>
+                <label class="radio-item" for=reg3><span>香港</span><span class="dot"></span></label>
+                <label class="radio-item" for=reg4><span>海外粤语文化圈</span><span class="dot"></span></label>
+              </div>
+              <div class="hint">用于推荐更贴近你背景的活动内容，不涉及身份认证。</div>
+            </div>
+            <div class="field">
+              <div class="label">你更感兴趣的活动类型是？</div>
+              <div class="chips">
+                <label class="chip" for=at0>用语</label>
+                <label class="chip" for=at1>故事</label>
+                <label class="chip" for=at2>诗歌</label>
+                <label class="chip" for=at3>地名解说</label>
+              </div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-title">联系信息</div>
+            <div class="section-sub">手机号仅用于获奖通知、奖品发放及必要参赛事务联系；验证码用于确认手机号的有效性，不会用于无关营销。</div>
+            <div class="field">
+              <div class="label"><span class="required">*</span>手机号</div>
+              <div class="input-wrap">
+                <span class="prefix">+86</span>
+                <input inputmode="numeric" value="13800138000" form=df aria-label="手机号" style="min-width:0;flex:1"/>
+                <label class="sms-send-inline" for=sms1>获取验证码</label>
+              </div>
+              <div class="sms-sent-notice"><span>验证码已发至 +86 138****8000</span><span class="sms-countdown">60 秒后可重发</span></div>
+              <div class="hint">如后续涉及实物寄送，收货地址将在确认获奖后单独收集。</div>
+            </div>
+            <div class="sms-code-section">
+              <div class="label"><span class="required">*</span>短信验证码</div>
+              <input class="otp-input" type="text" inputmode="numeric" maxlength="6" placeholder="请输入 6 位验证码" form=df aria-label="短信验证码">
+              <div class="hint" style="margin-top:8px">验证码有效期 10 分钟，请勿告知他人。</div>
+            </div>
+          </div>
+          <div class="footer-actions">
+            <label class="btn ghost full" for=sh1>返回上一步</label>
+            <label class="btn primary full sms-normal-btn" for=sh3>提交并继续参赛</label>
+            <label class="btn primary full sms-verify-btn" for=sh3>验证并提交</label>
+          </div>
+        </div>
+
+        <div class="sheet-step" data-step="3">
+          <div class="success-card">
+            <div class="success-check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div class="sheet-title" style="font-size:22px">感谢！请前往参与活动！</div>
+            <div class="helper-bar" style="margin-top:16px"><span>信息已提交，可以开始投稿了</span><span class="tag">已完成</span></div>
+            <div class="footer-actions">
+              <label class="btn primary full" for=pg1>进入投稿页面</label>
+              <label class="btn ghost full" for=sh0>取消提交</label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- POST PAGE -->
+      <section class="post-page">
+        <label class="post-option-mask" for=pck0></label>
+        <header class="post-head">
+          <label class="post-back" for=pg0>‹</label>
+          <div class="post-head-title">我要投稿</div>
+          <div class="post-menu">••• | ◎</div>
+        </header>
+        <div class="post-form">
+          <input class="post-input" type="text" maxlength="40" placeholder="请填写标题" aria-label="投稿标题" form=df>
+
+          <div class="post-editor-wrap">
+            <label class="post-editor-icon" for=vr><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></label>
+            <div class="voice-audio">
+              <button class="voice-play" type="button">▶</button>
+              <div class="voice-wave"></div>
+              <span class="voice-duration">00:12</span>
+              <label class="voice-redo" for=vr>长按重录</label>
+            </div>
+            <textarea class="post-editor" maxlength="200" placeholder="添加正文" aria-label="投稿正文" form=df></textarea>
+            <span class="post-count">0/200</span>
+          </div>
+
+          <label class="post-row" for=pck1>
+            <span>投稿类型</span>
+            <span class="post-placeholder">
+              <span class="tv-none">请选择投稿类型</span><span class="tv-0">诗歌</span><span class="tv-1">故事</span><span class="tv-2">标语</span><span class="tv-3">地名解说</span><span class="tv-4">歇后语</span><span class="tv-5">自然对话</span>
+            </span>
+            <span class="post-chevron">⌄</span>
+          </label>
+          <div class="post-options type-picker" id="typeOptions">
+            <div class="picker-head">
+              <label class="picker-cancel" for=pck0>取消</label>
+              <strong>选择投稿类型</strong>
+              <label class="picker-confirm" for=pck0>确认</label>
+            </div>
+            <div class="picker-list">
+              <label class="post-option" for=pt0>诗歌</label>
+              <label class="post-option" for=pt1>故事</label>
+              <label class="post-option" for=pt2>标语</label>
+              <label class="post-option" for=pt3>地名解说</label>
+              <label class="post-option" for=pt4>歇后语</label>
+              <label class="post-option" for=pt5>自然对话</label>
+            </div>
+          </div>
+
+          <label class="post-row" for=pck2>
+            <span>选择活动</span>
+            <span class="post-value">
+              <span class="av-0">不参与任何活动</span><span class="av-1">「粤菜记忆」声音资源征集</span><span class="av-2">「广府早茶」故事征集</span><span class="av-3">「家常粤味」影像征集</span>
+            </span>
+            <span class="post-chevron">⌄</span>
+          </label>
+          <div class="post-options activity-picker" id="activityOptions">
+            <div class="activity-head"><strong>选择活动</strong><label class="activity-close" for=pck0>×</label></div>
+            <label class="activity-search"><span>⌕</span><input type="search" placeholder="搜索活动" form=df></label>
+            <div class="activity-list">
+              <label class="post-option" for=pa0>不参与任何活动<span class="activity-check">✓</span></label>
+              <label class="post-option" for=pa1>「粤菜记忆」声音资源征集<span class="activity-check">✓</span></label>
+              <label class="post-option" for=pa2>「广府早茶」故事征集<span class="activity-check">✓</span></label>
+              <label class="post-option" for=pa3>「家常粤味」影像征集<span class="activity-check">✓</span></label>
+            </div>
+          </div>
+
+          <div class="post-tag-card">
+            <div class="post-label">添加标签</div>
+            <div class="post-tags">
+              <span class="post-tag add">＋ 添加标签</span>
+              <label class="post-tag" for=tag0>#粤菜好滋味</label>
+              <label class="post-tag" for=tag1>#广府饮食</label>
+              <label class="post-tag" for=tag2>#家乡味道</label>
+            </div>
+          </div>
+          <div class="post-submit-bar">
+            <label class="post-submit" for=psuc1>投稿</label>
+          </div>
+        </div>
+
+        <div class="post-success">
+          <div class="post-success-card">
+            <div class="post-success-icon">✓</div>
+            <div class="post-success-title">投稿提交成功</div>
+            <p class="post-success-text">感谢你的分享，作品已提交审核。</p>
+            <label class="post-success-btn" for=pg0>返回活动详情</label>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- .screen -->
+  </div><!-- .device -->
+
+  <aside class="prototype-notes">
+    <h1 class="note-title">可点击高保真 Demo</h1>
+    <p class="note-sub">该 demo 按当前 PRD 还原了"活动详情页 → 点击我要投稿 → 底部弹窗说明 → 问卷与联系方式 → 进入投稿页"的完整交互链路，供需求评审、设计对齐和研发实现参考。</p>
+    <div class="panel"><h3>演示范围</h3><ul class="mini-list"><li>活动详情页主视觉与底部参赛按钮。</li><li>底部弹窗 Step 1：用途说明与隐私指引入口。</li><li>底部弹窗 Step 2：基础问卷 + 手机号验证（获取短信验证码 → 输入验证码 → 验证并提交）。</li><li>提交成功态与进入投稿页动作。</li></ul></div>
+    <div class="panel"><h3>重点交互说明</h3><p>问卷不会在首页或详情页首屏自动弹出，而是绑定在"我要投稿"动作之后。字段中使用"你更熟悉哪个地区的语言文化？"替代"籍贯"，降低用户隐私敏感感受。</p><div class="legend"><div class="item"><strong>触发节点：</strong>活动详情页底部主按钮</div><div class="item"><strong>弹窗形式：</strong>Bottom Sheet，两步式</div><div class="item"><strong>必填字段：</strong>年龄区间、语言文化背景地区、手机号 + 短信验证码</div><div class="item"><strong>业务目的：</strong>参赛登记、活动匹配、获奖联系</div></div></div>
+    <div class="panel"><h3>快速操作</h3><p>可通过以下按钮直接跳转至对应演示阶段，或重置回初始状态。</p>
+      <div class="control-row">
+        <label class="demo-btn" for=sh1>打开弹窗</label>
+        <label class="demo-btn" for=sh2>跳到填写页</label>
+        <label class="demo-btn" for=sh0>取消提交</label>
+        <label class="demo-btn" for=pg1>进入投稿页面</label>
+        <button class="demo-btn" type=reset form=df>重置演示数据</button>
+      </div>
+    </div>
+  </aside>
+</div><!-- .stage -->
+</body>
+</html>

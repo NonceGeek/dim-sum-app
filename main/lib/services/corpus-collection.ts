@@ -1,5 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  assertQuestionnaireSubmissionGate,
+} from "@/lib/services/questionnaire-journey";
 
 export const PUBLIC_SUBMISSION_WHERE = {
   review_status: "approved",
@@ -34,6 +37,8 @@ export const ACTIVITY_TEXT_LIMITS = {
   description: 100,
   rules: 100,
 } as const;
+
+export const ACTIVITY_TAG_LENGTH = 4;
 
 function countCharacters(value: string) {
   return Array.from(value.trim()).length;
@@ -76,6 +81,25 @@ export function parseActivityTextFields(
     description: parseLimitedActivityText(body.description, "description"),
     rules: parseLimitedActivityText(body.rules, "rules"),
   };
+}
+
+export function parseActivityTags(value: unknown, options: { required?: boolean } = {}) {
+  if (value === undefined || value === null) {
+    if (options.required) throw new Error("Activity tag is required");
+    return undefined;
+  }
+
+  if (!Array.isArray(value) || value.length !== 1 || typeof value[0] !== "string") {
+    throw new Error("Activity tag must be a single string");
+  }
+
+  const tag = value[0].trim();
+  if (!tag) throw new Error("Activity tag is required");
+  if (countCharacters(tag) !== ACTIVITY_TAG_LENGTH) {
+    throw new Error(`Activity tag must be exactly ${ACTIVITY_TAG_LENGTH} characters`);
+  }
+
+  return [tag] as Prisma.InputJsonValue;
 }
 
 export function normalizeActivityMediaRequirements(value: unknown) {
@@ -220,6 +244,7 @@ export function serializeActivity(activity: any) {
     startsAt: activity.starts_at?.toISOString?.() ?? null,
     endsAt: activity.ends_at?.toISOString?.() ?? null,
     canSubmit: canSubmitToActivity(activity),
+    questionnaireGateEnabled: activity.questionnaire_gate_enabled ?? true,
     submissionCount: activity._count?.submissions ?? activity.submissionCount ?? undefined,
     works: activity.submissions
       ? activity.submissions.map((item: any) => serializeSubmission(item))
@@ -573,24 +598,63 @@ export async function createCorpusSubmission(userId: string, body: any) {
 
   const activityId = parseBigIntId(body.activityId);
   const coverUrl = normalizeCoverUrl(body.coverUrl);
-
-  return prisma.corpus_collection_submissions.create({
-    data: {
-      user_id: userId,
-      activity_id: activityId,
-      submission_type: body.submissionType,
-      title: body.title,
-      intro: body.intro,
-      tags: body.tags as Prisma.InputJsonValue,
-      cover_url: coverUrl ?? null,
-      precheck_result: jsonInput(body.precheckResult),
-      review_status: "pending_review",
-      visibility: "private",
-      media: {
-        create: buildSubmissionMediaCreateInput(media),
+  return prisma.$transaction(async (tx) => {
+    const activity = activityId
+      ? await tx.corpus_collection_activities.findUnique({
+          where: { id: activityId },
+          select: { questionnaire_gate_enabled: true },
+        })
+      : null;
+    if (activityId && !activity) {
+      throw new Error("Activity not found");
+    }
+    const journey =
+      activity?.questionnaire_gate_enabled
+        ? await assertQuestionnaireSubmissionGate(
+            tx,
+            userId,
+            activityId!,
+            typeof body.questionnaireJourneyId === "string"
+              ? body.questionnaireJourneyId
+              : "",
+          )
+        : null;
+    const submission = await tx.corpus_collection_submissions.create({
+      data: {
+        user_id: userId,
+        activity_id: activityId,
+        submission_type: body.submissionType,
+        title: body.title,
+        intro: body.intro,
+        tags: body.tags as Prisma.InputJsonValue,
+        cover_url: coverUrl ?? null,
+        precheck_result: jsonInput(body.precheckResult),
+        review_status: "pending_review",
+        visibility: "private",
+        media: {
+          create: buildSubmissionMediaCreateInput(media),
+        },
       },
-    },
-    include: submissionInclude,
+      include: submissionInclude,
+    });
+    if (journey) {
+      await tx.corpus_collection_questionnaire_journeys.update({
+        where: { id: journey.id },
+        data: { status: "submitted", submission_id: submission.id },
+      });
+      await tx.corpus_collection_questionnaire_events.create({
+        data: {
+          event_id: crypto.randomUUID(),
+          journey_id: journey.id,
+          user_id: userId,
+          activity_id: activityId!,
+          event_name: "submit_submission_success",
+          flow_type: journey.flow_type,
+          metadata: { submissionId: submission.id.toString() },
+        },
+      });
+    }
+    return submission;
   });
 }
 

@@ -70,6 +70,10 @@ const adminNavItems = [
       { title: "Categories", href: "/admin/corpus-collection/categories" },
       { title: "AI Review Batches", href: "/admin/corpus-collection/review-batches" },
       { title: "Analytics", href: "/admin/corpus-collection/analytics" },
+      { title: "Questionnaire Insights", href: "/admin/corpus-collection/questionnaire-insights" },
+      { title: "Questionnaire Permissions", href: "/admin/corpus-collection/questionnaire-permissions" },
+      { title: "Questionnaire Settings", href: "/admin/corpus-collection/questionnaire-settings" },
+      { title: "Questionnaire Definition", href: "/admin/corpus-collection/questionnaire-definition" },
     ],
   },
   {
@@ -99,6 +103,7 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [corpusAccess, setCorpusAccess] = useState<boolean | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     "/admin/corpus-collection": true,
   });
@@ -106,13 +111,32 @@ export default function AdminLayout({
   useEffect(() => {
     if (status === "loading") return;
 
-    if (!session?.user?.isSystemAdmin) {
+    if (session?.user?.isSystemAdmin) {
+      setCorpusAccess(true);
+      return;
+    }
+    if (!pathname.startsWith("/admin/corpus-collection/questionnaire-insights")) {
       router.push("/");
       return;
     }
-  }, [session, status, router]);
+    let active = true;
+    fetch("/api/admin/corpus-collection/access")
+      .then((response) => {
+        if (!response.ok) throw new Error("denied");
+        if (active) setCorpusAccess(true);
+      })
+      .catch(() => {
+        if (active) {
+          setCorpusAccess(false);
+          router.push("/");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [pathname, session, status, router]);
 
-  if (status === "loading") {
+  if (status === "loading" || (!session?.user?.isSystemAdmin && corpusAccess === null)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -120,7 +144,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!session?.user?.isSystemAdmin) {
+  if (!session?.user?.isSystemAdmin && !corpusAccess) {
     return null;
   }
 
@@ -151,7 +175,9 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {adminNavItems.map((item) => {
+          {adminNavItems
+            .filter((item) => session.user.isSystemAdmin || item.href === "/admin/corpus-collection")
+            .map((item) => {
             if (
               "superAdminOnly" in item &&
               item.superAdminOnly &&
@@ -196,7 +222,13 @@ export default function AdminLayout({
                   </button>
                   {isExpanded && (
                     <div className="ml-8 space-y-1">
-                      {item.children.map((child) => {
+                      {item.children
+                        .filter(
+                          (child) =>
+                            session.user.isSystemAdmin ||
+                            child.href === "/admin/corpus-collection/questionnaire-insights",
+                        )
+                        .map((child) => {
                         const isChildActive = pathname === child.href;
                         return (
                           <Link
@@ -258,7 +290,9 @@ export default function AdminLayout({
               <p className="text-xs text-muted-foreground truncate">
                 {session.user.isSuperAdmin
                   ? "Super Administrator"
-                  : "System Administrator"}
+                  : session.user.isSystemAdmin
+                    ? "System Administrator"
+                    : "Activity Operator"}
               </p>
             </div>
           </div>
