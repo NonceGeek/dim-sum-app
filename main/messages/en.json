@@ -337,6 +337,43 @@
     "updatedAt": "Updated",
     "copied": "Copied"
   },
+  "AdminLayout": {
+    "panelTitle": "Admin Panel",
+    "dashboardTitle": "Admin Dashboard",
+    "welcomeBack": "Welcome back, {name}",
+    "unnamedUser": "Administrator",
+    "backToMainApp": "Back to Main App",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "administrators": "Administrator Management",
+      "categories": "Categories",
+      "permissions": "Permissions",
+      "corpusData": "Corpus Data",
+      "corpusCollection": "Corpus Collection",
+      "auditLogs": "Audit Logs",
+      "ruleOps": "Rule Ops",
+      "settings": "Settings"
+    },
+    "corpusNav": {
+      "overview": "Overview",
+      "activities": "Activities",
+      "submissions": "Submissions",
+      "comments": "Comments",
+      "categories": "Categories",
+      "reviewBatches": "AI Review Batches",
+      "analytics": "Analytics",
+      "questionnaireInsights": "Questionnaire Insights",
+      "questionnairePermissions": "Questionnaire Permissions",
+      "questionnaireSettings": "Questionnaire Settings",
+      "questionnaireDefinition": "Questionnaire Definition"
+    },
+    "roles": {
+      "superAdministrator": "Super Administrator",
+      "systemAdministrator": "System Administrator",
+      "activityOperator": "Activity Operator"
+    }
+  },
   "AdminAdministrators": {
     "menuTitle": "Administrator Management",
     "title": "Administrator Management",

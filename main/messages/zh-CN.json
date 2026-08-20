@@ -338,6 +338,43 @@
     "updatedAt": "最近更新",
     "copied": "已复制"
   },
+  "AdminLayout": {
+    "panelTitle": "管理后台",
+    "dashboardTitle": "管理后台",
+    "welcomeBack": "欢迎回来，{name}",
+    "unnamedUser": "管理员",
+    "backToMainApp": "返回主应用",
+    "nav": {
+      "dashboard": "概览",
+      "users": "用户管理",
+      "administrators": "管理员管理",
+      "categories": "分类管理",
+      "permissions": "权限管理",
+      "corpusData": "语料数据",
+      "corpusCollection": "语料采集",
+      "auditLogs": "审计日志",
+      "ruleOps": "规则运维",
+      "settings": "系统设置"
+    },
+    "corpusNav": {
+      "overview": "采集概览",
+      "activities": "活动管理",
+      "submissions": "投稿管理",
+      "comments": "评论管理",
+      "categories": "采集分类",
+      "reviewBatches": "AI 审核批次",
+      "analytics": "数据分析",
+      "questionnaireInsights": "问卷洞察",
+      "questionnairePermissions": "问卷权限",
+      "questionnaireSettings": "问卷门禁",
+      "questionnaireDefinition": "问卷定义"
+    },
+    "roles": {
+      "superAdministrator": "超级管理员",
+      "systemAdministrator": "系统管理员",
+      "activityOperator": "活动运营"
+    }
+  },
   "AdminAdministrators": {
     "menuTitle": "管理员管理",
     "title": "管理员管理",
