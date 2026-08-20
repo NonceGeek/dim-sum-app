@@ -338,6 +338,27 @@
     "updatedAt": "最近更新",
     "copied": "已复制"
   },
+  "CorpusCollectionCategories": {
+    "title": "采集分类", "description": "配置投稿类型和公开标签。", "created": "分类已创建", "createFailed": "分类创建失败", "updated": "分类已更新", "updateFailed": "分类更新失败", "deleted": "分类已删除", "deleteFailed": "分类删除失败", "nameRequired": "分类名称不能为空",
+    "name": "名称", "type": "类型", "sort": "排序", "status": "状态", "actions": "操作", "submissionType": "投稿类型", "tag": "标签", "allTypes": "全部类型", "active": "启用", "inactive": "停用", "enable": "启用", "disable": "停用", "delete": "删除分类", "loading": "加载中…", "empty": "暂无分类。",
+    "add": { "title": "新增分类", "description": "此处配置的标签会显示在投稿表单中。", "button": "新增" },
+    "list": { "title": "分类列表", "description": "启用、停用或删除分类。" }
+  },
+  "CorpusCollectionComments": {
+    "title": "评论管理", "description": "在评论公开显示前进行审核。", "search": "搜索评论", "updated": "评论已更新", "updateFailed": "评论更新失败",
+    "statuses": { "all": "全部状态", "pending": "待审核", "approved": "已通过", "rejected": "已拒绝" },
+    "queue": "评论队列（{count}）", "queueDescription": "通过评论后会重新计算投稿的评论数量。",
+    "columns": { "comment": "评论", "work": "作品", "author": "作者", "status": "状态", "created": "创建时间", "actions": "操作" },
+    "loading": "加载中…", "unknown": "未知用户", "approve": "通过评论", "reject": "拒绝评论", "empty": "暂无评论。"
+  },
+  "CorpusCollectionAnalytics": {
+    "title": "数据分析", "description": "投稿、活动与互动指标。",
+    "cards": { "totalSubmissions": "投稿总数", "pending": "待审核", "approved": "已通过", "rejected": "已拒绝", "activities": "活动总数", "published": "已发布", "likes": "点赞", "comments": "评论" },
+    "health": { "title": "审核概况", "description": "审核完成情况的总体快照。", "approvalRate": "通过率", "backlog": "待审核积压", "interactions": "互动总数" },
+    "trends": { "title": "投稿趋势", "description": "最近 30 天每日审核状态变化。", "date": "日期", "total": "总数", "approved": "已通过", "pending": "待审核", "rejected": "已拒绝", "empty": "暂无趋势数据。" },
+    "breakdown": { "title": "分类分布", "description": "按投稿类型和热门标签统计投稿量。", "types": "类型", "topTags": "热门标签" },
+    "detail": { "title": "活动详情", "description": "输入活动 ID 查看活动级互动和审核状态。", "activityId": "活动 ID", "activity": "活动", "views": "浏览", "shares": "分享", "reviewStates": "审核状态" }
+  },
   "QuestionnaireInsights": {
     "title": "问卷洞察",
     "description": "参赛前登记、转化路径与去标识化用户画像。",

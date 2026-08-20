@@ -337,6 +337,27 @@
     "updatedAt": "Updated",
     "copied": "Copied"
   },
+  "CorpusCollectionCategories": {
+    "title": "Categories", "description": "Configure submission types and public tags.", "created": "Category created", "createFailed": "Unable to create category", "updated": "Category updated", "updateFailed": "Unable to update category", "deleted": "Category deleted", "deleteFailed": "Unable to delete category", "nameRequired": "Name is required",
+    "name": "Name", "type": "Type", "sort": "Sort", "status": "Status", "actions": "Actions", "submissionType": "Submission Type", "tag": "Tag", "allTypes": "All Types", "active": "Active", "inactive": "Inactive", "enable": "Enable", "disable": "Disable", "delete": "Delete category", "loading": "Loading…", "empty": "No categories found.",
+    "add": { "title": "Add Category", "description": "Tags configured here are shown in submission forms.", "button": "Add" },
+    "list": { "title": "Category List", "description": "Enable, disable, or remove categories." }
+  },
+  "CorpusCollectionComments": {
+    "title": "Comments", "description": "Review user comments before they appear publicly.", "search": "Search comments", "updated": "Comment updated", "updateFailed": "Unable to update comment",
+    "statuses": { "all": "All Statuses", "pending": "Pending Review", "approved": "Approved", "rejected": "Rejected" },
+    "queue": "Comment Queue ({count})", "queueDescription": "Approving a comment recalculates the submission comment count.",
+    "columns": { "comment": "Comment", "work": "Work", "author": "Author", "status": "Status", "created": "Created", "actions": "Actions" },
+    "loading": "Loading…", "unknown": "Unknown", "approve": "Approve comment", "reject": "Reject comment", "empty": "No comments found."
+  },
+  "CorpusCollectionAnalytics": {
+    "title": "Analytics", "description": "Submission, activity, and interaction metrics.",
+    "cards": { "totalSubmissions": "Total Submissions", "pending": "Pending Review", "approved": "Approved", "rejected": "Rejected", "activities": "Activities", "published": "Published", "likes": "Likes", "comments": "Comments" },
+    "health": { "title": "Review Health", "description": "High-level review completion snapshot.", "approvalRate": "Approval Rate", "backlog": "Review Backlog", "interactions": "Interaction Total" },
+    "trends": { "title": "Submission Trends", "description": "Daily review state movement over the last 30 days.", "date": "Date", "total": "Total", "approved": "Approved", "pending": "Pending", "rejected": "Rejected", "empty": "No trend data." },
+    "breakdown": { "title": "Category Breakdown", "description": "Submission volume by type and top tags.", "types": "Types", "topTags": "Top Tags" },
+    "detail": { "title": "Activity Detail", "description": "Enter an activity ID to inspect activity-level interactions and review state.", "activityId": "Activity ID", "activity": "Activity", "views": "Views", "shares": "Shares", "reviewStates": "Review States" }
+  },
   "QuestionnaireInsights": {
     "title": "Questionnaire Insights",
     "description": "Pre-participation registration, conversion paths, and de-identified audience profiles.",

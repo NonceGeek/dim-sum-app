@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, CheckCircle2, Clock, Heart, MessageCircle, Radio, XCircle } from "lucide-react";
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +35,8 @@ type ActivityDetail = {
 };
 
 export default function CorpusCollectionAnalyticsPage() {
+  const t = useTranslations("CorpusCollectionAnalytics");
+  const locale = useLocale();
   const [activityId, setActivityId] = useState("");
   const { data } = useQuery<Summary>({
     queryKey: ["corpus-collection-analytics-summary"],
@@ -73,14 +76,14 @@ export default function CorpusCollectionAnalyticsPage() {
   });
 
   const cards = [
-    { label: "Total Submissions", value: data?.totalSubmissions ?? 0, icon: Activity },
-    { label: "Pending Review", value: data?.pendingSubmissions ?? 0, icon: Clock },
-    { label: "Approved", value: data?.approvedSubmissions ?? 0, icon: CheckCircle2 },
-    { label: "Rejected", value: data?.rejectedSubmissions ?? 0, icon: XCircle },
-    { label: "Activities", value: data?.totalActivities ?? 0, icon: Radio },
-    { label: "Published", value: data?.publishedActivities ?? 0, icon: Radio },
-    { label: "Likes", value: data?.totalLikes ?? 0, icon: Heart },
-    { label: "Comments", value: data?.totalComments ?? 0, icon: MessageCircle },
+    { label: t("cards.totalSubmissions"), value: data?.totalSubmissions ?? 0, icon: Activity },
+    { label: t("cards.pending"), value: data?.pendingSubmissions ?? 0, icon: Clock },
+    { label: t("cards.approved"), value: data?.approvedSubmissions ?? 0, icon: CheckCircle2 },
+    { label: t("cards.rejected"), value: data?.rejectedSubmissions ?? 0, icon: XCircle },
+    { label: t("cards.activities"), value: data?.totalActivities ?? 0, icon: Radio },
+    { label: t("cards.published"), value: data?.publishedActivities ?? 0, icon: Radio },
+    { label: t("cards.likes"), value: data?.totalLikes ?? 0, icon: Heart },
+    { label: t("cards.comments"), value: data?.totalComments ?? 0, icon: MessageCircle },
   ];
 
   const approvedRate =
@@ -91,8 +94,8 @@ export default function CorpusCollectionAnalyticsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Analytics</h2>
-        <p className="text-muted-foreground mt-2">Submission, activity, and interaction metrics.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
+        <p className="text-muted-foreground mt-2">{t("description")}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -113,21 +116,21 @@ export default function CorpusCollectionAnalyticsPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Review Health</CardTitle>
-          <CardDescription>High-level review completion snapshot.</CardDescription>
+          <CardTitle>{t("health.title")}</CardTitle>
+          <CardDescription>{t("health.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg border p-4">
-              <div className="text-sm text-muted-foreground">Approval Rate</div>
+              <div className="text-sm text-muted-foreground">{t("health.approvalRate")}</div>
               <div className="mt-2 text-3xl font-bold">{approvedRate}%</div>
             </div>
             <div className="rounded-lg border p-4">
-              <div className="text-sm text-muted-foreground">Review Backlog</div>
+              <div className="text-sm text-muted-foreground">{t("health.backlog")}</div>
               <div className="mt-2 text-3xl font-bold">{data?.pendingSubmissions ?? 0}</div>
             </div>
             <div className="rounded-lg border p-4">
-              <div className="text-sm text-muted-foreground">Interaction Total</div>
+              <div className="text-sm text-muted-foreground">{t("health.interactions")}</div>
               <div className="mt-2 text-3xl font-bold">{(data?.totalLikes ?? 0) + (data?.totalComments ?? 0)}</div>
             </div>
           </div>
@@ -137,30 +140,30 @@ export default function CorpusCollectionAnalyticsPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Submission Trends</CardTitle>
-            <CardDescription>Daily review state movement over the last 30 days.</CardDescription>
+            <CardTitle>{t("trends.title")}</CardTitle>
+            <CardDescription>{t("trends.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Approved</TableHead>
-                  <TableHead>Pending</TableHead>
-                  <TableHead>Rejected</TableHead>
+                  <TableHead>{t("trends.date")}</TableHead>
+                  <TableHead>{t("trends.total")}</TableHead>
+                  <TableHead>{t("trends.approved")}</TableHead>
+                  <TableHead>{t("trends.pending")}</TableHead>
+                  <TableHead>{t("trends.rejected")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {trends?.items.slice(-10).map((row) => (
                   <TableRow key={row.period}>
-                    <TableCell>{new Date(row.period).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(row.period).toLocaleDateString(locale)}</TableCell>
                     <TableCell>{row.total}</TableCell>
                     <TableCell>{row.approved}</TableCell>
                     <TableCell>{row.pending}</TableCell>
                     <TableCell>{row.rejected}</TableCell>
                   </TableRow>
-                )) ?? <TableRow><TableCell colSpan={5}>No trend data.</TableCell></TableRow>}
+                )) ?? <TableRow><TableCell colSpan={5}>{t("trends.empty")}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent>
@@ -168,12 +171,12 @@ export default function CorpusCollectionAnalyticsPage() {
 
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Category Breakdown</CardTitle>
-            <CardDescription>Submission volume by type and top tags.</CardDescription>
+            <CardTitle>{t("breakdown.title")}</CardTitle>
+            <CardDescription>{t("breakdown.description")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 lg:grid-cols-2">
             <div>
-              <div className="mb-2 text-sm font-medium">Types</div>
+              <div className="mb-2 text-sm font-medium">{t("breakdown.types")}</div>
               <div className="space-y-2">
                 {breakdown?.types.map((row) => (
                   <div key={row.submissionType} className="rounded-md border p-3">
@@ -189,7 +192,7 @@ export default function CorpusCollectionAnalyticsPage() {
               </div>
             </div>
             <div>
-              <div className="mb-2 text-sm font-medium">Top Tags</div>
+              <div className="mb-2 text-sm font-medium">{t("breakdown.topTags")}</div>
               <div className="space-y-2">
                 {breakdown?.tags.slice(0, 8).map((row) => (
                   <div key={row.tag} className="flex justify-between rounded-md border px-3 py-2 text-sm">
@@ -205,27 +208,27 @@ export default function CorpusCollectionAnalyticsPage() {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Activity Detail</CardTitle>
-          <CardDescription>Enter an activity ID to inspect activity-level interactions and review state.</CardDescription>
+          <CardTitle>{t("detail.title")}</CardTitle>
+          <CardDescription>{t("detail.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input className="max-w-xs" placeholder="Activity ID" value={activityId} onChange={(e) => setActivityId(e.target.value)} />
+          <Input className="max-w-xs" placeholder={t("detail.activityId")} value={activityId} onChange={(e) => setActivityId(e.target.value)} />
           {activityDetail && (
             <div className="grid gap-4 md:grid-cols-4">
               <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground">Activity</div>
+                <div className="text-sm text-muted-foreground">{t("detail.activity")}</div>
                 <div className="mt-2 font-semibold">{activityDetail.activity.title}</div>
               </div>
               <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground">Views</div>
+                <div className="text-sm text-muted-foreground">{t("detail.views")}</div>
                 <div className="mt-2 text-2xl font-bold">{activityDetail.interactions.views}</div>
               </div>
               <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground">Shares</div>
+                <div className="text-sm text-muted-foreground">{t("detail.shares")}</div>
                 <div className="mt-2 text-2xl font-bold">{activityDetail.interactions.shares}</div>
               </div>
               <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground">Review States</div>
+                <div className="text-sm text-muted-foreground">{t("detail.reviewStates")}</div>
                 <div className="mt-2 text-sm">
                   {activityDetail.statusBreakdown.map((row) => `${row.status}: ${row.total}`).join(" · ")}
                 </div>
