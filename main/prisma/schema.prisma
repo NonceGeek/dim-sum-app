@@ -45,13 +45,13 @@ model User {
   role                                                                                      Role                                       @default(LEARNER)
   bio                                                                                       String?
   isSystemAdmin                                                                             Boolean                                    @default(false)
-  isSuperAdmin                                                                              Boolean                                    @default(false)
   ethAddress                                                                                String?                                    @unique
   createdAt                                                                                 DateTime                                   @default(now()) @db.Timestamptz(6)
   updatedAt                                                                                 DateTime                                   @default(now()) @updatedAt @db.Timestamptz(6)
   deletionRequestedAt                                                                       DateTime?                                  @db.Timestamptz(6)
   status                                                                                    UserStatus                                 @default(ACTIVE)
   mergedIntoId                                                                              String?
+  isSuperAdmin                                                                              Boolean                                    @default(false)
   accounts                                                                                  Account[]
   sessions                                                                                  Session[]
   walletNonces                                                                              WalletNonce[]
@@ -60,18 +60,18 @@ model User {
   cantonese_corpus_update_history                                                           cantonese_corpus_update_history[]
   corpus_category                                                                           corpus_category[]
   corpusCollectionActivities                                                                corpus_collection_activities[]
+  assignedQuestionnairePermissions                                                          corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionAssigner")
+  questionnairePermissions                                                                  corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionUser")
+  questionnaireAuditLogs                                                                    corpus_collection_audit_logs[]
   corpusCollectionComments                                                                  corpus_collection_comments[]
   corpusCollectionLikes                                                                     corpus_collection_likes[]
   corpusCollectionMessages                                                                  corpus_collection_messages[]
+  questionnaireEvents                                                                       corpus_collection_questionnaire_events[]
+  questionnaireJourneys                                                                     corpus_collection_questionnaire_journeys[]
+  questionnaireProfile                                                                      corpus_collection_questionnaire_profiles?
   corpusCollectionReviewBatches                                                             corpus_collection_review_batches[]
   corpusCollectionReviewedItems                                                             corpus_collection_submissions[]            @relation("CorpusCollectionReviewer")
   corpusCollectionSubmissions                                                               corpus_collection_submissions[]
-  questionnaireProfile                                                                      corpus_collection_questionnaire_profiles?
-  questionnaireJourneys                                                                     corpus_collection_questionnaire_journeys[]
-  questionnaireEvents                                                                       corpus_collection_questionnaire_events[]
-  questionnairePermissions                                                                  corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionUser")
-  assignedQuestionnairePermissions                                                          corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionAssigner")
-  questionnaireAuditLogs                                                                    corpus_collection_audit_logs[]
   corpus_tags                                                                               corpus_tags[]
   gameAnswerRecords                                                                         game_answer_records[]
   gamePlayerProgress                                                                        game_player_progress?
@@ -573,31 +573,32 @@ model game_player_progress {
 
 /// 语料采集 - 活动
 model corpus_collection_activities {
-  id                        BigInt                                     @id @default(autoincrement())
-  title                     String
-  slug                      String?                                    @unique
-  description               String?
-  rules                     String?
-  reward_config             Json                                       @default("{}")
-  media_requirements        Json                                       @default("{}")
-  banner_url                String?
-  status                    String                                     @default("draft")
-  starts_at                 DateTime?                                  @db.Timestamptz(6)
-  ends_at                   DateTime?                                  @db.Timestamptz(6)
-  created_by                String?
-  created_at                DateTime                                   @default(now()) @db.Timestamptz(6)
-  updated_at                DateTime                                   @default(now()) @updatedAt @db.Timestamptz(6)
-  category                  String?
-  submission_types          Json                                       @default("[]")
-  tags                      Json                                       @default("[]")
-  display_uuid              String                                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  creator                   User?                                      @relation(fields: [created_by], references: [id])
-  review_batches            corpus_collection_review_batches[]
-  submissions               corpus_collection_submissions[]
-  questionnaire_profiles    corpus_collection_questionnaire_profiles[]
-  questionnaire_journeys    corpus_collection_questionnaire_journeys[]
-  questionnaire_events      corpus_collection_questionnaire_events[]
-  questionnaire_permissions corpus_collection_activity_permissions[]
+  id                         BigInt                                     @id @default(autoincrement())
+  title                      String
+  slug                       String?                                    @unique
+  description                String?
+  rules                      String?
+  reward_config              Json                                       @default("{}")
+  media_requirements         Json                                       @default("{}")
+  banner_url                 String?
+  status                     String                                     @default("draft")
+  starts_at                  DateTime?                                  @db.Timestamptz(6)
+  ends_at                    DateTime?                                  @db.Timestamptz(6)
+  created_by                 String?
+  created_at                 DateTime                                   @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                                   @default(now()) @updatedAt @db.Timestamptz(6)
+  category                   String?
+  submission_types           Json                                       @default("[]")
+  tags                       Json                                       @default("[]")
+  display_uuid               String                                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questionnaire_gate_enabled Boolean                                    @default(true)
+  creator                    User?                                      @relation(fields: [created_by], references: [id])
+  questionnaire_permissions  corpus_collection_activity_permissions[]
+  questionnaire_events       corpus_collection_questionnaire_events[]
+  questionnaire_journeys     corpus_collection_questionnaire_journeys[]
+  questionnaire_profiles     corpus_collection_questionnaire_profiles[]
+  review_batches             corpus_collection_review_batches[]
+  submissions                corpus_collection_submissions[]
 
   @@index([status, starts_at, ends_at])
   @@index([category])
@@ -650,12 +651,12 @@ model corpus_collection_submissions {
   comments              corpus_collection_comments[]
   likes                 corpus_collection_likes[]
   messages              corpus_collection_messages[]
+  questionnaire_journey corpus_collection_questionnaire_journeys?
   review_items          corpus_collection_review_batch_items[]
   media                 corpus_collection_submission_media[]
   activity              corpus_collection_activities?             @relation(fields: [activity_id], references: [id])
   reviewer              User?                                     @relation("CorpusCollectionReviewer", fields: [reviewed_by], references: [id])
   user                  User                                      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  questionnaire_journey corpus_collection_questionnaire_journeys?
 
   @@index([user_id, created_at])
   @@index([activity_id, review_status])
@@ -676,8 +677,8 @@ model corpus_collection_questionnaire_profiles {
   source_activity_id BigInt
   completed_at       DateTime                     @default(now()) @db.Timestamptz(6)
   created_at         DateTime                     @default(now()) @db.Timestamptz(6)
-  user               User                         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   source_activity    corpus_collection_activities @relation(fields: [source_activity_id], references: [id])
+  user               User                         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([completed_at])
   @@index([source_activity_id, completed_at])
@@ -702,10 +703,10 @@ model corpus_collection_questionnaire_journeys {
   expires_at            DateTime                                 @db.Timestamptz(6)
   created_at            DateTime                                 @default(now()) @db.Timestamptz(6)
   updated_at            DateTime                                 @default(now()) @updatedAt @db.Timestamptz(6)
-  user                  User                                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  events                corpus_collection_questionnaire_events[]
   activity              corpus_collection_activities             @relation(fields: [activity_id], references: [id])
   submission            corpus_collection_submissions?           @relation(fields: [submission_id], references: [id])
-  events                corpus_collection_questionnaire_events[]
+  user                  User                                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, activity_id, started_at])
   @@index([activity_id, flow_type, started_at])
@@ -723,9 +724,9 @@ model corpus_collection_questionnaire_events {
   flow_type   String
   occurred_at DateTime                                 @default(now()) @db.Timestamptz(6)
   metadata    Json                                     @default("{}")
+  activity    corpus_collection_activities             @relation(fields: [activity_id], references: [id])
   journey     corpus_collection_questionnaire_journeys @relation(fields: [journey_id], references: [id], onDelete: Cascade)
   user        User                                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  activity    corpus_collection_activities             @relation(fields: [activity_id], references: [id])
 
   @@index([activity_id, event_name, occurred_at])
   @@index([user_id, activity_id, event_name, occurred_at])
@@ -742,9 +743,9 @@ model corpus_collection_activity_permissions {
   assigned_by         String?
   created_at          DateTime                     @default(now()) @db.Timestamptz(6)
   updated_at          DateTime                     @default(now()) @updatedAt @db.Timestamptz(6)
-  user                User                         @relation("QuestionnairePermissionUser", fields: [user_id], references: [id], onDelete: Cascade)
   activity            corpus_collection_activities @relation(fields: [activity_id], references: [id], onDelete: Cascade)
   assigner            User?                        @relation("QuestionnairePermissionAssigner", fields: [assigned_by], references: [id])
+  user                User                         @relation("QuestionnairePermissionUser", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, activity_id])
   @@index([activity_id])
@@ -1078,27 +1079,27 @@ model tmp_corpus_tags {
   @@ignore
 }
 
-enum Role {
-  LEARNER
-  TAGGER_PARTNER
-  TAGGER_OUTSOURCING
-  RESEARCHER
-}
-
 /// 用户账号状态
 /// 账号合并归档：合并前把源账号数据快照存下，源账号软删除（status=MERGED），以便将来撤回合并
 model user_merge_logs {
   id             String    @id @default(cuid())
   source_user_id String
   target_user_id String
-  phone_number   String? // 被合并过来的手机号（源账号原手机号）
-  snapshot       Json // 合并前源账号全部数据 + 会被改动的目标行
-  status         String    @default("MERGED") // MERGED | REVERSED
+  phone_number   String?
+  snapshot       Json
+  status         String    @default("MERGED")
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
   reversed_at    DateTime? @db.Timestamptz(6)
 
   @@index([source_user_id])
   @@index([target_user_id])
+}
+
+enum Role {
+  LEARNER
+  TAGGER_PARTNER
+  TAGGER_OUTSOURCING
+  RESEARCHER
 }
 
 enum UserStatus {

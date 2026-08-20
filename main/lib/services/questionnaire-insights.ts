@@ -170,8 +170,17 @@ export async function getQuestionnaireOverview(
   }
   const activities = [...activityMap.values()].map((rows) => {
     const activity = rows[0].activity;
-    const registeredUsers = new Set(rows.filter((row) => Boolean(row.completed_at)).map((row) => row.user_id));
+    const registeredUsers = new Set(
+      rows
+        .filter((row) => row.flow_type === "full_questionnaire" && Boolean(row.completed_at))
+        .map((row) => row.user_id),
+    );
     const submitted = new Set(rows.filter((row) => row.status === "submitted").map((row) => row.user_id)).size;
+    const clicked = eventCount(rows, "click_submit_cta");
+    const completedQuestionnaire = eventCount(
+      rows.filter((row) => row.flow_type === "full_questionnaire"),
+      "complete_questionnaire",
+    );
     const profileRows = profiles.filter((profile) => registeredUsers.has(profile.user_id));
     const ageCounts = new Map<string, number>();
     const regionCounts = new Map<string, number>();
@@ -187,7 +196,17 @@ export async function getQuestionnaireOverview(
       id: activity.id.toString(),
       title: activity.title,
       status: activity.status,
+      timeStatus:
+        activity.ends_at && activity.ends_at.getTime() < Date.now()
+          ? "ended"
+          : activity.status === "published"
+            ? "ongoing"
+            : activity.status,
+      startsAt: activity.starts_at?.toISOString() ?? null,
+      endsAt: activity.ends_at?.toISOString() ?? null,
       registrationCount: registeredUsers.size,
+      questionnaireCompletionRate:
+        registeredUsers.size < MIN_SAMPLE ? null : percent(completedQuestionnaire, clicked),
       submissionRate: registeredUsers.size < MIN_SAMPLE ? null : percent(submitted, registeredUsers.size),
       suppressed: registeredUsers.size < MIN_SAMPLE,
       topAgeRange: top(ageCounts, labelMaps.age),
@@ -221,5 +240,74 @@ export async function getQuestionnaireOverview(
     },
     activities,
     privacy: { minimumSampleSize: MIN_SAMPLE },
+  };
+}
+
+export function getFunnelDetail(overview: Awaited<ReturnType<typeof getQuestionnaireOverview>>) {
+  const withLoss = (rows: typeof overview.funnels.firstTime) =>
+    rows.map((row, index) => ({
+      ...row,
+      completionRate: percent(row.count, rows[0]?.count ?? 0),
+      lossFromPrevious: index === 0 ? 0 : Math.max(0, rows[index - 1].count - row.count),
+    }));
+  const firstTime = withLoss(overview.funnels.firstTime);
+  const reused = withLoss(overview.funnels.reused);
+  const allSteps = [...firstTime.slice(1), ...reused.slice(1)];
+  const maximumLoss = allSteps.sort((a, b) => b.lossFromPrevious - a.lossFromPrevious)[0] ?? null;
+  return { firstTime, reused, maximumLoss };
+}
+
+export function getProfileDetail(
+  overview: Awaited<ReturnType<typeof getQuestionnaireOverview>>,
+  dimension: "age" | "region" | "interest",
+) {
+  const rows =
+    dimension === "age"
+      ? overview.profile.ageRanges
+      : dimension === "region"
+        ? overview.profile.cultureRegions
+        : overview.profile.interestTypes;
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
+  const leading = rows[0] ?? null;
+  return {
+    dimension,
+    sampleSize: total,
+    leadingGroup: leading
+      ? {
+          code: leading.code,
+          label: leading.label,
+          count: leading.count,
+          share: percent(leading.count, total),
+        }
+      : null,
+    rows: rows.map((row) => ({
+      ...row,
+      share: percent(row.count, total),
+    })),
+    minimumSampleSize: overview.privacy.minimumSampleSize,
+  };
+}
+
+export function getActivityComparison(
+  overview: Awaited<ReturnType<typeof getQuestionnaireOverview>>,
+  limit: number,
+) {
+  const sortRows = (rows: typeof overview.activities) =>
+    [...rows]
+      .sort(
+        (a, b) =>
+          (b.submissionRate ?? -1) - (a.submissionRate ?? -1) ||
+          b.registrationCount - a.registrationCount,
+      )
+      .slice(0, limit);
+  return {
+    summary: {
+      activityCount: overview.activities.length,
+      ongoingCount: overview.activities.filter((activity) => activity.timeStatus === "ongoing").length,
+      endedCount: overview.activities.filter((activity) => activity.timeStatus === "ended").length,
+    },
+    ongoing: sortRows(overview.activities.filter((activity) => activity.timeStatus === "ongoing")),
+    ended: sortRows(overview.activities.filter((activity) => activity.timeStatus === "ended")),
+    minimumSampleSize: overview.privacy.minimumSampleSize,
   };
 }

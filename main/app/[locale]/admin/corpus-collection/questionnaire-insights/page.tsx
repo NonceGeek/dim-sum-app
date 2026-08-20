@@ -6,6 +6,7 @@ import { ArrowDownToLine, ClipboardCheck, RefreshCw, Send, UsersRound } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,6 +48,32 @@ type Overview = {
     activityTag: string;
   }>;
   privacy: { minimumSampleSize: number };
+};
+
+type FunnelDetail = {
+  firstTime: Array<{ key: string; label: string; count: number; completionRate: number; lossFromPrevious: number }>;
+  reused: Array<{ key: string; label: string; count: number; completionRate: number; lossFromPrevious: number }>;
+  maximumLoss: { label: string; lossFromPrevious: number } | null;
+};
+
+type ProfileDetail = {
+  dimension: "age" | "region" | "interest";
+  sampleSize: number;
+  leadingGroup: { label: string; count: number; share: number } | null;
+  rows: Array<DimensionRow & { share: number }>;
+};
+
+type ComparisonActivity = Overview["activities"][number] & {
+  questionnaireCompletionRate: number | null;
+  timeStatus: string;
+  startsAt: string | null;
+  endsAt: string | null;
+};
+
+type ActivityComparison = {
+  summary: { activityCount: number; ongoingCount: number; endedCount: number };
+  ongoing: ComparisonActivity[];
+  ended: ComparisonActivity[];
 };
 
 const dateRanges = {
@@ -140,6 +167,8 @@ export default function QuestionnaireInsightsPage() {
   const [activityId, setActivityId] = useState("all");
   const [submissionStatus, setSubmissionStatus] = useState("all");
   const [registrationType, setRegistrationType] = useState("all");
+  const [detailView, setDetailView] = useState<"funnel" | "activity" | null>(null);
+  const [profileDimension, setProfileDimension] = useState<"age" | "region" | "interest" | null>(null);
   const params = useMemo(() => {
     const end = new Date();
     const start = new Date(end.getTime() - dateRanges[dateRange] * 24 * 60 * 60 * 1000);
@@ -158,6 +187,37 @@ export default function QuestionnaireInsightsPage() {
     queryFn: async () => {
       const response = await fetch(`/api/admin/corpus-collection/questionnaire-insights/overview?${params}`);
       if (!response.ok) throw new Error("Failed to load questionnaire insights");
+      return response.json();
+    },
+  });
+  const { data: funnelDetail, isLoading: funnelLoading } = useQuery<FunnelDetail>({
+    queryKey: ["questionnaire-funnel-detail", params],
+    enabled: detailView === "funnel",
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/corpus-collection/questionnaire-insights/funnel-detail?${params}`);
+      if (!response.ok) throw new Error("Failed to load funnel detail");
+      return response.json();
+    },
+  });
+  const { data: profileDetail, isLoading: profileLoading } = useQuery<ProfileDetail>({
+    queryKey: ["questionnaire-profile-detail", params, profileDimension],
+    enabled: Boolean(profileDimension),
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/admin/corpus-collection/questionnaire-insights/profile-detail?${params}&dimension=${profileDimension}`,
+      );
+      if (!response.ok) throw new Error("Failed to load profile detail");
+      return response.json();
+    },
+  });
+  const { data: activityComparison, isLoading: comparisonLoading } = useQuery<ActivityComparison>({
+    queryKey: ["questionnaire-activity-comparison", params],
+    enabled: detailView === "activity",
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/admin/corpus-collection/questionnaire-insights/activity-comparison?${params}&limit=5`,
+      );
+      if (!response.ok) throw new Error("Failed to load activity comparison");
       return response.json();
     },
   });
@@ -192,6 +252,9 @@ export default function QuestionnaireInsightsPage() {
           <p className="mt-2 text-muted-foreground">参赛前登记、转化路径与去标识化用户画像。</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setDetailView("activity")}>
+            活动对比
+          </Button>
           <Button variant="outline" disabled title="聚合导出将在 Phase 5 开放">
             <ArrowDownToLine className="mr-2 h-4 w-4" />
             导出聚合报表
@@ -264,9 +327,12 @@ export default function QuestionnaireInsightsPage() {
           </div>
 
           <section className="space-y-3" aria-labelledby="conversion-title">
-            <div>
-              <h3 id="conversion-title" className="text-xl font-semibold">参与转化路径</h3>
-              <p className="text-sm text-muted-foreground">首次登记与资料复用独立统计，避免漏斗口径混合。</p>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 id="conversion-title" className="text-xl font-semibold">参与转化路径</h3>
+                <p className="text-sm text-muted-foreground">首次登记与资料复用独立统计，避免漏斗口径混合。</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setDetailView("funnel")}>查看流失详情</Button>
             </div>
             <div className="grid gap-6 xl:grid-cols-2">
               <FunnelCard title="首次登记漏斗" description="点击投稿后完成问卷并提交作品" rows={data?.funnels.firstTime ?? []} />
@@ -275,9 +341,16 @@ export default function QuestionnaireInsightsPage() {
           </section>
 
           <section className="space-y-3" aria-labelledby="profile-title">
-            <div>
-              <h3 id="profile-title" className="text-xl font-semibold">用户画像</h3>
-              <p className="text-sm text-muted-foreground">只展示去标识化聚合数据；少于 {data?.privacy.minimumSampleSize ?? 10} 人不展示精确转化率。</p>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 id="profile-title" className="text-xl font-semibold">用户画像</h3>
+                <p className="text-sm text-muted-foreground">只展示去标识化聚合数据；少于 {data?.privacy.minimumSampleSize ?? 10} 人不展示精确转化率。</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setProfileDimension("age")}>年龄详情</Button>
+                <Button variant="outline" size="sm" onClick={() => setProfileDimension("region")}>地区详情</Button>
+                <Button variant="outline" size="sm" onClick={() => setProfileDimension("interest")}>兴趣详情</Button>
+              </div>
             </div>
             <div className="grid gap-6 xl:grid-cols-3">
               <DistributionCard title="年龄区间" description="完成登记用户的年龄分布" rows={data?.profile.ageRanges ?? []} />
@@ -326,6 +399,97 @@ export default function QuestionnaireInsightsPage() {
           </Card>
         </>
       )}
+
+      <Dialog open={detailView === "funnel"} onOpenChange={(open) => !open && setDetailView(null)}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>问卷流失详情</DialogTitle>
+            <DialogDescription>首次登记与资料复用路径分别计算，所有人数均为去重用户。</DialogDescription>
+          </DialogHeader>
+          {funnelLoading ? <Skeleton className="h-64 w-full" /> : (
+            <div className="space-y-6">
+              {funnelDetail?.maximumLoss && (
+                <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="text-sm text-muted-foreground">最大流失步骤</p>
+                  <p className="mt-1 text-lg font-semibold">{funnelDetail.maximumLoss.label}</p>
+                  <p className="text-sm text-destructive">流失 {funnelDetail.maximumLoss.lossFromPrevious} 人</p>
+                </div>
+              )}
+              {[
+                ["首次登记", funnelDetail?.firstTime ?? []],
+                ["资料复用", funnelDetail?.reused ?? []],
+              ].map(([title, rows]) => (
+                <div key={title as string}>
+                  <h4 className="mb-3 font-semibold">{title as string}</h4>
+                  <Table>
+                    <TableHeader><TableRow><TableHead>步骤</TableHead><TableHead>人数</TableHead><TableHead>完成率</TableHead><TableHead>较上一步流失</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {(rows as FunnelDetail["firstTime"]).map((row) => (
+                        <TableRow key={row.key}><TableCell>{row.label}</TableCell><TableCell>{row.count}</TableCell><TableCell>{row.completionRate.toFixed(1)}%</TableCell><TableCell>{row.lossFromPrevious}</TableCell></TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(profileDimension)} onOpenChange={(open) => !open && setProfileDimension(null)}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>用户画像详情</DialogTitle>
+            <DialogDescription>仅展示聚合数据，小样本分组不返回精确投稿率。</DialogDescription>
+          </DialogHeader>
+          {profileLoading ? <Skeleton className="h-64 w-full" /> : (
+            <div className="space-y-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">画像样本数</p><p className="mt-1 text-2xl font-bold">{profileDetail?.sampleSize ?? 0}</p></div>
+                <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">核心分组</p><p className="mt-1 text-lg font-semibold">{profileDetail?.leadingGroup?.label ?? "—"}</p><p className="text-sm text-muted-foreground">{profileDetail?.leadingGroup?.share.toFixed(1) ?? "0.0"}%</p></div>
+              </div>
+              <Table>
+                <TableHeader><TableRow><TableHead>分组</TableHead><TableHead>人数</TableHead><TableHead>占比</TableHead><TableHead>投稿率</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {profileDetail?.rows.map((row) => (
+                    <TableRow key={row.code}><TableCell>{row.label}</TableCell><TableCell>{row.count}</TableCell><TableCell>{row.share.toFixed(1)}%</TableCell><TableCell>{rate(row.submissionRate)}</TableCell></TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={detailView === "activity"} onOpenChange={(open) => !open && setDetailView(null)}>
+        <DialogContent className="max-h-[85vh] max-w-5xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>活动对比详情</DialogTitle>
+            <DialogDescription>进行中与已结束活动分别按登记后投稿率排序，最多展示 5 条。</DialogDescription>
+          </DialogHeader>
+          {comparisonLoading ? <Skeleton className="h-72 w-full" /> : (
+            <div className="space-y-6">
+              {[
+                ["进行中活动 · Top 5", activityComparison?.ongoing ?? []],
+                ["已结束活动 · Top 5", activityComparison?.ended ?? []],
+              ].map(([title, rows]) => (
+                <div key={title as string}>
+                  <h4 className="mb-3 font-semibold">{title as string}</h4>
+                  <Table>
+                    <TableHeader><TableRow><TableHead>活动</TableHead><TableHead>登记人数</TableHead><TableHead>问卷完成率</TableHead><TableHead>投稿率</TableHead><TableHead>主要年龄</TableHead><TableHead>地区偏好</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {(rows as ComparisonActivity[]).map((activity) => (
+                        <TableRow key={activity.id}><TableCell><div className="font-medium">{activity.title}</div><div className="text-xs text-muted-foreground">{activity.endsAt ? `截止 ${new Date(activity.endsAt).toLocaleDateString()}` : "长期活动"}</div></TableCell><TableCell>{activity.registrationCount}</TableCell><TableCell>{rate(activity.questionnaireCompletionRate)}</TableCell><TableCell>{rate(activity.submissionRate)}</TableCell><TableCell>{activity.topAgeRange}</TableCell><TableCell>{activity.topCultureRegion}</TableCell></TableRow>
+                      ))}
+                      {!(rows as ComparisonActivity[]).length && <TableRow><TableCell colSpan={6} className="h-20 text-center text-muted-foreground">暂无活动</TableCell></TableRow>}
+                    </TableBody>
+                  </Table>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

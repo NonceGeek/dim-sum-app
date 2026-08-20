@@ -244,6 +244,7 @@ export function serializeActivity(activity: any) {
     startsAt: activity.starts_at?.toISOString?.() ?? null,
     endsAt: activity.ends_at?.toISOString?.() ?? null,
     canSubmit: canSubmitToActivity(activity),
+    questionnaireGateEnabled: activity.questionnaire_gate_enabled ?? true,
     submissionCount: activity._count?.submissions ?? activity.submissionCount ?? undefined,
     works: activity.submissions
       ? activity.submissions.map((item: any) => serializeSubmission(item))
@@ -597,20 +598,18 @@ export async function createCorpusSubmission(userId: string, body: any) {
 
   const activityId = parseBigIntId(body.activityId);
   const coverUrl = normalizeCoverUrl(body.coverUrl);
-  const enabledIds = new Set(
-    (process.env.QUESTIONNAIRE_GATE_ACTIVITY_IDS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean),
-  );
-  const gateEnabled =
-    Boolean(activityId) &&
-    (process.env.QUESTIONNAIRE_GATE_ENABLED === "true" ||
-      enabledIds.has(activityId!.toString()));
-
   return prisma.$transaction(async (tx) => {
+    const activity = activityId
+      ? await tx.corpus_collection_activities.findUnique({
+          where: { id: activityId },
+          select: { questionnaire_gate_enabled: true },
+        })
+      : null;
+    if (activityId && !activity) {
+      throw new Error("Activity not found");
+    }
     const journey =
-      gateEnabled
+      activity?.questionnaire_gate_enabled
         ? await assertQuestionnaireSubmissionGate(
             tx,
             userId,
