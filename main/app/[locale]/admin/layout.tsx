@@ -71,6 +71,7 @@ const adminNavItems = [
       { title: "AI Review Batches", href: "/admin/corpus-collection/review-batches" },
       { title: "Analytics", href: "/admin/corpus-collection/analytics" },
       { title: "Questionnaire Insights", href: "/admin/corpus-collection/questionnaire-insights" },
+      { title: "Questionnaire Permissions", href: "/admin/corpus-collection/questionnaire-permissions" },
     ],
   },
   {
