@@ -338,6 +338,65 @@
     "updatedAt": "最近更新",
     "copied": "已复制"
   },
+  "QuestionnairePermissions": {
+    "title": "问卷权限",
+    "description": "配置活动运营可访问的问卷洞察活动范围。",
+    "unnamedUser": "未命名用户",
+    "activityStatus": {
+      "draft": "草稿",
+      "published": "已发布",
+      "offline": "已下线"
+    },
+    "form": {
+      "title": "配置活动授权",
+      "description": "相同账号和活动重复保存时更新原授权；导出权限不会自动授予查看范围外的数据。",
+      "operator": "活动运营账号",
+      "selectOperator": "选择账号",
+      "searchOperator": "按姓名、邮箱或手机号搜索…",
+      "noOperator": "没有找到匹配账号。",
+      "activity": "授权活动",
+      "selectActivity": "选择活动",
+      "viewInsights": "查看问卷洞察",
+      "viewInsightsDescription": "只允许访问该活动的去标识化聚合数据。",
+      "exportInsights": "导出聚合报表",
+      "exportInsightsDescription": "导出仍执行小样本保护和专用审计。",
+      "saving": "保存中…",
+      "save": "保存授权",
+      "clear": "清空"
+    },
+    "list": {
+      "title": "现有活动授权",
+      "description": "系统管理员拥有全部活动权限，不需要出现在此列表中。",
+      "loadFailed": "授权列表加载失败。",
+      "reload": "重新加载",
+      "allowed": "允许",
+      "disabled": "停用",
+      "notAllowed": "不允许",
+      "editLabel": "编辑授权",
+      "revokeLabel": "撤销授权",
+      "empty": "暂无活动运营授权。",
+      "columns": {
+        "operator": "活动运营",
+        "activity": "活动",
+        "view": "查看洞察",
+        "export": "导出",
+        "updatedAt": "更新时间",
+        "action": "操作"
+      }
+    },
+    "toast": {
+      "saved": "活动授权已保存",
+      "saveFailed": "保存失败，请稍后重试。",
+      "revoked": "活动授权已撤销",
+      "revokeFailed": "撤销失败，请稍后重试。"
+    },
+    "dialog": {
+      "title": "撤销该活动授权？",
+      "description": "撤销后，该运营账号将立即失去“{activity}”的问卷洞察访问权限。",
+      "cancel": "取消",
+      "confirm": "确认撤销"
+    }
+  },
   "AdminLayout": {
     "panelTitle": "管理后台",
     "dashboardTitle": "管理后台",

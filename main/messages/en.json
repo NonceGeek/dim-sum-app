@@ -337,6 +337,65 @@
     "updatedAt": "Updated",
     "copied": "Copied"
   },
+  "QuestionnairePermissions": {
+    "title": "Questionnaire Permissions",
+    "description": "Configure which questionnaire insights each activity operator can access.",
+    "unnamedUser": "Unnamed user",
+    "activityStatus": {
+      "draft": "Draft",
+      "published": "Published",
+      "offline": "Offline"
+    },
+    "form": {
+      "title": "Configure Activity Access",
+      "description": "Saving the same account and activity updates the existing access. Export access never extends the activity scope.",
+      "operator": "Activity operator account",
+      "selectOperator": "Select an account",
+      "searchOperator": "Search by name, email, or phone number…",
+      "noOperator": "No matching account found.",
+      "activity": "Activity",
+      "selectActivity": "Select an activity",
+      "viewInsights": "View questionnaire insights",
+      "viewInsightsDescription": "Allows access only to de-identified aggregate data for this activity.",
+      "exportInsights": "Export aggregate reports",
+      "exportInsightsDescription": "Exports still enforce small-sample protection and dedicated auditing.",
+      "saving": "Saving…",
+      "save": "Save access",
+      "clear": "Clear"
+    },
+    "list": {
+      "title": "Existing Activity Access",
+      "description": "System administrators already have access to every activity and do not appear in this list.",
+      "loadFailed": "Unable to load activity access.",
+      "reload": "Reload",
+      "allowed": "Allowed",
+      "disabled": "Disabled",
+      "notAllowed": "Not allowed",
+      "editLabel": "Edit access",
+      "revokeLabel": "Revoke access",
+      "empty": "No activity operator access configured.",
+      "columns": {
+        "operator": "Activity operator",
+        "activity": "Activity",
+        "view": "View insights",
+        "export": "Export",
+        "updatedAt": "Updated",
+        "action": "Action"
+      }
+    },
+    "toast": {
+      "saved": "Activity access saved",
+      "saveFailed": "Unable to save access. Please try again later.",
+      "revoked": "Activity access revoked",
+      "revokeFailed": "Unable to revoke access. Please try again later."
+    },
+    "dialog": {
+      "title": "Revoke this activity access?",
+      "description": "The operator will immediately lose access to questionnaire insights for “{activity}”.",
+      "cancel": "Cancel",
+      "confirm": "Revoke access"
+    }
+  },
   "AdminLayout": {
     "panelTitle": "Admin Panel",
     "dashboardTitle": "Admin Dashboard",
