@@ -242,7 +242,7 @@ function firstAssetUrl(
   const keyMap = {
     audio: ["audio", "audioUrl", "音频", "音频链接"],
     video: ["video", "videoUrl", "视频", "视频链接"],
-    image: ["image", "imageUrl", "cover", "coverImage", "图片", "封面", "封面图"],
+    image: ["img", "image", "imageUrl", "cover", "coverImage", "图片", "封面", "封面图"],
   } satisfies Record<typeof blockType, string[]>;
 
   return firstContextString(note, keyMap[blockType]);
