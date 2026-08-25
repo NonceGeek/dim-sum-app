@@ -226,6 +226,10 @@ function getCoverMetadata(submission: any) {
 }
 
 export function serializeActivity(activity: any) {
+  const activityTag =
+    Array.isArray(activity.tags) && typeof activity.tags[0] === "string"
+      ? activity.tags[0]
+      : null;
   return {
     id: activity.id.toString(),
     displayUuid: activity.display_uuid,
@@ -234,6 +238,7 @@ export function serializeActivity(activity: any) {
     description: activity.description,
     rules: activity.rules,
     category: activity.category ?? null,
+    activityTag,
     tags: activity.tags ?? [],
     submissionTypes: activity.submission_types ?? [],
     rewardConfig: activity.reward_config,

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
-import { completeQuestionnaireJourney } from "@/lib/services/questionnaire-journey";
+import {
+  completeQuestionnaireJourney,
+  recordQuestionnairePhoneSubmitFailure,
+} from "@/lib/services/questionnaire-journey";
 import { bindQuestionnairePhone } from "@/lib/services/questionnaire-phone-binding";
 import { QuestionnaireAnswers, questionnaireErrorResponse, submitQuestionnaireRequestSchema } from "@/lib/services/questionnaire-schema";
 
@@ -18,10 +21,19 @@ export async function POST(req: NextRequest) {
         };
       };
       if (input.phoneBinding) {
-        await bindQuestionnairePhone(user.userId, {
-          journeyId: input.journeyId,
-          ...input.phoneBinding,
-        });
+        try {
+          await bindQuestionnairePhone(user.userId, {
+            journeyId: input.journeyId,
+            ...input.phoneBinding,
+          });
+        } catch (error) {
+          try {
+            await recordQuestionnairePhoneSubmitFailure(user.userId, input.journeyId, error);
+          } catch (eventError) {
+            console.error("[Questionnaire] Failed to record phone_submit_fail", eventError);
+          }
+          throw error;
+        }
       }
       return NextResponse.json(await completeQuestionnaireJourney(user.userId, {
         journeyId: input.journeyId,
