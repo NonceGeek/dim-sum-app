@@ -210,7 +210,7 @@ Schema 来自数据库当前已发布版本。客户端必须保存进入接口�
 - `continue_questionnaire`
 - `cancel_questionnaire`
 
-`open_questionnaire` 在问卷或手机号弹窗首次完成渲染后上报一次。完成问卷、进入投稿页和成功投稿由服务端写事件，客户端不得伪造。
+`open_questionnaire` 在问卷或手机号弹窗首次完成渲染后上报一次。完成问卷、手机号提交失败、进入投稿页和成功投稿由服务端写事件，客户端不得伪造。问卷提交成功时服务端同时记录 `complete_questionnaire` 与兼容事件 `questionnaire_submit_success`；手机号提交失败时记录 `phone_submit_fail`，但需要用户确认账号合并的 `MERGE_REQUIRED` 不计为失败。
 
 ### 响应 `200`
 

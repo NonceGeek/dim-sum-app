@@ -207,6 +207,8 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
       "id": "act_001",
       "title": "粤语诗歌朗诵赛",
       "description": "征集粤语诗歌朗诵作品",
+      "activityTag": "粤语表达",
+      "tags": ["粤语表达"],
       "bannerUrl": "https://oss/banner.jpg",
       "mediaRequirements": {
         "requiredTypes": ["image", "audio"]
@@ -278,7 +280,8 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
   "startsAt": "2026-05-01T00:00:00.000Z",
   "endsAt": "2026-05-31T23:59:59.000Z",
   "category": "诗歌朗诵",
-  "tags": ["粤语", "童谣", "荔湾"],
+  "activityTag": "粤语表达",
+  "tags": ["粤语表达"],
   "submissionTypes": ["诗歌"],
   "rewardConfig": {
     "enabled": true,
@@ -293,7 +296,7 @@ GET /api/miniprogram/corpus_collection/activities?timeStatus=ongoing
 }
 ```
 
-`mediaRequirements` 对外统一返回 `{ "requiredTypes": [...] }`。后端兼容旧配置格式，例如 `allowedTypes` 或 `{ images/audio/video: { enabled|required } }`，但小程序端只需要消费 `requiredTypes`。`timeStatus` 由后端根据当前时间和活动时间计算，可选值：`not_started`、`ongoing`、`ended`。`canSubmit` 由后端根据活动状态、开始结束时间和当前用户权限计算。
+`activityTag` 是后台配置的单个四字活动标签；未配置的旧活动返回 `null`。`tags` 保留为单元素数组以兼容旧调用方。`mediaRequirements` 对外统一返回 `{ "requiredTypes": [...] }`。后端兼容旧配置格式，例如 `allowedTypes` 或 `{ images/audio/video: { enabled|required } }`，但小程序端只需要消费 `requiredTypes`。`timeStatus` 由后端根据当前时间和活动时间计算，可选值：`not_started`、`ongoing`、`ended`。`canSubmit` 由后端根据活动状态、开始结束时间和当前用户权限计算。
 
 ### 2.3 活动媒体要求模型变更说明
 

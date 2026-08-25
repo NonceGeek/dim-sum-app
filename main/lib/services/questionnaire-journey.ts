@@ -247,6 +247,16 @@ export async function completeQuestionnaireJourney(
         flow_type: journey.flow_type,
       },
     });
+    await tx.corpus_collection_questionnaire_events.create({
+      data: {
+        event_id: crypto.randomUUID(),
+        journey_id: journey.id,
+        user_id: userId,
+        activity_id: journey.activity_id,
+        event_name: "questionnaire_submit_success",
+        flow_type: journey.flow_type,
+      },
+    });
     return savedProfile;
   });
   return {
@@ -331,4 +341,35 @@ export async function assertQuestionnaireSubmissionGate(
   }
   assertJourneyActive(journey);
   return journey;
+}
+
+export async function recordQuestionnairePhoneSubmitFailure(
+  userId: string,
+  journeyId: string,
+  error: unknown,
+) {
+  if (error instanceof QuestionnaireError && error.code === "MERGE_REQUIRED") return false;
+  if (!UUID_PATTERN.test(journeyId)) return false;
+
+  const journey = await prisma.corpus_collection_questionnaire_journeys.findFirst({
+    where: { id: journeyId, user_id: userId },
+    select: { id: true, activity_id: true, flow_type: true },
+  });
+  if (!journey) return false;
+
+  await prisma.corpus_collection_questionnaire_events.create({
+    data: {
+      event_id: crypto.randomUUID(),
+      journey_id: journey.id,
+      user_id: userId,
+      activity_id: journey.activity_id,
+      event_name: "phone_submit_fail",
+      flow_type: journey.flow_type,
+      metadata: {
+        errorCode: error instanceof QuestionnaireError ? error.code : "INTERNAL_ERROR",
+        stage: "phone_binding",
+      },
+    },
+  });
+  return true;
 }

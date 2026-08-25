@@ -169,7 +169,7 @@ V1 不负责：
   -> 用户继续并填写问卷
   -> 已有手机号：直接提交
   -> 缺少手机号：发送验证码并校验
-  -> 一个事务内绑定手机号、创建问卷档案、记录 complete_questionnaire
+  -> 创建问卷档案，并记录 complete_questionnaire 与 questionnaire_submit_success
   -> 展示成功态
   -> 服务端确认进入投稿页并记录 enter_submission_page
 ```
@@ -203,10 +203,12 @@ V1 不负责：
 | `continue_questionnaire` | 小程序上报 | 用户从用途说明进入填写页 |
 | `cancel_questionnaire` | 小程序上报 | 用户主动取消本次登记 |
 | `complete_questionnaire` | 提交接口服务端 | 问卷档案与联系方式均已完整 |
+| `questionnaire_submit_success` | 提交接口服务端 | 问卷提交成功兼容事件，与 `complete_questionnaire` 同时写入 |
+| `phone_submit_fail` | 提交接口服务端 | 手机号格式、验证码或账号档案冲突等提交失败；`MERGE_REQUIRED` 不计入 |
 | `enter_submission_page` | 进入投稿接口服务端 | 服务端校验通过并允许进入投稿页 |
 | `submit_submission_success` | 投稿创建接口服务端 | 投稿记录创建成功 |
 
-旧 PRD 中的 `join_click`、`questionnaire_popup_show`、`questionnaire_submit_success`、`post_entry_success` 不再作为实现名称。
+旧 PRD 中的 `join_click`、`questionnaire_popup_show`、`post_entry_success` 不再作为实现名称。`questionnaire_submit_success` 作为兼容埋点与标准事件 `complete_questionnaire` 双写；洞察看板继续以 `complete_questionnaire` 为统计口径。
 
 ### 7.2 幂等与去重
 
