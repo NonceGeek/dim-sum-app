@@ -12,6 +12,7 @@ import {
 } from "@/lib/services/questionnaire-definition";
 
 const JOURNEY_TTL_MS = 24 * 60 * 60 * 1000;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function maskPhone(phoneNumber: string | null) {
   return phoneNumber ? `${phoneNumber.slice(0, 3)}****${phoneNumber.slice(-4)}` : null;
@@ -319,6 +320,9 @@ export async function assertQuestionnaireSubmissionGate(
   activityId: bigint,
   journeyId: string,
 ) {
+  if (!UUID_PATTERN.test(journeyId)) {
+    throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
+  }
   const journey = await tx.corpus_collection_questionnaire_journeys.findFirst({
     where: { id: journeyId, user_id: userId, activity_id: activityId },
   });
