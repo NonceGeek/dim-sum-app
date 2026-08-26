@@ -669,17 +669,17 @@ model corpus_collection_submissions {
 
 /// 语料采集 - 不可变参赛前问卷档案
 model corpus_collection_questionnaire_profiles {
-  id                 BigInt                       @id @default(autoincrement())
-  user_id            String                       @unique
-  schema_version     Int                          @default(1)
+  id                 BigInt                        @id @default(autoincrement())
+  user_id            String                        @unique
+  schema_version     Int                           @default(1)
   age_range          String
   culture_region     String
-  interest_types     Json                         @default("[]")
-  source_activity_id BigInt
-  completed_at       DateTime                     @default(now()) @db.Timestamptz(6)
-  created_at         DateTime                     @default(now()) @db.Timestamptz(6)
-  source_activity    corpus_collection_activities @relation(fields: [source_activity_id], references: [id])
-  user               User                         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  interest_types     Json                          @default("[]")
+  source_activity_id BigInt?
+  completed_at       DateTime                      @default(now()) @db.Timestamptz(6)
+  created_at         DateTime                      @default(now()) @db.Timestamptz(6)
+  source_activity    corpus_collection_activities? @relation(fields: [source_activity_id], references: [id], onDelete: Restrict)
+  user               User                          @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([completed_at])
   @@index([source_activity_id, completed_at])
@@ -709,7 +709,7 @@ model corpus_collection_questionnaire_journeys {
   id                    String                                   @id @default(uuid()) @db.Uuid
   entry_client_event_id String                                   @unique @db.Uuid
   user_id               String
-  activity_id           BigInt
+  activity_id           BigInt?
   flow_type             String
   registration_type     String
   schema_version        Int?
@@ -722,7 +722,7 @@ model corpus_collection_questionnaire_journeys {
   created_at            DateTime                                 @default(now()) @db.Timestamptz(6)
   updated_at            DateTime                                 @default(now()) @updatedAt @db.Timestamptz(6)
   events                corpus_collection_questionnaire_events[]
-  activity              corpus_collection_activities             @relation(fields: [activity_id], references: [id])
+  activity              corpus_collection_activities?            @relation(fields: [activity_id], references: [id], onDelete: Restrict)
   submission            corpus_collection_submissions?           @relation(fields: [submission_id], references: [id])
   user                  User                                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -737,12 +737,12 @@ model corpus_collection_questionnaire_events {
   event_id    String                                   @unique @db.Uuid
   journey_id  String                                   @db.Uuid
   user_id     String
-  activity_id BigInt
+  activity_id BigInt?
   event_name  String
   flow_type   String
   occurred_at DateTime                                 @default(now()) @db.Timestamptz(6)
   metadata    Json                                     @default("{}")
-  activity    corpus_collection_activities             @relation(fields: [activity_id], references: [id])
+  activity    corpus_collection_activities?            @relation(fields: [activity_id], references: [id], onDelete: Restrict)
   journey     corpus_collection_questionnaire_journeys @relation(fields: [journey_id], references: [id], onDelete: Cascade)
   user        User                                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -1111,6 +1111,18 @@ model user_merge_logs {
 
   @@index([source_user_id])
   @@index([target_user_id])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model app_lib_h5_survey {
+  id         BigInt    @default(autoincrement())
+  content    Json?     @default("{}")
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  wechat_id  String?
+
+  @@ignore
 }
 
 enum Role {

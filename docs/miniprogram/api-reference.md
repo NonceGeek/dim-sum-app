@@ -133,7 +133,12 @@ wx.setStorageSync('userInfo', user);
     "name": "用户昵称",
     "avatar": "https://wx.qlogo.cn/...",
     "role": "LEARNER",
-    "isSystemAdmin": false
+    "isSystemAdmin": false,
+    "questionnaireStatus": {
+      "completed": true,
+      "phoneVerified": true,
+      "completedAt": "2026-08-20T08:00:00.000Z"
+    }
   }
 }
 ```
@@ -149,6 +154,9 @@ wx.setStorageSync('userInfo', user);
 | `user.avatar` | string | 用户头像 URL |
 | `user.role` | string | 用户角色,枚举值见 [用户角色](#用户角色) |
 | `user.isSystemAdmin` | boolean | 是否为系统管理员 |
+| `user.questionnaireStatus.completed` | boolean | 是否已有不可变的参赛前问卷档案 |
+| `user.questionnaireStatus.phoneVerified` | boolean | 是否已绑定手机号 |
+| `user.questionnaireStatus.completedAt` | string \| null | 首次完成问卷时间，ISO 8601；未完成时为 `null` |
 
 #### 错误响应
 
@@ -372,7 +380,12 @@ console.log('用户信息:', user);
     "role": "LEARNER",
     "bio": "这是我的个人简介",
     "isSystemAdmin": false,
-    "phoneNumber": "13800138000"
+    "phoneNumber": "13800138000",
+    "questionnaireStatus": {
+      "completed": true,
+      "phoneVerified": true,
+      "completedAt": "2026-08-20T08:00:00.000Z"
+    }
   }
 }
 ```
@@ -389,6 +402,11 @@ console.log('用户信息:', user);
 | `user.bio` | string | 个人简介 (可能为空) |
 | `user.isSystemAdmin` | boolean | 是否为系统管理员 |
 | `user.phoneNumber` | string | 手机号 (可能为空) |
+| `user.questionnaireStatus.completed` | boolean | 是否已完成参赛前问卷 |
+| `user.questionnaireStatus.phoneVerified` | boolean | 是否已绑定手机号 |
+| `user.questionnaireStatus.completedAt` | string \| null | 首次完成问卷时间，未完成时为 `null` |
+
+`questionnaireStatus` 用于小程序提前决定问卷相关 UI。活动投稿和自由投稿都受问卷门禁影响，并调用 `/api/miniprogram/corpus_collection/questionnaire/entry` 准备对应的 `questionnaireJourneyId`；自由投稿调用时省略 `activityId`。
 
 #### 错误响应
 

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
     try {
       const input = entryRequestSchema.parse(await req.json()) as {
-        activityId: string;
+        activityId?: string;
         clientEventId: string;
       };
       return NextResponse.json(await createQuestionnaireJourney(user.userId, input));

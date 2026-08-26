@@ -196,7 +196,7 @@ UNIQUE(tenant_id, profile_id, interest_type)
 | `tenantId` | text | 必填 |
 | `entryClientEventId` | text | 必填 UUID |
 | `userId` | text | 必填 |
-| `activityId` | text | 必填，同租户活动 |
+| `activityId` | text | 活动投稿必填；自由投稿为空 |
 | `flowType` | text | full_questionnaire/phone_only/reused |
 | `registrationType` | text | first_time/reused |
 | `schemaVersion` | integer? | 问卷版本 |
@@ -233,7 +233,7 @@ UNIQUE(tenant_id, entry_client_event_id)
 | `eventId` | text | 保留源 event UUID |
 | `journeyId` | text | 必填，同租户 journey |
 | `userId` | text | 必填，聚合冗余字段 |
-| `activityId` | text | 必填，聚合冗余字段 |
+| `activityId` | text | 活动投稿填写；自由投稿为空，聚合冗余字段 |
 | `eventName` | text | 标准事件枚举 |
 | `flowType` | text | 旅程路径快照 |
 | `occurredAt` | timestamp | 必填 |

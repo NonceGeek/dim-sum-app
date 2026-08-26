@@ -78,14 +78,19 @@ export const questionnaireDefinitionSchema = z.object({
 });
 
 export const entryRequestSchema = z.object({
-  activityId: z.string().regex(/^\d+$/),
+  activityId: z.string().regex(/^\d+$/).optional(),
   clientEventId: z.string().uuid(),
 }).strict();
 
 export const clientEventRequestSchema = z.object({
   journeyId: z.string().uuid(),
   clientEventId: z.string().uuid(),
-  eventName: z.enum(["open_questionnaire", "continue_questionnaire", "cancel_questionnaire"]),
+  eventName: z.enum([
+    "open_questionnaire",
+    "continue_questionnaire",
+    "cancel_questionnaire",
+    "enter_submission_page",
+  ]),
 }).strict();
 
 export const submitQuestionnaireRequestSchema = z.object({

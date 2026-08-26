@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
-  assertQuestionnaireSubmissionGate,
+  assertQuestionnaireActivitySubmittable,
+  resolveQuestionnaireSubmissionJourney,
 } from "@/lib/services/questionnaire-journey";
 
 export const PUBLIC_SUBMISSION_WHERE = {
@@ -607,21 +608,30 @@ export async function createCorpusSubmission(userId: string, body: any) {
     const activity = activityId
       ? await tx.corpus_collection_activities.findUnique({
           where: { id: activityId },
-          select: { questionnaire_gate_enabled: true },
+          select: {
+            questionnaire_gate_enabled: true,
+            status: true,
+            starts_at: true,
+            ends_at: true,
+          },
         })
       : null;
     if (activityId && !activity) {
       throw new Error("Activity not found");
     }
+    const questionnaireGateRequired = activityId === null || activity?.questionnaire_gate_enabled === true;
+    if (activity) {
+      assertQuestionnaireActivitySubmittable(activity);
+    }
     const journey =
-      activity?.questionnaire_gate_enabled
-        ? await assertQuestionnaireSubmissionGate(
+      questionnaireGateRequired
+        ? await resolveQuestionnaireSubmissionJourney(
             tx,
             userId,
-            activityId!,
+            activityId,
             typeof body.questionnaireJourneyId === "string"
               ? body.questionnaireJourneyId
-              : "",
+              : undefined,
           )
         : null;
     const submission = await tx.corpus_collection_submissions.create({
@@ -652,7 +662,7 @@ export async function createCorpusSubmission(userId: string, body: any) {
           event_id: crypto.randomUUID(),
           journey_id: journey.id,
           user_id: userId,
-          activity_id: activityId!,
+          activity_id: activityId,
           event_name: "submit_submission_success",
           flow_type: journey.flow_type,
           metadata: { submissionId: submission.id.toString() },

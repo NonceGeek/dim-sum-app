@@ -9,7 +9,11 @@ export async function POST(req: NextRequest) {
       const input = clientEventRequestSchema.parse(await req.json()) as {
         journeyId: string;
         clientEventId: string;
-        eventName: "open_questionnaire" | "continue_questionnaire" | "cancel_questionnaire";
+        eventName:
+          | "open_questionnaire"
+          | "continue_questionnaire"
+          | "cancel_questionnaire"
+          | "enter_submission_page";
       };
       return NextResponse.json(await recordQuestionnaireClientEvent(user.userId, input));
     } catch (error) {

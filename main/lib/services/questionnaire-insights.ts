@@ -165,7 +165,7 @@ export async function getQuestionnaireOverview(
 
   const activityMap = new Map<string, typeof journeys>();
   for (const journey of journeys) {
-    const key = journey.activity_id.toString();
+    const key = journey.activity_id?.toString() ?? "free";
     activityMap.set(key, [...(activityMap.get(key) ?? []), journey]);
   }
   const activities = [...activityMap.values()].map((rows) => {
@@ -193,17 +193,17 @@ export async function getQuestionnaireOverview(
       return code ? labels.get(code) ?? code : "—";
     };
     return {
-      id: activity.id.toString(),
-      title: activity.title,
-      status: activity.status,
+      id: activity?.id.toString() ?? "free",
+      title: activity?.title ?? "自由投稿",
+      status: activity?.status ?? "published",
       timeStatus:
-        activity.ends_at && activity.ends_at.getTime() < Date.now()
+        activity?.ends_at && activity.ends_at.getTime() < Date.now()
           ? "ended"
-          : activity.status === "published"
+          : !activity || activity.status === "published"
             ? "ongoing"
             : activity.status,
-      startsAt: activity.starts_at?.toISOString() ?? null,
-      endsAt: activity.ends_at?.toISOString() ?? null,
+      startsAt: activity?.starts_at?.toISOString() ?? null,
+      endsAt: activity?.ends_at?.toISOString() ?? null,
       registrationCount: registeredUsers.size,
       questionnaireCompletionRate:
         registeredUsers.size < MIN_SAMPLE ? null : percent(completedQuestionnaire, clicked),
@@ -211,7 +211,7 @@ export async function getQuestionnaireOverview(
       suppressed: registeredUsers.size < MIN_SAMPLE,
       topAgeRange: top(ageCounts, labelMaps.age),
       topCultureRegion: top(regionCounts, labelMaps.region),
-      activityTag: Array.isArray(activity.tags) && typeof activity.tags[0] === "string" ? activity.tags[0] : "—",
+      activityTag: Array.isArray(activity?.tags) && typeof activity.tags[0] === "string" ? activity.tags[0] : "—",
     };
   }).sort((a, b) => (b.submissionRate ?? -1) - (a.submissionRate ?? -1));
 

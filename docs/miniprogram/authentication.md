@@ -140,10 +140,17 @@ wx.login({
     "name": "用户昵称",
     "avatar": "https://...",
     "role": "LEARNER",
-    "isSystemAdmin": false
+    "isSystemAdmin": false,
+    "questionnaireStatus": {
+      "completed": true,
+      "phoneVerified": true,
+      "completedAt": "2026-08-20T08:00:00.000Z"
+    }
   }
 }
 ```
+
+`questionnaireStatus` 同时由 `GET /api/miniprogram/user/profile` 返回。语料采集小程序可将其保存在本地用于 UI 分流；活动投稿和自由投稿都需调用 questionnaire `/entry` 准备 journey，自由投稿调用时省略 `activityId`。
 
 **错误响应**:
 
