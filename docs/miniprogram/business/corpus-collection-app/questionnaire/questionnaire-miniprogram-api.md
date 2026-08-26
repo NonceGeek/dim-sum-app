@@ -19,7 +19,7 @@
 
 活动详情仍可匿名读取，但点击“我要投稿”后的问卷与投稿流程必须登录。
 
-登录接口和用户资料接口都会返回 `user.questionnaireStatus`，供小程序提前决定展示完整问卷、手机号补充或直达投稿。该状态只用于客户端 UI 分流；服务端仍以问卷档案和活动专属 journey 为最终真源。
+登录接口和用户资料接口都会返回 `user.questionnaireStatus`，供小程序提前决定展示完整问卷、手机号补充或直达投稿。该状态只用于客户端 UI 分流；服务端仍以问卷档案和当前投稿范围（指定活动或自由投稿）的 journey 为最终真源。
 
 ```json
 {
@@ -48,7 +48,7 @@
 | 400 | `PHONE_INVALID` | 手机号格式错误 |
 | 400 | `PHONE_CODE_INVALID` | 验证码错误或已过期 |
 | 401 | `AUTH_REQUIRED` | Token 缺失或失效 |
-| 403 | `QUESTIONNAIRE_REQUIRED` | 未完成登记，禁止进入或提交活动投稿 |
+| 403 | `QUESTIONNAIRE_REQUIRED` | 未完成登记，禁止进入或提交活动投稿/自由投稿 |
 | 404 | `ACTIVITY_NOT_FOUND` | 活动不存在 |
 | 409 | `MERGE_REQUIRED` | 手机号属于另一个账号，需要用户确认合并 |
 | 409 | `PROFILE_ALREADY_EXISTS` | 重复创建不可变问卷档案 |
@@ -121,9 +121,9 @@ Schema 来自数据库当前已发布版本。客户端必须保存进入接口�
 }
 ```
 
-## 4. 创建参赛旅程
+## 4. 创建投稿旅程
 
-用户点击某个活动的“我要投稿”后调用。该接口负责记录 `click_submit_cta` 并返回下一步。
+用户点击活动投稿或自由投稿的“我要投稿”后调用。该接口负责记录 `click_submit_cta` 并返回下一步。
 
 - URL：`POST /api/miniprogram/corpus_collection/questionnaire/entry`
 - 认证：必须
@@ -137,7 +137,7 @@ Schema 来自数据库当前已发布版本。客户端必须保存进入接口�
 }
 ```
 
-`clientEventId` 是客户端生成的 UUID。网络重试必须复用同一个值，服务端返回同一结果。
+`activityId` 为可选字段：活动投稿传活动 ID，自由投稿省略。`clientEventId` 是客户端生成的 UUID。网络重试必须复用同一个值，服务端返回同一结果。
 
 ### 首次登记响应 `200`
 
@@ -199,6 +199,8 @@ Schema 来自数据库当前已发布版本。客户端必须保存进入接口�
 ```
 
 资料完整用户应先直接打开投稿页，再在后台异步调用 `/entry` 准备埋点 journey。`/entry` 记录 `click_submit_cta`，但不代表投稿页已经真实打开；客户端拿到 `questionnaireJourneyId` 后异步上报 `enter_submission_page`。journey 请求失败不得关闭或阻塞投稿页。
+
+自由投稿的返回结构相同，其中 `activityId` 为 `null`。小程序后续提交自由投稿时继续省略 `activityId`，不得把字符串 `"null"` 作为活动 ID 发送。
 
 为兼容优化上线前使用相同 `clientEventId` 创建、且仍停留在 `completed` 状态的旧 journey，服务端可能返回 `nextAction = enter_submission`；客户端遇到该值时继续调用第 8 节接口即可。
 
@@ -399,7 +401,7 @@ questionnaire-bind:<phoneNumber>:<userId>
 POST /api/miniprogram/corpus_collection/submissions
 ```
 
-活动投稿请求支持关联字段：
+活动投稿和自由投稿均支持问卷关联字段；自由投稿省略 `activityId`：
 
 ```json
 {
@@ -417,8 +419,8 @@ POST /api/miniprogram/corpus_collection/submissions
 
 - 首次问卷或手机号补充流程完成后，客户端仍应传 `questionnaireJourneyId`，以保持完整归因。
 - 已完成问卷且已绑定手机号时，`questionnaireJourneyId` 可选；异步 journey 已返回就传，未返回或失败则省略。
-- 不带 `activityId` 的普通投稿不要求该字段。
-- 旅程与活动、用户不一致时返回 `403 QUESTIONNAIRE_REQUIRED`。
+- 自由投稿也受问卷门禁影响；首次问卷或手机号补充流程仍需传 `questionnaireJourneyId`。
+- 旅程与投稿范围（指定活动或自由投稿）、用户不一致时返回 `403 QUESTIONNAIRE_REQUIRED`。
 - 旅程过期返回 `410 JOURNEY_EXPIRED`，小程序重新调用进入接口。
 - 资料完整用户省略 journey 时，服务端校验真实档案与手机号，查找最近有效 reused journey，必要时在投稿事务内补建。
 - 投稿创建成功与 `submit_submission_success` 事件在同一事务内完成。
@@ -468,6 +470,6 @@ OPEN_SUBMISSION_PAGE
 8. `phone_only` 只接受手机号绑定，不接受答案覆盖。
 9. 重复事件和重复提交保持幂等。
 10. 伪造或过期 journey 时创建失败；资料完整用户省略 journey 时正常投稿并由服务端查找或补建。
-11. 普通非活动投稿不受问卷门禁影响。
+11. 自由投稿与活动投稿受同一问卷门禁影响；自由投稿 journey 的 `activityId` 返回 `null`。
 12. 客户端日志和接口响应中无完整手机号、验证码或已保存答案。
 13. 登录和 profile 中的 `questionnaireStatus` 与问卷档案、手机号状态一致；客户端刷新后不会把本地状态作为投稿门禁真源。

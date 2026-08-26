@@ -4,6 +4,7 @@ import {
   getQuestionnaireEntryNavigation,
   resolveQuestionnaireSubmissionJourney,
 } from "./questionnaire-journey";
+import { entryRequestSchema } from "./questionnaire-schema";
 import { buildQuestionnaireStatus } from "./questionnaire-status";
 
 test("builds questionnaire status from the immutable profile and phone", () => {
@@ -116,6 +117,44 @@ test("submission creates a fallback reused journey when analytics preparation fa
   assert.equal(result, createdJourney);
   assert.equal(createData?.flow_type, "reused");
   assert.equal(createData?.status, "entered_submission");
+});
+
+test("free submission entry accepts an omitted activity id", () => {
+  assert.deepEqual(
+    entryRequestSchema.parse({
+      clientEventId: "b25da8a8-acde-4ee8-a2ec-d2d4eb07e0fe",
+    }),
+    { clientEventId: "b25da8a8-acde-4ee8-a2ec-d2d4eb07e0fe" },
+  );
+});
+
+test("free submission creates a journey without an activity", async () => {
+  let createData: Record<string, unknown> | undefined;
+  const createdJourney = {
+    id: "9f2ca850-1b91-4c96-8124-bc7f4357e381",
+    expires_at: new Date(Date.now() + 60_000),
+  };
+  const tx = {
+    user: {
+      findUnique: async () => ({
+        phoneNumber: "13800138000",
+        questionnaireProfile: { id: BigInt(1) },
+      }),
+    },
+    corpus_collection_questionnaire_journeys: {
+      findFirst: async () => null,
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        createData = data;
+        return createdJourney;
+      },
+    },
+  } as unknown as Parameters<typeof resolveQuestionnaireSubmissionJourney>[0];
+
+  const result = await resolveQuestionnaireSubmissionJourney(tx, "user-1", null);
+
+  assert.equal(result, createdJourney);
+  assert.equal(createData?.activity_id, null);
+  assert.equal(createData?.flow_type, "reused");
 });
 
 test("submission without a journey still rejects an incomplete questionnaire profile", async () => {

@@ -59,7 +59,7 @@ export function getQuestionnaireEntryNavigation(
 
 function entryResponse(journey: {
   id: string;
-  activity_id: bigint;
+  activity_id: bigint | null;
   flow_type: string;
   registration_type: string;
   status: string;
@@ -76,7 +76,7 @@ function entryResponse(journey: {
     ...(canOpenSubmission
       ? {
           questionnaireJourneyId: journey.id,
-          activityId: journey.activity_id.toString(),
+          activityId: journey.activity_id?.toString() ?? null,
           allowed: true,
         }
       : {}),
@@ -94,9 +94,9 @@ function entryResponse(journey: {
 
 export async function createQuestionnaireJourney(
   userId: string,
-  input: { activityId: string; clientEventId: string },
+  input: { activityId?: string; clientEventId: string },
 ) {
-  const activityId = BigInt(input.activityId);
+  const activityId = input.activityId ? BigInt(input.activityId) : null;
   const existing = await prisma.corpus_collection_questionnaire_journeys.findUnique({
     where: { entry_client_event_id: input.clientEventId },
     include: { user: { select: { phoneNumber: true } } },
@@ -112,10 +112,12 @@ export async function createQuestionnaireJourney(
   }
 
   const [activity, user] = await Promise.all([
-    prisma.corpus_collection_activities.findUnique({
-      where: { id: activityId },
-      select: { id: true, status: true, starts_at: true, ends_at: true },
-    }),
+    activityId
+      ? prisma.corpus_collection_activities.findUnique({
+          where: { id: activityId },
+          select: { id: true, status: true, starts_at: true, ends_at: true },
+        })
+      : Promise.resolve(null),
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -125,9 +127,9 @@ export async function createQuestionnaireJourney(
       },
     }),
   ]);
-  if (!activity) throw new QuestionnaireError("ACTIVITY_NOT_FOUND", 404, "活动不存在");
+  if (activityId && !activity) throw new QuestionnaireError("ACTIVITY_NOT_FOUND", 404, "活动不存在");
   if (!user) throw new QuestionnaireError("AUTH_REQUIRED", 401, "用户不存在");
-  assertQuestionnaireActivitySubmittable(activity);
+  if (activity) assertQuestionnaireActivitySubmittable(activity);
 
   const profile = user.questionnaireProfile;
   const flowType = profile ? (user.phoneNumber ? "reused" : "phone_only") : "full_questionnaire";
@@ -333,7 +335,7 @@ export async function enterQuestionnaireSubmission(
   });
   if (!journey) throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
   assertJourneyActive(journey);
-  assertQuestionnaireActivitySubmittable(journey.activity);
+  if (journey.activity) assertQuestionnaireActivitySubmittable(journey.activity);
   const profile = await prisma.corpus_collection_questionnaire_profiles.findUnique({ where: { user_id: userId } });
   if (!profile || !journey.user.phoneNumber || !["completed", "entered_submission"].includes(journey.status)) {
     throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
@@ -369,7 +371,7 @@ export async function enterQuestionnaireSubmission(
   ]);
   return {
     allowed: true,
-    activityId: journey.activity_id.toString(),
+    activityId: journey.activity_id?.toString() ?? null,
     questionnaireJourneyId: journey.id,
     expiresAt: journey.expires_at.toISOString(),
     nextAction: "open_submission_page",
@@ -379,7 +381,7 @@ export async function enterQuestionnaireSubmission(
 export async function resolveQuestionnaireSubmissionJourney(
   tx: Prisma.TransactionClient,
   userId: string,
-  activityId: bigint,
+  activityId: bigint | null,
   journeyId?: string,
 ) {
   if (journeyId !== undefined) {

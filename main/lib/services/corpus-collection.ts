@@ -619,15 +619,16 @@ export async function createCorpusSubmission(userId: string, body: any) {
     if (activityId && !activity) {
       throw new Error("Activity not found");
     }
-    if (activity?.questionnaire_gate_enabled) {
+    const questionnaireGateRequired = activityId === null || activity?.questionnaire_gate_enabled === true;
+    if (activity) {
       assertQuestionnaireActivitySubmittable(activity);
     }
     const journey =
-      activity?.questionnaire_gate_enabled
+      questionnaireGateRequired
         ? await resolveQuestionnaireSubmissionJourney(
             tx,
             userId,
-            activityId!,
+            activityId,
             typeof body.questionnaireJourneyId === "string"
               ? body.questionnaireJourneyId
               : undefined,
@@ -661,7 +662,7 @@ export async function createCorpusSubmission(userId: string, body: any) {
           event_id: crypto.randomUUID(),
           journey_id: journey.id,
           user_id: userId,
-          activity_id: activityId!,
+          activity_id: activityId,
           event_name: "submit_submission_success",
           flow_type: journey.flow_type,
           metadata: { submissionId: submission.id.toString() },

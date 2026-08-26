@@ -78,7 +78,7 @@ export const questionnaireDefinitionSchema = z.object({
 });
 
 export const entryRequestSchema = z.object({
-  activityId: z.string().regex(/^\d+$/),
+  activityId: z.string().regex(/^\d+$/).optional(),
   clientEventId: z.string().uuid(),
 }).strict();
 

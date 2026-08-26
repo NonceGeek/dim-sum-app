@@ -150,7 +150,7 @@ wx.login({
 }
 ```
 
-`questionnaireStatus` 同时由 `GET /api/miniprogram/user/profile` 返回。语料采集小程序可将其保存在本地用于 UI 分流，但活动投稿仍需调用 questionnaire `/entry` 获取活动专属 journey。
+`questionnaireStatus` 同时由 `GET /api/miniprogram/user/profile` 返回。语料采集小程序可将其保存在本地用于 UI 分流；活动投稿和自由投稿都需调用 questionnaire `/entry` 准备 journey，自由投稿调用时省略 `activityId`。
 
 **错误响应**:
 

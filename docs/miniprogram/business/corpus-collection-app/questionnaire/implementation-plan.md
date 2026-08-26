@@ -251,7 +251,7 @@ POST /api/miniprogram/corpus_collection/questionnaire/enter-submission
 POST /api/miniprogram/corpus_collection/submissions
 ```
 
-只对带 `activityId` 的投稿强制 `questionnaireJourneyId`。
+活动投稿和自由投稿均强制问卷门禁。自由投稿省略 `activityId`，对应 journey/event 的 `activity_id` 为 `null`。
 
 手机号绑定必须抽出能同时接受 Web session 用户和小程序 JWT 用户的领域函数，不能让小程序调用 Web 专用 `/api/user/phone/bind`。
 
@@ -349,7 +349,7 @@ GET  /api/admin/corpus-collection/questionnaire-insights/exports/:id
 - 五个问卷接口。
 - 活动投稿增加旅程校验。
 - 服务端事务写完成与投稿成功事件。
-- 兼容普通非活动投稿。
+- 自由投稿接入与活动投稿一致的问卷门禁和 journey 归因。
 - 输出小程序联调环境和示例。
 
 ### Phase 3：权限与聚合查询

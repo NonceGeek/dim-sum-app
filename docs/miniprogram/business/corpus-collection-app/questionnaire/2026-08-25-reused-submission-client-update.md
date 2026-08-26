@@ -10,6 +10,8 @@
 
 问卷 journey 继续用于埋点归因和后台统计，但不再作为资料完整用户进入投稿页或最终投稿的前置通行证。异步 journey 或埋点失败不得阻塞投稿业务。
 
+活动投稿和自由投稿都受同一套问卷门禁影响。两者的唯一区别是：活动投稿传 `activityId`，自由投稿省略 `activityId`；自由投稿 journey 响应中的 `activityId` 为 `null`。
+
 ## 2. 登录与用户状态
 
 以下两个接口都会返回 `user.questionnaireStatus`：
@@ -71,6 +73,14 @@ Content-Type: application/json
 }
 ```
 
+自由投稿请求：
+
+```json
+{
+  "clientEventId": "b25da8a8-acde-4ee8-a2ec-d2d4eb07e0fe"
+}
+```
+
 资料完整用户响应：
 
 ```json
@@ -87,6 +97,8 @@ Content-Type: application/json
 ```
 
 该请求由点击动作异步触发，服务端会记录 `click_submit_cta`。网络重试必须复用相同的 `clientEventId`。
+
+自由投稿响应结构相同，但 `activityId` 为 `null`。首次用户和仅缺手机号用户也必须先调用该接口，不能因为是自由投稿而跳过问卷流程。
 
 ## 5. 异步上报投稿页打开事件
 
@@ -139,12 +151,25 @@ journey 未取得：
 }
 ```
 
+自由投稿同样传或省略 `questionnaireJourneyId`，但不传 `activityId`：
+
+```json
+{
+  "questionnaireJourneyId": "9f2ca850-1b91-4c96-8124-bc7f4357e381",
+  "submissionType": "story",
+  "title": "西关旧事",
+  "intro": "投稿内容",
+  "tags": ["城市记忆"],
+  "media": []
+}
+```
+
 缺少 `questionnaireJourneyId` 时，服务端会在投稿事务内：
 
-1. 校验活动仍处于可投稿状态。
+1. 活动投稿校验活动仍处于可投稿状态；自由投稿跳过活动状态校验。
 2. 校验用户已有问卷档案。
 3. 校验用户已绑定手机号。
-4. 查找该用户、该活动最近一个有效的 reused journey。
+4. 查找该用户在当前投稿范围（指定活动或自由投稿）最近一个有效的 reused journey。
 5. 找不到时补建 reused journey。
 6. 创建投稿、关联 journey 并记录投稿成功事件。
 
@@ -153,11 +178,11 @@ journey 未取得：
 ## 7. 推荐客户端伪代码
 
 ```ts
-function handleSubmitEntry(activityId: string) {
+function handleSubmitEntry(activityId?: string) {
   const status = user.questionnaireStatus;
 
   if (!status.completed || !status.phoneVerified) {
-    return startQuestionnaireFlow(activityId);
+    return startQuestionnaireFlow(activityId); // 自由投稿传 undefined
   }
 
   navigateToPostPage(activityId);
@@ -185,7 +210,7 @@ function handleSubmitEntry(activityId: string) {
 function submitPost(form: PostForm) {
   return createSubmission({
     ...form,
-    activityId: form.activityId,
+    ...(form.activityId ? { activityId: form.activityId } : {}),
     ...(postPageStore.journeyId
       ? { questionnaireJourneyId: postPageStore.journeyId }
       : {}),
@@ -202,3 +227,5 @@ function submitPost(form: PostForm) {
 5. 未完成问卷或未绑定手机号的用户省略 journey 时返回 `403 QUESTIONNAIRE_REQUIRED`。
 6. 投稿页打开后只上报一次 `enter_submission_page`。
 7. 所有埋点重试复用原 `clientEventId`，避免重复计数。
+8. 自由投稿首次用户会进入完整问卷，缺手机号用户会进入手机号补充流程。
+9. 自由投稿资料完整用户可直接打开投稿页，并异步创建 `activityId = null` 的 journey。

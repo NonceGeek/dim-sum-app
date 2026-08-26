@@ -406,7 +406,7 @@ console.log('用户信息:', user);
 | `user.questionnaireStatus.phoneVerified` | boolean | 是否已绑定手机号 |
 | `user.questionnaireStatus.completedAt` | string \| null | 首次完成问卷时间，未完成时为 `null` |
 
-`questionnaireStatus` 用于小程序提前决定问卷相关 UI。活动投稿仍必须调用 `/api/miniprogram/corpus_collection/questionnaire/entry` 获取当前活动专属的 `questionnaireJourneyId`。
+`questionnaireStatus` 用于小程序提前决定问卷相关 UI。活动投稿和自由投稿都受问卷门禁影响，并调用 `/api/miniprogram/corpus_collection/questionnaire/entry` 准备对应的 `questionnaireJourneyId`；自由投稿调用时省略 `activityId`。
 
 #### 错误响应
 
