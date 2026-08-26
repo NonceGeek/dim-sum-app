@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
+import { buildQuestionnaireStatus } from "@/lib/services/questionnaire-status";
 
 /**
  * Get user profile
@@ -27,6 +28,9 @@ export async function GET(req: NextRequest) {
           bio: true,
           isSystemAdmin: true,
           phoneNumber: true,
+          questionnaireProfile: {
+            select: { completed_at: true },
+          },
         },
       });
 
@@ -37,10 +41,16 @@ export async function GET(req: NextRequest) {
         );
       }
 
+      const { questionnaireProfile, ...profile } = user;
+
       return NextResponse.json({
         user: {
-          ...user,
+          ...profile,
           avatar: user.wechatAvatar || user.image,
+          questionnaireStatus: buildQuestionnaireStatus({
+            phoneNumber: user.phoneNumber,
+            questionnaireProfile,
+          }),
         },
       });
     } catch (error) {

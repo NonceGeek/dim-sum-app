@@ -12,6 +12,7 @@
 2. [小程序接口文档](./questionnaire-miniprogram-api.md)
 3. [实施计划](./implementation-plan.md)
 4. [多租户迁移实施计划](./multi-tenant-migration-plan.md)
+5. [已完成问卷用户无阻塞投稿升级说明](./2026-08-25-reused-submission-client-update.md)
 
 ### 原始产品输入
 

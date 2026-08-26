@@ -152,6 +152,8 @@ V1 不负责：
 | `phone_only` | 只展示联系方式补充弹窗 | 兼容历史数据或异常恢复；新提交应保持问卷和绑定原子性 |
 | `reused` | 直接进入投稿页 | 不展示完整问卷 |
 
+小程序可从登录或用户 profile 响应中的 `questionnaireStatus` 提前获知问卷档案与手机号状态。资料完整用户直接进入投稿页，并在后台异步调用 `/questionnaire/entry` 准备统计 journey；该异步请求失败不影响投稿。最终服务端仍以数据库中的问卷档案和手机号为业务真源。
+
 `registrationType` 的后台筛选映射：
 
 - `first_time`：`full_questionnaire` 与 `phone_only`。
@@ -182,12 +184,12 @@ V1 不负责：
 
 ### 6.3 资料复用
 
-`reused` 路径不弹问卷，服务端仍创建本次参赛旅程并记录进入投稿页事件，以便按活动归因。
+`reused` 路径不弹问卷，也不等待 journey。小程序先打开投稿页，再异步调用 `/questionnaire/entry` 创建统计 journey并记录点击事件；拿到 journeyId 后异步上报真实的 `enter_submission_page`。最终投稿可以携带该 journeyId，也可以在埋点请求未完成或失败时省略，由服务端查找或补建 reused journey。
 
 ### 6.4 投稿门禁
 
-- 活动投稿必须携带有效的 `questionnaireJourneyId`。
-- 旅程必须属于当前用户和当前活动，且已记录 `enter_submission_page`。
+- 首次问卷和手机号补充流程的活动投稿必须携带有效的 `questionnaireJourneyId`。
+- 资料完整用户的 journeyId 可选；传入时必须属于当前用户和当前活动，省略时服务端校验档案与手机号并查找或补建 reused journey。
 - 旅程有效期为 24 小时。
 - 普通非活动投稿保持现有行为，不要求问卷旅程。
 - 成功创建投稿时，服务端在同一事务内记录 `submit_submission_success`，不能依赖前端补报。
@@ -198,14 +200,14 @@ V1 不负责：
 
 | 事件 | 记录方 | 含义 |
 |---|---|---|
-| `click_submit_cta` | 进入接口服务端 | 收到用户对某活动的投稿意图 |
+| `click_submit_cta` | 小程序异步调用进入接口，服务端记录 | 收到用户对某活动的投稿意图 |
 | `open_questionnaire` | 小程序上报 | 问卷或手机号弹窗首次渲染成功 |
 | `continue_questionnaire` | 小程序上报 | 用户从用途说明进入填写页 |
 | `cancel_questionnaire` | 小程序上报 | 用户主动取消本次登记 |
 | `complete_questionnaire` | 提交接口服务端 | 问卷档案与联系方式均已完整 |
 | `questionnaire_submit_success` | 提交接口服务端 | 问卷提交成功兼容事件，与 `complete_questionnaire` 同时写入 |
 | `phone_submit_fail` | 提交接口服务端 | 手机号格式、验证码或账号档案冲突等提交失败；`MERGE_REQUIRED` 不计入 |
-| `enter_submission_page` | 进入投稿接口服务端 | 服务端校验通过并允许进入投稿页 |
+| `enter_submission_page` | 小程序异步上报 | 投稿页真实完成打开 |
 | `submit_submission_success` | 投稿创建接口服务端 | 投稿记录创建成功 |
 
 旧 PRD 中的 `join_click`、`questionnaire_popup_show`、`post_entry_success` 不再作为实现名称。`questionnaire_submit_success` 作为兼容埋点与标准事件 `complete_questionnaire` 双写；洞察看板继续以 `complete_questionnaire` 为统计口径。

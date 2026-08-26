@@ -18,7 +18,11 @@ function maskPhone(phoneNumber: string | null) {
   return phoneNumber ? `${phoneNumber.slice(0, 3)}****${phoneNumber.slice(-4)}` : null;
 }
 
-function assertSubmittable(activity: { status: string; starts_at: Date | null; ends_at: Date | null }) {
+export function assertQuestionnaireActivitySubmittable(activity: {
+  status: string;
+  starts_at: Date | null;
+  ends_at: Date | null;
+}) {
   const now = Date.now();
   if (
     activity.status !== "published" ||
@@ -35,22 +39,47 @@ function assertJourneyActive(journey: { expires_at: Date }) {
   }
 }
 
+export function getQuestionnaireEntryNavigation(
+  flowType: string,
+  status: string,
+) {
+  const canOpenSubmission =
+    flowType === "reused" && status === "entered_submission";
+  const nextAction =
+    flowType === "full_questionnaire"
+      ? "show_questionnaire_intro"
+      : flowType === "phone_only"
+        ? "show_phone_binding"
+        : canOpenSubmission
+          ? "open_submission_page"
+          : "enter_submission";
+
+  return { canOpenSubmission, nextAction };
+}
+
 function entryResponse(journey: {
   id: string;
+  activity_id: bigint;
   flow_type: string;
   registration_type: string;
+  status: string;
   expires_at: Date;
   user: { phoneNumber: string | null };
 }, questionnaire: Awaited<ReturnType<typeof getPublishedQuestionnaireSchema>> | null) {
   const verified = Boolean(journey.user.phoneNumber);
-  const nextAction =
-    journey.flow_type === "full_questionnaire"
-      ? "show_questionnaire_intro"
-      : journey.flow_type === "phone_only"
-        ? "show_phone_binding"
-        : "enter_submission";
+  const { canOpenSubmission, nextAction } = getQuestionnaireEntryNavigation(
+    journey.flow_type,
+    journey.status,
+  );
   return {
     journeyId: journey.id,
+    ...(canOpenSubmission
+      ? {
+          questionnaireJourneyId: journey.id,
+          activityId: journey.activity_id.toString(),
+          allowed: true,
+        }
+      : {}),
     flowType: journey.flow_type,
     registrationType: journey.registration_type,
     nextAction,
@@ -82,24 +111,32 @@ export async function createQuestionnaireJourney(
     return entryResponse(existing, questionnaire);
   }
 
-  const [activity, user, profile] = await Promise.all([
+  const [activity, user] = await Promise.all([
     prisma.corpus_collection_activities.findUnique({
       where: { id: activityId },
       select: { id: true, status: true, starts_at: true, ends_at: true },
     }),
-    prisma.user.findUnique({ where: { id: userId }, select: { id: true, phoneNumber: true } }),
-    prisma.corpus_collection_questionnaire_profiles.findUnique({ where: { user_id: userId } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        phoneNumber: true,
+        questionnaireProfile: { select: { id: true } },
+      },
+    }),
   ]);
   if (!activity) throw new QuestionnaireError("ACTIVITY_NOT_FOUND", 404, "活动不存在");
   if (!user) throw new QuestionnaireError("AUTH_REQUIRED", 401, "用户不存在");
-  assertSubmittable(activity);
+  assertQuestionnaireActivitySubmittable(activity);
 
+  const profile = user.questionnaireProfile;
   const flowType = profile ? (user.phoneNumber ? "reused" : "phone_only") : "full_questionnaire";
   const questionnaire = flowType === "full_questionnaire"
     ? await getPublishedQuestionnaireSchema()
     : null;
   const now = new Date();
   const journey = await prisma.$transaction(async (tx) => {
+    const canOpenSubmission = flowType === "reused";
     const created = await tx.corpus_collection_questionnaire_journeys.create({
       data: {
         entry_client_event_id: input.clientEventId,
@@ -108,8 +145,9 @@ export async function createQuestionnaireJourney(
         flow_type: flowType,
         registration_type: profile ? "reused" : "first_time",
         schema_version: questionnaire?.schemaVersion ?? null,
-        status: flowType === "reused" ? "completed" : "started",
-        completed_at: flowType === "reused" ? now : null,
+        status: canOpenSubmission ? "entered_submission" : "started",
+        completed_at: canOpenSubmission ? now : null,
+        entered_submission_at: null,
         expires_at: new Date(now.getTime() + JOURNEY_TTL_MS),
       },
       include: { user: { select: { phoneNumber: true } } },
@@ -141,6 +179,12 @@ export async function recordQuestionnaireClientEvent(
   if (input.eventName === "cancel_questionnaire" && journey.status === "submitted") {
     throw new QuestionnaireError("JOURNEY_STATE_CONFLICT", 409, "已投稿旅程不能取消");
   }
+  if (
+    input.eventName === "enter_submission_page" &&
+    !["completed", "entered_submission", "submitted"].includes(journey.status)
+  ) {
+    throw new QuestionnaireError("JOURNEY_STATE_CONFLICT", 409, "参赛旅程尚未允许进入投稿页");
+  }
   const existingEvent = await prisma.corpus_collection_questionnaire_events.findUnique({
     where: { event_id: input.clientEventId },
   });
@@ -170,6 +214,14 @@ export async function recordQuestionnaireClientEvent(
           where: { id: journey.id },
           data: { status: "cancelled" },
         })]
+      : input.eventName === "enter_submission_page"
+        ? [prisma.corpus_collection_questionnaire_journeys.update({
+            where: { id: journey.id },
+            data: {
+              status: journey.status === "completed" ? "entered_submission" : journey.status,
+              entered_submission_at: journey.entered_submission_at ?? new Date(),
+            },
+          })]
       : []),
   ]);
   return { success: true, eventId: input.clientEventId };
@@ -281,7 +333,7 @@ export async function enterQuestionnaireSubmission(
   });
   if (!journey) throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
   assertJourneyActive(journey);
-  assertSubmittable(journey.activity);
+  assertQuestionnaireActivitySubmittable(journey.activity);
   const profile = await prisma.corpus_collection_questionnaire_profiles.findUnique({ where: { user_id: userId } });
   if (!profile || !journey.user.phoneNumber || !["completed", "entered_submission"].includes(journey.status)) {
     throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
@@ -324,23 +376,64 @@ export async function enterQuestionnaireSubmission(
   };
 }
 
-export async function assertQuestionnaireSubmissionGate(
+export async function resolveQuestionnaireSubmissionJourney(
   tx: Prisma.TransactionClient,
   userId: string,
   activityId: bigint,
-  journeyId: string,
+  journeyId?: string,
 ) {
-  if (!UUID_PATTERN.test(journeyId)) {
-    throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
+  if (journeyId !== undefined) {
+    if (!UUID_PATTERN.test(journeyId)) {
+      throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "参赛旅程无效");
+    }
+    const journey = await tx.corpus_collection_questionnaire_journeys.findFirst({
+      where: { id: journeyId, user_id: userId, activity_id: activityId },
+    });
+    if (!journey || journey.status !== "entered_submission") {
+      throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "参赛旅程无效");
+    }
+    assertJourneyActive(journey);
+    return journey;
   }
-  const journey = await tx.corpus_collection_questionnaire_journeys.findFirst({
-    where: { id: journeyId, user_id: userId, activity_id: activityId },
+
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    select: {
+      phoneNumber: true,
+      questionnaireProfile: { select: { id: true } },
+    },
   });
-  if (!journey || journey.status !== "entered_submission") {
+  if (!user?.questionnaireProfile || !user.phoneNumber) {
     throw new QuestionnaireError("QUESTIONNAIRE_REQUIRED", 403, "请先完成参赛前登记");
   }
-  assertJourneyActive(journey);
-  return journey;
+
+  const now = new Date();
+  const existingJourney = await tx.corpus_collection_questionnaire_journeys.findFirst({
+    where: {
+      user_id: userId,
+      activity_id: activityId,
+      flow_type: "reused",
+      status: "entered_submission",
+      submission_id: null,
+      expires_at: { gt: now },
+    },
+    orderBy: { started_at: "desc" },
+  });
+  if (existingJourney) return existingJourney;
+
+  return tx.corpus_collection_questionnaire_journeys.create({
+    data: {
+      entry_client_event_id: crypto.randomUUID(),
+      user_id: userId,
+      activity_id: activityId,
+      flow_type: "reused",
+      registration_type: "reused",
+      status: "entered_submission",
+      completed_at: now,
+      entered_submission_at: null,
+      expires_at: new Date(now.getTime() + JOURNEY_TTL_MS),
+    },
+  });
 }
 
 export async function recordQuestionnairePhoneSubmitFailure(

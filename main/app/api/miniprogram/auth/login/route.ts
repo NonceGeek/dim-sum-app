@@ -5,6 +5,7 @@ import {
 } from "@/lib/miniprogram-jwt";
 import { getUserCorpusList } from "@/lib/permission";
 import { AliyunSmsService } from "@/lib/services/aliyun-sms";
+import { buildQuestionnaireStatus } from "@/lib/services/questionnaire-status";
 import { prisma } from "@/lib/prisma";
 
 interface WeChatAuthResponse {
@@ -22,6 +23,19 @@ enum MiniprogramApp {
 }
 
 const DEFAULT_MINIPROGRAM_APP = MiniprogramApp.ReviewApp;
+
+const miniprogramUserSelect = {
+  id: true,
+  name: true,
+  image: true,
+  wechatAvatar: true,
+  role: true,
+  isSystemAdmin: true,
+  phoneNumber: true,
+  questionnaireProfile: {
+    select: { completed_at: true },
+  },
+} as const;
 
 const MINIPROGRAM_CONFIGS: Record<
   MiniprogramApp,
@@ -149,18 +163,9 @@ async function handlePhoneLogin(phoneNumber: string, verificationCode: string) {
 
   // 查找用户。命中即登录：无论该手机号是手机注册产生的，
   // 还是已被某账号（如微信用户）绑定，都落在同一个 phoneNumber 字段上。
-  const userSelect = {
-    id: true,
-    name: true,
-    image: true,
-    wechatAvatar: true,
-    role: true,
-    isSystemAdmin: true,
-  } as const;
-
   let user = await prisma.user.findFirst({
     where: { phoneNumber: formattedPhone },
-    select: userSelect,
+    select: miniprogramUserSelect,
   });
 
   // 未命中则自由注册：新建用户（默认 LEARNER 角色）并创建 SMS Account 记录，
@@ -180,13 +185,13 @@ async function handlePhoneLogin(phoneNumber: string, verificationCode: string) {
             },
           },
         },
-        select: userSelect,
+        select: miniprogramUserSelect,
       });
     } catch (createError) {
       // 并发注册时唯一约束可能冲突，回读一次已存在的用户
       user = await prisma.user.findFirst({
         where: { phoneNumber: formattedPhone },
-        select: userSelect,
+        select: miniprogramUserSelect,
       });
       if (!user) {
         throw createError;
@@ -227,6 +232,7 @@ async function handlePhoneLogin(phoneNumber: string, verificationCode: string) {
       avatar: user.wechatAvatar || user.image,
       role: user.role,
       isSystemAdmin: user.isSystemAdmin,
+      questionnaireStatus: buildQuestionnaireStatus(user),
     },
     allowedCorpora: allowedCorpora,
   });
@@ -285,15 +291,6 @@ async function handleWeChatLogin(
   }
 
   // Find user by unionId
-  const userSelect = {
-    id: true,
-    name: true,
-    image: true,
-    wechatAvatar: true,
-    role: true,
-    isSystemAdmin: true,
-  } as const;
-
   const account = await prisma.account.findFirst({
     where: {
       unionId: unionid,
@@ -301,7 +298,7 @@ async function handleWeChatLogin(
     },
     include: {
       user: {
-        select: userSelect,
+        select: miniprogramUserSelect,
       },
     },
   });
@@ -326,7 +323,7 @@ async function handleWeChatLogin(
             },
           },
         },
-        select: userSelect,
+        select: miniprogramUserSelect,
       });
     } catch (createError) {
       // 并发注册时唯一约束可能冲突，回读一次已存在的用户
@@ -337,7 +334,7 @@ async function handleWeChatLogin(
         },
         include: {
           user: {
-            select: userSelect,
+            select: miniprogramUserSelect,
           },
         },
       });
@@ -372,6 +369,7 @@ async function handleWeChatLogin(
       avatar: user.wechatAvatar || user.image,
       role: user.role,
       isSystemAdmin: user.isSystemAdmin,
+      questionnaireStatus: buildQuestionnaireStatus(user),
     },
     allowedCorpora: allowedCorpora,
   });

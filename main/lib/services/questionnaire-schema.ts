@@ -85,7 +85,12 @@ export const entryRequestSchema = z.object({
 export const clientEventRequestSchema = z.object({
   journeyId: z.string().uuid(),
   clientEventId: z.string().uuid(),
-  eventName: z.enum(["open_questionnaire", "continue_questionnaire", "cancel_questionnaire"]),
+  eventName: z.enum([
+    "open_questionnaire",
+    "continue_questionnaire",
+    "cancel_questionnaire",
+    "enter_submission_page",
+  ]),
 }).strict();
 
 export const submitQuestionnaireRequestSchema = z.object({

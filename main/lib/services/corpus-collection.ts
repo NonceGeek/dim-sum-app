@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
-  assertQuestionnaireSubmissionGate,
+  assertQuestionnaireActivitySubmittable,
+  resolveQuestionnaireSubmissionJourney,
 } from "@/lib/services/questionnaire-journey";
 
 export const PUBLIC_SUBMISSION_WHERE = {
@@ -607,21 +608,29 @@ export async function createCorpusSubmission(userId: string, body: any) {
     const activity = activityId
       ? await tx.corpus_collection_activities.findUnique({
           where: { id: activityId },
-          select: { questionnaire_gate_enabled: true },
+          select: {
+            questionnaire_gate_enabled: true,
+            status: true,
+            starts_at: true,
+            ends_at: true,
+          },
         })
       : null;
     if (activityId && !activity) {
       throw new Error("Activity not found");
     }
+    if (activity?.questionnaire_gate_enabled) {
+      assertQuestionnaireActivitySubmittable(activity);
+    }
     const journey =
       activity?.questionnaire_gate_enabled
-        ? await assertQuestionnaireSubmissionGate(
+        ? await resolveQuestionnaireSubmissionJourney(
             tx,
             userId,
             activityId!,
             typeof body.questionnaireJourneyId === "string"
               ? body.questionnaireJourneyId
-              : "",
+              : undefined,
           )
         : null;
     const submission = await tx.corpus_collection_submissions.create({

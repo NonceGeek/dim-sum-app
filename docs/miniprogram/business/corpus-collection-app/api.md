@@ -553,6 +553,7 @@ Base64 形态：
 ```json
 {
   "activityId": "act_001",
+  "questionnaireJourneyId": "9f2ca850-1b91-4c96-8124-bc7f4357e381",
   "submissionType": "诗歌",
   "title": "月光光",
   "intro": "粤语童谣经典作品",
@@ -571,6 +572,7 @@ Base64 形态：
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|-----|------|
 | `activityId` | string | 否 | 关联活动 ID |
+| `questionnaireJourneyId` | string | 条件必填 | 首次问卷/手机号补充流程必填；资料完整用户可选。由 `/questionnaire/entry` 或 `/questionnaire/enter-submission` 返回 |
 | `submissionType` | string | 是 | 用语/诗歌/故事/标语/地名解说/歇后语 |
 | `title` | string | 是 | 标题 |
 | `intro` | string | 是 | 介绍内容 |
@@ -580,6 +582,8 @@ Base64 形态：
 | `precheckResult` | object | 否 | 投稿前安全检查结果 |
 
 `coverUrl` 会保存为投稿封面字段；`imageUrls` 仍从 `media[]` 中的图片派生。音频/视频投稿可以只传 `coverUrl` 作为封面，不必为了封面额外把它放进 `media[]`。
+
+已完成问卷且已绑定手机号的用户先直接进入投稿页，并在后台异步调用 `/questionnaire/entry`。异步 journey 已返回时传 `questionnaireJourneyId`；未返回或失败时省略，服务端会校验真实档案和手机号并查找或补建 reused journey。首次问卷和手机号补充流程仍必须传入该字段。
 
 #### 成功响应 (201)
 
