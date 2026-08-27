@@ -4,16 +4,7 @@
     "app/api/search/embedding-relay/route.ts": {
       "regions": ["iad1"]
     },
-    "app/api/auth/send-sms-verification/route.ts": {
-      "regions": ["iad1"]
-    },
-    "app/api/miniprogram/auth/send-sms/route.ts": {
-      "regions": ["iad1"]
-    },
-    "app/api/miniprogram/corpus_collection/questionnaire/phone/send-code/route.ts": {
-      "regions": ["iad1"]
-    },
-    "app/api/user/phone/send-bind-code/route.ts": {
+    "app/api/auth/sms-relay/route.ts": {
       "regions": ["iad1"]
     }
   }
