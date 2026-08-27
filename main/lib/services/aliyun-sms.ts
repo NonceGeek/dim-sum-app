@@ -2,19 +2,29 @@ import Dysmsapi20170525, * as $Dysmsapi20170525 from "@alicloud/dysmsapi20170525
 import * as $OpenApi from "@alicloud/openapi-client";
 import * as $Util from "@alicloud/tea-util";
 
+const DEFAULT_SMS_ENDPOINT = "dysmsapi.aliyuncs.com";
+const DEFAULT_CONNECT_TIMEOUT_MS = 4_000;
+const DEFAULT_READ_TIMEOUT_MS = 6_000;
+
+function positiveIntegerFromEnv(name: string, fallback: number) {
+  const value = Number(process.env[name]);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
 /**
  * 阿里云短信服务封装
  */
 export class AliyunSmsService {
   private client: Dysmsapi20170525;
+  private endpoint: string;
 
   constructor() {
+    this.endpoint = process.env.ALIYUN_SMS_ENDPOINT?.trim() || DEFAULT_SMS_ENDPOINT;
     const config = new $OpenApi.Config({
       accessKeyId: process.env.ALIYUN_SMS_ACCESS_KEY_ID,
       accessKeySecret: process.env.ALIYUN_SMS_ACCESS_KEY_SECRET,
+      endpoint: this.endpoint,
     });
-    // 短信服务的 endpoint
-    config.endpoint = "dysmsapi.aliyuncs.com";
     this.client = new Dysmsapi20170525(config);
   }
 
@@ -77,7 +87,19 @@ export class AliyunSmsService {
       templateParam: JSON.stringify({ code }),
     });
 
-    const runtime = new $Util.RuntimeOptions({});
+    const runtime = new $Util.RuntimeOptions({
+      autoretry: false,
+      maxAttempts: 1,
+      connectTimeout: positiveIntegerFromEnv(
+        "ALIYUN_SMS_CONNECT_TIMEOUT_MS",
+        DEFAULT_CONNECT_TIMEOUT_MS,
+      ),
+      readTimeout: positiveIntegerFromEnv(
+        "ALIYUN_SMS_READ_TIMEOUT_MS",
+        DEFAULT_READ_TIMEOUT_MS,
+      ),
+    });
+    const startedAt = Date.now();
 
     try {
       const result = await this.client.sendSmsWithOptions(
@@ -86,29 +108,46 @@ export class AliyunSmsService {
       );
 
       if (result.body.code === "OK") {
-        console.log(
-          `短信发送成功: ${formattedPhone}, RequestId: ${result.body.requestId}`
-        );
+        console.info("阿里云短信发送成功", {
+          endpoint: this.endpoint,
+          region: process.env.VERCEL_REGION || "local",
+          elapsedMs: Date.now() - startedAt,
+          requestId: result.body.requestId,
+        });
         return {
           success: true,
           message: "验证码发送成功",
           requestId: result.body.requestId,
         };
       } else {
-        console.error(
-          `短信发送失败: ${result.body.code} - ${result.body.message}`
-        );
+        console.error("阿里云短信发送失败", {
+          endpoint: this.endpoint,
+          region: process.env.VERCEL_REGION || "local",
+          elapsedMs: Date.now() - startedAt,
+          code: result.body.code,
+          message: result.body.message,
+          requestId: result.body.requestId,
+        });
         return {
           success: false,
           message: result.body.message || "短信发送失败",
           requestId: result.body.requestId,
         };
       }
-    } catch (error: any) {
-      console.error("短信发送异常:", error);
+    } catch (error: unknown) {
+      console.error("阿里云短信发送异常", {
+        endpoint: this.endpoint,
+        region: process.env.VERCEL_REGION || "local",
+        elapsedMs: Date.now() - startedAt,
+        errorName: error instanceof Error ? error.name : "UnknownError",
+        errorCode:
+          typeof error === "object" && error && "code" in error
+            ? String(error.code)
+            : undefined,
+      });
       return {
         success: false,
-        message: error.message || "短信发送失败",
+        message: "短信服务暂时不可用，请稍后重试",
       };
     }
   }
