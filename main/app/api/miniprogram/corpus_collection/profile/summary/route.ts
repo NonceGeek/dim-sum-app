@@ -4,17 +4,12 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
-    const [total, approved, pending, rejected, activities, unreadNotifications] = await Promise.all([
-      prisma.corpus_collection_submissions.count({ where: { user_id: user.userId } }),
-      prisma.corpus_collection_submissions.count({
-        where: { user_id: user.userId, review_status: "approved" },
-      }),
-      prisma.corpus_collection_submissions.count({
-        where: { user_id: user.userId, review_status: { in: ["pending_review", "ai_reviewing", "review_needed"] } },
-      }),
-      prisma.corpus_collection_submissions.count({
-        where: { user_id: user.userId, review_status: "rejected" },
-      }),
+    const statusRows = await prisma.corpus_collection_submissions.groupBy({
+      by: ["review_status"],
+      where: { user_id: user.userId },
+      _count: { _all: true },
+    });
+    const [activities, unreadNotifications] = await prisma.$transaction([
       prisma.corpus_collection_submissions.findMany({
         where: { user_id: user.userId, activity_id: { not: null } },
         select: { activity_id: true },
@@ -24,6 +19,17 @@ export async function GET(req: NextRequest) {
         where: { user_id: user.userId, is_read: false },
       }),
     ]);
+
+    const statusCounts = new Map(
+      statusRows.map((row) => [row.review_status, row._count._all]),
+    );
+    const total = statusRows.reduce((sum, row) => sum + row._count._all, 0);
+    const approved = statusCounts.get("approved") ?? 0;
+    const pending = ["pending_review", "ai_reviewing", "review_needed"].reduce(
+      (sum, status) => sum + (statusCounts.get(status) ?? 0),
+      0,
+    );
+    const rejected = statusCounts.get("rejected") ?? 0;
 
     return NextResponse.json({
       submissionCount: total,

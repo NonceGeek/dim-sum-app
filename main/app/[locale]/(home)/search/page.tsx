@@ -92,11 +92,11 @@ export default function SearchPage() {
     error: entrySimilarSearchError,
   } = useEntrySemanticSearchQuery(urlKeyword, {
     similarCursor,
-    semanticPart: "similar",
+    semanticPart: similarCursor ? "similar" : undefined,
     enabled: !!urlKeyword && useEntryMode,
   });
-  const shouldRequestRecommended =
-    !!urlKeyword && useEntryMode && Boolean(entrySimilarResult);
+  const recommendedRequestEnabled =
+    !!urlKeyword && useEntryMode && Boolean(recommendedCursor);
   const {
     data: entryRecommendedResult,
     isPending: entryRecommendedPending,
@@ -106,7 +106,7 @@ export default function SearchPage() {
     similarCursor: recommendedBaseSimilarCursor,
     recommendedCursor,
     semanticPart: "recommended",
-    enabled: shouldRequestRecommended,
+    enabled: recommendedRequestEnabled,
   });
   const isInitialSimilarLoading =
     !displaySimilarResult && (entrySimilarPending || entrySimilarFetching);
@@ -114,11 +114,10 @@ export default function SearchPage() {
     !displayRecommendedResult &&
     !entryRecommendedSearchError &&
     (
-      entryRecommendedPending ||
-      entryRecommendedFetching ||
+      (recommendedRequestEnabled &&
+        (entryRecommendedPending || entryRecommendedFetching)) ||
       entrySimilarPending ||
-      entrySimilarFetching ||
-      shouldRequestRecommended
+      entrySimilarFetching
     );
   const entryResult = useMemo(() => {
     if (!useEntryMode) return null;
@@ -136,8 +135,8 @@ export default function SearchPage() {
         semantic:
           entrySimilarPending ||
           entrySimilarFetching ||
-          entryRecommendedPending ||
-          entryRecommendedFetching,
+          (recommendedRequestEnabled &&
+            (entryRecommendedPending || entryRecommendedFetching)),
       },
       sectionStatus: {
         primary: entryPrimaryResult?.sectionStatus?.primary ?? "idle",
@@ -161,11 +160,14 @@ export default function SearchPage() {
     entryRecommendedPending,
     entrySimilarFetching,
     entrySimilarPending,
+    recommendedRequestEnabled,
     urlKeyword,
     useEntryMode,
   ]);
   const searchPending = useEntryMode
-    ? entryPrimaryPending || entrySimilarPending || entryRecommendedPending
+    ? entryPrimaryPending ||
+      entrySimilarPending ||
+      (recommendedRequestEnabled && entryRecommendedPending)
     : isPending;
 
   // 搜索参数同步到 UI state（用于 SearchHeader 显示）
@@ -191,7 +193,10 @@ export default function SearchPage() {
   useEffect(() => {
     if (!useEntryMode || !entrySimilarResult) return;
     setDisplaySimilarResult(entrySimilarResult);
-  }, [entrySimilarResult, useEntryMode]);
+    if (similarCursor === null) {
+      setDisplayRecommendedResult(entrySimilarResult);
+    }
+  }, [entrySimilarResult, similarCursor, useEntryMode]);
 
   useEffect(() => {
     if (!useEntryMode || !entryRecommendedResult) return;

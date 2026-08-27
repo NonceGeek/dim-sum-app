@@ -325,7 +325,7 @@ export function parseQuestionLimit(value: string | null) {
 
 export async function getTodayProgress(userId: string) {
   const today = startOfToday();
-  const [completedToday, progress] = await Promise.all([
+  const [completedToday, progress] = await prisma.$transaction([
     prisma.game_answer_records.count({
       where: {
         user_id: userId,

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       status: status || undefined,
       title: q && qMode !== "activityUuid" ? { contains: q, mode: "insensitive" } : undefined,
     };
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_activities.findMany({
         where,
         include: { _count: { select: { submissions: true } } },

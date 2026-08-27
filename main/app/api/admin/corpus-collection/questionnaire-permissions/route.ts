@@ -37,7 +37,7 @@ function serializePermission(permission: {
 
 export async function GET(req: NextRequest) {
   return requireAdmin(req, async () => {
-    const [permissions, users, activities] = await Promise.all([
+    const [permissions, users, activities] = await prisma.$transaction([
       prisma.corpus_collection_activity_permissions.findMany({
         include: {
           user: { select: { name: true, email: true } },
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       );
     }
     const activityId = BigInt(parsed.data.activityId);
-    const [user, activity, existingPermission] = await Promise.all([
+    const [user, activity, existingPermission] = await prisma.$transaction([
       prisma.user.findUnique({ where: { id: parsed.data.userId }, select: { id: true, status: true } }),
       prisma.corpus_collection_activities.findUnique({ where: { id: activityId }, select: { id: true } }),
       prisma.corpus_collection_activity_permissions.findUnique({

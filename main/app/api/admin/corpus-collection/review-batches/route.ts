@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   return requireAdmin(req, async () => {
     const where = { status: status || undefined };
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_review_batches.findMany({
         where,
         orderBy: { created_at: "desc" },

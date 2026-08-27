@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
     const batchId = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!batchId) return NextResponse.json({ error: "Invalid batch id" }, { status: 400 });
     const where = { batch_id: batchId, status: status || undefined };
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_review_batch_items.findMany({
         where,
         include: { submission: { select: { id: true, title: true, review_status: true } } },

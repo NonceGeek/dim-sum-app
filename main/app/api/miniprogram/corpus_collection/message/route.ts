@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       is_read: unreadOnly ? false : undefined,
     };
 
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_messages.findMany({
         where,
         orderBy: { created_at: "desc" },

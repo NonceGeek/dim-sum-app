@@ -487,7 +487,7 @@ export async function listPublicSubmissions(options: {
   includeRaw?: boolean;
 }) {
   const where = buildPublicSubmissionWhere(options);
-  const [items, total] = await Promise.all([
+  const [items, total] = await prisma.$transaction([
     prisma.corpus_collection_submissions.findMany({
       where,
       include: submissionInclude,
@@ -517,7 +517,7 @@ export async function listHomeFeedSubmissions(options: {
   viewerId?: string;
 }) {
   const where = buildPublicSubmissionWhere(options);
-  const [items, total] = await Promise.all([
+  const [items, total] = await prisma.$transaction([
     prisma.corpus_collection_submissions.findMany({
       where,
       include: submissionInclude,
