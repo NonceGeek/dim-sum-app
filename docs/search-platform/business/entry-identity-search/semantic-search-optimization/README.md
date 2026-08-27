@@ -29,7 +29,11 @@
 - 已执行：数据库建表、1,000 条样本验证、首次全量构建和 active 数据切换。
 - 当前 active：23,405 source、748,960 邻居、canonical 覆盖率 100%。
 - 已验证：线上读取 3 * 24 条邻居的 SQL 实际执行 8.807ms。
-- 待执行：提交部署代码、打开 Vercel feature flag、固定查询集线上验收。
+- 已部署：提交 `9b3733c` 的 dev Preview 已 Ready，并只在 dev Preview 打开邻居开关。
+- 暂缓 Production：Preview 多个冷查询均因 Vercel 新加坡/香港到中国 DashScope 的
+  query embedding 4 秒超时而进入 fallback；邻居 SQL 本身不是瓶颈。
+- 待执行：先解决或代理 query embedding 网络，再完成固定查询集验收并打开 Production
+  feature flag。
 
 ## 目标架构
 

@@ -170,7 +170,11 @@ P0 聚合字段：
 - [x] 在线推荐已增加 feature flag 控制的 active 邻居候选融合。
 - [x] 数据库建表、1,000 条样本和首次全量已完成；active build 覆盖 23,405 source，
   共 748,960 邻居，读取 72 行实测 8.807ms。
-- [ ] 提交部署后打开线上 feature flag，并完成固定查询集验收。
+- [x] 提交 `9b3733c` 已推送，dev Preview 部署 Ready；仅 dev Preview 设置
+  `SEARCH_OFFLINE_NEIGHBORS_ENABLED=true`。
+- [ ] Production 开关暂缓：Preview 的“饮茶/早晨/粤语/食饭”冷查询均因 DashScope
+  query embedding 4 秒超时进入 fallback，日志确认不是邻居 SQL 超时。先解决新加坡/
+  香港 Vercel 到中国 DashScope 的网络路径，再完成固定查询集验收。
 - [x] 新增 query embedding 接入点：`DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY` 配置后，semantic section 会调阿里云 `qwen3-vl-embedding` 获取用户 query 向量。
 - [x] 批量 `entryIdentity` 聚合已下沉为 Supabase RPC。
 - [x] primary 精准搜索已下沉为 Supabase RPC，并支持可选来源语料集过滤。

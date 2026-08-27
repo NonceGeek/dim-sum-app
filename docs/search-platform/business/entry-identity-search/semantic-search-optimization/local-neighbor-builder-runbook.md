@@ -246,6 +246,11 @@ pnpm db:neighbors:incremental --batch-size 200
 | 无变更增量空跑 | 约 10 秒，不下载向量、不改写邻居 |
 | 在线邻居读取 EXPLAIN | 72 行，index scan，Execution Time 8.807ms |
 
+dev Preview 随后单独开启离线邻居开关。基础搜索接口正常，但多个冷查询在调用中国
+DashScope 生成 query embedding 时触发 4 秒超时并降级，响应约 5.6 到 9.0 秒。运行日志
+确认该 fallback 发生在 embedding HTTP 请求阶段，不是邻居读取阶段；因此 Production
+开关保持关闭，待 embedding 网络路径解决后再验收。
+
 抽样邻居的诗句、主题和语义关系正常。抽查同时发现源语料中存在 `ttt`、
 `text已修改测试v2`、`ddd` 等测试残留；这是 embedding 输入数据质量问题，后续应单独
 清理并执行一次增量或全量重建。
