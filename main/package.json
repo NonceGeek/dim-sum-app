@@ -10,6 +10,7 @@
     "lint": "next lint",
     "test:questionnaire": "node --import tsx --test lib/services/questionnaire-status.test.ts",
     "test:search-embedding": "node --import tsx --test lib/search/query-embedding.test.ts",
+    "test:sms-relay": "node --import tsx --test lib/services/aliyun-sms.test.ts",
     "test:miniprogram": "tsx scripts/test-miniprogram.ts",
     "process-deletions": "tsx scripts/process-deletions.ts",
     "db:generate": "prisma generate",
