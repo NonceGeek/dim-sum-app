@@ -1,6 +1,6 @@
 # 实施进度
 
-更新时间：2026-06-25
+更新时间：2026-08-27
 
 本文用于记录“语料身份搜索”从方案进入实施后的状态。`语料身份需求.md` 是后端原始数据底座文档，不写入前端实现建议、搜索策略建议或暂缓字段建议；这些内容统一沉淀在本文、`data-model.md`、`search-ranking-recommendation.md` 和 `frontend-backend-contract.md`。
 
@@ -115,7 +115,7 @@ P0 聚合字段：
 |---------|------|---------|
 | `primary` | 1 | exact / 繁简 exact / prefix / like / full text，取最佳 |
 | `similar` | 3 | 以后端文档为准；固定调阿里云生成用户搜索文本的 query vector，再查 `corpus_field_embeddings(field_type='doc')`；融合/兜底同标签和同二级身份分类 |
-| `recommended` | 4 | 优先从 similar 结果的 `doc` 向量继续扩散，叠加 `tag_related`、同二级身份分类、同一级身份分类热门融合排序 |
+| `recommended` | 4 | 当前融合 query vector、`tag_related`、同二级/一级分类和热度；后续从离线邻居恢复 similar 扩散 |
 
 二级和三级不做传统分页，只提供“换一批”刷新。
 
@@ -161,7 +161,16 @@ P0 聚合字段：
 - [x] 优化聚合查询性能：已将多次 `$queryRaw` 合并为单次聚合 SQL，热请求约 1.1-1.3 秒。
 - [x] 三级推荐兜底已从旧 `cantonese_corpus_all.category` 调整为 `corpus_category -> content_categories` 身份分类。
 - [x] 二级相似结果已按后端文档接入百炼 query embedding + `corpus_field_embeddings(field_type='doc')` KNN 召回。
-- [x] 三级推荐已从二级 similar 结果的 `doc` 向量继续扩散，并低权重融合 query/primary 语义候选。
+- [x] 完成 2026-08-27 线上性能审计：recommended 平均约 37-38 秒，最大约 75 秒。
+- [x] 暂停未命中 HNSW 的 similar 动态向量二次扩散，保留 query/tag/category/热度融合。
+- [x] semantic 复用 primary `corpusId`，避免重复文本匹配；无 primary 时显式传 `none`。
+- [x] semantic 增加 8 秒 statement timeout、事务上限和 similar-only 降级。
+- [x] 完成 `corpus_embedding_neighbors` 表结构、SQL migration 和 Prisma 模型。
+- [x] 完成本地 FAISS/HNSW 全量、断点恢复、增量、状态与原子激活脚本。
+- [x] 在线推荐已增加 feature flag 控制的 active 邻居候选融合。
+- [x] 数据库建表、1,000 条样本和首次全量已完成；active build 覆盖 23,405 source，
+  共 748,960 邻居，读取 72 行实测 8.807ms。
+- [ ] 提交部署后打开线上 feature flag，并完成固定查询集验收。
 - [x] 新增 query embedding 接入点：`DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY` 配置后，semantic section 会调阿里云 `qwen3-vl-embedding` 获取用户 query 向量。
 - [x] 批量 `entryIdentity` 聚合已下沉为 Supabase RPC。
 - [x] primary 精准搜索已下沉为 Supabase RPC，并支持可选来源语料集过滤。
@@ -200,6 +209,8 @@ P0 聚合字段：
 - [ ] `list_entries_by_category` 下沉为 Supabase RPC 或稳定查询接口。
 - [ ] `list_entries_by_tag` 下沉为 Supabase RPC 或稳定查询接口。
 - [ ] 评估热门 query 缓存，降低实时调用百炼和远端 DB 查询成本。
+- [ ] 按 `semantic-search-optimization/offline-neighbor-table-implementation-plan.md`
+  完成邻居表、全量构建、增量任务和灰度。
 
 ### 7.3 搜索效果调优
 
@@ -243,7 +254,10 @@ main/prisma/migrations/20260625111423_add_entry_primary_search_rpc/migration.sql
 2. 验证分享卡片弹窗、复制链接、打开卡片、新旧搜索并行时的 loading、空结果、换一批状态。
 3. 如线上仍需更低延迟，再评估 similar/recommended 召回 SQL 是否也需要局部下沉，并缓存热门 query。
 
-向量检索当前按后端方案保持 query vector 优先：二级固定请求百炼把用户 query 转成 1024 维向量，再查 `corpus_field_embeddings(field_type='doc')`；三级从二级结果的 `doc` 向量继续扩散。`primary` 文本搜索和 `semantic` 向量搜索在前端分别请求、分别 loading。后续 P0.5 再把 `sentence` / `definition` / `headword` 分面接入，并评估查询耗时和索引命中。
+向量检索当前保持 query vector 优先：二级请求百炼生成 1024 维向量，再查
+`corpus_field_embeddings(field_type='doc')`。三级在线动态扩散因执行计划不命中 HNSW 已暂停，
+后续读取离线 `corpus_embedding_neighbors` 恢复。`primary` 先返回并把 `corpusId`
+交给 `semantic`，两个区域分别 loading。
 
 当前性能观察：
 
@@ -254,4 +268,9 @@ main/prisma/migrations/20260625111423_add_entry_primary_search_rpc/migration.sql
 - 非向量版本地热请求曾验证：普通搜索约 1.1-1.3 秒，换一批约 1.2-1.3 秒。
 - 接入 `corpus_field_embeddings` doc 向量召回后，曾尝试“两步查：先取源向量、再绑定参数 KNN”，可命中 HNSW，但因为远端 DB 往返增加，接口退化到约 3.6-4.8 秒。
 - 当前采用“单次聚合 SQL + 标量子查询取源向量”的写法，`EXPLAIN ANALYZE` 已确认向量段命中 `corpus_field_emb_doc_hnsw`；本地热请求约 1.9-2.4 秒，`好` 这类短 query 仍受 primary `%like%` 扫描和远端 DB 往返影响。
+- 2026-08-27 发现 similar -> recommended 的相关 LATERAL KNN 未命中 HNSW，线上
+  recommended 隔离请求为 38.52 秒；详见
+  `semantic-search-optimization/performance-analysis-and-current-optimization.md`。
+- 删除该在线二次扩散并传入 `primaryCorpusId` 后，部署前应用级 semantic 验证为
+  3.88-4.60 秒，仍返回 similar=3、recommended=4。
 - 页面编译验证：`/zh-CN/search?mode=entry&q=好` 会 307 到默认 locale 无前缀路径，跟随重定向后返回 200。

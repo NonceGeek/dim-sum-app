@@ -33,6 +33,9 @@
 |------|------|
 | `README.md` | 当前结论和文档地图 |
 | `implementation-progress.md` | 当前实施状态、可开发项、暂缓项 |
+| `semantic-search-optimization/README.md` | 2026-08-27 探索搜索优化专题索引 |
+| `semantic-search-optimization/performance-analysis-and-current-optimization.md` | 线上慢查询证据、根因和当前优化 |
+| `semantic-search-optimization/offline-neighbor-table-implementation-plan.md` | 离线邻居表、周期任务、灰度与回滚方案 |
 | `frontend-backend-contract.md` | 前后端职责边界、接口契约、待实现清单 |
 | `语料身份需求.md` | 后端确认的数据表、DDL、查询示例 |
 
@@ -43,6 +46,7 @@
 | `语料身份需求.md` | 后端数据底座 Source of Truth |
 | `data-model.md` | 面向产品和前端的 entryIdentity 数据模型 |
 | `search-engine-research.md` | qwen3-vl-embedding、pgvector、短 query 策略 |
+| `semantic-search-optimization/offline-neighbor-table-implementation-plan.md` | 完整三级向量扩散的数据实施方案 |
 
 ### 前端 / Next / UI
 
@@ -87,7 +91,8 @@
 - 当前 `corpus_tags` 可提供语料标签关系。
 - 本期先不依赖 `corpus_tags.tag_role` 和 `corpus_tags.relevance_level`；前端聚合时把已有标签统一视为 `related / medium`。
 - `tag_related` 可按 `cooc / semantic / manual` 提供相关标签。
-- `corpus_field_embeddings` 可用于二级/三级推荐增强。
+- `corpus_field_embeddings` 当前用于 query -> similar；similar -> recommended 的在线动态
+  扩散因未命中 HNSW 已暂停，后续读取离线 `corpus_embedding_neighbors` 恢复。
 
 ---
 
@@ -208,7 +213,8 @@ corpus_field_embeddings
 ### 后端待确认
 
 - 是否能提供批量聚合 `entryIdentity` 的 SQL / RPC。
-- `corpus_field_embeddings` 在线查询的性能边界和推荐 SQL 是否稳定。
+- 按 `semantic-search-optimization/offline-neighbor-table-implementation-plan.md`
+  建设离线邻居表与构建任务。
 
 ### 前端待实现
 
