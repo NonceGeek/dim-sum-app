@@ -85,15 +85,25 @@ export default function SearchPage() {
     datasetName.length ? datasetName : ["all"],
     !!urlKeyword && useEntryMode,
   );
+  const semanticRequestEnabled =
+    !!urlKeyword &&
+    useEntryMode &&
+    (!entryPrimaryPending || Boolean(entryPrimarySearchError));
+  const primaryCorpusId = entryPrimaryResult
+    ? (entryPrimaryResult.primary?.corpusId ?? null)
+    : entryPrimarySearchError
+      ? null
+      : undefined;
   const {
     data: entrySimilarResult,
     isPending: entrySimilarPending,
     isFetching: entrySimilarFetching,
     error: entrySimilarSearchError,
   } = useEntrySemanticSearchQuery(urlKeyword, {
+    primaryCorpusId,
     similarCursor,
     semanticPart: similarCursor ? "similar" : undefined,
-    enabled: !!urlKeyword && useEntryMode,
+    enabled: semanticRequestEnabled,
   });
   const recommendedRequestEnabled =
     !!urlKeyword && useEntryMode && Boolean(recommendedCursor);
@@ -103,13 +113,16 @@ export default function SearchPage() {
     isFetching: entryRecommendedFetching,
     error: entryRecommendedSearchError,
   } = useEntrySemanticSearchQuery(urlKeyword, {
+    primaryCorpusId,
     similarCursor: recommendedBaseSimilarCursor,
     recommendedCursor,
     semanticPart: "recommended",
     enabled: recommendedRequestEnabled,
   });
   const isInitialSimilarLoading =
-    !displaySimilarResult && (entrySimilarPending || entrySimilarFetching);
+    semanticRequestEnabled &&
+    !displaySimilarResult &&
+    (entrySimilarPending || entrySimilarFetching);
   const isInitialRecommendedLoading =
     !displayRecommendedResult &&
     !entryRecommendedSearchError &&

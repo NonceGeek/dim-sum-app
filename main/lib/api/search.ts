@@ -61,6 +61,7 @@ type SearchParams = {
 type EntrySearchParams = {
   keyword: string;
   datasets?: string[];
+  primaryCorpusId?: number | null;
   similarCursor?: string | null;
   recommendedCursor?: string | null;
   section?: "all" | "primary" | "semantic";
@@ -197,6 +198,7 @@ export function useSearchQuery(keyword: string, category: string, enabled = true
 async function fetchEntrySearch({
   keyword,
   datasets,
+  primaryCorpusId,
   section,
   similarCursor,
   recommendedCursor,
@@ -208,6 +210,11 @@ async function fetchEntrySearch({
     params.set("dataset", datasets.join(","));
   }
   if (section) params.set("section", section);
+  if (primaryCorpusId === null) {
+    params.set("primaryCorpusId", "none");
+  } else if (primaryCorpusId !== undefined) {
+    params.set("primaryCorpusId", String(primaryCorpusId));
+  }
   if (semanticPart) params.set("semanticPart", semanticPart);
   if (similarCursor) params.set("similarCursor", similarCursor);
   if (recommendedCursor) params.set("recommendedCursor", recommendedCursor);
@@ -277,6 +284,7 @@ export function useEntryPrimarySearchQuery(
 export function useEntrySemanticSearchQuery(
   keyword: string,
   options: {
+    primaryCorpusId?: number | null;
     similarCursor?: string | null;
     recommendedCursor?: string | null;
     semanticPart?: "similar" | "recommended";
@@ -289,6 +297,9 @@ export function useEntrySemanticSearchQuery(
       "semantic",
       options.semanticPart ?? "all",
       keyword,
+      options.primaryCorpusId === null
+        ? "none"
+        : (options.primaryCorpusId ?? "unresolved"),
       options.similarCursor ?? null,
       options.recommendedCursor ?? null,
     ],
@@ -296,6 +307,7 @@ export function useEntrySemanticSearchQuery(
       fetchEntrySearch({
         keyword,
         section: "semantic",
+        primaryCorpusId: options.primaryCorpusId,
         semanticPart: options.semanticPart,
         similarCursor: options.similarCursor,
         recommendedCursor: options.recommendedCursor,

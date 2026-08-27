@@ -122,7 +122,7 @@ data 前缀匹配
 
 ```text
 tag_related 相关标签
-> similar 结果的 doc 向量继续扩散
+> corpus_embedding_neighbors 中 similar 的预计算 doc 邻居
 > query vector 弱召回
 > 同一级分类下热门词
 > 同 dataset 下热门词
@@ -143,6 +143,11 @@ tag_related 相关标签
 ```
 
 三级结果不应影响一级精准结果排序。
+
+当前过渡版本尚未建立 `corpus_embedding_neighbors`，因此暂时关闭 similar 动态向量
+二次扩散，只保留 query vector、标签、分类和热度。完整恢复方案见
+`semantic-search-optimization/offline-neighbor-table-implementation-plan.md`，不得恢复会扫描
+向量表的在线相关子查询。
 
 ---
 
@@ -229,7 +234,8 @@ field_type = doc / sentence / definition / headword / image / video
 
 - 一级精准结果不走向量，仍走 `cantonese_corpus_all.data` 的 exact / prefix / like / full text。
 - 二级固定使用用户 query vector 查询 `corpus_field_embeddings(field_type=doc)`，不依赖一级精准结果必然存在。
-- 三级优先从二级结果的 `doc` 向量继续扩散，再叠加标签、相关标签、同分类和热度。
+- 三级最终从二级结果的离线 `doc` 邻居扩散，再叠加标签、相关标签、同分类和热度；
+  禁止重新使用动态 source vector 的在线相关扫描。
 - query 只有一两个字时，向量容易漂，优先用同标签、相关标签、同分类做约束。
 
 ---

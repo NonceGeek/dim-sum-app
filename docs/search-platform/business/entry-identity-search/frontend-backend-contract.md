@@ -94,7 +94,9 @@
 field_type = doc / sentence / definition / headword / image / video
 ```
 
-后端提供可用的向量查询能力。搜索实现以后端原始文档为准：一级精准结果不依赖向量；二级相似结果必须使用用户搜索文本的百炼 query vector 查询 `corpus_field_embeddings`；三级推荐从二级结果继续扩散，可叠加标签、分类和热度约束，避免只靠语义相似导致结果漂移。
+后端提供可用的向量查询能力：一级精准结果不依赖向量；二级相似结果使用用户搜索文本的
+百炼 query vector 查询 `corpus_field_embeddings`；三级最终从二级结果的离线邻居继续扩散，
+并叠加标签、分类和热度约束，避免只靠语义相似导致结果漂移。
 
 ---
 
@@ -175,7 +177,8 @@ exact / 繁简 exact / prefix / like / full text
   -> 得到 1024 维 query vector
   -> 查 corpus_field_embeddings(field_type=doc)
   -> 生成 similar
-  -> 再从 similar 的 doc 向量扩散 recommended
+  -> 当前使用 query/tag/category/热度生成 recommended
+  -> 后续从 corpus_embedding_neighbors 读取 similar 的离线邻居恢复完整扩散
 ```
 
 排序融合维度：
@@ -192,7 +195,8 @@ content_categories
 
 - `primary`：文本精准链路，独立查询。
 - `similar`：语义链路，固定使用用户 query vector 查询 `corpus_field_embeddings(field_type='doc')`，再融合已有标签和身份分类。
-- `recommended`：语义链路，优先从 similar 结果的 `doc` 向量继续扩散，再融合 `tag_related`、身份分类热门和热度。
+- `recommended`：当前线上性能保护版本使用 query vector 弱召回、`tag_related`、身份分类
+  和热度；similar 的 doc 二次扩散已暂停，后续由离线 `corpus_embedding_neighbors` 恢复。
 - 短 query 的一级精准仍不走向量；当前 primary 已支持原词、繁简/HK-CN 转换词、prefix、like 和 PGroonga 全文匹配。
 - 短 query 的 similar 仍用 query vector，但需要结合 tag / category 做过滤或加权，减少短文本向量不稳定带来的误召回。
 
@@ -202,16 +206,17 @@ content_categories
 |---------|-------------------|------|
 | `primary` | 不使用向量 | 直接查 `cantonese_corpus_all.data`，走 exact / prefix / like |
 | `similar` | `doc` | 用户搜索文本先调百炼生成 query vector，再在 `corpus_field_embeddings(field_type='doc')` 子空间召回 |
-| `recommended` | `doc` | 先取 similar 结果，再使用这些语料的 `doc` 向量继续扩散推荐 |
+| `recommended` | query `doc` + 后续离线邻居 | 当前不在线使用动态 source vector；后续读取预计算 doc 邻居 |
 
 暂不使用 `headword`、`sentence`、`definition`、`image`、`video`。后续如果要按搜索意图增强，可考虑：完整句子 query 引入 `sentence`，释义/概念 query 引入 `definition`，明确词条名 query 用 `headword` 做辅助。
 
 前端请求和 loading：
 
-- `primary` 和 `similar` 首次进入时并发请求、分别 loading。
+- `primary` 首次请求完成后立即展示，并把 `primary.corpusId` 传给 semantic；这样 semantic
+  不再重复执行 primary 文本匹配。没有 primary 时传 `primaryCorpusId=none`。
 - `primary` 找不到时，只显示“未找到完全匹配词条”，不阻塞 `similar`。
-- `recommended` 首次请求等待 `similar` 返回后再启动，使用二级结果作为扩散基准，避免推荐链路和相关表达语义脱节。
-- `similar` / `recommended` 分别 loading；`recommended` 等待 `similar` 期间展示自己的首次 loading 骨架，不影响 `similar` 展示。
+- `similar` 和首批 `recommended` 当前由一次 semantic 请求返回；换一批分别请求。
+- 首批 `similar` / `recommended` 共用 semantic loading；换一批时分别 loading，互不覆盖。
 - `similar` / `recommended` 换一批只刷新对应结果区域；点击二级“换一批”时三级保持当前结果，点击三级“换一批”时二级保持当前结果。
 - 三级换一批可使用当前二级批次作为扩散基准，但不因为二级换批自动刷新。
 
@@ -239,7 +244,8 @@ content_categories
 - `content_categories` 和 `corpus_category` 可查询语料一级/二级身份分类。
 - `corpus_tags` 可查询语料已有标签；P0 前端统一按 `related / medium` 输出。
 - `tag_related` 可用于相关标签扩展。
-- `corpus_field_embeddings` 可用于二级/三级向量召回；至少需要支持用户 query vector 在 `field_type='doc'` 子空间 KNN 查询相似语料，以及按 similar `corpus_id` 取 `field_type='doc'` 向量继续扩散推荐。
+- `corpus_field_embeddings` 支持用户 query vector 在 `field_type='doc'` 子空间 KNN 查询。
+  similar 的二次扩散不得再使用未命中 HNSW 的动态向量相关子查询，后续由离线邻居表提供。
 - 前端语义搜索固定使用用户 query 实时生成的 1024 维向量查询 `corpus_field_embeddings(field_type='doc')`，不依赖 primary 必然存在。
 - 当前不强依赖 `tags.embedding` 和相似标签向量；如果 similar / recommended 效果不够，再把相似标签下的语料加入召回池。
 - 贡献者可通过 `cantonese_corpus_update_history` 批量聚合。

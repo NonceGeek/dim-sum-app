@@ -17,6 +17,11 @@
     "db:push": "prisma db push",
     "db:pull": "prisma db pull",
     "db:seed-questionnaire": "tsx scripts/seed-questionnaire-definition.ts",
+    "db:neighbors:setup": "python3 -m venv .venv-neighbors && .venv-neighbors/bin/python -m pip install -r scripts/requirements-embedding-neighbors.txt",
+    "db:neighbors:full": ".venv-neighbors/bin/python scripts/build-corpus-embedding-neighbors.py full",
+    "db:neighbors:incremental": ".venv-neighbors/bin/python scripts/build-corpus-embedding-neighbors.py incremental",
+    "db:neighbors:status": ".venv-neighbors/bin/python scripts/build-corpus-embedding-neighbors.py status",
+    "db:neighbors:activate": ".venv-neighbors/bin/python scripts/build-corpus-embedding-neighbors.py activate",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

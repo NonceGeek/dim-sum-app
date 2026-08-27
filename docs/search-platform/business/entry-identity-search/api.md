@@ -98,10 +98,11 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
 |--------|------|------|--------|------|
 | `q` | string | 是 | - | 搜索关键词 |
 | `dataset` | string | 否 | `all` | 现有 Search URL 中的 dataset，逗号分隔；仅约束 primary 精准结果 |
-| `section` | string | 否 | `all` | `all` / `similar` / `recommended`。首次搜索用 `all`，换一批时指定 section |
-| `batchSize` | number | 否 | 按 section | 每批返回数量。`similar` 默认 3，`recommended` 默认 4 |
-| `batchToken` | string | 否 | - | 换一批游标，由上一次响应返回 |
-| `includeRecommendations` | boolean | 否 | `true` | 是否返回二级/三级结果 |
+| `section` | string | 否 | `all` | `all` / `primary` / `semantic`；页面当前先请求 primary，再请求 semantic |
+| `semanticPart` | string | 否 | `all` | `similar` / `recommended`；换一批时只计算对应区域 |
+| `primaryCorpusId` | string | 否 | 缺省 | primary 的内部 `corpusId`；无 primary 时传 `none`，避免 semantic 重复文本匹配 |
+| `similarCursor` | string | 否 | `0` | similar offset 游标，由上一次响应返回 |
+| `recommendedCursor` | string | 否 | `0` | recommended offset 游标，由上一次响应返回 |
 
 #### 聚合逻辑
 
@@ -204,16 +205,17 @@ GET {BACKEND_URL}/v2/corpus_category?name={category}
 换一批示例：
 
 ```text
-GET /api/search/entries?q=好&dataset=all&section=similar&batchToken=similar:2&batchSize=3
-GET /api/search/entries?q=好&dataset=all&section=recommended&batchToken=recommended:2&batchSize=4
+GET /api/search/entries?q=好&dataset=all&section=primary
+GET /api/search/entries?q=好&section=semantic&primaryCorpusId=123
+GET /api/search/entries?q=好&section=semantic&semanticPart=similar&primaryCorpusId=123&similarCursor=3
+GET /api/search/entries?q=好&section=semantic&semanticPart=recommended&primaryCorpusId=123&recommendedCursor=4
 ```
 
 后端实现说明：
 
 ```text
-batchToken 是不透明字符串，前端只负责原样传回。
-P0 可编码 page/offset。
-P1/P2 可编码 vector score、last unique_id、seed 或推荐池 offset。
+similarCursor / recommendedCursor 当前是十进制 offset 字符串，前端只使用响应返回值。
+后续接入离线邻居 build 后可升级为不透明 cursor，但必须保持旧 offset 兼容期。
 ```
 
 兼容策略：

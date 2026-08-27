@@ -37,6 +37,10 @@ does not solve contention; it only makes users wait longer.
 - Corpus collection analytics summary was reduced from eight queries to four.
 - Initial entry semantic search now returns similar and recommended results from
   one SQL execution. Pagination queries request only their required section.
+- Semantic search no longer performs three correlated dynamic-vector scans for
+  recommended results. It reuses the primary corpus id, enforces an 8-second
+  statement timeout, and will restore full neighbor expansion from an offline
+  precomputed neighbor table.
 - Semantic search no longer starts a second fallback query after a `P2024`.
 - Public corpus collection home/activity lists and entry search use short CDN
   caches to absorb repeated reads.

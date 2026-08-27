@@ -19,6 +19,14 @@ export function isPrismaTransientDatabaseError(error: unknown) {
   );
 }
 
+export function isPrismaStatementTimeout(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2010" &&
+    error.meta?.code === "57014"
+  );
+}
+
 export function databaseErrorResponse(error: unknown, fallbackMessage: string) {
   if (isPrismaTransientDatabaseError(error)) {
     return NextResponse.json(
