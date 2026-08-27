@@ -16,7 +16,7 @@ type TagRow = {
 
 export async function GET(req: NextRequest) {
   return requireAdmin(req, async () => {
-    const [types, tags] = await Promise.all([
+    const [types, tags] = await prisma.$transaction([
       prisma.$queryRaw<TypeRow[]>`
         SELECT
           "submission_type",

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       content: q ? { contains: q, mode: "insensitive" } : undefined,
     };
 
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_comments.findMany({
         where,
         include: {

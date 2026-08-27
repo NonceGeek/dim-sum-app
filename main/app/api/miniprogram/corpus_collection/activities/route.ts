@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { databaseErrorResponse } from "@/lib/prisma-errors";
+import { PUBLIC_LIST_CACHE_HEADERS } from "@/lib/public-cache";
 import {
   PUBLIC_SUBMISSION_COUNT,
   PUBLIC_SUBMISSION_WHERE,
@@ -56,7 +58,7 @@ export async function GET(req: NextRequest) {
     }
 
     const where: Prisma.corpus_collection_activitiesWhereInput = { AND: and };
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_activities.findMany({
         where,
         include: {
@@ -86,15 +88,15 @@ export async function GET(req: NextRequest) {
       prisma.corpus_collection_activities.count({ where }),
     ]);
 
-    return NextResponse.json({
-      items: items.map(serializePublicActivity),
-      pagination: { page, pageSize, total },
-    });
+    return NextResponse.json(
+      {
+        items: items.map(serializePublicActivity),
+        pagination: { page, pageSize, total },
+      },
+      { headers: PUBLIC_LIST_CACHE_HEADERS },
+    );
   } catch (error) {
     console.error("[CorpusCollection] Failed to load activities", error);
-    return NextResponse.json(
-      { error: "Failed to load activities" },
-      { status: 500 }
-    );
+    return databaseErrorResponse(error, "Failed to load activities");
   }
 }

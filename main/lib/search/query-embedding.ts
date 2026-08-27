@@ -11,7 +11,13 @@ type DashScopeEmbeddingResponse = {
   code?: string;
 };
 
-const queryEmbeddingCache = new Map<string, Promise<string>>();
+const QUERY_EMBEDDING_CACHE_TTL_MS = 5 * 60 * 1000;
+const QUERY_EMBEDDING_CACHE_MAX_ENTRIES = 256;
+const QUERY_EMBEDDING_TIMEOUT_MS = 4_000;
+const queryEmbeddingCache = new Map<
+  string,
+  { value: Promise<string>; expiresAt: number }
+>();
 
 function getDashScopeApiKey(): string | null {
   return (
@@ -30,13 +36,15 @@ export async function getQueryEmbeddingText(query: string): Promise<string | nul
   if (!normalizedQuery) return null;
 
   const cached = queryEmbeddingCache.get(normalizedQuery);
-  if (cached) return cached;
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached) queryEmbeddingCache.delete(normalizedQuery);
 
   const apiKey = getDashScopeApiKey();
   if (!apiKey) return null;
 
   const request = fetch(DASHSCOPE_EMBEDDING_ENDPOINT, {
     method: "POST",
+    signal: AbortSignal.timeout(QUERY_EMBEDDING_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
@@ -75,6 +83,13 @@ export async function getQueryEmbeddingText(query: string): Promise<string | nul
       throw error;
     });
 
-  queryEmbeddingCache.set(normalizedQuery, request);
+  if (queryEmbeddingCache.size >= QUERY_EMBEDDING_CACHE_MAX_ENTRIES) {
+    const oldestKey = queryEmbeddingCache.keys().next().value;
+    if (oldestKey) queryEmbeddingCache.delete(oldestKey);
+  }
+  queryEmbeddingCache.set(normalizedQuery, {
+    value: request,
+    expiresAt: Date.now() + QUERY_EMBEDDING_CACHE_TTL_MS,
+  });
   return request;
 }

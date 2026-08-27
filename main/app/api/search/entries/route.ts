@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import * as OpenCC from "opencc-js";
 import { publicApi } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isPrismaTransientDatabaseError } from "@/lib/prisma-errors";
 import {
   buildEntryIdentity,
   type CorpusSearchRow,
@@ -13,6 +14,10 @@ import { getQueryEmbeddingText } from "@/lib/search/query-embedding";
 
 const SIMILAR_LIMIT = 3;
 const RECOMMENDED_LIMIT = 4;
+const SEARCH_CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+} as const;
+const SEARCH_NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
 const toSimplified = OpenCC.Converter({ from: "hk", to: "cn" });
 const toTraditional = OpenCC.Converter({ from: "cn", to: "hk" });
 
@@ -152,8 +157,11 @@ async function fetchPrimarySearchRows(
   const datasetFilter = datasets?.length
     ? Prisma.sql`array[${Prisma.join(datasets)}]::text[]`
     : Prisma.sql`null::text[]`;
-  return prisma.$queryRaw<AggregatedSearchRow[]>(
-    Prisma.sql`
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '5000ms'");
+      return tx.$queryRaw<AggregatedSearchRow[]>(
+        Prisma.sql`
       with primary_match as (
         select unique_id
         from public.search_entry_primary(
@@ -190,7 +198,10 @@ async function fetchPrimarySearchRows(
       from primary_match pm
       join lateral public.get_entry_identities(array[pm.unique_id]::uuid[]) entry
         on true
-    `,
+        `,
+      );
+    },
+    { maxWait: 2_000, timeout: 7_000 },
   );
 }
 
@@ -545,7 +556,29 @@ async function fetchSemanticSearchRows(params: {
   queryEmbeddingText: string;
   similarOffset: number;
   recommendedOffset: number;
+  semanticPart: SemanticPart;
 }): Promise<AggregatedSearchRow[]> {
+  const resultIds =
+    params.semanticPart === "similar"
+      ? Prisma.sql`
+          select 'similar'::text as section, item_order, id
+          from similar_ids
+        `
+      : params.semanticPart === "recommended"
+        ? Prisma.sql`
+            select 'recommended'::text as section, item_order, id
+            from recommended_ids
+          `
+        : Prisma.sql`
+            select 'similar'::text as section, item_order, id
+            from similar_ids
+
+            union all
+
+            select 'recommended'::text as section, item_order, id
+            from recommended_ids
+          `;
+
   return prisma.$queryRaw<AggregatedSearchRow[]>(
     Prisma.sql`
       with primary_seed as (
@@ -708,13 +741,7 @@ async function fetchSemanticSearchRows(params: {
         offset ${params.recommendedOffset}
       ),
       result_ids as (
-        select 'similar'::text as section, item_order, id
-        from similar_ids
-
-        union all
-
-        select 'recommended'::text as section, item_order, id
-        from recommended_ids
+        ${resultIds}
       ),
       result_rows as (
         select
@@ -861,51 +888,61 @@ export async function GET(req: NextRequest) {
       rows: AggregatedSearchRow[];
       status: EntrySearchResponse["sectionStatus"]["semantic"];
     }> => {
-      try {
-        const queryEmbeddingText = await getQueryEmbeddingText(query);
-
-        if (!queryEmbeddingText) {
-          const fallbackRows = await fetchAggregatedSearchRows({
-            query,
-            similarOffset,
-            recommendedOffset,
-          });
-          const rows = fallbackRows.filter((row) => row.section !== "primary");
-          return {
-            rows: rows.filter(
-              (row) => semanticPart === "all" || row.section === semanticPart,
-            ),
-            status: "fallback",
-          };
-        }
-
-        const rows = await fetchSemanticSearchRows({
-          query,
-          queryEmbeddingText,
-          similarOffset,
-          recommendedOffset,
-        });
-
-        return {
-          rows: rows.filter(
-            (row) => semanticPart === "all" || row.section === semanticPart,
-          ),
-          status: "success",
-        };
-      } catch (error) {
-        console.error("Semantic entry search failed:", error);
+      const filterRows = (rows: AggregatedSearchRow[]) =>
+        rows.filter(
+          (row) => semanticPart === "all" || row.section === semanticPart,
+        );
+      const fetchFallback = async () => {
         const fallbackRows = await fetchAggregatedSearchRows({
           query,
           similarOffset,
           recommendedOffset,
         });
-        const rows = fallbackRows.filter((row) => row.section !== "primary");
         return {
-          rows: rows.filter(
-            (row) => semanticPart === "all" || row.section === semanticPart,
+          rows: filterRows(
+            fallbackRows.filter((row) => row.section !== "primary"),
           ),
-          status: "fallback",
+          status: "fallback" as const,
         };
+      };
+
+      let queryEmbeddingText: string | null = null;
+      try {
+        queryEmbeddingText = await getQueryEmbeddingText(query);
+      } catch (error) {
+        console.error("Query embedding failed; using search fallback:", error);
+      }
+
+      if (queryEmbeddingText) {
+        try {
+          const rows = await fetchSemanticSearchRows({
+            query,
+            queryEmbeddingText,
+            similarOffset,
+            recommendedOffset,
+            semanticPart,
+          });
+
+          return {
+            rows: filterRows(rows),
+            status: "success",
+          };
+        } catch (error) {
+          console.error("Semantic entry search failed:", error);
+          if (isPrismaTransientDatabaseError(error)) {
+            return { rows: [], status: "error" };
+          }
+        }
+      }
+
+      try {
+        return await fetchFallback();
+      } catch (error) {
+        console.error("Entry search fallback failed:", error);
+        if (isPrismaTransientDatabaseError(error)) {
+          return { rows: [], status: "error" };
+        }
+        throw error;
       }
     };
 
@@ -919,6 +956,7 @@ export async function GET(req: NextRequest) {
           recommendedOffset,
           semanticStatus: "idle",
         }),
+        { headers: SEARCH_CACHE_HEADERS },
       );
     }
 
@@ -932,6 +970,12 @@ export async function GET(req: NextRequest) {
           recommendedOffset,
           semanticStatus: semantic.status,
         }),
+        {
+          headers:
+            semantic.status === "error"
+              ? SEARCH_NO_STORE_HEADERS
+              : SEARCH_CACHE_HEADERS,
+        },
       );
     }
 
@@ -949,6 +993,12 @@ export async function GET(req: NextRequest) {
         recommendedOffset,
         semanticStatus: semantic.status,
       }),
+      {
+        headers:
+          semantic.status === "error"
+            ? SEARCH_NO_STORE_HEADERS
+            : SEARCH_CACHE_HEADERS,
+      },
     );
   });
 }

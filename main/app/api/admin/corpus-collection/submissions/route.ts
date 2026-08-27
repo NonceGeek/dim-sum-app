@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
           ]
         : undefined,
     };
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_submissions.findMany({
         where,
         include: submissionInclude,

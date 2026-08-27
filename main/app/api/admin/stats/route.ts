@@ -10,8 +10,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   return requireAdmin(req, async () => {
     try {
-      // 并行查询所有统计数据以提高性能
-      const [totalUsers, totalCorpusEntries, recentActiveUsers] = await Promise.all([
+      const [totalUsers, totalCorpusEntries, recentActiveUsers] = await prisma.$transaction([
         // 总用户数（排除已合并/软删除账号）
         prisma.user.count({ where: { status: { not: "MERGED" } } }),
 

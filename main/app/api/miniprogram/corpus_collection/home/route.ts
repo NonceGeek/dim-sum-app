@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { databaseErrorResponse } from "@/lib/prisma-errors";
+import { PUBLIC_LIST_CACHE_HEADERS } from "@/lib/public-cache";
 import {
   PUBLIC_SUBMISSION_COUNT,
   listPublicSubmissions,
@@ -32,25 +34,28 @@ export async function GET(_req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({
-      banners: activities.map((activity) => ({
-        id: activity.id.toString(),
-        title: activity.title,
-        imageUrl: activity.banner_url,
-        linkType: "activity",
-        linkId: activity.id.toString(),
-      })),
-      quickEntries: [
-        { key: "submit", title: "我要投稿" },
-        { key: "activities", title: "活动日历" },
-        { key: "featured", title: "精选内容" },
-      ],
-      activities: activities.map(serializePublicActivity),
-      latestSubmissions: latest.rawItems.map(serializeHomeSubmission),
-      featuredSubmissions: featured.items,
-    });
+    return NextResponse.json(
+      {
+        banners: activities.map((activity) => ({
+          id: activity.id.toString(),
+          title: activity.title,
+          imageUrl: activity.banner_url,
+          linkType: "activity",
+          linkId: activity.id.toString(),
+        })),
+        quickEntries: [
+          { key: "submit", title: "我要投稿" },
+          { key: "activities", title: "活动日历" },
+          { key: "featured", title: "精选内容" },
+        ],
+        activities: activities.map(serializePublicActivity),
+        latestSubmissions: latest.rawItems.map(serializeHomeSubmission),
+        featuredSubmissions: featured.items,
+      },
+      { headers: PUBLIC_LIST_CACHE_HEADERS },
+    );
   } catch (error) {
     console.error("[CorpusCollection] Failed to load home", error);
-    return NextResponse.json({ error: "Failed to load home" }, { status: 500 });
+    return databaseErrorResponse(error, "Failed to load home");
   }
 }

@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
         where.category = category;
       }
 
-      // 并行查询总数和语料库列表
-      const [total, corpusEntries] = await Promise.all([
+      // 使用同一连接读取总数和分页列表，避免连接池扇出。
+      const [total, corpusEntries] = await prisma.$transaction([
         prisma.cantonese_corpus_all.count({ where }),
         prisma.cantonese_corpus_all.findMany({
           where,

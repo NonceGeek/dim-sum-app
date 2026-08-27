@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
     }
 
     const where = { submission_id: id, status: "approved" };
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_comments.findMany({
         where,
         include: { user: { select: { id: true, name: true, image: true, wechatAvatar: true } } },

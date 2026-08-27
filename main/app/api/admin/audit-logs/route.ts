@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     if (targetUserId) whereClause.target_user_id = targetUserId;
     if (categoryName) whereClause.category_name = categoryName;
 
-    const [logs, total] = await Promise.all([
+    const [logs, total] = await prisma.$transaction([
       prisma.permission_audit_logs.findMany({
         where: whereClause,
         include: {

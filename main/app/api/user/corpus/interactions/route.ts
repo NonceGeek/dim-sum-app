@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
 
         const offset = (page - 1) * limit;
 
-        const [interactions, total] = await Promise.all([
+        const [interactions, total] = await prisma.$transaction([
           prisma.user_corpus_interactions.findMany({
             where: finalWhere,
             include: {

@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
       // 排除已合并（软删除）的账号
       where.status = { not: "MERGED" };
 
-      // 并行查询总数和用户列表
-      const [total, users] = await Promise.all([
+      // 使用同一连接读取总数和分页列表，避免连接池扇出。
+      const [total, users] = await prisma.$transaction([
         prisma.user.count({ where }),
         prisma.user.findMany({
           where,
