@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await source.arrayBuffer());
     const extension = extensionFromContentType(contentType);
     const objectName = `corpus-collection/covers/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-    const uploaded = await uploadBufferToOss(objectName, buffer, contentType);
+    const uploaded = await uploadBufferToOss(objectName, buffer, contentType, "corpusAsset");
 
     if (activityId || submissionId) {
       await prisma.$transaction(async (tx) => {
