@@ -44,6 +44,7 @@ export type EntryIdentity = {
   assets: {
     audioUrl: string | null;
     videoUrl: string | null;
+    videoTranscript: string | null;
     coverImage: string | null;
     model3dUrl: string | null;
   };
@@ -283,6 +284,25 @@ function firstMeaning(structuredNote: unknown, note: unknown): string | null {
   ]);
 }
 
+function firstVideoTranscript(
+  structuredNote: unknown,
+  note: unknown,
+): string | null {
+  for (const type of ["subtitle", "transcript", "transcription"]) {
+    const transcript = firstBlockValue(structuredNote, type);
+    if (transcript) return transcript;
+  }
+
+  return firstContextString(note, [
+    "subtitle",
+    "transcript",
+    "transcription",
+    "字幕",
+    "转写",
+    "视频转写",
+  ]);
+}
+
 function firstAssetUrl(
   structuredNote: unknown,
   note: unknown,
@@ -415,6 +435,7 @@ export function buildEntryIdentity(
     assets: {
       audioUrl: firstAssetUrl(row.structured_note, row.note, "audio"),
       videoUrl: firstAssetUrl(row.structured_note, row.note, "video"),
+      videoTranscript: firstVideoTranscript(row.structured_note, row.note),
       coverImage: firstAssetUrl(row.structured_note, row.note, "image"),
       model3dUrl: firstAssetUrl(row.structured_note, row.note, "model3d"),
     },

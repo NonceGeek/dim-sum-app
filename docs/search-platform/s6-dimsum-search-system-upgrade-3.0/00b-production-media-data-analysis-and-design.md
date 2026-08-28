@@ -106,6 +106,25 @@ structured_note: null
 
 有 1 条 `note.video_clips` 数组，其元素 `link` 为空，不计为 video。仅有数组、block type 或描述文字都不足以证明媒体可用。
 
+### 3.4 现有 5 条视频的展示约束
+
+Production 的 5 条 `text + video` 语料均为旧结构，全部使用 `note.context.video` 保存 MP4，并使用 `note.context.subtitle` 保存完整转写；`structured_note` 均为空。因此 S6 不能只实现未来的正式 video block，也不能把字幕误当作普通释义。
+
+只读核验结果：
+
+| 项目 | 结果 |
+|---|---|
+| 视频数量 | 5 |
+| 文件大小 | 约 1.5 MB、2.8 MB、27.6 MB、59.3 MB、72.2 MB |
+| MIME | 全部 `video/mp4` |
+| Range 请求 | 全部支持 `Accept-Ranges: bytes` |
+| 转写 | 5 条均有非空 `subtitle` |
+| 直接打开源文件 | 其中 4 条 OSS 响应带强制下载头 |
+
+据此采用以下实现：精准结果和词条详情使用浏览器原生播放器，设置 `preload=metadata` 与 `playsInline`；转写默认折叠，用户按需展开；始终保留“打开视频源文件”作为播放降级。相关结果列表不挂载播放器、不请求视频 metadata，视频按钮进入词条详情，避免批量预载大文件及直接触发 OSS 下载。
+
+Entry DTO 增加 `assets.videoTranscript`，兼容正式 `subtitle/transcript/transcription` block 和旧 `note.context.subtitle/transcript/transcription/字幕/转写/视频转写`。该字段只是读取现有事实数据，不增加数据库列。
+
 ## 四、字段定义
 
 ```sql

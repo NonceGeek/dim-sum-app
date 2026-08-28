@@ -38,9 +38,12 @@ mediaType=text|audio|video|image|model3d
 contentAttribute
 mediaTypes
 assets.model3dUrl
+assets.videoTranscript
 ```
 
 `model3dUrl` 与原有 `audioUrl/videoUrl/coverImage` 同属 `assets` 对象，只是补齐 3D 类型，不是另建顶层字段或独立资源协议。四种字段当前都返回从正式 block 与旧 context 兼容结构中找到的第一个可用 URL；`mediaTypes` 则用于数据库筛选。
+
+`videoTranscript` 同样位于 `assets`，读取正式 `subtitle/transcript/transcription` block 或旧 `note.context` 的对应字幕 key。它复用已有 JSON，不新增数据库列。Production 现有 5 条视频全部使用旧 `video + subtitle` 结构，因此这项兼容是现有数据可展示的必要条件。
 
 旧媒体兼容读取补齐：
 
@@ -121,7 +124,9 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 
 ### 3.1 独立分支上的媒体前端
 
-`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选。相关结果卡片提供 model3d 资源按钮；精准结果和词条详情通过 iframe 懒加载来源已有的 Viewer 页面，同时保留外链降级。当前不复制来源端的 Three.js/model-viewer 依赖，也不改变 Production。
+`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选。精准结果和词条详情通过 iframe 懒加载来源已有的 3D Viewer 页面，同时保留外链降级。当前不复制来源端的 Three.js/model-viewer 依赖，也不改变 Production。
+
+视频复用一个原生播放器组件：精准结果和词条详情使用 `preload=metadata + playsInline`，现有转写默认折叠展示，并始终保留源文件入口。相关结果只链接到词条详情，不挂载播放器；这是为了避免同时预载 5 个约 1.5–72.2 MB 的资源，也避免直接打开带 OSS 强制下载头的 URL。
 
 ## 四、回退
 

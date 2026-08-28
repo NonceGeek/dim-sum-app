@@ -14,6 +14,7 @@ import {
 import { getTranslations } from "next-intl/server";
 import { CopyEntryIdButton } from "./copy-entry-id-button";
 import { Model3dCard } from "@/components/media/model3d-card";
+import { VideoCard } from "@/components/media/video-card";
 
 type EntryPageProps = {
   params: Promise<{
@@ -168,11 +169,12 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                 />
               )}
               {entry.assets.videoUrl && (
-                <video
-                  src={entry.assets.videoUrl}
-                  controls
-                  className="w-full rounded-lg border border-border"
-                  poster={entry.assets.coverImage ?? undefined}
+                <VideoCard
+                  url={entry.assets.videoUrl}
+                  poster={entry.assets.coverImage}
+                  transcript={entry.assets.videoTranscript}
+                  transcriptLabel={t("videoTranscript")}
+                  openSourceLabel={t("openVideoSource")}
                 />
               )}
               {entry.assets.audioUrl && (

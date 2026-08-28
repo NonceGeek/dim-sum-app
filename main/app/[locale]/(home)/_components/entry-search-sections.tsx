@@ -21,6 +21,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { Model3dCard } from "@/components/media/model3d-card";
+import { VideoCard } from "@/components/media/video-card";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
@@ -263,6 +264,7 @@ function MediaControls({
   entry,
   labels,
   compact = false,
+  returnQuery,
 }: {
   entry: EntryIdentity;
   labels: {
@@ -273,6 +275,7 @@ function MediaControls({
     audioPlayFailed: string;
   };
   compact?: boolean;
+  returnQuery?: string;
 }) {
   const { audioUrl, videoUrl, coverImage, model3dUrl } = entry.assets;
   if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
@@ -304,10 +307,10 @@ function MediaControls({
           className={buttonClass}
           asChild
         >
-          <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+          <Link href={entryHref(entry, returnQuery)}>
             <Video className={`${iconClass} mr-1`} />
             {labels.video}
-          </a>
+          </Link>
         </Button>
       )}
       {coverImage && (
@@ -351,7 +354,8 @@ function PrimaryMediaPreview({
   labels: MediaLabels;
   returnQuery?: string;
 }) {
-  const { audioUrl, videoUrl, coverImage, model3dUrl } = entry.assets;
+  const { audioUrl, videoUrl, videoTranscript, coverImage, model3dUrl } =
+    entry.assets;
   if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
 
   return (
@@ -361,7 +365,12 @@ function PrimaryMediaPreview({
       )}
 
       {(coverImage || videoUrl) && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div
+          className={cn(
+            "grid gap-3",
+            coverImage && videoUrl && "sm:grid-cols-2",
+          )}
+        >
           {coverImage && (
             <Link
               href={entryHref(entry, returnQuery)}
@@ -376,12 +385,12 @@ function PrimaryMediaPreview({
             </Link>
           )}
           {videoUrl && (
-            <video
-              src={videoUrl}
-              controls
-              preload="metadata"
-              poster={coverImage ?? undefined}
-              className="aspect-video w-full rounded-md border border-border bg-muted/30 object-cover"
+            <VideoCard
+              url={videoUrl}
+              poster={coverImage}
+              transcript={videoTranscript}
+              transcriptLabel={labels.videoTranscript}
+              openSourceLabel={labels.openVideoSource}
             />
           )}
         </div>
@@ -987,7 +996,12 @@ function EntryTile({
         )}
       </Link>
       <div className="mt-auto space-y-3">
-        <MediaControls entry={entry} labels={labels.media} compact />
+        <MediaControls
+          entry={entry}
+          labels={labels.media}
+          compact
+          returnQuery={returnQuery}
+        />
         <TagList
           entry={entry}
           relatedLimit={dense ? 3 : 4}
@@ -1190,6 +1204,8 @@ type MediaLabels = {
   image: string;
   model3d: string;
   openModel3d: string;
+  videoTranscript: string;
+  openVideoSource: string;
   audioPlayFailed: string;
 };
 
@@ -1219,6 +1235,8 @@ export function EntrySearchSections({
     image: t("image"),
     model3d: t("model3d"),
     openModel3d: t("openModel3d"),
+    videoTranscript: t("videoTranscript"),
+    openVideoSource: t("openVideoSource"),
     audioPlayFailed: t("audioPlayFailed"),
   };
   const commonLabels = {
