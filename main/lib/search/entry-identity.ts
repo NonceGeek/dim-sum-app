@@ -7,11 +7,24 @@ export type EntryTag = {
   relevanceLevel: "medium";
 };
 
+export type EntryContentAttribute =
+  | "unclassified"
+  | "oral"
+  | "cultural_knowledge";
+export type EntryMediaType =
+  | "text"
+  | "audio"
+  | "video"
+  | "image"
+  | "model3d";
+
 export type EntryIdentity = {
   corpusId: number;
   entryId: string;
   entryName: string;
   editableLevel: number;
+  contentAttribute: EntryContentAttribute;
+  mediaTypes: EntryMediaType[];
   jyutping: string | null;
   meaning: string | null;
   source: {
@@ -32,6 +45,7 @@ export type EntryIdentity = {
     audioUrl: string | null;
     videoUrl: string | null;
     coverImage: string | null;
+    model3dUrl: string | null;
   };
   stats: {
     likes: number;
@@ -86,6 +100,8 @@ export type CorpusSearchRow = {
   category_display_name: string | null;
   editable_level: bigint | number | null;
   lifecycle_stage: string;
+  content_attribute: EntryContentAttribute;
+  media_types: EntryMediaType[];
   liked_num: bigint | number | null;
   bookmark_num: bigint | number | null;
   view_num: bigint | number | null;
@@ -116,6 +132,7 @@ type StructuredBlock = {
   type?: string;
   content?: unknown;
   url?: unknown;
+  link?: unknown;
 };
 
 type StructuredDataItem = {
@@ -175,7 +192,7 @@ function firstContextString(
 function firstBlockValue(
   structuredNote: unknown,
   type: string,
-  field: "content" | "url" = "content",
+  field: "content" | "url" | "link" = "content",
 ): string | null {
   for (const item of getStructuredItems(structuredNote)) {
     if (!Array.isArray(item.blocks)) continue;
@@ -183,6 +200,41 @@ function firstBlockValue(
     const value = block?.[field];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
+  return null;
+}
+
+function mediaUrlFromValue(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const url = mediaUrlFromValue(item);
+      if (url) return url;
+    }
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return mediaUrlFromValue(record.url) ?? mediaUrlFromValue(record.link);
+  }
+  return null;
+}
+
+function firstContextMediaUrl(note: unknown, keys: string[]): string | null {
+  const context = getNoteContext(note);
+  if (context) {
+    for (const key of keys) {
+      const url = mediaUrlFromValue(context[key]);
+      if (url) return url;
+    }
+  }
+
+  if (note && typeof note === "object" && !Array.isArray(note)) {
+    const record = note as Record<string, unknown>;
+    for (const key of keys) {
+      const url = mediaUrlFromValue(record[key]);
+      if (url) return url;
+    }
+  }
+
   return null;
 }
 
@@ -234,18 +286,54 @@ function firstMeaning(structuredNote: unknown, note: unknown): string | null {
 function firstAssetUrl(
   structuredNote: unknown,
   note: unknown,
-  blockType: "audio" | "video" | "image",
+  blockType: Exclude<EntryMediaType, "text">,
 ): string | null {
-  const structuredUrl = firstBlockValue(structuredNote, blockType, "url");
-  if (structuredUrl) return structuredUrl;
+  const blockTypes = blockType === "model3d" ? ["model3d", "voxel"] : [blockType];
+  for (const type of blockTypes) {
+    const structuredUrl =
+      firstBlockValue(structuredNote, type, "url") ??
+      firstBlockValue(structuredNote, type, "link");
+    if (structuredUrl) return structuredUrl;
+  }
 
   const keyMap = {
-    audio: ["audio", "audioUrl", "音频", "音频链接"],
-    video: ["video", "videoUrl", "视频", "视频链接"],
-    image: ["img", "image", "imageUrl", "cover", "coverImage", "图片", "封面", "封面图"],
+    audio: [
+      "audio",
+      "audioUrl",
+      "音频",
+      "音频1",
+      "音频2",
+      "音频3",
+      "音频4",
+      "音频5",
+      "音频链接",
+      "粤语",
+      "普通话",
+    ],
+    video: ["video", "videoUrl", "视频", "视频链接", "video_clips"],
+    image: [
+      "img",
+      "image",
+      "imageUrl",
+      "cover",
+      "coverImage",
+      "photo_url",
+      "图片",
+      "封面",
+      "封面图",
+    ],
+    model3d: [
+      "voxel",
+      "model3d",
+      "model_3d",
+      "3d_model",
+      "gltf",
+      "glb",
+      "usdz",
+    ],
   } satisfies Record<typeof blockType, string[]>;
 
-  return firstContextString(note, keyMap[blockType]);
+  return firstContextMediaUrl(note, keyMap[blockType]);
 }
 
 function buildCategory(row: CorpusSearchRow) {
@@ -309,6 +397,8 @@ export function buildEntryIdentity(
     entryId,
     entryName: cleanEntryName(row.data, row.structured_note),
     editableLevel: asNumber(row.editable_level),
+    contentAttribute: row.content_attribute ?? "unclassified",
+    mediaTypes: Array.isArray(row.media_types) ? row.media_types : ["text"],
     jyutping: firstJyutping(row.structured_note, row.note),
     meaning: firstMeaning(row.structured_note, row.note),
     source: {
@@ -326,6 +416,7 @@ export function buildEntryIdentity(
       audioUrl: firstAssetUrl(row.structured_note, row.note, "audio"),
       videoUrl: firstAssetUrl(row.structured_note, row.note, "video"),
       coverImage: firstAssetUrl(row.structured_note, row.note, "image"),
+      model3dUrl: firstAssetUrl(row.structured_note, row.note, "model3d"),
     },
     stats: {
       likes: asNumber(row.liked_num),

@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DimSum 标注小程序 · v6</title><style>
+:root{--blue:#1677ff;--bg:#f5f7fb;--line:#e7eaf0;--txt:#182230;--sub:#748092;--green:#17a673;--orange:#ef8a18}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#e8ebf0;font:14px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:var(--txt);display:flex;justify-content:center}
+.s{display:none;position:absolute}
+.app{width:390px;min-height:100vh;background:var(--bg)}
+.status{height:44px;padding:12px 20px 0;background:#fff;display:flex;justify-content:space-between;font-weight:700}
+.nav{height:54px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:850;position:relative}
+.back{position:absolute;left:18px;color:#4d596a;cursor:pointer;user-select:none;font-size:17px;font-weight:400}
+.content{padding:16px 16px 88px}
+.notice{background:#eaf3ff;color:#276bc5;border-radius:10px;padding:11px 12px;line-height:1.55;font-size:12px;margin-bottom:13px}
+.filter-title{color:var(--sub);font-size:12px;margin:10px 0 6px}
+.filters{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
+.filter{flex:none;background:#fff;border:1px solid var(--line);border-radius:18px;padding:7px 11px;color:var(--sub);font-size:12px;cursor:pointer;user-select:none;white-space:nowrap}
+.summary{display:flex;justify-content:space-between;color:var(--sub);font-size:12px;margin:13px 0 10px}
+.task{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:11px;box-shadow:0 2px 8px #1b273810}
+.tasktop{display:flex;justify-content:space-between}
+.badge{font-size:11px;border-radius:6px;padding:4px 7px;font-weight:750}
+.classify{color:#7955c9;background:#f0ebff}
+.sample{color:#16805d;background:#e6f8f0}
+.contenttask{color:#d07611;background:#fff3df}
+.corpus{font-weight:850;color:#3b485a;margin:9px 0 4px}
+.task h3{margin:4px 0 5px;font-size:16px}
+.arrow{font-size:18px;color:#9aa5b5}
+.meta{color:var(--sub);font-size:12px;line-height:1.6}
+.label{color:var(--sub);font-size:12px;line-height:1.6}
+.co-note{font-size:12px;color:var(--sub);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.bottom{position:fixed;bottom:0;width:390px;max-width:100vw;height:66px;border-top:1px solid var(--line);background:#fff;display:flex;justify-content:space-around;align-items:center;z-index:5}
+.tab{font-size:11px;text-align:center;color:var(--sub);cursor:pointer;min-width:70px;user-select:none}
+.tab b{display:block;font-size:19px;margin-bottom:3px}
+/* detail */
+.headrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.typebadge{font-size:12px;padding:5px 8px;border-radius:7px;font-weight:750}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:11px;box-shadow:0 2px 8px #1b273810}
+.entry{font-size:23px;font-weight:850;color:#10284a;margin:3px 0 12px}
+.value{line-height:1.6}
+.evidence{border-left:3px solid var(--blue);background:#f8f9fb;padding:10px;line-height:1.65;font-size:13px;color:#3e4a59;margin-top:8px}
+.resultbox{border:1px solid #cdbfff;background:#faf8ff}
+.samplebox{border-color:#a9e0c8;background:#f3fcf7}
+.resultbox h3{margin:5px 0 8px;color:#6547bd}
+.samplebox h3{color:#17825e}
+.reason{font-size:13px;color:#4c5570;line-height:1.6}
+.btnrow{display:flex;gap:9px;margin-top:16px}
+.btn{border:0;border-radius:9px;padding:12px 8px;font-weight:750;flex:1;display:block;text-align:center;cursor:pointer;user-select:none}
+.confirm{background:var(--blue);color:#fff}
+.modify{background:#edf4ff;color:var(--blue)}
+.empty{background:#f1f3f6;color:#5e6876}
+.tip{margin-top:13px;color:var(--sub);font-size:12px;line-height:1.5}
+/* sheet */
+.sheetback{display:none;position:fixed;inset:0;background:#0007;align-items:flex-end;justify-content:center;z-index:9}
+.sheetbd{position:absolute;inset:0;z-index:1}
+.sheet{width:390px;max-width:100vw;background:#fff;border-radius:20px 20px 0 0;padding:10px 18px 28px;position:relative;z-index:2}
+.handle{height:5px;width:40px;border-radius:4px;background:#d1d6df;margin:2px auto 15px}
+.sheet h2{font-size:18px;margin:0 0 8px}
+.option{display:flex;justify-content:space-between;padding:14px 2px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer;user-select:none}
+.opt-chk{visibility:hidden}
+
+/* ===== STATE MACHINE ===== */
+/* pages */
+.pg{display:none}
+#pg0:checked~.app .list-pg{display:block}
+#pg1:checked~.app .d1-pg{display:block}
+#pg2:checked~.app .d2-pg{display:block}
+#pg3:checked~.app .d3-pg{display:block}
+#pg4:checked~.app .proc-pg,#pg5:checked~.app .proc-pg,#pg6:checked~.app .proc-pg,
+#pg7:checked~.app .proc-pg,#pg8:checked~.app .proc-pg,#pg9:checked~.app .proc-pg,
+#pg10:checked~.app .proc-pg{display:block}
+/* tab active */
+#pg0:checked~.app .tab-t,#pg1:checked~.app .tab-t,#pg2:checked~.app .tab-t,#pg3:checked~.app .tab-t{color:var(--blue);font-weight:700}
+#pg4:checked~.app .tab-m,#pg5:checked~.app .tab-m,#pg6:checked~.app .tab-m,#pg7:checked~.app .tab-m,
+#pg8:checked~.app .tab-m,#pg9:checked~.app .tab-m,#pg10:checked~.app .tab-m{color:var(--blue);font-weight:700}
+/* type filter chips active */
+#tf0:checked~.app .tfall{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#tf1:checked~.app .tfcl{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#tf2:checked~.app .tfsp{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#tf3:checked~.app .tfco{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+/* corpus block */
+.corpus-block{display:none}
+#tf1:checked~.app .corpus-block,#tf2:checked~.app .corpus-block,#tf3:checked~.app .corpus-block{display:block}
+/* corpus chip sets */
+.cf-cl,.cf-sp,.cf-co{display:none}
+#tf1:checked~.app .cf-cl{display:flex}
+#tf2:checked~.app .cf-sp{display:flex}
+#tf3:checked~.app .cf-co{display:flex}
+/* corpus chips active */
+#cc0:checked~.app .ccall{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cc1:checked~.app .cc1lbl{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cs0:checked~.app .csall{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cs1:checked~.app .cs1lbl{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cs2:checked~.app .cs2lbl{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cco0:checked~.app .ccoall{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cco1:checked~.app .cco1lbl{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+#cco2:checked~.app .cco2lbl{background:#eaf3ff;border-color:#8dbbff;color:var(--blue);font-weight:750}
+/* summary */
+.sall,.scl,.ssp,.sco{display:none}
+#tf0:checked~.app .sall{display:inline}
+#tf1:checked~.app .scl{display:inline}
+#tf2:checked~.app .ssp{display:inline}
+#tf3:checked~.app .sco{display:inline}
+/* task visibility */
+#tf1:checked~.app .task-sp,#tf1:checked~.app .task-co{display:none}
+#tf2:checked~.app .task-cl,#tf2:checked~.app .task-co{display:none}
+#tf3:checked~.app .task-cl,#tf3:checked~.app .task-sp{display:none}
+#cs1:checked~.app .task-sp2{display:none}
+#cs2:checked~.app .task-sp1{display:none}
+#cco1:checked~.app .task-co2{display:none}
+#cco2:checked~.app .task-co1{display:none}
+/* proc content */
+.pe,.pd1,.pd2,.pd3,.pd1s,.pd2s,.pd3s{display:none}
+#pg4:checked~.app .pe{display:block}
+#pg5:checked~.app .pd1{display:block}
+#pg6:checked~.app .pd2{display:block}
+#pg7:checked~.app .pd3{display:block}
+#pg8:checked~.app .pd1s{display:block}
+#pg9:checked~.app .pd2s{display:block}
+#pg10:checked~.app .pd3s{display:block}
+/* option categories display */
+.d1cat,.d2cat,.d3cat{display:none}
+#d1a:checked~.app .d1a-c{display:inline}
+#d1b:checked~.app .d1b-c{display:inline}
+#d1c:checked~.app .d1c-c{display:inline}
+#d1d:checked~.app .d1d-c{display:inline}
+#d2a:checked~.app .d2a-c{display:inline}
+#d2b:checked~.app .d2b-c{display:inline}
+#d2c:checked~.app .d2c-c{display:inline}
+#d2d:checked~.app .d2d-c{display:inline}
+#d3a:checked~.app .d3a-c{display:inline}
+#d3b:checked~.app .d3b-c{display:inline}
+#d3c:checked~.app .d3c-c{display:inline}
+#d3d:checked~.app .d3d-c{display:inline}
+/* sheet */
+#sh1:checked~.app .sheetback,#sh2:checked~.app .sheetback,#sh3:checked~.app .sheetback{display:flex}
+@keyframes sUp{from{transform:translateY(100%)}to{transform:none}}
+#sh1:checked~.app .sheet,#sh2:checked~.app .sheet,#sh3:checked~.app .sheet{animation:sUp .25s forwards}
+.sh-d1,.sh-d2,.sh-d3{display:none}
+#sh1:checked~.app .sh-d1{display:block}
+#sh2:checked~.app .sh-d2{display:block}
+#sh3:checked~.app .sh-d3{display:block}
+/* option highlight in sheet */
+#d1a:checked~.app .d1-oa{color:var(--blue);font-weight:800}
+#d1a:checked~.app .d1-oa .opt-chk{visibility:visible}
+#d1b:checked~.app .d1-ob{color:var(--blue);font-weight:800}
+#d1b:checked~.app .d1-ob .opt-chk{visibility:visible}
+#d1c:checked~.app .d1-oc{color:var(--blue);font-weight:800}
+#d1c:checked~.app .d1-oc .opt-chk{visibility:visible}
+#d1d:checked~.app .d1-od{color:var(--blue);font-weight:800}
+#d1d:checked~.app .d1-od .opt-chk{visibility:visible}
+#d2a:checked~.app .d2-oa{color:var(--blue);font-weight:800}
+#d2a:checked~.app .d2-oa .opt-chk{visibility:visible}
+#d2b:checked~.app .d2-ob{color:var(--blue);font-weight:800}
+#d2b:checked~.app .d2-ob .opt-chk{visibility:visible}
+#d2c:checked~.app .d2-oc{color:var(--blue);font-weight:800}
+#d2c:checked~.app .d2-oc .opt-chk{visibility:visible}
+#d2d:checked~.app .d2-od{color:var(--blue);font-weight:800}
+#d2d:checked~.app .d2-od .opt-chk{visibility:visible}
+#d3a:checked~.app .d3-oa{color:var(--blue);font-weight:800}
+#d3a:checked~.app .d3-oa .opt-chk{visibility:visible}
+#d3b:checked~.app .d3-ob{color:var(--blue);font-weight:800}
+#d3b:checked~.app .d3-ob .opt-chk{visibility:visible}
+#d3c:checked~.app .d3-oc{color:var(--blue);font-weight:800}
+#d3c:checked~.app .d3-oc .opt-chk{visibility:visible}
+#d3d:checked~.app .d3-od{color:var(--blue);font-weight:800}
+#d3d:checked~.app .d3-od .opt-chk{visibility:visible}
+</style></head><body>
+
+<!-- page -->
+<input type=radio name=page id=pg0 class=s checked>
+<input type=radio name=page id=pg1 class=s>
+<input type=radio name=page id=pg2 class=s>
+<input type=radio name=page id=pg3 class=s>
+<input type=radio name=page id=pg4 class=s>
+<input type=radio name=page id=pg5 class=s>
+<input type=radio name=page id=pg6 class=s>
+<input type=radio name=page id=pg7 class=s>
+<input type=radio name=page id=pg8 class=s>
+<input type=radio name=page id=pg9 class=s>
+<input type=radio name=page id=pg10 class=s>
+<!-- type filter -->
+<input type=radio name=tf id=tf0 class=s checked>
+<input type=radio name=tf id=tf1 class=s>
+<input type=radio name=tf id=tf2 class=s>
+<input type=radio name=tf id=tf3 class=s>
+<!-- corpus classify -->
+<input type=radio name=cc id=cc0 class=s checked>
+<input type=radio name=cc id=cc1 class=s>
+<!-- corpus sample -->
+<input type=radio name=cs id=cs0 class=s checked>
+<input type=radio name=cs id=cs1 class=s>
+<input type=radio name=cs id=cs2 class=s>
+<!-- corpus content -->
+<input type=radio name=cco id=cco0 class=s checked>
+<input type=radio name=cco id=cco1 class=s>
+<input type=radio name=cco id=cco2 class=s>
+<!-- sheet -->
+<input type=radio name=sh id=sh0 class=s checked>
+<input type=radio name=sh id=sh1 class=s>
+<input type=radio name=sh id=sh2 class=s>
+<input type=radio name=sh id=sh3 class=s>
+<!-- d1 options -->
+<input type=radio name=d1opt id=d1a class=s checked>
+<input type=radio name=d1opt id=d1b class=s>
+<input type=radio name=d1opt id=d1c class=s>
+<input type=radio name=d1opt id=d1d class=s>
+<!-- d2 options -->
+<input type=radio name=d2opt id=d2a class=s checked>
+<input type=radio name=d2opt id=d2b class=s>
+<input type=radio name=d2opt id=d2c class=s>
+<input type=radio name=d2opt id=d2d class=s>
+<!-- d3 options -->
+<input type=radio name=d3opt id=d3a class=s checked>
+<input type=radio name=d3opt id=d3b class=s>
+<input type=radio name=d3opt id=d3c class=s>
+<input type=radio name=d3opt id=d3d class=s>
+
+<div class=app>
+
+<!-- ======== LIST PAGE ======== -->
+<section class="pg list-pg">
+<div class=status><span>20:26</span><span>▮▮▮ ◒</span></div>
+<div class=nav>DimSum 标注任务</div>
+<main class=content>
+  <div class=notice>请先选择任务类型；选择后，再按来源语料库查看对应任务。</div>
+  <div class=filter-title>任务类型</div>
+  <div class=filters>
+    <label class="filter tfall" for=tf0>全部 12</label>
+    <label class="filter tfcl" for=tf1>分类确认 1</label>
+    <label class="filter tfsp" for=tf2>分类抽检 2</label>
+    <label class="filter tfco" for=tf3>内容校对 9</label>
+  </div>
+
+  <div class=corpus-block>
+    <div class=filter-title>来源语料库</div>
+    <div class="filters cf-cl">
+      <label class="filter ccall" for=cc0>全部语料库</label>
+      <label class="filter cc1lbl" for=cc1>岭南建筑资料库</label>
+    </div>
+    <div class="filters cf-sp">
+      <label class="filter csall" for=cs0>全部语料库</label>
+      <label class="filter cs1lbl" for=cs1>广州话正音字典</label>
+      <label class="filter cs2lbl" for=cs2>十三行资料集</label>
+    </div>
+    <div class="filters cf-co">
+      <label class="filter ccoall" for=cco0>全部语料库</label>
+      <label class="filter cco1lbl" for=cco1>影视动画配音</label>
+      <label class="filter cco2lbl" for=cco2>岭南建筑口语介绍集</label>
+    </div>
+  </div>
+
+  <div class=summary>
+    <span>
+      <span class=sall>全部待处理任务</span>
+      <span class=scl>分类确认任务</span>
+      <span class=ssp>分类抽检任务</span>
+      <span class=sco>内容校对任务</span>
+    </span>
+    <span>按最新推送排序</span>
+  </div>
+
+  <!-- CL-018: classify -->
+  <div class=task-cl>
+    <label for=pg1 style="display:block;cursor:pointer">
+      <div class=task>
+        <div class=tasktop><span class="badge classify">分类确认</span><span class=arrow>›</span></div>
+        <div class=corpus>岭南建筑资料库</div>
+        <h3>骑楼建筑形制介绍</h3>
+        <div class=meta>文化知识 · 建筑资料<br>待确认：二级分类</div>
+      </div>
+    </label>
+  </div>
+  <!-- SP-006: sample corpus1 -->
+  <div class="task-sp task-sp1">
+    <label for=pg2 style="display:block;cursor:pointer">
+      <div class=task>
+        <div class=tasktop><span class="badge sample">分类抽检</span><span class=arrow>›</span></div>
+        <div class=corpus>广州话正音字典</div>
+        <h3>广州话正音字典：好</h3>
+        <div class=meta>文化知识 · 字典词条<br>请检查当前分类是否合适</div>
+      </div>
+    </label>
+  </div>
+  <!-- SP-011: sample corpus2 -->
+  <div class="task-sp task-sp2">
+    <label for=pg3 style="display:block;cursor:pointer">
+      <div class=task>
+        <div class=tasktop><span class="badge sample">分类抽检</span><span class=arrow>›</span></div>
+        <div class=corpus>十三行资料集</div>
+        <h3>哥德堡号航运资料</h3>
+        <div class=meta>文化知识 · 历史资料<br>请检查当前分类是否合适</div>
+      </div>
+    </label>
+  </div>
+  <!-- CO-023: content corpus1 (non-clickable) -->
+  <div class="task-co task-co1">
+    <div class=task>
+      <div class=tasktop><span class="badge contenttask">内容校对</span><span class=arrow>›</span></div>
+      <div class=corpus>影视动画配音</div>
+      <h3>好嘢。hou2 je5</h3>
+      <div class=meta>口语语料 · 影视配音<br>请进行内容校对</div>
+      <div class=co-note>内容校对沿用现有校对页面（本 Demo 聚焦分类任务）</div>
+    </div>
+  </div>
+  <!-- CO-027: content corpus2 (non-clickable) -->
+  <div class="task-co task-co2">
+    <div class=task>
+      <div class=tasktop><span class="badge contenttask">内容校对</span><span class=arrow>›</span></div>
+      <div class=corpus>岭南建筑口语介绍集</div>
+      <h3>恩宁路骑楼街景导览</h3>
+      <div class=meta>口语语料 · 实地导览<br>请进行内容校对</div>
+      <div class=co-note>内容校对沿用现有校对页面（本 Demo 聚焦分类任务）</div>
+    </div>
+  </div>
+</main>
+</section>
+
+<!-- ======== DETAIL 1: CL-018 classify ======== -->
+<section class="pg d1-pg">
+<div class=status><span>20:26</span><span>▮▮▮ ◒</span></div>
+<div class=nav><label class=back for=pg0>‹ 任务</label>分类确认</div>
+<main class=content>
+  <div class=headrow>
+    <span class="typebadge classify">分类确认</span>
+    <span class=meta>任务 #CL-20260809-018</span>
+  </div>
+  <div class=card>
+    <div class=label>来源语料库</div>
+    <div class=value style="font-size:17px;font-weight:850">岭南建筑资料库</div>
+  </div>
+  <div class=card>
+    <div class=label>请为这条内容选择最符合主题的分类</div>
+    <div class=entry>骑楼建筑形制介绍</div>
+    <div class=label>内容属性 / 当前主题</div>
+    <div class=value>文化知识 / 建筑资料</div>
+    <div class=label style="margin-top:13px">内容摘要</div>
+    <div class=evidence>骑楼底层沿街退让形成带顶盖通道，兼具遮阳避雨与商业展示功能，常见于近代广州、佛山商埠街区。</div>
+  </div>
+  <div class="card resultbox">
+    <div class=label>系统建议</div>
+    <h3>
+      <span class="d1cat d1a-c">近代街区建筑</span>
+      <span class="d1cat d1b-c">传统民居建筑</span>
+      <span class="d1cat d1c-c">建筑保护与修复</span>
+      <span class="d1cat d1d-c">暂不分类</span>
+    </h3>
+    <div class=reason>内容重点描述骑楼的建筑形制和街区使用功能。</div>
+  </div>
+  <div class=btnrow>
+    <label class="btn confirm" for=pg5>确认分类</label>
+    <label class="btn modify" for=sh1>修改分类</label>
+    <label class="btn empty" for=pg8>暂不分类</label>
+  </div>
+  <div class=tip>若没有合适的分类，或资料无法判断，可选择"暂不分类"。</div>
+</main>
+</section>
+
+<!-- ======== DETAIL 2: SP-006 sample/字典 ======== -->
+<section class="pg d2-pg">
+<div class=status><span>20:26</span><span>▮▮▮ ◒</span></div>
+<div class=nav><label class=back for=pg0>‹ 任务</label>分类抽检</div>
+<main class=content>
+  <div class=headrow>
+    <span class="typebadge sample">分类抽检</span>
+    <span class=meta>任务 #SP-20260809-006</span>
+  </div>
+  <div class=card>
+    <div class=label>来源语料库</div>
+    <div class=value style="font-size:17px;font-weight:850">广州话正音字典</div>
+  </div>
+  <div class=card>
+    <div class=label>请检查当前分类是否符合这条内容主题</div>
+    <div class=entry>广州话正音字典：好</div>
+    <div class=label>内容属性 / 当前主题</div>
+    <div class=value>文化知识 / 字典词条</div>
+    <div class=label style="margin-top:13px">内容摘要</div>
+    <div class=evidence>"好"字的粤语读音、词义解释及常见用法说明。</div>
+  </div>
+  <div class="card resultbox samplebox">
+    <div class=label>当前分类</div>
+    <h3>
+      <span class="d2cat d2a-c">通用字词</span>
+      <span class="d2cat d2b-c">读音说明</span>
+      <span class="d2cat d2c-c">词义解释</span>
+      <span class="d2cat d2d-c">暂不分类</span>
+    </h3>
+    <div class=reason>当前分类已自动整理，请检查是否符合内容主题。</div>
+  </div>
+  <div class=btnrow>
+    <label class="btn confirm" for=pg6>分类正确</label>
+    <label class="btn modify" for=sh2>修改分类</label>
+    <label class="btn empty" for=pg9>暂不分类</label>
+  </div>
+  <div class=tip>若没有合适的分类，或资料无法判断，可选择"暂不分类"。</div>
+</main>
+</section>
+
+<!-- ======== DETAIL 3: SP-011 sample/历史 ======== -->
+<section class="pg d3-pg">
+<div class=status><span>20:26</span><span>▮▮▮ ◒</span></div>
+<div class=nav><label class=back for=pg0>‹ 任务</label>分类抽检</div>
+<main class=content>
+  <div class=headrow>
+    <span class="typebadge sample">分类抽检</span>
+    <span class=meta>任务 #SP-20260809-011</span>
+  </div>
+  <div class=card>
+    <div class=label>来源语料库</div>
+    <div class=value style="font-size:17px;font-weight:850">十三行资料集</div>
+  </div>
+  <div class=card>
+    <div class=label>请检查当前分类是否符合这条内容主题</div>
+    <div class=entry>哥德堡号航运资料</div>
+    <div class=label>内容属性 / 当前主题</div>
+    <div class=value>文化知识 / 历史资料</div>
+    <div class=label style="margin-top:13px">内容摘要</div>
+    <div class=evidence>介绍哥德堡号与广州港贸易往来的历史资料。</div>
+  </div>
+  <div class="card resultbox samplebox">
+    <div class=label>当前分类</div>
+    <h3>
+      <span class="d3cat d3a-c">航运资料</span>
+      <span class="d3cat d3b-c">商贸历史</span>
+      <span class="d3cat d3c-c">人物资料</span>
+      <span class="d3cat d3d-c">暂不分类</span>
+    </h3>
+    <div class=reason>当前分类已自动整理，请检查是否符合内容主题。</div>
+  </div>
+  <div class=btnrow>
+    <label class="btn confirm" for=pg7>分类正确</label>
+    <label class="btn modify" for=sh3>修改分类</label>
+    <label class="btn empty" for=pg10>暂不分类</label>
+  </div>
+  <div class=tip>若没有合适的分类，或资料无法判断，可选择"暂不分类"。</div>
+</main>
+</section>
+
+<!-- ======== PROCESSED PAGE ======== -->
+<section class="pg proc-pg">
+<div class=status><span>20:26</span><span>▮▮▮ ◒</span></div>
+<div class=nav>已处理任务</div>
+<main class=content>
+  <div class=notice>已处理记录保留任务类型、来源语料库、最终分类和处理时间，方便回查。</div>
+  <div class=pe><div class=card>暂无本次会话处理记录</div></div>
+  <!-- d1 confirmed -->
+  <div class=pd1>
+    <div class=task>
+      <div class=tasktop><span class="badge classify">分类确认 · 已完成</span><span class=meta>刚刚</span></div>
+      <div class=corpus>岭南建筑资料库</div>
+      <h3>骑楼建筑形制介绍</h3>
+      <div class=meta>已确认分类：<span class="d1cat d1a-c">近代街区建筑</span><span class="d1cat d1b-c">传统民居建筑</span><span class="d1cat d1c-c">建筑保护与修复</span><span class="d1cat d1d-c">暂不分类</span><br>内容属性：文化知识</div>
+    </div>
+  </div>
+  <!-- d1 skipped -->
+  <div class=pd1s>
+    <div class=task>
+      <div class=tasktop><span class="badge classify">分类确认 · 已完成</span><span class=meta>刚刚</span></div>
+      <div class=corpus>岭南建筑资料库</div>
+      <h3>骑楼建筑形制介绍</h3>
+      <div class=meta>已暂不分类<br>内容属性：文化知识</div>
+    </div>
+  </div>
+  <!-- d2 confirmed -->
+  <div class=pd2>
+    <div class=task>
+      <div class=tasktop><span class="badge sample">分类抽检 · 已完成</span><span class=meta>刚刚</span></div>
+      <div class=corpus>广州话正音字典</div>
+      <h3>广州话正音字典：好</h3>
+      <div class=meta>抽检结果：分类正确 —— <span class="d2cat d2a-c">通用字词</span><span class="d2cat d2b-c">读音说明</span><span class="d2cat d2c-c">词义解释</span><span class="d2cat d2d-c">暂不分类</span><br>内容属性：文化知识</div>
+    </div>
+  </div>
+  <!-- d2 skipped -->
+  <div class=pd2s>
+    <div class=task>
+      <div class=tasktop><span class="badge sample">分类抽检 · 已完成</span><span class=meta>刚刚</span></div>
+      <div class=corpus>广州话正音字典</div>
+      <h3>广州话正音字典：好</h3>
+      <div class=meta>抽检结果：暂不分类<br>内容属性：文化知识</div>
+    </div>
+  </div>
+  <!-- d3 confirmed -->
+  <div class=pd3>
+    <div class=task>
+      <div class=tasktop><span class="badge sample">分类抽检 · 已完成</span><span class=meta>刚刚</span></div>
+      <div class=corpus>十三行资料集</div>
+      <h3>哥德堡号航运资料</h3>
+      <div class=meta>抽检结果：分类正确 —— <span class="d3cat d3a-c">航运资料</span><span class="d3cat d3b-c">商贸历史</span><span class="d3cat d3c-c">人物资料</span><span class="d3cat d3d-c">暂不分类</span><br>内容属性：文化知识</div>
+    </div>
+  </div>
+  <!-- d3 skipped -->
+  <div class=pd3s>
+    <div class=task>
+      <div class=tasktop><span class="badge sample">分类抽检 · 已完成</span><span class=meta>刚刚</span></div>
+      <div class=corpus>十三行资料集</div>
+      <h3>哥德堡号航运资料</h3>
+      <div class=meta>抽检结果：暂不分类<br>内容属性：文化知识</div>
+    </div>
+  </div>
+</main>
+</section>
+
+<!-- ======== BOTTOM TABS ======== -->
+<div class=bottom>
+  <label class="tab tab-t" for=pg0><b>▤</b>任务</label>
+  <div class=tab><b>◷</b>通知</div>
+  <label class="tab tab-m" for=pg4><b>◉</b>我的</label>
+</div>
+
+<!-- ======== BOTTOM SHEET ======== -->
+<div class=sheetback>
+  <label class=sheetbd for=sh0></label>
+  <div class=sheet>
+    <div class=handle></div>
+
+    <div class=sh-d1>
+      <h2>选择分类</h2>
+      <div class=meta style="margin-bottom:14px">请根据内容主题，选择最合适的一项。</div>
+      <label class="option d1-oa" for=d1a>近代街区建筑<span class=opt-chk>✓</span></label>
+      <label class="option d1-ob" for=d1b>传统民居建筑<span class=opt-chk>✓</span></label>
+      <label class="option d1-oc" for=d1c>建筑保护与修复<span class=opt-chk>✓</span></label>
+      <label class="option d1-od" for=d1d>暂不分类<span class=opt-chk>✓</span></label>
+      <label class="btn confirm" for=sh0 style="width:100%;margin-top:18px">确认选择</label>
+    </div>
+
+    <div class=sh-d2>
+      <h2>选择分类</h2>
+      <div class=meta style="margin-bottom:14px">请根据内容主题，选择最合适的一项。</div>
+      <label class="option d2-oa" for=d2a>通用字词<span class=opt-chk>✓</span></label>
+      <label class="option d2-ob" for=d2b>读音说明<span class=opt-chk>✓</span></label>
+      <label class="option d2-oc" for=d2c>词义解释<span class=opt-chk>✓</span></label>
+      <label class="option d2-od" for=d2d>暂不分类<span class=opt-chk>✓</span></label>
+      <label class="btn confirm" for=sh0 style="width:100%;margin-top:18px">确认选择</label>
+    </div>
+
+    <div class=sh-d3>
+      <h2>选择分类</h2>
+      <div class=meta style="margin-bottom:14px">请根据内容主题，选择最合适的一项。</div>
+      <label class="option d3-oa" for=d3a>航运资料<span class=opt-chk>✓</span></label>
+      <label class="option d3-ob" for=d3b>商贸历史<span class=opt-chk>✓</span></label>
+      <label class="option d3-oc" for=d3c>人物资料<span class=opt-chk>✓</span></label>
+      <label class="option d3-od" for=d3d>暂不分类<span class=opt-chk>✓</span></label>
+      <label class="btn confirm" for=sh0 style="width:100%;margin-top:18px">确认选择</label>
+    </div>
+  </div>
+</div>
+
+</div><!-- app -->
+</body></html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>S6 · DimSum 系统协作时序图（实施概览）</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",sans-serif;background:#c4c9d6;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh;overflow:hidden}
+.wrap{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+.slide{width:1440px;height:810px;background:#f5f7fb;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 60px rgba(0,0,0,.35);position:absolute;transform-origin:center center}
+
+/* HEADER */
+.hd{flex:none;height:50px;background:#10284a;display:flex;align-items:center;padding:0 22px;justify-content:space-between}
+.hd-title{color:#fff;font-size:18px;font-weight:800;letter-spacing:.01em}
+.hd-meta{color:rgba(255,255,255,.45);font-size:11px;text-align:right;line-height:1.6}
+
+/* BODY */
+.bd{flex:1;min-height:0;display:flex;flex-direction:column;padding:11px 16px 0;gap:9px}
+
+/* NOTICE */
+.notice{flex:none;background:#eef3ff;border-left:3px solid #1677ff;border-radius:0 6px 6px 0;padding:8px 13px;font-size:12.5px;color:#3b4d70;line-height:1.5}
+
+/* SECTIONS */
+.sec{display:flex;flex-direction:column;gap:6px;min-height:0}
+.sec-hd{flex:none;font-size:12.5px;font-weight:700;color:#10284a;display:flex;align-items:center;gap:8px}
+.sec-hd::after{content:'';flex:1;height:1px;background:#cdd3df}
+
+/* SWIMLANE */
+.lane{flex:1;border:1px solid #ccd2e0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.cols7{display:grid;grid-template-columns:130px repeat(5,1fr) 118px}
+.ch{font-size:12px;font-weight:700;text-align:center;padding:8px 5px;border-right:1px solid #ccd2e0;line-height:1.3}
+.ch:last-child{border-right:0}
+.ch0{background:#eff2f6;color:#4a5567}
+.ch1{background:#ddeeff;color:#1a4f90}
+.ch2{background:#fff0de;color:#8a5000}
+.ch3{background:#e3f8ee;color:#1a6e45}
+.ch4{background:#ede8ff;color:#5a35a8}
+.ch5{background:#fff8e4;color:#7a5a00}
+.ch6{background:#e7f3fe;color:#1a4f90}
+
+.lane-body{flex:1;display:grid;grid-template-rows:repeat(4,1fr);min-height:0}
+.row{border-bottom:1px solid #e0e5ef}
+.row:last-child{border-bottom:0}
+.row:nth-child(odd){background:#fff}
+.row:nth-child(even){background:#fafbfd}
+.c{padding:8px 10px;border-right:1px solid #e0e5ef;font-size:11.5px;line-height:1.5;color:#3e4a5c;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.c:last-child{border-right:0}
+.c.c0{background:rgba(240,243,248,.55);font-weight:650;color:#2e3d54;font-size:11.5px}
+.step-n{font-size:10px;color:#9aa5b5;font-weight:600;margin-bottom:2px;letter-spacing:.04em}
+.dash{color:#c0c8d5;font-size:12.5px;text-align:center;align-self:center;width:100%}
+.sub{font-size:10px;color:#b0b8c8;margin-top:1px}
+
+/* DETAIL CARDS */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:8px;min-height:0}
+.card{border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden}
+.ct{flex:none;font-size:12.5px;font-weight:750;margin-bottom:5px}
+.cb{flex:1;font-size:11.5px;line-height:1.55;color:#4c5570;overflow:hidden;display:flex;flex-direction:column;gap:2px}
+.cb li{list-style:none}
+.cb li::before{content:'▸ ';color:#b0b8c8;font-size:10.5px}
+.cf{background:#ddeeff;border:1px solid #aacfff}
+.cf .ct{color:#1a4f90}
+.ca{background:#fff0de;border:1px solid #ffc97a}
+.ca .ct{color:#8a5000}
+.cm{background:#ede8ff;border:1px solid #c8b5ff}
+.cm .ct{color:#5a35a8}
+.ci{background:#f5f7fa;border:1px solid #d5dbe8}
+.ci .ct{color:#3e4a5c}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;flex:1}
+.ii{overflow:hidden}
+.il{font-size:10.5px;font-weight:650;color:#748092;margin-bottom:1px}
+.iv{font-size:11px;color:#4c5570;line-height:1.45}
+
+/* FOOTER */
+.ft{flex:none;height:28px;background:#edf0f5;border-top:1px solid #d5dbe6;display:flex;align-items:center;padding:0 16px;font-size:10.5px;color:#9aa5b5;justify-content:space-between;margin-top:9px}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:1023px){
+  body{height:auto;min-height:100vh;overflow-y:auto;background:#f5f7fb}
+  .wrap{height:auto;min-height:100vh;align-items:flex-start;justify-content:flex-start}
+  .slide{position:static;width:100%;height:auto;min-height:100vh;transform:none!important;box-shadow:none;border-radius:0}
+  .bd{flex:none;height:auto;padding:13px 13px 28px;gap:13px}
+  .sec{flex:none;height:auto}
+  /* swimlane: horizontal scroll */
+  .lane{flex:none;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  .cols7{min-width:780px}
+  .lane-body{grid-template-rows:auto}
+  .c{min-height:68px;font-size:12px}
+  .ch{font-size:12px}
+  /* cards: 2 columns */
+  .cards{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;height:auto}
+  .card{height:auto}
+  .cb{overflow:visible;height:auto}
+  .ig{grid-template-rows:auto}
+  .ft{height:auto;flex-direction:column;align-items:flex-start;padding:10px 14px;gap:3px;font-size:11px;margin-top:12px}
+  .hd{height:auto;padding:12px 16px;flex-wrap:wrap;gap:4px}
+  .hd-title{font-size:16px}
+  .hd-meta{font-size:10.5px}
+  .notice{font-size:13px}
+  .sec-hd{font-size:13px}
+}
+@media(max-width:600px){
+  .cards{grid-template-columns:1fr}
+  .hd-meta{display:none}
+  .hd-title{font-size:15px}
+  .c{font-size:12.5px}
+  .ct{font-size:13px}
+  .cb{font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="slide" id="slide">
+
+<div class="hd">
+  <div class="hd-title">S6 · DimSum 系统协作时序图（实施概览）</div>
+  <div class="hd-meta">内部设计参考文档 · v6 · 2026-08-09<br>DimSum 粤语资料库项目组</div>
+</div>
+
+<div class="bd">
+
+  <div class="notice">前置说明：本图已按 S6 主 PRD 校正。Fynn 负责规则、状态和中间层；Agent 只提供建议；AW 负责人工作业与分享体验。正式字段以实施接口文档为准。</div>
+
+  <!-- Section 1 -->
+  <div class="sec" style="flex:1.3">
+    <div class="sec-hd">一、人角色与交互时序（按触发顺序排列，部分步骤可并发执行）</div>
+    <div class="lane">
+      <div class="cols7" style="border-bottom:2px solid #ccd2e0">
+        <div class="ch ch0">内容整理员</div>
+        <div class="ch ch1">Fynn</div>
+        <div class="ch ch2">New老师 / Agent</div>
+        <div class="ch ch3">语料与素材集</div>
+        <div class="ch ch4">AW 功能</div>
+        <div class="ch ch5">推送通知</div>
+        <div class="ch ch6">Search WebApp</div>
+      </div>
+      <div class="lane-body">
+        <!-- Row 1 -->
+        <div class="row cols7">
+          <div class="c c0"><div class="step-n">步骤 1</div>提交语料内容、来源、属性与已有分类</div>
+          <div class="c">校验输入并保存原文；缺二级分类时构造 Agent 上下文</div>
+          <div class="c">读取原文和分类树，生成一个候选、依据与路由建议</div>
+          <div class="c">保存原始内容、来源、权利和待处理状态</div>
+          <div class="c"><div class="dash">—<br><span class="sub">尚未创建任务</span></div></div>
+          <div class="c"><div class="dash">—<br><span class="sub">等待路由决定</span></div></div>
+          <div class="c"><div class="dash">—<br><span class="sub">等待归档</span></div></div>
+        </div>
+        <!-- Row 2 -->
+        <div class="row cols7">
+          <div class="c c0"><div class="step-n">步骤 2</div>系统按 Agent 结果决定自动候选、人工确认或留空</div>
+          <div class="c">校验 Agent 输出；写入 pending_sample / pending_review / empty</div>
+          <div class="c">返回候选、依据和建议；不直接修改公开内容</div>
+          <div class="c">保存分类工作流与 Agent 审计记录</div>
+          <div class="c">仅歧义或抽中样本进入 AW 任务列表</div>
+          <div class="c">仅对需要人工处理的任务发送通知</div>
+          <div class="c"><div class="dash">—</div></div>
+        </div>
+        <!-- Row 3 -->
+        <div class="row cols7">
+          <div class="c c0"><div class="step-n">步骤 3</div>标注员在 AW 确认、修改或暂不分类</div>
+          <div class="c">校验版本并回写最终分类、来源、状态和审计事件</div>
+          <div class="c"><div class="dash">—<br><span class="sub">本步骤不直接参与</span></div></div>
+          <div class="c">确认结果写入正式分类；历史记录只追加不覆盖</div>
+          <div class="c">提交任务结果并展示已处理记录</div>
+          <div class="c">可选推送：任务处理完成</div>
+          <div class="c"><div class="dash">—<br><span class="sub">仍由公开状态控制</span></div></div>
+        </div>
+        <!-- Row 4 -->
+        <div class="row cols7">
+          <div class="c c0"><div class="step-n">步骤 4</div>正式内容发布；用户在选定属性范围内搜索</div>
+          <div class="c">判断公开权限并更新索引；显式传入属性时三段统一过滤</div>
+          <div class="c"><div class="dash">—<br><span class="sub">不参与在线公开决策</span></div></div>
+          <div class="c">状态更新为「正式」，保留来源与派生关系</div>
+          <div class="c">分享时按 Fynn 上下文生成卡片体验</div>
+          <div class="c"><div class="dash">—</div></div>
+          <div class="c">默认全库搜索；可选属性参数启用三段过滤</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="sec" style="flex:1.05">
+    <div class="sec-hd">二、系统节点细节说明（各节点系统处理方式）</div>
+    <div class="cards">
+      <div class="card cf">
+        <div class="ct">Fynn：系统处理</div>
+        <ul class="cb">
+          <li>校验入库字段、权利与公开状态</li>
+          <li>调用 Agent 并校验结构化结果</li>
+          <li>决定 pending_sample / pending_review / empty</li>
+          <li>提供 AW 任务、回写与分享上下文 API</li>
+          <li>默认全库 Search；可选属性过滤三段并更新索引</li>
+        </ul>
+      </div>
+      <div class="card ca">
+        <div class="ct">New老师 / Agent 判断</div>
+        <ul class="cb">
+          <li>读取 Fynn 发送的原文、来源和分类树</li>
+          <li>最多生成一个二级分类候选</li>
+          <li>返回结构化依据、说明与路由建议</li>
+          <li>不直接改库、不建 AW 任务、不决定公开状态</li>
+        </ul>
+      </div>
+      <div class="card cm">
+        <div class="ct">AW：标注资料库整理</div>
+        <ul class="cb">
+          <li>消费 Fynn 已创建的确认与抽检任务</li>
+          <li>支持确认、修改、暂不分类和已处理记录</li>
+          <li>按 Fynn 契约提交结果，不直接修改底层数据</li>
+          <li>负责分享卡片模板、渲染与端侧体验</li>
+        </ul>
+      </div>
+      <div class="card ci">
+        <div class="ct">接口交接 1：Fynn → Agent</div>
+        <div class="cb">
+          <div class="ig">
+            <div class="ii"><div class="il">输入信息</div><div class="iv">用户提交的语料内容与初始属性</div></div>
+            <div class="ii"><div class="il">触发方式</div><div class="iv">Fynn 检测需分类建议时主动触发</div></div>
+            <div class="ii"><div class="il">处理结果</div><div class="iv">Agent 返回一个候选、依据和路由建议</div></div>
+            <div class="ii"><div class="il">预期行为</div><div class="iv">Fynn 校验并决定抽检、人工确认或留空</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card ci">
+        <div class="ct">接口交接 2：Fynn → AW</div>
+        <div class="cb">
+          <div class="ig">
+            <div class="ii"><div class="il">输入信息</div><div class="iv">Fynn 创建的确认或抽检任务</div></div>
+            <div class="ii"><div class="il">触发方式</div><div class="iv">pending_review 或抽中 pending_sample</div></div>
+            <div class="ii"><div class="il">处理结果</div><div class="iv">AW 提交确认、修改或暂不分类</div></div>
+            <div class="ii"><div class="il">预期行为</div><div class="iv">审核员收到通知，开始人工标注</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card ci">
+        <div class="ct">接口交接 3：Fynn → Search</div>
+        <div class="cb">
+          <div class="ig">
+            <div class="ii"><div class="il">输入信息</div><div class="iv">Fynn 判定可公开的标准化词条</div></div>
+            <div class="ii"><div class="il">触发方式</div><div class="iv">内容发布、权利/属性/分类变更</div></div>
+            <div class="ii"><div class="il">处理结果</div><div class="iv">Search 更新索引与缓存</div></div>
+            <div class="ii"><div class="il">预期行为</div><div class="iv">默认不筛属性；显式参数才限定三段结果</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="ft">
+  <span>说明：正式字段、状态和错误处理以本目录 03–07 实施文档为准。</span>
+  <span>DimSum 粤语资料库 · 实施流程概览 · S6</span>
+</div>
+
+</div><!-- .slide -->
+</div><!-- .wrap -->
+<script>
+function fit(){
+  var sl=document.getElementById('slide');
+  if(window.innerWidth>=1024){
+    var s=Math.min(window.innerWidth/1440,window.innerHeight/810);
+    sl.style.transform='scale('+s+')';
+    sl.style.position='absolute';
+    document.body.style.overflow='hidden';
+    document.body.style.height='100vh';
+  } else {
+    sl.style.transform='none';
+    sl.style.position='static';
+    document.body.style.overflow='';
+    document.body.style.height='auto';
+  }
+}
+fit();
+window.addEventListener('resize',fit);
+</script>
+</body>
+</html>

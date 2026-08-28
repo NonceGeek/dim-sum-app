@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DimSum App · S6 PRD v4</title><style>
+:root{--bg:#080d15;--card:#111722;--line:#273142;--text:#eef3fa;--sub:#9aa5b5;--blue:#59a7ff;--pink:#f472b6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#000;color:var(--text);font:14px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;display:flex;justify-content:center}
+.s{display:none;position:absolute}
+.wrap{position:relative}
+.phone{width:390px;min-height:100vh;background:var(--bg)}
+.status{padding:14px 20px 8px;display:flex;justify-content:space-between;font-size:16px;font-weight:800}
+.nav{padding:14px 19px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:20px;font-weight:850}
+.signin{padding:9px 15px;border-radius:10px;background:var(--blue);color:#07111e;font-weight:800}
+.search{display:flex;align-items:center;gap:10px;margin:0 18px 13px;padding:11px 14px;background:#151b26;border:1px solid var(--line);border-radius:28px}
+.search input{flex:1;background:transparent;border:0;outline:0;color:var(--text);font-size:16px}
+.glass{padding:9px;border-radius:50%;background:var(--blue);color:#07111e}
+.modes{margin:0 18px 10px;padding:4px;display:flex;gap:4px;background:#121925;border:1px solid var(--line);border-radius:11px}
+.ml{flex:1;border:0;background:transparent;color:var(--sub);padding:9px 2px;border-radius:8px;cursor:pointer;display:block;text-align:center;user-select:none}
+.hint{font-size:12px;line-height:1.45;margin:0 18px 12px;color:var(--sub)}
+.content{padding:0 18px 40px}
+.exact{border-left:3px solid var(--blue);color:var(--blue);font-weight:800;padding-left:9px;margin:12px 0 14px}
+.identity{border-radius:14px;border:1px solid var(--line);background:var(--card);padding:17px}
+.entry{font-size:34px;font-weight:900}
+.roman{margin:8px 0;color:var(--sub)}
+.definition{line-height:1.8;color:#d8dde5}
+.media{margin-top:14px;padding:10px;border-radius:8px;background:#192130;color:var(--sub)}
+.info{margin-top:15px;padding-top:14px;border-top:1px solid var(--line)}
+.infohead{display:flex;justify-content:space-between;font-weight:800}
+.row{display:flex;gap:10px;margin:8px 0;line-height:1.4}
+.lbl{width:78px;flex:none;color:var(--sub)}
+.copy{color:#a7d6ff;cursor:default}
+.tag{display:inline-block;font-style:normal;padding:4px 8px;border-radius:7px;font-size:12px;margin:2px 3px 2px 0;color:#a7d6ff;background:#102641;border:1px solid #1a416b}
+.actions{display:flex;gap:8px;margin-top:13px}
+.minor,.btn-p{flex:1;padding:9px 5px;border-radius:8px;font-weight:800;text-align:center;cursor:pointer;display:block;user-select:none}
+.minor{background:#192331;color:var(--text);border:1px solid var(--line)}
+.btn-p{border:0;background:var(--blue);color:#07111e}
+.suggest{margin:20px 0 24px;padding:15px;border:1px solid #4c3563;background:#221934;border-radius:13px}
+.suggest strong{color:#e7cdfd}
+.suggest p{font-size:12px;color:#c5a9e8}
+.stag{display:inline-block;padding:7px 11px;background:#2e2044;border:1px solid #654284;color:#e5caff;border-radius:8px;margin-right:5px;cursor:pointer;user-select:none}
+.head{display:flex;justify-content:space-between;align-items:center;margin-top:25px}
+.head h2{font-size:19px;margin:0}
+.filters{display:flex;gap:7px;overflow:auto;padding-bottom:3px;margin:8px 0}
+.chip{flex:none;padding:7px 11px;border-radius:17px;border:1px solid var(--line);background:#121925;color:var(--sub);font-size:12px;cursor:pointer;user-select:none}
+.card{margin:11px 0;padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+.cat,.small{font-size:12px;color:var(--sub)}
+.title{font-size:18px;font-weight:850;margin:8px 0}
+.audio{display:inline-block;margin:7px 0;padding:7px 10px;border-radius:7px;background:#272f3a}
+.vcard{padding:0;overflow:hidden;cursor:pointer}
+.thumb{height:170px;display:grid;place-items:center;position:relative;background:linear-gradient(135deg,#35214e,#102642)}
+.play-icon{border:0;background:#ffffff24;color:#fff;border-radius:50%;padding:12px 15px;font-size:20px;pointer-events:none}
+.dur,.pri{position:absolute;padding:4px 8px;border-radius:6px;font-size:11px}
+.dur{right:8px;bottom:8px;background:#000b}
+.pri{top:8px;left:8px;background:var(--pink);color:#310b1d;font-weight:800}
+.vbody{padding:14px}
+.nr{color:var(--sub);padding:8px 0;display:none}
+.bottom{position:sticky;bottom:0;padding:10px;text-align:center;background:#151a24;border-top:1px solid var(--line);color:var(--sub)}
+/* sheet */
+.back{position:fixed;inset:0;display:none;background:#000a;align-items:flex-end;justify-content:center;z-index:100}
+.backdrop{position:fixed;inset:0;z-index:1}
+.sheet{width:390px;max-height:84vh;overflow:auto;background:#151e2b;border-radius:22px 22px 0 0;padding:10px 19px 30px;transform:translateY(100%);transition:.25s;position:relative;z-index:2}
+.handle{width:40px;height:5px;border-radius:4px;background:#515b6c;margin:3px auto 15px}
+.shead{display:flex;justify-content:space-between;align-items:flex-start}
+.shead h2{margin:0;font-size:18px}
+.close{font-size:20px;color:var(--sub);cursor:pointer;user-select:none;flex-shrink:0;margin-left:10px}
+.scard{margin-top:12px;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.player{aspect-ratio:16/9;border-radius:11px;background:linear-gradient(135deg,#35214e,#102642);display:flex;align-items:center;justify-content:center;margin:15px 0}
+.pvpl{border:0;background:#ffffff24;color:#fff;border-radius:50%;padding:12px 15px;font-size:20px;cursor:pointer;user-select:none}
+.pvtx{color:#fff;display:none}
+.sw{border:1px solid var(--line);background:#192331;color:var(--text);border-radius:8px;padding:8px 11px;cursor:pointer;user-select:none;margin-right:6px}
+.notice{display:none;padding:9px;border-radius:8px;background:#3a2022;color:#ffc4c5;margin:10px 0}
+.tline{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);line-height:1.5}
+.time{width:42px;color:var(--sub);flex:none}
+.share{background:#fff;color:#111;border-radius:12px;padding:17px;margin:14px 0}
+.sharebrand{font-weight:850;color:#277aca}
+.shareentry{font-size:28px;font-weight:900;margin:14px 0 8px}
+.qr{float:right;width:54px;height:54px;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 50%/12px 12px;margin-left:8px}
+
+/* ===== STATE ===== */
+#mo:checked~.wrap .ml[for=mo],#mc:checked~.wrap .ml[for=mc]{background:var(--blue);color:#07111e;font-weight:850}
+.ob,.cb{display:none}
+#mo:checked~.wrap .ob{display:block}
+#mc:checked~.wrap .cb{display:block}
+.or,.cr,.og,.cg{display:none}
+#mo:checked~.wrap .or,#mo:checked~.wrap .og{display:block}
+#mc:checked~.wrap .cr,#mc:checked~.wrap .cg{display:block}
+/* filter chips */
+#fa:checked~.wrap .chip[for=fa],#ft:checked~.wrap .chip[for=ft],#fau:checked~.wrap .chip[for=fau],#fv:checked~.wrap .chip[for=fv]{background:#1c518c;color:#fff;border-color:#3987d2}
+/* filter: oral related (V A T) */
+#ft:checked~.wrap .or .wv,#ft:checked~.wrap .or .wa{display:none}
+#fau:checked~.wrap .or .wv,#fau:checked~.wrap .or .wt{display:none}
+#fv:checked~.wrap .or .wa,#fv:checked~.wrap .or .wt{display:none}
+/* filter: culture related (V T — no audio) */
+#ft:checked~.wrap .cr .wv{display:none}
+#fau:checked~.wrap .cr .wv,#fau:checked~.wrap .cr .wt{display:none}
+#fv:checked~.wrap .cr .wt{display:none}
+#fau:checked~.wrap .cr .nr{display:block}
+/* sheet open */
+#p1:checked~.wrap .back,#p2:checked~.wrap .back,#p3:checked~.wrap .back,#p4:checked~.wrap .back,
+#p5:checked~.wrap .back,#p6:checked~.wrap .back,#p7:checked~.wrap .back,#p8:checked~.wrap .back{display:flex}
+#p1:checked~.wrap .sheet,#p2:checked~.wrap .sheet,#p3:checked~.wrap .sheet,#p4:checked~.wrap .sheet,
+#p5:checked~.wrap .sheet,#p6:checked~.wrap .sheet,#p7:checked~.wrap .sheet,#p8:checked~.wrap .sheet{transform:none}
+.pn{display:none}
+#p1:checked~.wrap .pn1{display:block}
+#p2:checked~.wrap .pn2{display:block}
+#p3:checked~.wrap .pn3{display:block}
+#p4:checked~.wrap .pn4{display:block}
+#p5:checked~.wrap .pn5{display:block}
+#p6:checked~.wrap .pn6{display:block}
+#p7:checked~.wrap .pn7{display:block}
+#p8:checked~.wrap .pn8{display:block}
+/* video play/notice */
+.pn3:has(#vp3:checked) .pvpl,.pn7:has(#vp7:checked) .pvpl{display:none}
+.pn3:has(#vp3:checked) .pvtx,.pn7:has(#vp7:checked) .pvtx{display:block}
+.pn3:has(#vp3:checked) .player,.pn7:has(#vp7:checked) .player{background:#000}
+.pn3:has(#vn3:checked) .notice,.pn7:has(#vn7:checked) .notice{display:block}
+</style></head><body>
+
+<input type=radio name=mode id=mo class=s checked>
+<input type=radio name=mode id=mc class=s>
+<input type=radio name=flt id=fa class=s checked>
+<input type=radio name=flt id=ft class=s>
+<input type=radio name=flt id=fau class=s>
+<input type=radio name=flt id=fv class=s>
+<input type=radio name=pan id=pn class=s checked>
+<input type=radio name=pan id=p1 class=s>
+<input type=radio name=pan id=p2 class=s>
+<input type=radio name=pan id=p3 class=s>
+<input type=radio name=pan id=p4 class=s>
+<input type=radio name=pan id=p5 class=s>
+<input type=radio name=pan id=p6 class=s>
+<input type=radio name=pan id=p7 class=s>
+<input type=radio name=pan id=p8 class=s>
+
+<div class=wrap><div class=phone>
+<div class=status><span>20:26</span><span>▮▮▮ ◒ <b style="background:#facc15;color:#111;padding:2px 5px;border-radius:5px">93</b></span></div>
+<div class=nav><span>☰</span><span class=brand>🥟 DimSum</span><span class=signin>Sign In</span></div>
+<div class=search>🔍 <input value="骑楼" readonly><span>☷⌄</span><span>×</span><b class=glass>⌕</b></div>
+<div class=modes>
+  <label class=ml for=mo>🗣️ 口语语料</label>
+  <label class=ml for=mc>📖 文化知识</label>
+</div>
+
+<div class="hint ob">当前搜索范围：口语语料。精准结果保持稳定；媒体筛选仅作用于二级相关结果。</div>
+<div class="hint cb">当前搜索范围：文化知识。精准、相关和推荐阅读均只返回文化知识内容。</div>
+
+<main class=content>
+<div class=exact>一级精准结果 · Exact match</div>
+
+<!-- Oral identity card -->
+<div class="identity ob">
+  <div class=entry>骑楼</div>
+  <div class=roman>ke4 lau4</div>
+  <div class=definition>骑楼：岭南常见建筑形制。楼房底层沿街退让形成带顶盖通道，方便行人遮阳避雨。</div>
+  <div class=media>🔊 音频预览　▶　00:00 ━━━━━ 00:18</div>
+  <div class=info>
+    <div class=infohead><span>词条身份信息</span><span class=copy>▣ Copy</span></div>
+    <div class=row><span class=lbl>Unique ID</span><span>7f71a1c5...b027 <span class=copy>▣</span></span></div>
+    <div class=row><span class=lbl>来源语料集</span><span>岭南建筑口语介绍集</span></div>
+    <div class=row><span class=lbl>贡献者</span><span>DimSum内容组</span></div>
+    <div class=row><span class=lbl>内容属性</span><span>口语语料</span></div>
+    <div class=row><span class=lbl>内容类别</span><span>建筑主题</span></div>
+    <div class=row><span class=lbl>二级分类</span><span>街区建筑</span></div>
+    <div class=row><span class=lbl>分类状态</span><span>已审核整理</span></div>
+    <div class=row><span class=lbl>精准标签</span><span><i class=tag>粤语</i><i class=tag>导览讲解</i></span></div>
+    <div class=row><span class=lbl>关联标签</span><span><i class=tag>岭南</i><i class=tag>建筑</i></span></div>
+    <div class=actions>
+      <button class=minor>复制链接</button>
+      <label class=btn-p for=p4>分享卡片</label>
+    </div>
+  </div>
+</div>
+
+<!-- Culture identity card -->
+<div class="identity cb">
+  <div class=entry>骑楼</div>
+  <div class=roman>ke4 lau4</div>
+  <div class=definition>骑楼作为近代岭南商埠建筑形制，兼具遮阳避雨与商业展示功能，常见于广州、佛山等地传统街区。</div>
+  <div class=media>🔊 音频预览　▶　00:00 ━━━━━ 00:18</div>
+  <div class=info>
+    <div class=infohead><span>词条身份信息</span><span class=copy>▣ Copy</span></div>
+    <div class=row><span class=lbl>Unique ID</span><span>c8a915b4...9d10 <span class=copy>▣</span></span></div>
+    <div class=row><span class=lbl>来源语料集</span><span>岭南建筑资料库</span></div>
+    <div class=row><span class=lbl>贡献者</span><span>岭南文化资料组</span></div>
+    <div class=row><span class=lbl>内容属性</span><span>文化知识</span></div>
+    <div class=row><span class=lbl>内容类别</span><span>建筑资料</span></div>
+    <div class=row><span class=lbl>二级分类</span><span>近代街区建筑</span></div>
+    <div class=row><span class=lbl>分类状态</span><span>原始资料整理</span></div>
+    <div class=row><span class=lbl>精准标签</span><span><i class=tag>地方志</i><i class=tag>建筑史</i></span></div>
+    <div class=row><span class=lbl>关联标签</span><span><i class=tag>岭南</i><i class=tag>建筑</i></span></div>
+    <div class=actions>
+      <button class=minor>复制链接</button>
+      <label class=btn-p for=p8>分享卡片</label>
+    </div>
+  </div>
+</div>
+
+<!-- Oral suggest -->
+<div class="suggest ob">
+  <strong>✦ 推荐阅读</strong><p>以下为推荐阅读，非直接匹配</p>
+  <label class=stag for=p1>西关大屋</label><label class=stag for=p2>满洲窗</label>
+</div>
+<!-- Culture suggest -->
+<div class="suggest cb">
+  <strong>✦ 推荐阅读</strong><p>以下为推荐阅读，非直接匹配</p>
+  <label class=stag for=p5>十三行</label><label class=stag for=p6>建筑保护</label>
+</div>
+
+<div class=head><h2>二级相关结果</h2><span class=small>↻ Refresh</span></div>
+<div class=small style="margin:6px 0">仅筛选相关结果：</div>
+<div class=filters>
+  <label class=chip for=fa>全部</label>
+  <label class=chip for=ft>文本</label>
+  <label class=chip for=fau>音频</label>
+  <label class=chip for=fv>视频</label>
+</div>
+
+<!-- Oral related: V A T -->
+<div class=or>
+  <div class=wv><label for=p3 style="display:block;cursor:pointer"><div class="card vcard"><div class=thumb><span class=pri>视频优先</span><button class=play-icon>▶</button><span class=dur>02:14</span></div><div class=vbody><div class=cat>实地导览</div><div class=title>恩宁路骑楼街景导览</div><div class=small>来源：岭南建筑口语介绍集</div><i class=tag>视频</i> <i class=tag>广州</i> <i class=tag>骑楼</i></div></div></label></div>
+  <div class=wa><div class=card><div class=cat>影视动画配音</div><div class=title>骑楼点解叫骑楼？</div><div class=small>骑楼为什么叫骑楼</div><div class=small>来源：岭南建筑口语介绍集</div><span class=audio>🔊 Audio</span><br><i class=tag>音频</i> <i class=tag>导览</i></div></div>
+  <div class=wt><div class=card><div class=cat>广州话正音字典</div><div class=title>骑楼</div><div class=small>底层退让形成廊道</div><div class=small>来源：岭南建筑口语介绍集</div><i class=tag>字典</i> <i class=tag>建筑主题</i></div></div>
+</div>
+
+<!-- Culture related: V T -->
+<div class=cr>
+  <div class=wv><label for=p7 style="display:block;cursor:pointer"><div class="card vcard"><div class=thumb><span class=pri>视频优先</span><button class=play-icon>▶</button><span class=dur>03:47</span></div><div class=vbody><div class=cat>纪录片摘录</div><div class=title>骑楼建筑史纪录片选段</div><div class=small>来源：岭南建筑资料库</div><i class=tag>视频</i> <i class=tag>纪录片</i> <i class=tag>历史</i></div></div></label></div>
+  <div class=wt><div class=card><div class=cat>地方志摘录</div><div class=title>骑楼建筑形制考</div><div class=small>地方志建筑志记载</div><div class=small>来源：岭南建筑资料库</div><i class=tag>地方志</i> <i class=tag>建筑资料</i></div></div>
+  <div class=nr>当前筛选下暂无相关结果；精准结果保持显示。</div>
+</div>
+
+<div class=head><h2>三级推荐结果</h2><span class=small>↻ Refresh</span></div>
+<div class=og><div class=card><div class=cat>三字组习语</div><div class=title>骑楼底</div><div class=small>骑楼下方廊道口语说法</div><div class=small>来源：岭南建筑口语介绍集</div><i class=tag>习语</i> <i class=tag>口语</i></div></div>
+<div class=cg><div class=card><div class=cat>典籍引文</div><div class=title>商埠骑楼沿革</div><div class=small>近代商埠建筑变迁记载</div><div class=small>来源：岭南建筑资料库</div><i class=tag>典籍</i> <i class=tag>历史资料</i></div></div>
+
+</main>
+<div class=bottom>▣　 search.aidimsum.com　↻</div>
+</div><!-- phone -->
+
+<!-- Bottom sheet -->
+<div class=back>
+  <label class=backdrop for=pn></label>
+  <div class=sheet>
+    <div class=handle></div>
+
+    <div class="pn pn1">
+      <div class=shead><h2 style="color:#e7cdfd">联想聚合：西关大屋</h2><label class=close for=pn>✕</label></div>
+      <p class=small>同属建筑主题的口语导览内容</p>
+      <div class=scard><div class=title>西关大屋庭院与趟栊门介绍</div><div class=small>来源：岭南建筑口语介绍集 · 音频</div></div>
+    </div>
+
+    <div class="pn pn2">
+      <div class=shead><h2 style="color:#e7cdfd">联想聚合：满洲窗</h2><label class=close for=pn>✕</label></div>
+      <p class=small>骑楼常见构件关联内容</p>
+      <div class=scard><div class=title>满洲窗彩色玻璃工艺讲解</div><div class=small>来源：美术工艺资料 · 文本</div></div>
+    </div>
+
+    <div class="pn pn3">
+      <input type=checkbox id=vp3 class=s><input type=checkbox id=vn3 class=s>
+      <div class=shead><h2 style="color:#ffb4d7">🎬 恩宁路骑楼街景导览</h2><label class=close for=pn>✕</label></div>
+      <div class=player><label for=vp3 class=pvpl>▶</label><span class=pvtx>▶ 播放中（模拟）</span></div>
+      <button class=sw>🎬 视频</button><label for=vn3 class=sw>🔊 切换音频</label>
+      <div class=notice>⚠️ 视频加载失败，已切换至文本模式。可继续切换音频收听。</div>
+      <div class=tline><span class=time>00:00</span><span>呢一段就係恩宁路骑楼街景，可以睇到连续柱廊同二楼满洲窗。</span></div>
+      <div class=tline><span class=time>00:18</span><span>骑楼底层形成行人通道，係岭南商埠建筑特色。</span></div>
+    </div>
+
+    <div class="pn pn4">
+      <div class=shead><h2>分享卡片预览</h2><label class=close for=pn>✕</label></div>
+      <div class=share>
+        <div class=sharebrand>🥟 DimSum <span class=qr></span></div>
+        <div class=shareentry>骑楼</div>
+        <div>读音／粤拼：ke4 lau4</div>
+        <div style="margin-top:8px">骑楼：岭南常见建筑形制。楼房底层沿街退让形成带顶盖通道，方便行人遮阳避雨。</div>
+        <hr>
+        <div>来源语料集：岭南建筑口语介绍集</div>
+        <div>内容类别：建筑主题</div>
+        <div>标签：粤语 · 导览讲解 · 街景</div>
+        <div>Unique ID：7f71a1c5...b027</div>
+      </div>
+      <div class=actions>
+        <button class=minor>保存图片</button>
+        <button class=minor>复制链接</button>
+        <button class=btn-p>发送</button>
+      </div>
+    </div>
+
+    <div class="pn pn5">
+      <div class=shead><h2 style="color:#e7cdfd">联想聚合：十三行</h2><label class=close for=pn>✕</label></div>
+      <p class=small>骑楼商贸历史关联资料</p>
+      <div class=scard><div class=title>十三行商贸制度与骑楼商铺关系记载</div><div class=small>来源：十三行资料集 · 文本</div></div>
+    </div>
+
+    <div class="pn pn6">
+      <div class=shead><h2 style="color:#e7cdfd">联想聚合：建筑保护</h2><label class=close for=pn>✕</label></div>
+      <p class=small>历史建筑保护关联资料</p>
+      <div class=scard><div class=title>荔湾骑楼历史建筑保护名录</div><div class=small>来源：地方志 · 文本</div></div>
+    </div>
+
+    <div class="pn pn7">
+      <input type=checkbox id=vp7 class=s><input type=checkbox id=vn7 class=s>
+      <div class=shead><h2 style="color:#ffb4d7">🎬 骑楼建筑史纪录片选段</h2><label class=close for=pn>✕</label></div>
+      <div class=player><label for=vp7 class=pvpl>▶</label><span class=pvtx>▶ 播放中（模拟）</span></div>
+      <button class=sw>🎬 视频</button><label for=vn7 class=sw>🔊 切换音频</label>
+      <div class=notice>⚠️ 视频加载失败，已切换至文本模式。可继续切换音频收听。</div>
+      <div class=tline><span class=time>00:00</span><span>呢一段就係恩宁路骑楼街景，可以睇到连续柱廊同二楼满洲窗。</span></div>
+      <div class=tline><span class=time>00:18</span><span>骑楼底层形成行人通道，係岭南商埠建筑特色。</span></div>
+    </div>
+
+    <div class="pn pn8">
+      <div class=shead><h2>分享卡片预览</h2><label class=close for=pn>✕</label></div>
+      <div class=share>
+        <div class=sharebrand>🥟 DimSum <span class=qr></span></div>
+        <div class=shareentry>骑楼</div>
+        <div>读音／粤拼：ke4 lau4</div>
+        <div style="margin-top:8px">骑楼作为近代岭南商埠建筑形制，兼具遮阳避雨与商业展示功能，常见于广州、佛山等地传统街区。</div>
+        <hr>
+        <div>来源语料集：岭南建筑资料库</div>
+        <div>内容类别：建筑资料</div>
+        <div>标签：地方志 · 建筑史 · 历史资料</div>
+        <div>Unique ID：c8a915b4...9d10</div>
+      </div>
+      <div class=actions>
+        <button class=minor>保存图片</button>
+        <button class=minor>复制链接</button>
+        <button class=btn-p>发送</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div></div><!-- wrap / phone -->
+</body></html>
