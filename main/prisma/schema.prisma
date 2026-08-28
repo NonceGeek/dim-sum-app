@@ -140,30 +140,34 @@ model cantonese_categories {
 }
 
 model cantonese_corpus_all {
-  id                   BigInt                     @unique @default(autoincrement())
-  data                 String
-  note                 Json?                      @default("{}")
-  category             String
-  created_at           DateTime                   @default(now()) @db.Timestamptz(6)
-  tags                 Json?                      @default("[]")
-  editable_level       Int                        @default(1) @db.SmallInt
-  liked_num            BigInt                     @default(0)
-  unique_id            String                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bookmark_num         BigInt                     @default(0)
-  view_num             BigInt                     @default(0)
-  updated_at           DateTime                   @default(now()) @db.Timestamptz(6)
-  lifecycle_stage      String                     @default("draft")
-  structured_note      Json?
-  cantonese_categories cantonese_categories       @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
-  corpus_category      corpus_category?
-  corpus_tags          corpus_tags[]
-  corpus_zyzdv2        corpus_zyzdv2[]
-  userInteractions     user_corpus_interactions[]
+  id                            BigInt                       @unique @default(autoincrement())
+  data                          String
+  note                          Json?                        @default("{}")
+  category                      String
+  created_at                    DateTime                     @default(now()) @db.Timestamptz(6)
+  tags                          Json?                        @default("[]")
+  editable_level                Int                          @default(1) @db.SmallInt
+  liked_num                     BigInt                       @default(0)
+  unique_id                     String                       @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookmark_num                  BigInt                       @default(0)
+  view_num                      BigInt                       @default(0)
+  updated_at                    DateTime                     @default(now()) @db.Timestamptz(6)
+  lifecycle_stage               String                       @default("draft")
+  content_attribute             String                       @default("unclassified")
+  media_types                   String[]                     @default(["text"])
+  structured_note               Json?
+  cantonese_categories          cantonese_categories         @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  corpus_category               corpus_category?
   embedding_neighbors_as_source corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_source")
   embedding_neighbors_as_target corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_target")
+  corpus_tags                   corpus_tags[]
+  corpus_zyzdv2                 corpus_zyzdv2[]
+  userInteractions              user_corpus_interactions[]
 
   @@id([id, data])
   @@index([data], map: "cantonese_corpus_all_data_pgroonga_idx")
+  @@index([content_attribute], map: "cantonese_corpus_all_content_attribute_idx")
+  @@index([media_types], type: Gin, map: "cantonese_corpus_all_media_types_gin_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1031,43 +1035,43 @@ model corpus_field_embeddings {
 }
 
 model corpus_embedding_neighbor_builds {
-  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  field_type             String   @default("doc")
+  id                     String                                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_type             String                                 @default("doc")
   model_name             String
   embedding_dimension    Int
-  neighbors_per_source   Int      @db.SmallInt
-  status                 String   @default("building")
-  source_count           Int      @default(0)
-  processed_source_count Int      @default(0)
-  neighbor_count         BigInt   @default(0)
-  source_watermark       DateTime? @db.Timestamptz(6)
-  started_at             DateTime @default(now()) @db.Timestamptz(6)
-  completed_at           DateTime? @db.Timestamptz(6)
-  activated_at           DateTime? @db.Timestamptz(6)
+  neighbors_per_source   Int                                    @db.SmallInt
+  status                 String                                 @default("building")
+  source_count           Int                                    @default(0)
+  processed_source_count Int                                    @default(0)
+  neighbor_count         BigInt                                 @default(0)
+  source_watermark       DateTime?                              @db.Timestamptz(6)
+  started_at             DateTime                               @default(now()) @db.Timestamptz(6)
+  completed_at           DateTime?                              @db.Timestamptz(6)
+  activated_at           DateTime?                              @db.Timestamptz(6)
   error_message          String?
-  metadata               Json     @default("{}")
-  created_at             DateTime @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime @default(now()) @db.Timestamptz(6)
-  neighbors              corpus_embedding_neighbors[]
+  metadata               Json                                   @default("{}")
+  created_at             DateTime                               @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                               @default(now()) @db.Timestamptz(6)
   sync_states            corpus_embedding_neighbor_sync_state[]
+  neighbors              corpus_embedding_neighbors[]
 
   @@index([field_type, status, created_at(sort: Desc)], map: "corpus_embedding_neighbor_build_status_idx")
 }
 
 model corpus_embedding_neighbors {
-  build_id                    String   @db.Uuid
-  field_type                  String   @default("doc")
+  build_id                    String                           @db.Uuid
+  field_type                  String                           @default("doc")
   source_corpus_id            BigInt
   target_corpus_id            BigInt
-  rank                        Int      @db.SmallInt
-  distance                    Float    @db.Real
-  similarity                  Float    @db.Real
-  source_embedding_updated_at DateTime @db.Timestamptz(6)
-  target_embedding_updated_at DateTime @db.Timestamptz(6)
-  computed_at                 DateTime @default(now()) @db.Timestamptz(6)
+  rank                        Int                              @db.SmallInt
+  distance                    Float                            @db.Real
+  similarity                  Float                            @db.Real
+  source_embedding_updated_at DateTime                         @db.Timestamptz(6)
+  target_embedding_updated_at DateTime                         @db.Timestamptz(6)
+  computed_at                 DateTime                         @default(now()) @db.Timestamptz(6)
   build                       corpus_embedding_neighbor_builds @relation(fields: [build_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  source                      cantonese_corpus_all @relation("corpus_embedding_neighbor_source", fields: [source_corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  target                      cantonese_corpus_all @relation("corpus_embedding_neighbor_target", fields: [target_corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  source                      cantonese_corpus_all             @relation("corpus_embedding_neighbor_source", fields: [source_corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  target                      cantonese_corpus_all             @relation("corpus_embedding_neighbor_target", fields: [target_corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([build_id, field_type, source_corpus_id, target_corpus_id])
   @@unique([build_id, field_type, source_corpus_id, rank])
@@ -1076,15 +1080,15 @@ model corpus_embedding_neighbors {
 }
 
 model corpus_embedding_neighbor_sync_state {
-  field_type                String   @id
-  watermark                 DateTime @db.Timestamptz(6)
-  active_build_id           String?  @db.Uuid
-  last_started_at           DateTime? @db.Timestamptz(6)
-  last_completed_at         DateTime? @db.Timestamptz(6)
-  last_changed_source_count Int      @default(0)
+  field_type                String                            @id
+  watermark                 DateTime                          @db.Timestamptz(6)
+  active_build_id           String?                           @db.Uuid
+  last_started_at           DateTime?                         @db.Timestamptz(6)
+  last_completed_at         DateTime?                         @db.Timestamptz(6)
+  last_changed_source_count Int                               @default(0)
   last_error                String?
-  updated_at                DateTime @default(now()) @db.Timestamptz(6)
-  active_build              corpus_embedding_neighbor_builds? @relation(fields: [active_build_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  updated_at                DateTime                          @default(now()) @db.Timestamptz(6)
+  active_build              corpus_embedding_neighbor_builds? @relation(fields: [active_build_id], references: [id], onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

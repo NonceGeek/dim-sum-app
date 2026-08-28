@@ -50,6 +50,20 @@ type AggregatedSearchRow = CorpusSearchRow & {
 
 type EntrySearchSection = "all" | "primary" | "semantic";
 type SemanticPart = "all" | "similar" | "recommended";
+type ContentAttributeFilter = "oral" | "cultural_knowledge";
+type MediaTypeFilter = "text" | "audio" | "video" | "image" | "model3d";
+
+const CONTENT_ATTRIBUTE_FILTERS = new Set<ContentAttributeFilter>([
+  "oral",
+  "cultural_knowledge",
+]);
+const MEDIA_TYPE_FILTERS = new Set<MediaTypeFilter>([
+  "text",
+  "audio",
+  "video",
+  "image",
+  "model3d",
+]);
 
 function parsePositiveIntegerEnvironment(
   value: string | undefined,
@@ -77,6 +91,43 @@ function parseDatasets(value: string | null): string[] | null {
   );
 
   return !datasets.length || datasets.includes("all") ? null : datasets;
+}
+
+function parseContentAttribute(
+  value: string | null,
+): ContentAttributeFilter | null | "invalid" {
+  if (!value) return null;
+  return CONTENT_ATTRIBUTE_FILTERS.has(value as ContentAttributeFilter)
+    ? (value as ContentAttributeFilter)
+    : "invalid";
+}
+
+function parseMediaType(
+  value: string | null,
+): MediaTypeFilter | null | "invalid" {
+  if (!value) return null;
+  return MEDIA_TYPE_FILTERS.has(value as MediaTypeFilter)
+    ? (value as MediaTypeFilter)
+    : "invalid";
+}
+
+function buildContentAttributeFilter(
+  column: Prisma.Sql,
+  contentAttribute: ContentAttributeFilter | null,
+): Prisma.Sql {
+  return contentAttribute
+    ? Prisma.sql`and ${column} = ${contentAttribute}`
+    : Prisma.empty;
+}
+
+function buildRelatedMediaFilter(
+  column: Prisma.Sql,
+  mediaType: MediaTypeFilter | null,
+): Prisma.Sql {
+  if (!mediaType) return Prisma.empty;
+  return mediaType === "text"
+    ? Prisma.sql`and ${column} = array['text']::text[]`
+    : Prisma.sql`and ${column} @> array[${mediaType}]::text[]`;
 }
 
 function normalizeTags(value: CorpusTagRow[] | null): CorpusTagRow[] {
@@ -181,22 +232,47 @@ function buildResponse(params: {
 async function fetchPrimarySearchRows(
   query: string,
   datasets: string[] | null,
+  contentAttribute: ContentAttributeFilter | null,
 ): Promise<AggregatedSearchRow[]> {
   const terms = getPrimarySearchTerms(query);
   const datasetFilter = datasets?.length
     ? Prisma.sql`array[${Prisma.join(datasets)}]::text[]`
     : Prisma.sql`null::text[]`;
+  const directDatasetFilter = datasets?.length
+    ? Prisma.sql`and c.category in (${Prisma.join(datasets)})`
+    : Prisma.empty;
+  const primaryMatch = contentAttribute
+    ? Prisma.sql`
+        select c.unique_id
+        from public.cantonese_corpus_all c
+        where ${buildPrimaryMatchCondition(query)}
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            contentAttribute,
+          )}
+          ${directDatasetFilter}
+        order by
+          ${buildPrimaryRankCase(query)},
+          length(c.data),
+          c.view_num desc,
+          c.bookmark_num desc,
+          c.liked_num desc
+        limit 1
+      `
+    : Prisma.sql`
+        select unique_id
+        from public.search_entry_primary(
+          array[${Prisma.join(terms)}]::text[],
+          ${datasetFilter}
+        )
+      `;
   return prisma.$transaction(
     async (tx) => {
       await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '5000ms'");
       return tx.$queryRaw<AggregatedSearchRow[]>(
         Prisma.sql`
       with primary_match as (
-        select unique_id
-        from public.search_entry_primary(
-          array[${Prisma.join(terms)}]::text[],
-          ${datasetFilter}
-        )
+        ${primaryMatch}
       )
       select
         'primary'::text as section,
@@ -210,6 +286,8 @@ async function fetchPrimarySearchRows(
         entry.category_display_name,
         entry.editable_level,
         entry.lifecycle_stage,
+        scope.content_attribute,
+        scope.media_types,
         entry.liked_num,
         entry.bookmark_num,
         entry.view_num,
@@ -225,6 +303,7 @@ async function fetchPrimarySearchRows(
         entry.recommended_tags,
         entry.contributor_ids
       from primary_match pm
+      join public.cantonese_corpus_all scope on scope.unique_id = pm.unique_id
       join lateral public.get_entry_identities(array[pm.unique_id]::uuid[]) entry
         on true
         `,
@@ -238,6 +317,8 @@ async function fetchAggregatedSearchRows(params: {
   query: string;
   similarOffset: number;
   recommendedOffset: number;
+  contentAttribute: ContentAttributeFilter | null;
+  mediaType: MediaTypeFilter | null;
 }): Promise<AggregatedSearchRow[]> {
   return prisma.$transaction(
     async (tx) => {
@@ -273,6 +354,10 @@ async function fetchAggregatedSearchRows(params: {
         left join content_categories child on child.id = cg.category_id
         left join content_categories parent on parent.id = child.parent_id
         where ${buildPrimaryMatchCondition(params.query)}
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            params.contentAttribute,
+          )}
         order by
           ${buildPrimaryRankCase(params.query)},
           length(c.data),
@@ -347,6 +432,15 @@ async function fetchAggregatedSearchRows(params: {
           ) as item_order
         from similar_candidates sc
         join cantonese_corpus_all c on c.id = sc.id
+        where true
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            params.contentAttribute,
+          )}
+          ${buildRelatedMediaFilter(
+            Prisma.sql`c.media_types`,
+            params.mediaType,
+          )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
       similar_ids as (
@@ -444,6 +538,10 @@ async function fetchAggregatedSearchRows(params: {
         where not exists (
           select 1 from similar_ids s where s.id = c.id
         )
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            params.contentAttribute,
+          )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
       recommended_ids as (
@@ -480,6 +578,8 @@ async function fetchAggregatedSearchRows(params: {
           cc.nickname as category_display_name,
           cc.editable_level as editable_level,
           c.lifecycle_stage,
+          c.content_attribute,
+          c.media_types,
           c.liked_num,
           c.bookmark_num,
           c.view_num,
@@ -593,6 +693,8 @@ async function fetchSemanticSearchRows(params: {
   similarOffset: number;
   recommendedOffset: number;
   semanticPart: SemanticPart;
+  contentAttribute: ContentAttributeFilter | null;
+  mediaType: MediaTypeFilter | null;
 }): Promise<AggregatedSearchRow[]> {
   const primarySeedCondition =
     params.primaryCorpusId === null
@@ -658,6 +760,10 @@ async function fetchSemanticSearchRows(params: {
         left join content_categories child on child.id = cg.category_id
         left join content_categories parent on parent.id = child.parent_id
         where ${primarySeedCondition}
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            params.contentAttribute,
+          )}
         order by
           ${buildPrimaryRankCase(params.query)},
           length(c.data),
@@ -678,8 +784,13 @@ async function fetchSemanticSearchRows(params: {
             e.corpus_id as id,
             (1 - (e.embedding <=> ${params.queryEmbeddingText}::vector)) * 100 as score
           from corpus_field_embeddings e
+          join cantonese_corpus_all candidate on candidate.id = e.corpus_id
           where e.field_type = 'doc'
             and e.corpus_id <> coalesce((select id from primary_seed), -1)
+            ${buildContentAttributeFilter(
+              Prisma.sql`candidate.content_attribute`,
+              params.contentAttribute,
+            )}
           order by e.embedding <=> ${params.queryEmbeddingText}::vector
           limit 48
         ) vector_candidates
@@ -713,6 +824,15 @@ async function fetchSemanticSearchRows(params: {
           ) as item_order
         from similar_candidates sc
         join cantonese_corpus_all c on c.id = sc.id
+        where true
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            params.contentAttribute,
+          )}
+          ${buildRelatedMediaFilter(
+            Prisma.sql`c.media_types`,
+            params.mediaType,
+          )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
       similar_ids as (
@@ -780,6 +900,10 @@ async function fetchSemanticSearchRows(params: {
         where not exists (
           select 1 from similar_ids s where s.id = c.id
         )
+          ${buildContentAttributeFilter(
+            Prisma.sql`c.content_attribute`,
+            params.contentAttribute,
+          )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
       recommended_ids as (
@@ -805,6 +929,8 @@ async function fetchSemanticSearchRows(params: {
           cc.nickname as category_display_name,
           cc.editable_level as editable_level,
           c.lifecycle_stage,
+          c.content_attribute,
+          c.media_types,
           c.liked_num,
           c.bookmark_num,
           c.view_num,
@@ -915,6 +1041,25 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = (searchParams.get("q") ?? "").trim();
     const datasets = parseDatasets(searchParams.get("dataset"));
+    const contentAttribute = parseContentAttribute(
+      searchParams.get("contentAttribute"),
+    );
+    if (contentAttribute === "invalid") {
+      return NextResponse.json(
+        { error: "Invalid contentAttribute; expected oral or cultural_knowledge" },
+        { status: 400 },
+      );
+    }
+    const mediaType = parseMediaType(searchParams.get("mediaType"));
+    if (mediaType === "invalid") {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid mediaType; expected text, audio, video, image, or model3d",
+        },
+        { status: 400 },
+      );
+    }
     const sectionParam = searchParams.get("section");
     const section: EntrySearchSection =
       sectionParam === "primary" || sectionParam === "semantic"
@@ -961,6 +1106,8 @@ export async function GET(req: NextRequest) {
           query,
           similarOffset,
           recommendedOffset,
+          contentAttribute,
+          mediaType,
         });
         return {
           rows: filterRows(
@@ -986,6 +1133,8 @@ export async function GET(req: NextRequest) {
             similarOffset,
             recommendedOffset,
             semanticPart,
+            contentAttribute,
+            mediaType,
           });
 
           return {
@@ -1003,6 +1152,8 @@ export async function GET(req: NextRequest) {
                 similarOffset,
                 recommendedOffset,
                 semanticPart: "similar",
+                contentAttribute,
+                mediaType,
               });
               return { rows: similarRows, status: "fallback" };
             } catch (similarError) {
@@ -1028,7 +1179,11 @@ export async function GET(req: NextRequest) {
 
     if (section === "primary") {
       try {
-        const primaryRows = await fetchPrimarySearchRows(query, datasets);
+        const primaryRows = await fetchPrimarySearchRows(
+          query,
+          datasets,
+          contentAttribute,
+        );
         return NextResponse.json(
           buildResponse({
             query,
@@ -1065,7 +1220,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [primaryRows, semantic] = await Promise.all([
-      fetchPrimarySearchRows(query, datasets),
+      fetchPrimarySearchRows(query, datasets, contentAttribute),
       fetchSemantic(),
     ]);
 
