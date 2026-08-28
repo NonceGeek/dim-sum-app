@@ -76,7 +76,8 @@
 | `video_clips=[{link:""}]` | 不标记为 video |
 | 帆船语料含 voxel + 粤语/普通话音频 | `media_types={text,audio,model3d}` |
 | 筛选 model3d | related 只显示含 model3d 的词条，primary/recommended 保持稳定 |
-| model3d 词条卡和详情页 | 显示模型资源入口；新标签页打开失败不影响其他媒体和搜索结果 |
+| model3d 精准结果和详情页 | Viewer 懒加载，可旋转/缩放并保留外链降级；加载失败不影响其他媒体和搜索结果 |
+| model3d 相关结果列表 | 只显示资源按钮，不批量下载模型文件 |
 
 媒体列表不得预加载视频流。使用网络面板验证初始请求中没有 video 内容下载。
 

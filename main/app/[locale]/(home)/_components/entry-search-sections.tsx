@@ -14,13 +14,13 @@ import {
 import {
   Box,
   Copy,
-  ExternalLink,
   ImageIcon,
   RefreshCcw,
   Share2,
   Video,
   Volume2,
 } from "lucide-react";
+import { Model3dCard } from "@/components/media/model3d-card";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
@@ -388,25 +388,12 @@ function PrimaryMediaPreview({
       )}
 
       {model3dUrl && (
-        <a
-          href={model3dUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex max-w-3xl items-center gap-3 rounded-md border border-border bg-muted/20 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Box className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">
-              {labels.model3d}
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              {labels.openModel3d}
-            </span>
-          </span>
-          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-        </a>
+        <Model3dCard
+          url={model3dUrl}
+          entryName={entry.entryName}
+          modelLabel={labels.model3d}
+          openLabel={labels.openModel3d}
+        />
       )}
     </div>
   );

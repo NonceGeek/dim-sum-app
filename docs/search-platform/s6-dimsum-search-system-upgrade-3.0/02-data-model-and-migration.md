@@ -74,7 +74,7 @@ text / audio / video / image / model3d
 - 由数据库统一派生函数和 trigger 在 `data/note/structured_note` 变化时刷新，应用入口不得手工维护；
 - 只有非空 URL/link 才计入对应媒体，空 `video_clips` 或空 link 不计入；
 - `mediaType=text` 表示纯文本，即数组只有 `text`，其他类型使用数组包含判断；
-- 存储、DTO 和前端筛选均支持 `model3d`；搜索结果与词条详情提供模型资源入口，内嵌 3D Viewer 留待独立交互评审。
+- 存储、DTO 和前端筛选均支持 `model3d`；精准结果与词条详情懒加载现有 Viewer 页面并保留外链降级，不在相关结果列表批量预载模型。
 
 ## 四、现有状态字段观察与本期口径
 
