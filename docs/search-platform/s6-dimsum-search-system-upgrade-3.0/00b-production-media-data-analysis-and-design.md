@@ -143,7 +143,7 @@ mediaType=model3d -> media_types @> ARRAY['model3d']
 参数省略           -> 不按媒体过滤
 ```
 
-存储、DTO 和前端筛选均支持 `model3d`，搜索卡片与词条详情提供模型资源入口；当前不引入内嵌 3D Viewer。回填仍不得丢掉现有 voxel 资产。
+存储、DTO 和前端筛选均支持 `model3d`。精准结果与词条详情通过 iframe 懒加载来源已有的 Viewer 页面并保留外链降级；相关结果列表只显示资源按钮，不批量预载约 9.6 MB 的帆船 GLB。DimSum 不重复引入 Three.js/model-viewer 依赖。回填仍不得丢掉现有 voxel 资产。
 
 若未来真实前端需要 `countsByMedia`，其中 `text` 应专指纯文本，其他类型按包含关系计数，因此多个媒体计数之和允许大于候选总数。当前接口未返回该计数，且它不是 S6 上线条件。
 

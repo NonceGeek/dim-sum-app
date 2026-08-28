@@ -6,15 +6,14 @@ import { Button } from "@/components/ui/button";
 import { fetchEntryIdentityByUniqueId } from "@/lib/search/entry-query";
 import {
   ArrowLeft,
-  Box,
   CalendarDays,
   Database,
-  ExternalLink,
   Share2,
   UserRound,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { CopyEntryIdButton } from "./copy-entry-id-button";
+import { Model3dCard } from "@/components/media/model3d-card";
 
 type EntryPageProps = {
   params: Promise<{
@@ -180,25 +179,12 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                 <audio src={entry.assets.audioUrl} controls className="h-10 w-full" />
               )}
               {entry.assets.model3dUrl && (
-                <a
-                  href={entry.assets.model3dUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <Box className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-foreground">
-                      {t("model3d")}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">
-                      {t("openModel3d")}
-                    </span>
-                  </span>
-                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-                </a>
+                <Model3dCard
+                  url={entry.assets.model3dUrl}
+                  entryName={entry.entryName}
+                  modelLabel={t("model3d")}
+                  openLabel={t("openModel3d")}
+                />
               )}
             </section>
           )}

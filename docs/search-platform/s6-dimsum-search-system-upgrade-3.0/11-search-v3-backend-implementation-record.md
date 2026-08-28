@@ -121,7 +121,7 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 
 ### 3.1 独立分支上的媒体前端
 
-`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选，并补齐搜索卡片、精准结果和词条详情的 model3d 资源入口。当前采用外链降级方案，不引入内嵌 3D Viewer，也不改变 Production。
+`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选。相关结果卡片提供 model3d 资源按钮；精准结果和词条详情通过 iframe 懒加载来源已有的 Viewer 页面，同时保留外链降级。当前不复制来源端的 Three.js/model-viewer 依赖，也不改变 Production。
 
 ## 四、回退
 
