@@ -74,6 +74,20 @@ async function main() {
     ),
   );
 
+  const oralSemanticUnfiltered = await request({
+    q: "船",
+    section: "semantic",
+    primaryCorpusId: String(oralSeed.corpusId),
+    contentAttribute: "oral",
+  });
+  assert.equal(oralSemanticUnfiltered.response.status, 200);
+  assert.deepEqual(
+    oralSemanticBody.recommended.map((entry) => entry.corpusId),
+    (oralSemanticUnfiltered.body as SearchResponse).recommended.map(
+      (entry) => entry.corpusId,
+    ),
+  );
+
   const ship = await request({
     q: "帆船",
     section: "primary",
@@ -106,6 +120,7 @@ async function main() {
       oralPrimary: oralSeed.entryName,
       oralSimilarCount: oralSemanticBody.similar.length,
       oralRecommendedCount: oralSemanticBody.recommended.length,
+      mediaFilterKeepsRecommendedStable: true,
       shipMediaTypes: shipEntry?.mediaTypes,
       invalidAttributeStatus: invalidAttribute.response.status,
       invalidMediaStatus: invalidMedia.response.status,

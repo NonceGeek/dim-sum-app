@@ -34,6 +34,17 @@ import CategoryTabs from "../_components/category-tabs";
 import { EntrySearchSections } from "../_components/entry-search-sections";
 import { SearchHeader } from "@/components/layout/search-header";
 import { MinimalFooter } from "../_components/minimal-footer";
+import type { EntryMediaType } from "@/lib/search/entry-identity";
+
+type SearchMediaFilter = EntryMediaType;
+
+const SEARCH_MEDIA_FILTERS = new Set<SearchMediaFilter>([
+  "text",
+  "audio",
+  "video",
+  "image",
+  "model3d",
+]);
 
 // Type guard for dictionary note
 function isDictionaryNote(note: SearchResult["note"]): note is DictionaryNote {
@@ -58,6 +69,12 @@ export default function SearchPage() {
   const urlKeyword = searchParams.get("q") || "";
   const urlDataset = searchParams.get("dataset") || "";
   const useEntryMode = searchParams.get("mode") === "entry";
+  const mediaTypeParam = searchParams.get("mediaType");
+  const urlMediaType = SEARCH_MEDIA_FILTERS.has(
+    mediaTypeParam as SearchMediaFilter,
+  )
+    ? (mediaTypeParam as SearchMediaFilter)
+    : undefined;
   const datasetName = urlDataset ? urlDataset.split(",").filter(Boolean) : [];
   const categoryParam = JSON.stringify(datasetName.length ? datasetName : ["all"]);
   const [similarCursor, setSimilarCursor] = useState<string | null>(null);
@@ -103,6 +120,7 @@ export default function SearchPage() {
     primaryCorpusId,
     similarCursor,
     semanticPart: similarCursor ? "similar" : undefined,
+    mediaType: urlMediaType,
     enabled: semanticRequestEnabled,
   });
   const recommendedRequestEnabled =
@@ -204,12 +222,23 @@ export default function SearchPage() {
   }, [urlKeyword, urlDataset, useEntryMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!useEntryMode) return;
+    setSimilarCursor(null);
+    setDisplaySimilarResult(undefined);
+  }, [urlMediaType, useEntryMode]);
+
+  useEffect(() => {
     if (!useEntryMode || !entrySimilarResult) return;
     setDisplaySimilarResult(entrySimilarResult);
-    if (similarCursor === null) {
+    if (similarCursor === null && !displayRecommendedResult) {
       setDisplayRecommendedResult(entrySimilarResult);
     }
-  }, [entrySimilarResult, similarCursor, useEntryMode]);
+  }, [
+    displayRecommendedResult,
+    entrySimilarResult,
+    similarCursor,
+    useEntryMode,
+  ]);
 
   useEffect(() => {
     if (!useEntryMode || !entryRecommendedResult) return;
@@ -278,7 +307,10 @@ export default function SearchPage() {
     const params = new URLSearchParams();
     params.set("q", searchPrompt.trim());
     params.set("dataset", buildDatasetParam());
-    if (useEntryMode) params.set("mode", "entry");
+    if (useEntryMode) {
+      params.set("mode", "entry");
+      if (urlMediaType) params.set("mediaType", urlMediaType);
+    }
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
@@ -290,7 +322,10 @@ export default function SearchPage() {
     const params = new URLSearchParams();
     params.set("q", term.trim());
     params.set("dataset", buildDatasetParam());
-    if (useEntryMode) params.set("mode", "entry");
+    if (useEntryMode) {
+      params.set("mode", "entry");
+      if (urlMediaType) params.set("mediaType", urlMediaType);
+    }
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
@@ -303,8 +338,21 @@ export default function SearchPage() {
     const params = new URLSearchParams();
     params.set("q", prompt);
     params.set("dataset", "all");
-    if (useEntryMode) params.set("mode", "entry");
+    if (useEntryMode) {
+      params.set("mode", "entry");
+      if (urlMediaType) params.set("mediaType", urlMediaType);
+    }
     router.push(`/search?${params.toString()}`, { scroll: false });
+  };
+
+  const handleMediaTypeChange = (mediaType?: SearchMediaFilter) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (mediaType) {
+      params.set("mediaType", mediaType);
+    } else {
+      params.delete("mediaType");
+    }
+    router.replace(`/search?${params.toString()}`, { scroll: false });
   };
 
   // 在渲染层把原始 category name 映射为 nickname，不在 mutation 里 await
@@ -468,6 +516,8 @@ export default function SearchPage() {
                   isLoadingRecommended={isInitialRecommendedLoading}
                   isRefreshingSimilar={entrySimilarFetching}
                   isRefreshingRecommended={entryRecommendedFetching}
+                  mediaType={urlMediaType}
+                  onMediaTypeChange={handleMediaTypeChange}
                   onRefreshSimilar={() =>
                     setSimilarCursor(entryResult.cursors.similarNext)
                   }
@@ -489,6 +539,8 @@ export default function SearchPage() {
                 isLoadingRecommended={isInitialRecommendedLoading}
                 isRefreshingSimilar={entrySimilarFetching}
                 isRefreshingRecommended={entryRecommendedFetching}
+                mediaType={urlMediaType}
+                onMediaTypeChange={handleMediaTypeChange}
                 onRefreshSimilar={() =>
                   setSimilarCursor(entryResult.cursors.similarNext)
                 }

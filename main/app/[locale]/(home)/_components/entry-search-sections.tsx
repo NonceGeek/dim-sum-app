@@ -22,6 +22,7 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
 import domtoimage from "dom-to-image";
+import { cn } from "@/lib/utils";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
@@ -33,9 +34,13 @@ type EntrySearchSectionsProps = {
   isRefreshingRecommended?: boolean;
   onRefreshSimilar?: () => void;
   onRefreshRecommended?: () => void;
+  mediaType?: SearchMediaFilter;
+  onMediaTypeChange?: (mediaType?: SearchMediaFilter) => void;
   setEditingResult?: React.Dispatch<React.SetStateAction<SearchResult | null>>;
   setUpdateDialogOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
+
+type SearchMediaFilter = "text" | "audio" | "video" | "image" | "model3d";
 
 function displayCategory(entry: EntryIdentity): string {
   return (
@@ -991,6 +996,7 @@ function ResultSection({
   columns = 3,
   dense = false,
   returnQuery,
+  headerAccessory,
 }: {
   title: string;
   entries: EntryIdentity[];
@@ -1004,6 +1010,7 @@ function ResultSection({
   columns?: 3 | 4;
   dense?: boolean;
   returnQuery?: string;
+  headerAccessory?: React.ReactNode;
 }) {
   const gridClass =
     columns === 4
@@ -1013,22 +1020,25 @@ function ResultSection({
 
   return (
     <section className="px-4 py-7 sm:px-0">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-        {onRefresh && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCcw
-              className={`mr-1.5 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            {refreshLabel}
-          </Button>
-        )}
+      <div className="mb-5 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          {onRefresh && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCcw
+                className={`mr-1.5 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {refreshLabel}
+            </Button>
+          )}
+        </div>
+        {headerAccessory}
       </div>
       <AnimatePresence mode="wait" initial={false}>
         {isRefreshing && !entries.length ? (
@@ -1080,6 +1090,61 @@ function ResultSection({
   );
 }
 
+function MediaFilter({
+  value,
+  onChange,
+  labels,
+}: {
+  value?: SearchMediaFilter;
+  onChange: (value?: SearchMediaFilter) => void;
+  labels: {
+    group: string;
+    all: string;
+    text: string;
+    audio: string;
+    video: string;
+    image: string;
+    model3d: string;
+  };
+}) {
+  const options: Array<{ value?: SearchMediaFilter; label: string }> = [
+    { label: labels.all },
+    { value: "text", label: labels.text },
+    { value: "audio", label: labels.audio },
+    { value: "video", label: labels.video },
+    { value: "image", label: labels.image },
+    { value: "model3d", label: labels.model3d },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label={labels.group}
+      className="flex max-w-full flex-wrap items-center gap-1.5"
+    >
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Button
+            key={option.value ?? "all"}
+            type="button"
+            size="sm"
+            variant={selected ? "secondary" : "ghost"}
+            aria-pressed={selected}
+            className={cn(
+              "h-8 rounded-full px-3 text-xs font-medium",
+              selected && "bg-primary/10 text-primary hover:bg-primary/15",
+            )}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
 type MediaLabels = {
   audio: string;
   video: string;
@@ -1097,6 +1162,8 @@ export function EntrySearchSections({
   isRefreshingRecommended,
   onRefreshSimilar,
   onRefreshRecommended,
+  mediaType,
+  onMediaTypeChange,
   setEditingResult,
   setUpdateDialogOpen,
 }: EntrySearchSectionsProps) {
@@ -1175,11 +1242,28 @@ export function EntrySearchSections({
         title={t("similarTitle")}
         entries={result.similar}
         refreshLabel={t("refresh")}
-        emptyLabel={t("emptyResults")}
+        emptyLabel={mediaType ? t("emptyMediaResults") : t("emptyResults")}
         labels={commonLabels}
         isRefreshing={isLoadingSimilar || isRefreshingSimilar}
         onRefresh={result.cursors.similarNext ? onRefreshSimilar : undefined}
         returnQuery={result.query}
+        headerAccessory={
+          onMediaTypeChange ? (
+            <MediaFilter
+              value={mediaType}
+              onChange={onMediaTypeChange}
+              labels={{
+                group: t("mediaFilterLabel"),
+                all: t("mediaAll"),
+                text: t("mediaText"),
+                audio: t("audio"),
+                video: t("video"),
+                image: t("image"),
+                model3d: t("mediaModel3d"),
+              }}
+            />
+          ) : undefined
+        }
       />
       <ResultSection
         title={t("recommendedTitle")}

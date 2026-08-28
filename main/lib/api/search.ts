@@ -2,7 +2,10 @@ import { useMutation, useQuery, useQueryClient, QueryClient } from "@tanstack/re
 import { fetchAllCategories, CategoryInfo } from "./category";
 import { backendFetch } from "./backend";
 import { api } from "./client";
-import type { EntrySearchResponse } from "@/lib/search/entry-identity";
+import type {
+  EntryMediaType,
+  EntrySearchResponse,
+} from "@/lib/search/entry-identity";
 
 export type LyricsResult = {
   sec: number;
@@ -66,6 +69,7 @@ type EntrySearchParams = {
   recommendedCursor?: string | null;
   section?: "all" | "primary" | "semantic";
   semanticPart?: "similar" | "recommended";
+  mediaType?: EntryMediaType;
 };
 
 
@@ -203,6 +207,7 @@ async function fetchEntrySearch({
   similarCursor,
   recommendedCursor,
   semanticPart,
+  mediaType,
 }: EntrySearchParams): Promise<EntrySearchResponse> {
   const params = new URLSearchParams();
   params.set("q", keyword);
@@ -216,6 +221,7 @@ async function fetchEntrySearch({
     params.set("primaryCorpusId", String(primaryCorpusId));
   }
   if (semanticPart) params.set("semanticPart", semanticPart);
+  if (mediaType) params.set("mediaType", mediaType);
   if (similarCursor) params.set("similarCursor", similarCursor);
   if (recommendedCursor) params.set("recommendedCursor", recommendedCursor);
 
@@ -288,6 +294,7 @@ export function useEntrySemanticSearchQuery(
     similarCursor?: string | null;
     recommendedCursor?: string | null;
     semanticPart?: "similar" | "recommended";
+    mediaType?: EntryMediaType;
     enabled?: boolean;
   } = {},
 ) {
@@ -302,6 +309,7 @@ export function useEntrySemanticSearchQuery(
         : (options.primaryCorpusId ?? "unresolved"),
       options.similarCursor ?? null,
       options.recommendedCursor ?? null,
+      options.mediaType ?? null,
     ],
     queryFn: () =>
       fetchEntrySearch({
@@ -311,6 +319,7 @@ export function useEntrySemanticSearchQuery(
         semanticPart: options.semanticPart,
         similarCursor: options.similarCursor,
         recommendedCursor: options.recommendedCursor,
+        mediaType: options.mediaType,
       }),
     enabled: (options.enabled ?? true) && !!keyword.trim(),
     staleTime: 5 * 60 * 1000,
