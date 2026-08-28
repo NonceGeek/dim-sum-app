@@ -1,6 +1,6 @@
 # 04 · 现有 Search API 的 S6 增量契约
 
-状态：已按现有正式接口实现并完成本地代码 + Production 数据只读验收；待部署线上应用
+状态：已按现有正式接口上线，并通过 `search.aidimsum.com` Production 验收
 
 ## 一、实施原则
 

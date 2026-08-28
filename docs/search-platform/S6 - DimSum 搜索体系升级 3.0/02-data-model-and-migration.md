@@ -1,6 +1,6 @@
 # 02 · S6 精简数据模型与迁移方案
 
-状态：Production schema、媒体回填、内容属性标记和现有 Search API 兼容实现已完成；应用待部署
+状态：Production schema、媒体回填、内容属性标记和现有 Search API 兼容实现均已上线并验证
 范围依据：[00a-requirement-implementation-traceability.md](00a-requirement-implementation-traceability.md)
 
 ## 一、设计结论
