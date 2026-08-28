@@ -166,6 +166,10 @@ SEARCH_OFFLINE_NEIGHBORS_WEIGHT=45
 SEARCH_OFFLINE_NEIGHBORS_MAX_RANK=24
 ```
 
+截至 2026-08-27，Production 与 dev Preview 的
+`SEARCH_OFFLINE_NEIGHBORS_ENABLED` 均为 `true`；权重和最大 rank 未显式配置时由代码使用
+默认值 `45` 和 `24`。
+
 重新部署后测试固定查询集，确认 semantic P95、推荐重复率和相关性。异常时把
 `SEARCH_OFFLINE_NEIGHBORS_ENABLED` 改回 `false` 并重新部署；关闭后生成的 SQL 不会
 引用邻居表。
@@ -246,10 +250,15 @@ pnpm db:neighbors:incremental --batch-size 200
 | 无变更增量空跑 | 约 10 秒，不下载向量、不改写邻居 |
 | 在线邻居读取 EXPLAIN | 72 行，index scan，Execution Time 8.807ms |
 
-dev Preview 随后单独开启离线邻居开关。基础搜索接口正常，但多个冷查询在调用中国
-DashScope 生成 query embedding 时触发 4 秒超时并降级，响应约 5.6 到 9.0 秒。运行日志
-确认该 fallback 发生在 embedding HTTP 请求阶段，不是邻居读取阶段；因此 Production
-开关保持关闭，待 embedding 网络路径解决后再验收。
+dev Preview 初次灰度时，多个冷查询在调用中国 DashScope 生成 query embedding 时触发
+4 秒超时并降级。随后查询向量改为通过固定在 `iad1` 的受保护中转访问 DashScope，并将
+中转改为 Edge Runtime 以降低第二层 Node Function 冷启动。
+
+最终 Preview 20 样本 20/20 semantic success，P50 1.876 秒、P95 3.210 秒、最大
+5.508 秒。提交 `eba9150` 经 PR #387 合并到 `main` 后，Production 开关已开启；正式域名
+20 样本 20/20 semantic success，P50 1.656 秒、P95 4.976 秒、最大 7.899 秒，满足
+semantic P95 不超过 5 秒的验收标准。首个冷请求仍可能高于 5 秒，需要继续观察线上
+超过 8 秒请求、P2024 和 statement timeout。
 
 抽样邻居的诗句、主题和语义关系正常。抽查同时发现源语料中存在 `ttt`、
 `text已修改测试v2`、`ddd` 等测试残留；这是 embedding 输入数据质量问题，后续应单独

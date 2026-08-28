@@ -12,6 +12,7 @@
 | `performance-analysis-and-current-optimization.md` | 线上基线、数据库证据、根因、已实施优化和验收标准 |
 | `offline-neighbor-table-implementation-plan.md` | 邻居表 DDL、离线构建、增量/全量任务、灰度和回滚 |
 | `local-neighbor-builder-runbook.md` | 本地首次全量、手动增量、激活、恢复和故障处理操作手册 |
+| `iad1-query-embedding-relay.md` | 查询向量中转、Edge 冷启动优化与 Preview/Production 验收 |
 
 日常维护直接阅读 `local-neighbor-builder-runbook.md` 的“日常手动维护速查”，按
 `status -> incremental -> status` 执行；周期性全量按 `full -> status/抽查 -> activate -> status`
@@ -29,21 +30,21 @@
 - 已执行：数据库建表、1,000 条样本验证、首次全量构建和 active 数据切换。
 - 当前 active：23,405 source、748,960 邻居、canonical 覆盖率 100%。
 - 已验证：线上读取 3 * 24 条邻居的 SQL 实际执行 8.807ms。
-- 已部署：提交 `9b3733c` 的 dev Preview 已 Ready，并只在 dev Preview 打开邻居开关。
-- 暂缓 Production：Preview 多个冷查询均因 Vercel 新加坡/香港到中国 DashScope 的
-  query embedding 4 秒超时而进入 fallback；邻居 SQL 本身不是瓶颈。
-- 待执行：先解决或代理 query embedding 网络，再完成固定查询集验收并打开 Production
-  feature flag。
+- 已部署：查询向量经 Edge Runtime `iad1` 中转访问 DashScope，提交 `eba9150` 已通过
+  PR #387 合并到 `main`。
+- 已验收：Preview 20/20 成功，P50 1.876 秒、P95 3.210 秒、最大 5.508 秒。
+- 已上线：Production `SEARCH_OFFLINE_NEIGHBORS_ENABLED=true`；20/20 成功，P50
+  1.656 秒、P95 4.976 秒、最大 7.899 秒。
+- 待观察：首个冷请求仍可能超过 5 秒，持续检查超过 8 秒请求、P2024 与 statement
+  timeout；异常时关闭开关并重新部署，不删除 active build。
 
 ## 目标架构
 
 ```text
-当前：query vector + tag/category/heat -> recommended
-
-后续：query vector -> similar
-                 -> offline neighbors
-                 -> tag/category/heat fusion
-                 -> recommended
+query vector -> similar
+             -> active offline neighbors
+             -> tag/category/heat fusion
+             -> recommended
 ```
 
-后续方案不会恢复动态 source vector 的在线相关扫描。
+当前实现不会恢复动态 source vector 的在线相关扫描。

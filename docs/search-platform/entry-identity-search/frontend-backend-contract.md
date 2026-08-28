@@ -245,7 +245,8 @@ content_categories
 - `corpus_tags` 可查询语料已有标签；P0 前端统一按 `related / medium` 输出。
 - `tag_related` 可用于相关标签扩展。
 - `corpus_field_embeddings` 支持用户 query vector 在 `field_type='doc'` 子空间 KNN 查询。
-  similar 的二次扩散不得再使用未命中 HNSW 的动态向量相关子查询，后续由离线邻居表提供。
+  similar 的二次扩散不得再使用未命中 HNSW 的动态向量相关子查询，当前由 active
+  `corpus_embedding_neighbors` 提供。
 - 前端语义搜索固定使用用户 query 实时生成的 1024 维向量查询 `corpus_field_embeddings(field_type='doc')`，不依赖 primary 必然存在。
 - 当前不强依赖 `tags.embedding` 和相似标签向量；如果 similar / recommended 效果不够，再把相似标签下的语料加入召回池。
 - 贡献者可通过 `cantonese_corpus_update_history` 批量聚合。

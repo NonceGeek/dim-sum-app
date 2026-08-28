@@ -83,6 +83,7 @@
 | 语料标签关系 | `corpus_tags` |
 | 相关标签 | `tag_related` |
 | 字段级向量 | `corpus_field_embeddings` |
+| active 离线邻居 | `corpus_embedding_neighbors` / `corpus_embedding_neighbor_builds` |
 | 编辑贡献者 | `cantonese_corpus_update_history` |
 
 后端需要保证：
@@ -91,8 +92,8 @@
 - 当前 `corpus_tags` 可提供语料标签关系。
 - 本期先不依赖 `corpus_tags.tag_role` 和 `corpus_tags.relevance_level`；前端聚合时把已有标签统一视为 `related / medium`。
 - `tag_related` 可按 `cooc / semantic / manual` 提供相关标签。
-- `corpus_field_embeddings` 当前用于 query -> similar；similar -> recommended 的在线动态
-  扩散因未命中 HNSW 已暂停，后续读取离线 `corpus_embedding_neighbors` 恢复。
+- `corpus_field_embeddings` 用于 query -> similar；similar -> recommended 不再执行未命中
+  HNSW 的在线动态扩散，已改为读取 active `corpus_embedding_neighbors`。
 
 ---
 

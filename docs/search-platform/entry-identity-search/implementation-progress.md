@@ -115,7 +115,7 @@ P0 聚合字段：
 |---------|------|---------|
 | `primary` | 1 | exact / 繁简 exact / prefix / like / full text，取最佳 |
 | `similar` | 3 | 以后端文档为准；固定调阿里云生成用户搜索文本的 query vector，再查 `corpus_field_embeddings(field_type='doc')`；融合/兜底同标签和同二级身份分类 |
-| `recommended` | 4 | 当前融合 query vector、`tag_related`、同二级/一级分类和热度；后续从离线邻居恢复 similar 扩散 |
+| `recommended` | 4 | 融合 query vector、active 离线邻居、`tag_related`、同二级/一级分类和热度 |
 
 二级和三级不做传统分页，只提供“换一批”刷新。
 
@@ -170,11 +170,13 @@ P0 聚合字段：
 - [x] 在线推荐已增加 feature flag 控制的 active 邻居候选融合。
 - [x] 数据库建表、1,000 条样本和首次全量已完成；active build 覆盖 23,405 source，
   共 748,960 邻居，读取 72 行实测 8.807ms。
-- [x] 提交 `9b3733c` 已推送，dev Preview 部署 Ready；仅 dev Preview 设置
-  `SEARCH_OFFLINE_NEIGHBORS_ENABLED=true`。
-- [ ] Production 开关暂缓：Preview 的“饮茶/早晨/粤语/食饭”冷查询均因 DashScope
-  query embedding 4 秒超时进入 fallback，日志确认不是邻居 SQL 超时。先解决新加坡/
-  香港 Vercel 到中国 DashScope 的网络路径，再完成固定查询集验收。
+- [x] 提交 `9b3733c` 已推送，完成 dev Preview 离线邻居灰度。
+- [x] 查询向量已通过 Edge Runtime 中转到 `iad1`；提交 `eba9150` 经 PR #387 合并到
+  `main`（merge commit `7d381b3`）。
+- [x] Preview 20 样本验收：20/20 semantic success，P50 1.876 秒、P95 3.210 秒、
+  最大 5.508 秒。
+- [x] Production 已设置 `SEARCH_OFFLINE_NEIGHBORS_ENABLED=true` 并完成部署；20 样本
+  20/20 semantic success，P50 1.656 秒、P95 4.976 秒、最大 7.899 秒。
 - [x] 新增 query embedding 接入点：`DASHSCOPE_API_KEY` / `ALIBABA_CLOUD_DASHSCOPE_API_KEY` 配置后，semantic section 会调阿里云 `qwen3-vl-embedding` 获取用户 query 向量。
 - [x] 批量 `entryIdentity` 聚合已下沉为 Supabase RPC。
 - [x] primary 精准搜索已下沉为 Supabase RPC，并支持可选来源语料集过滤。
@@ -259,9 +261,9 @@ main/prisma/migrations/20260625111423_add_entry_primary_search_rpc/migration.sql
 3. 如线上仍需更低延迟，再评估 similar/recommended 召回 SQL 是否也需要局部下沉，并缓存热门 query。
 
 向量检索当前保持 query vector 优先：二级请求百炼生成 1024 维向量，再查
-`corpus_field_embeddings(field_type='doc')`。三级在线动态扩散因执行计划不命中 HNSW 已暂停，
-后续读取离线 `corpus_embedding_neighbors` 恢复。`primary` 先返回并把 `corpusId`
-交给 `semantic`，两个区域分别 loading。
+`corpus_field_embeddings(field_type='doc')`。三级不再执行未命中 HNSW 的在线动态扩散，
+已读取 active `corpus_embedding_neighbors` 恢复 similar 邻居候选。`primary` 先返回并把
+`corpusId` 交给 `semantic`，两个区域分别 loading。
 
 当前性能观察：
 
