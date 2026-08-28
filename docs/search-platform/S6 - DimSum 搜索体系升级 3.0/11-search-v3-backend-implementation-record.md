@@ -68,7 +68,7 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 - Entry DTO 与既有 embedding 测试共 7 项：全部通过。
 - `pnpm build`：通过，173 个静态页面生成完成。
 
-### 2.2 本地代码 + Production 数据只读验收
+### 2.2 Production 线上验收
 
 | 用例 | 结果 |
 |---|---|
@@ -81,7 +81,15 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 | `contentAttribute=unclassified` | HTTP 400 |
 | `mediaType=document` | HTTP 400 |
 
-可重复验收脚本：`main/scripts/test-s6-search-live.ts`。
+验收目标：`https://search.aidimsum.com`。可重复验收脚本：`main/scripts/test-s6-search-live.ts`。
+
+### 2.3 部署记录
+
+- 功能提交：`9079446`，推送到 `dev`。
+- Pull Request：`#388`，Vercel Preview 检查通过后合并。
+- `main` 合并提交：`a803252`。
+- Production：由 `aid-im-sum-lab/dim-sum-app` 的 GitHub 集成自动部署，状态 `success`。
+- 正式流程固定为 `dev -> PR -> main -> Vercel 自动部署`，不得绕过该流程从本地 CLI 手动发布 Production。
 
 ## 三、未来候选设计，不是 S6 未完成项
 
@@ -100,4 +108,4 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 
 ## 四、回退
 
-代码尚未部署到线上应用。若后续部署后需要回退，恢复上一应用版本即可；Production 新字段与已回填数据保留。默认未传新参数的请求不依赖功能开关。
+应用代码如需回退，应通过 Git revert/回退 PR 进入 `main`，由团队 Vercel 项目自动部署；不要使用个人 Vercel 项目或本地 CLI 覆盖 Production。Production 新字段与已回填数据保留，默认未传新参数的请求不依赖功能开关。
