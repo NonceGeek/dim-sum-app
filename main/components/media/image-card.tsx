@@ -1,57 +1,89 @@
 "use client";
 
-import Link from "next/link";
+import { Maximize2 } from "lucide-react";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 type ImageCardProps = {
   url: string;
   alt: string;
-  openSourceLabel: string;
+  previewLabel: string;
   unavailableLabel: string;
-  detailHref?: string;
+  compact?: boolean;
 };
 
 export function ImageCard({
   url,
   alt,
-  openSourceLabel,
+  previewLabel,
   unavailableLabel,
-  detailHref,
+  compact = false,
 }: ImageCardProps) {
   const [loadFailed, setLoadFailed] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const image = loadFailed ? (
-    <div className="flex aspect-video items-center justify-center rounded-md border border-dashed border-border bg-muted/30 px-4 text-center text-sm text-muted-foreground">
-      {unavailableLabel}
-    </div>
-  ) : (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt={alt}
-      loading="lazy"
-      onError={() => setLoadFailed(true)}
-      className="max-h-[420px] w-full rounded-md border border-border bg-muted/30 object-contain"
-    />
-  );
+  if (loadFailed) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-md border border-dashed border-border bg-muted/30 px-4 text-center text-sm text-muted-foreground",
+          compact ? "h-24" : "aspect-video",
+        )}
+      >
+        {unavailableLabel}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-2">
-      {detailHref && !loadFailed ? (
-        <Link href={detailHref} className="block">
-          {image}
-        </Link>
-      ) : (
-        image
-      )}
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+    <Dialog open={open} onOpenChange={setOpen}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={previewLabel}
+        className={cn(
+          "group/image relative block w-full overflow-hidden rounded-md border border-border bg-muted/30 text-left",
+          compact ? "h-24" : "max-h-[420px]",
+        )}
       >
-        {openSourceLabel}
-      </a>
-    </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={alt}
+          loading="lazy"
+          onError={() => setLoadFailed(true)}
+          className={cn(
+            "w-full object-contain",
+            compact ? "h-full" : "max-h-[420px]",
+          )}
+        />
+        <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition-all group-hover/image:bg-black/25 group-hover/image:opacity-100 group-focus-visible/image:bg-black/25 group-focus-visible/image:opacity-100">
+          <span className="flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-medium">
+            <Maximize2 className="h-3.5 w-3.5" />
+            {previewLabel}
+          </span>
+        </span>
+      </button>
+
+      <DialogContent className="max-w-[min(94vw,1100px)] border-white/10 bg-black/95 p-3 text-white sm:rounded-xl">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{alt}</DialogTitle>
+          <DialogDescription>{previewLabel}</DialogDescription>
+        </DialogHeader>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={alt}
+          className="max-h-[85vh] w-full object-contain"
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

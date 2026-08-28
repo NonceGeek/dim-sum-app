@@ -166,7 +166,7 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                 <ImageCard
                   url={entry.assets.coverImage}
                   alt={entry.entryName}
-                  openSourceLabel={t("openImageSource")}
+                  previewLabel={t("previewImage")}
                   unavailableLabel={t("imageUnavailable")}
                 />
               )}
@@ -176,13 +176,11 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                   poster={entry.assets.coverImage}
                   transcript={entry.assets.videoTranscript}
                   transcriptLabel={t("videoTranscript")}
-                  openSourceLabel={t("openVideoSource")}
                 />
               )}
               {entry.assets.audioUrl && (
                 <AudioCard
                   url={entry.assets.audioUrl}
-                  openSourceLabel={t("openAudioSource")}
                 />
               )}
               {entry.assets.model3dUrl && (
@@ -190,7 +188,6 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                   url={entry.assets.model3dUrl}
                   entryName={entry.entryName}
                   modelLabel={t("model3d")}
-                  openLabel={t("openModel3d")}
                 />
               )}
             </section>

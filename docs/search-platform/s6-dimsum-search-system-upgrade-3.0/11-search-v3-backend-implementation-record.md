@@ -124,11 +124,11 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 
 ### 3.1 独立分支上的媒体前端
 
-`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选。精准结果和词条详情通过 iframe 懒加载来源已有的 3D Viewer 页面，同时保留外链降级。当前不复制来源端的 Three.js/model-viewer 依赖，也不改变 Production。
+`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选。精准结果和词条详情通过 iframe 懒加载来源已有的 3D Viewer 页面。当前不复制来源端的 Three.js/model-viewer 依赖，也不改变 Production。
 
-视频复用一个原生播放器组件：精准结果和词条详情使用 `preload=metadata + playsInline`，现有转写默认折叠展示，并始终保留源文件入口。相关结果只链接到词条详情，不挂载播放器；这是为了避免同时预载 5 个约 1.5–72.2 MB 的资源，也避免直接打开带 OSS 强制下载头的 URL。
+视频复用一个原生播放器组件：精准结果和词条详情使用 `preload=metadata + playsInline`，现有转写默认折叠展示。相关表达和继续探索使用固定视频槽，初始 video 元素不设置 `src`；点击“全屏播放”后才加载，原生全屏不可用时降级为卡片内播放器。这避免同时预载 5 个约 1.5–72.2 MB 的资源。
 
-音频和图片也复用共享媒体卡片。音频在精准结果和详情页使用原生控件并保留源文件入口，相关结果维持点击后才播放；图片在页内懒加载，失败显示占位并保留源文件入口。Production 的 10 条图片源均来自旧 `img/photo_url`，且 OSS 设为强制下载，所以相关结果的图片按钮改为进入词条详情，不再直连资源。
+音频和图片也复用共享媒体卡片。音频在精准结果和详情页使用原生控件，相关卡片使用明确的“试听/暂停”并保证同时只播放一条；图片在两组相关卡片的正文和标签间使用固定预览槽，点击打开站内灯箱，失败显示占位。Production 的 10 条图片源均来自旧 `img/photo_url`，且 OSS 设为强制下载，因此公开 Search UI 已移除所有媒体源文件和下载入口。
 
 ## 四、回退
 
