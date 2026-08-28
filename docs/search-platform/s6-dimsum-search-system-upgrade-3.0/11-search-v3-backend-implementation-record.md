@@ -91,6 +91,20 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 - Production：由 `aid-im-sum-lab/dim-sum-app` 的 GitHub 集成自动部署，状态 `success`。
 - 正式流程固定为 `dev -> PR -> main -> Vercel 自动部署`，不得绕过该流程从本地 CLI 手动发布 Production。
 
+### 2.4 上线后稳定性抽样
+
+2026-08-28 在最终 `main` 自动部署完成后，对 `https://search.aidimsum.com` 进行只读复核：
+
+| 请求 | HTTP | 单次样本耗时 |
+|---|---:|---:|
+| 默认“船” Primary | 200 | 0.37–0.50s |
+| oral“船” Primary | 200 | 0.35s |
+| cultural“帆船” Primary | 200 | 0.20s |
+| oral + audio semantic | 200 | 2.88s |
+| 非法 `contentAttribute=unclassified` | 400 | 0.33s |
+
+部署切换后的第一次完整冒烟请求曾收到一次 503；15 秒后重试及其后连续抽样均通过。当前按 Serverless/数据库连接冷启动瞬态记录，不据此修改搜索业务逻辑。后续若重复出现，应结合团队 Vercel 函数日志和数据库连接指标立项排查。
+
 ## 三、未来候选设计，不是 S6 未完成项
 
 复核真实代码后决定不为 AI 原型单独实现 `/api/search/v3/entries`。以下设计只有在出现明确调用方需求时再评审，不计入当前 S6 上线待办：

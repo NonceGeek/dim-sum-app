@@ -7,7 +7,7 @@
 数据库与搜索聚合 Function 保持在数据库邻近区域；只有 DashScope 查询向量请求通过固定在 Vercel `iad1` 的受保护中转路由发送到阿里云中国区。
 
 ```text
-搜索 Function（Production: sin1）
+搜索 Function（Production 实测: hnd1）
   -> /api/search/embedding-relay（iad1）
   -> DashScope 中国区 qwen3-vl-embedding
   -> 1024 维查询向量
@@ -16,8 +16,9 @@
 
 ## 实施内容
 
-- `main/vercel.json` 将以下 Function 固定到 `iad1`：
-  - `/api/search/embedding-relay`
+- `main/vercel.json` 将以下 Function 配置到 `iad1`：
+  - `/api/search/embedding-relay`；Route 同时使用 Edge Runtime 和
+    `preferredRegion = "iad1"`，以 Route 配置约束 Edge 实际区域；
   - `/api/auth/sms-relay`（只调用阿里云短信，不访问数据库）
 - 登录、绑定手机和问卷手机号验证等业务 API 不再固定到 `iad1`，继续运行在项目默认的数据库邻近区域；这些 API 完成频控、验证码记录等数据库逻辑后，仅把最终短信发送动作交给中转。
 - `main/lib/search/query-embedding.ts`：
@@ -27,7 +28,8 @@
   - 校验中转返回值必须是 1024 维；
   - 中转失败后由现有搜索路由执行降级，不从亚洲区域再次直连中国区。
 - `/api/search/embedding-relay`：
-  - 使用独立 Secret 鉴权，并采用定时安全比较；
+  - 使用独立 Secret 鉴权，以 Web Crypto SHA-256 固定长度摘要进行定时安全比较；
+  - 使用 Edge Runtime，避免查询 Function 冷启动后再次触发 Node 中转冷启动；
   - 不访问数据库；
   - 不记录或返回 DashScope API Key；
   - 返回向量的响应设置 `Cache-Control: no-store`。
@@ -69,14 +71,26 @@
 - 其余请求 1757–3680ms；
 - 全部请求 P50 2382ms。
 
-Preview 主搜索 Function 当次运行在 `hnd1`；中转路由响应头为 `hnd1::iad1::*`，证明中转 Function 实际运行在 `iad1`。Production 主搜索仍由项目级配置运行在 `sin1`。
+Preview 主搜索 Function 当次运行在 `hnd1`；中转路由响应头为 `hnd1::iad1::*`，证明中转 Function 实际运行在 `iad1`。
+
+### Edge 中转与离线邻居上线验收
+
+- Node 中转基线首冷请求约 10.27 秒，热请求约 2.06–3.18 秒；
+- Edge 中转固定 `iad1` 后，Preview 20 样本 20/20 semantic success，P50
+  1.876 秒、P95 3.210 秒、最大 5.508 秒；
+- 提交 `eba9150` 经 PR #387 合并到 `main`，merge commit 为 `7d381b3`；
+- Production 已设置 `SEARCH_OFFLINE_NEIGHBORS_ENABLED=true`；
+- 正式域名 20 样本 20/20 semantic success，P50 1.656 秒、P95 4.976 秒、最大
+  7.899 秒；每次均返回 3 条 similar 和 4 条 recommended；
+- Production 实测主搜索 Function 为 `hnd1`，Edge 中转响应路径为
+  `hnd1::iad1::*`。
 
 ### 短信中转 Preview
 
 - Preview 构建成功；
 - 无鉴权调用 `/api/auth/sms-relay` 返回 401，`x-vercel-id` 为 `hnd1::iad1::*`；
 - 空载荷调用 `/api/miniprogram/auth/send-sms` 返回 400，`x-vercel-id` 为 `hnd1::hnd1::*`；
-- 由此确认 Preview 中只有短信网络调用进入 `iad1`，完整业务接口没有被带离默认区域；Production 对应业务接口将跟随项目默认的 `sin1`；
+- 由此确认 Preview 中只有短信网络调用进入 `iad1`，完整业务接口没有被带离默认区域；Production 对应业务接口跟随项目默认区域；
 - 单元测试覆盖中转 URL、鉴权头、请求体、缺少密钥时的安全失败，以及无效手机号不触发中转。
 
 ## 部署与回滚
@@ -86,7 +100,8 @@ Preview 主搜索 Function 当次运行在 `hnd1`；中转路由响应头为 `hn
 1. Vercel 构建详情中 `/api/search/embedding-relay` 的区域为 `iad1`；
 2. 无鉴权调用中转应返回 401，响应头第二段区域应为 `iad1`；
 3. 使用多个未缓存关键词验证语义状态为 `success`；
-4. 观察日志中不再出现来自 `sin1` 的 DashScope `TimeoutError`。
+4. 观察日志中不再出现主搜索 Function 直连 DashScope 的 `TimeoutError`；
+5. 离线邻居开启时，固定查询集 semantic P95 不超过 5 秒。
 
 短信链路同时检查：
 
@@ -95,4 +110,7 @@ Preview 主搜索 Function 当次运行在 `hnd1`；中转路由响应头为 `hn
 3. 业务 API 日志负责数据库阶段，中转日志只包含阿里云调用耗时和脱敏后的执行结果；
 4. 缺少 `ALIYUN_SMS_RELAY_SECRET` 时 Vercel 环境安全失败，不从亚洲区域回退为阿里云直连；本地开发完全未配置中转变量时仍可直连。
 
-回滚时移除搜索客户端的中转逻辑和 `vercel.json` 中的中转区域配置。不要只删除 `SEARCH_EMBEDDING_RELAY_SECRET`：Vercel 环境缺少该变量时，当前实现会主动进入搜索降级，避免重新产生跨境直连超时。
+离线邻居异常时，优先将 `SEARCH_OFFLINE_NEIGHBORS_ENABLED` 改为 `false` 并重新部署；
+不要删除 active build。中转异常需要代码回滚时，再恢复 Node Runtime 或移除中转逻辑。
+不要只删除 `SEARCH_EMBEDDING_RELAY_SECRET`：Vercel 环境缺少该变量时，当前实现会主动
+进入搜索降级，避免重新产生跨境直连超时。

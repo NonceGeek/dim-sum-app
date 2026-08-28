@@ -144,10 +144,10 @@ tag_related 相关标签
 
 三级结果不应影响一级精准结果排序。
 
-当前过渡版本尚未建立 `corpus_embedding_neighbors`，因此暂时关闭 similar 动态向量
-二次扩散，只保留 query vector、标签、分类和热度。完整恢复方案见
-`semantic-search-optimization/offline-neighbor-table-implementation-plan.md`，不得恢复会扫描
-向量表的在线相关子查询。
+`corpus_embedding_neighbors` 已完成首次全量并激活，recommended 会融合 similar 结果的
+active 离线邻居、query vector、标签、分类和热度。不得恢复会扫描向量表且不命中 HNSW
+的在线动态相关子查询；构建与维护流程见
+`semantic-search-optimization/offline-neighbor-table-implementation-plan.md`。
 
 ---
 
