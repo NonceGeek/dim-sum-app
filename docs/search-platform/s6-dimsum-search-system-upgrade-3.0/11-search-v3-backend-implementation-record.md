@@ -118,7 +118,10 @@ assets.model3dUrl = https://oss.aidimsum.com/vox-ship
 - 移除公开 DTO 中的 `raw.note/raw.structuredNote`；
 - Search Web/App 迁移至破坏性新 DTO；
 - 前端属性选择器（明确后续实施）；
-- `model3d` 前端筛选入口（后续交互需求）。
+
+### 3.1 独立分支上的媒体前端
+
+`s6-media-filter-ui` 已实现方案 B 的 text/audio/video/image/model3d 前端筛选，并补齐搜索卡片、精准结果和词条详情的 model3d 资源入口。当前采用外链降级方案，不引入内嵌 3D Viewer，也不改变 Production。
 
 ## 四、回退
 

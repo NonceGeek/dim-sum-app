@@ -67,7 +67,7 @@ content_attribute = 请求值
 采用方案 B：`mediaType` 只影响二级相关结果。
 
 - primary 永远展示最佳精准内容。
-- related 后端按 text/audio/video/image/model3d 筛选；model3d 前端入口待产品确认。
+- related 后端按 text/audio/video/image/model3d 筛选；前端已提供五种媒体筛选入口，并为 model3d 提供资源入口。
 - recommended 不受媒体筛选影响。
 - 媒体筛选切换时不改变搜索词或可选内容属性参数。
 - 本期 URL 保存 `mediaType`；后续属性选择器上线时再保存 `contentAttribute`。

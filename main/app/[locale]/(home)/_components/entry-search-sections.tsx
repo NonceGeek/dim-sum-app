@@ -11,7 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, ImageIcon, RefreshCcw, Share2, Video, Volume2 } from "lucide-react";
+import {
+  Box,
+  Copy,
+  ExternalLink,
+  ImageIcon,
+  RefreshCcw,
+  Share2,
+  Video,
+  Volume2,
+} from "lucide-react";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
@@ -260,12 +269,13 @@ function MediaControls({
     audio: string;
     video: string;
     image: string;
+    model3d: string;
     audioPlayFailed: string;
   };
   compact?: boolean;
 }) {
-  const { audioUrl, videoUrl, coverImage } = entry.assets;
-  if (!audioUrl && !videoUrl && !coverImage) return null;
+  const { audioUrl, videoUrl, coverImage, model3dUrl } = entry.assets;
+  if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
 
   const buttonClass = compact
     ? "h-7 rounded px-2 text-xs"
@@ -314,19 +324,35 @@ function MediaControls({
           </a>
         </Button>
       )}
+      {model3dUrl && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className={buttonClass}
+          asChild
+        >
+          <a href={model3dUrl} target="_blank" rel="noopener noreferrer">
+            <Box className={`${iconClass} mr-1`} />
+            {labels.model3d}
+          </a>
+        </Button>
+      )}
     </div>
   );
 }
 
 function PrimaryMediaPreview({
   entry,
+  labels,
   returnQuery,
 }: {
   entry: EntryIdentity;
+  labels: MediaLabels;
   returnQuery?: string;
 }) {
-  const { audioUrl, videoUrl, coverImage } = entry.assets;
-  if (!audioUrl && !videoUrl && !coverImage) return null;
+  const { audioUrl, videoUrl, coverImage, model3dUrl } = entry.assets;
+  if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
 
   return (
     <div className="space-y-3">
@@ -359,6 +385,28 @@ function PrimaryMediaPreview({
             />
           )}
         </div>
+      )}
+
+      {model3dUrl && (
+        <a
+          href={model3dUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex max-w-3xl items-center gap-3 rounded-md border border-border bg-muted/20 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Box className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-foreground">
+              {labels.model3d}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {labels.openModel3d}
+            </span>
+          </span>
+          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+        </a>
       )}
     </div>
   );
@@ -835,7 +883,11 @@ function PrimaryEntry({
             </p>
           )}
 
-          <PrimaryMediaPreview entry={entry} returnQuery={returnQuery} />
+          <PrimaryMediaPreview
+            entry={entry}
+            labels={labels.media}
+            returnQuery={returnQuery}
+          />
 
           <PrimaryIdentityInfo
             entry={entry}
@@ -1149,6 +1201,8 @@ type MediaLabels = {
   audio: string;
   video: string;
   image: string;
+  model3d: string;
+  openModel3d: string;
   audioPlayFailed: string;
 };
 
@@ -1176,6 +1230,8 @@ export function EntrySearchSections({
     audio: t("audio"),
     video: t("video"),
     image: t("image"),
+    model3d: t("model3d"),
+    openModel3d: t("openModel3d"),
     audioPlayFailed: t("audioPlayFailed"),
   };
   const commonLabels = {
