@@ -125,6 +125,12 @@ Production 的 5 条 `text + video` 语料均为旧结构，全部使用 `note.c
 
 Entry DTO 增加 `assets.videoTranscript`，兼容正式 `subtitle/transcript/transcription` block 和旧 `note.context.subtitle/transcript/transcription/字幕/转写/视频转写`。该字段只是读取现有事实数据，不增加数据库列。
 
+### 3.5 现有 10 条图片的展示约束
+
+Production 的 10 条 `text + image` 语料全部是旧结构：5 条使用 `note.context.img`，5 条使用 `note.context.photo_url`，`structured_note` 均为空。资源来自两个 Aliyun OSS bucket，抽查两侧响应均为正确的 `image/png` 或 `image/jpeg`，但同时带 `Content-Disposition: attachment` 和 `x-oss-force-download: true`。
+
+因此图片可直接在页面 `<img>` 中展示，但相关结果的“图片”按钮不能继续直连 OSS，否则会触发下载。S6 改为相关结果进入词条详情；精准结果和详情页保留页内图片，并提供源文件降级入口。图片使用懒加载，加载失败时显示明确占位，不留下浏览器破图。该实现继续读取 `assets.coverImage`，不增加数据库字段或图片代理服务。
+
 ## 四、字段定义
 
 ```sql

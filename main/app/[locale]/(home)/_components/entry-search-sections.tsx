@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { Model3dCard } from "@/components/media/model3d-card";
 import { VideoCard } from "@/components/media/video-card";
+import { AudioCard } from "@/components/media/audio-card";
+import { ImageCard } from "@/components/media/image-card";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
 import { toast } from "sonner";
@@ -321,10 +323,10 @@ function MediaControls({
           className={buttonClass}
           asChild
         >
-          <a href={coverImage} target="_blank" rel="noopener noreferrer">
+          <Link href={entryHref(entry, returnQuery)}>
             <ImageIcon className={`${iconClass} mr-1`} />
             {labels.image}
-          </a>
+          </Link>
         </Button>
       )}
       {model3dUrl && (
@@ -361,7 +363,7 @@ function PrimaryMediaPreview({
   return (
     <div className="space-y-3">
       {audioUrl && (
-        <audio src={audioUrl} controls className="h-10 w-full max-w-3xl" />
+        <AudioCard url={audioUrl} openSourceLabel={labels.openAudioSource} />
       )}
 
       {(coverImage || videoUrl) && (
@@ -372,17 +374,13 @@ function PrimaryMediaPreview({
           )}
         >
           {coverImage && (
-            <Link
-              href={entryHref(entry, returnQuery)}
-              className="block overflow-hidden rounded-md border border-border bg-muted/30"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={coverImage}
-                alt={entry.entryName}
-                className="aspect-video w-full object-cover"
-              />
-            </Link>
+            <ImageCard
+              url={coverImage}
+              alt={entry.entryName}
+              detailHref={entryHref(entry, returnQuery)}
+              openSourceLabel={labels.openImageSource}
+              unavailableLabel={labels.imageUnavailable}
+            />
           )}
           {videoUrl && (
             <VideoCard
@@ -1206,6 +1204,9 @@ type MediaLabels = {
   openModel3d: string;
   videoTranscript: string;
   openVideoSource: string;
+  openAudioSource: string;
+  openImageSource: string;
+  imageUnavailable: string;
   audioPlayFailed: string;
 };
 
@@ -1237,6 +1238,9 @@ export function EntrySearchSections({
     openModel3d: t("openModel3d"),
     videoTranscript: t("videoTranscript"),
     openVideoSource: t("openVideoSource"),
+    openAudioSource: t("openAudioSource"),
+    openImageSource: t("openImageSource"),
+    imageUnavailable: t("imageUnavailable"),
     audioPlayFailed: t("audioPlayFailed"),
   };
   const commonLabels = {
