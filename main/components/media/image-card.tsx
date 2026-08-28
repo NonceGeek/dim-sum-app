@@ -60,8 +60,8 @@ export function ImageCard({
           loading="lazy"
           onError={() => setLoadFailed(true)}
           className={cn(
-            "w-full object-contain",
-            compact ? "h-full" : "max-h-[420px]",
+            "w-full",
+            compact ? "h-full object-cover" : "max-h-[420px] object-contain",
           )}
         />
         <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition-all group-hover/image:bg-black/25 group-hover/image:opacity-100 group-focus-visible/image:bg-black/25 group-focus-visible/image:opacity-100">

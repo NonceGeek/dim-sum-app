@@ -131,7 +131,7 @@ Entry DTO 增加 `assets.videoTranscript`，兼容正式 `subtitle/transcript/tr
 
 Production 的 10 条 `text + image` 语料全部是旧结构：5 条使用 `note.context.img`，5 条使用 `note.context.photo_url`，`structured_note` 均为空。资源来自两个 Aliyun OSS bucket，抽查两侧响应均为正确的 `image/png` 或 `image/jpeg`，但同时带 `Content-Disposition: attachment` 和 `x-oss-force-download: true`。
 
-因此图片可直接在页面 `<img>` 中展示，但不能提供直连 OSS 的公开按钮，否则会触发下载。S6 在相关表达和继续探索卡片的正文与标签之间提供固定图片槽；图片使用懒加载和 `object-contain`，点击打开站内灯箱，加载失败时显示明确占位。精准结果和详情页复用同一灯箱组件，不展示源文件入口。该实现继续读取 `assets.coverImage`，不增加数据库字段或图片代理服务。
+因此图片可直接在页面 `<img>` 中展示，但不能提供直连 OSS 的公开按钮，否则会触发下载。S6 在相关表达和继续探索卡片的正文与标签之间提供固定图片槽；列表缩略图使用懒加载和 `object-cover` 填满媒体槽，点击后的站内灯箱以及精准结果、详情页使用 `object-contain` 展示完整原图。加载失败时显示明确占位，不展示源文件入口。该实现继续读取 `assets.coverImage`，不增加数据库字段或图片代理服务。
 
 ## 四、字段定义
 
