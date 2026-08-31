@@ -2,6 +2,7 @@ import OSS from "ali-oss";
 
 const clients = new Map<string, OSS>();
 const DEFAULT_OSS_TIMEOUT_MS = 180_000;
+const ACCELERATE_ENDPOINT = "oss-accelerate.aliyuncs.com";
 
 const OSS_BUCKET_BY_PURPOSE = {
   avatar: "dimsum-user-avatar",
@@ -52,21 +53,43 @@ function getOssTimeoutMs() {
     : DEFAULT_OSS_TIMEOUT_MS;
 }
 
+// Vercel 的海外区域直连广州 OSS 会 ETIMEDOUT；开启后写入改走传输加速接入点。
+// 读取侧不受影响：公开 URL 始终按常规地域域名生成，避免产生加速下载流量。
+function useAccelerateEndpoint(): boolean {
+  return process.env.ALIYUN_OSS_ACCELERATE?.trim() === "true";
+}
+
+function regionHost(): string {
+  const region = requireOssConfig("ALIYUN_OSS_REGION").replace(/^oss-/, "");
+  return `oss-${region}.aliyuncs.com`;
+}
+
+export function publicOssUrl(objectName: string, purpose: OssBucketPurpose): string {
+  const bucket = OSS_BUCKET_BY_PURPOSE[purpose];
+  const encodedKey = objectName.split("/").map(encodeURIComponent).join("/");
+  return `https://${bucket}.${regionHost()}/${encodedKey}`;
+}
+
 export function getOssClient(purpose: OssBucketPurpose) {
   const bucket = OSS_BUCKET_BY_PURPOSE[purpose];
+  const accelerate = useAccelerateEndpoint();
 
-  const cached = clients.get(bucket);
+  const cacheKey = `${bucket}:${accelerate ? "accelerate" : "region"}`;
+  const cached = clients.get(cacheKey);
   if (cached) return cached;
 
   const client = new OSS({
-    region: requireOssConfig("ALIYUN_OSS_REGION"),
+    // endpoint 优先级高于 region；ali-oss 默认 V1 签名与 host 无关，换域名不影响鉴权。
+    ...(accelerate
+      ? { endpoint: ACCELERATE_ENDPOINT }
+      : { region: requireOssConfig("ALIYUN_OSS_REGION") }),
     accessKeyId: requireOssConfig("ALIYUN_OSS_ACCESS_KEY_ID"),
     accessKeySecret: requireOssConfig("ALIYUN_OSS_ACCESS_KEY_SECRET"),
     bucket,
     secure: true,
     timeout: getOssTimeoutMs(),
   });
-  clients.set(bucket, client);
+  clients.set(cacheKey, client);
   return client;
 }
 
@@ -161,11 +184,13 @@ export async function uploadBufferToOss(
   contentType: string | null | undefined,
   purpose: OssBucketPurpose
 ) {
-  const result = await getOssClient(purpose).put(objectName, buffer, {
+  await getOssClient(purpose).put(objectName, buffer, {
     headers: contentType ? { "Content-Type": contentType } : undefined,
   });
+  // 不使用 result.url：开启加速时它会是加速域名，一旦写入数据库，
+  // 之后每次读取都会额外计一份加速下载流量。
   return {
     name: objectName,
-    url: result.url.replace("http://", "https://"),
+    url: publicOssUrl(objectName, purpose),
   };
 }
