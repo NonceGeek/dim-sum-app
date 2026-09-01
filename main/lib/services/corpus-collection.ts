@@ -206,6 +206,12 @@ function getSubmissionImages(submission: any) {
     .map((item: any) => item.url);
 }
 
+function getSubmissionAudios(submission: any) {
+  return (submission.media ?? [])
+    .filter((item: any) => item.media_type === "audio")
+    .map((item: any) => item.url);
+}
+
 function normalizeCoverUrl(value: unknown) {
   if (value === undefined || value === null) return null;
   if (typeof value !== "string") return undefined;
@@ -390,6 +396,7 @@ export function serializeHomeSubmission(submission: any) {
 export function serializeHomeFeedSubmission(submission: any, viewerLiked?: boolean) {
   const author = serializeUser(submission.user);
   const imageUrls = getSubmissionImages(submission);
+  const audioUrls = getSubmissionAudios(submission);
   const cover = getCoverMetadata(submission);
   const coverAspectRatio =
     cover.coverWidth && cover.coverHeight ? cover.coverWidth / cover.coverHeight : null;
@@ -402,6 +409,7 @@ export function serializeHomeFeedSubmission(submission: any, viewerLiked?: boole
     tags: submission.tags,
     coverUrl: cover.coverUrl ?? imageUrls[0] ?? "",
     imageUrls,
+    audioUrls,
     coverWidth: cover.coverWidth,
     coverHeight: cover.coverHeight,
     coverAspectRatio,
