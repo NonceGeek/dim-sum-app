@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatActivityDate } from "@/lib/activity-time";
 
 type DimensionRow = {
   code: string;
@@ -481,7 +482,7 @@ export default function QuestionnaireInsightsPage() {
                     <TableHeader><TableRow><TableHead>{t("comparisonDialog.activity")}</TableHead><TableHead>{t("comparisonDialog.registrations")}</TableHead><TableHead>{t("comparisonDialog.completionRate")}</TableHead><TableHead>{t("comparisonDialog.submissionRate")}</TableHead><TableHead>{t("comparisonDialog.topAge")}</TableHead><TableHead>{t("comparisonDialog.region")}</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {(rows as ComparisonActivity[]).map((activity) => (
-                        <TableRow key={activity.id}><TableCell><div className="font-medium">{activity.title}</div><div className="text-xs text-muted-foreground">{activity.endsAt ? t("comparisonDialog.endsAt", { date: new Date(activity.endsAt).toLocaleDateString(locale) }) : t("comparisonDialog.longRunning")}</div></TableCell><TableCell>{activity.registrationCount}</TableCell><TableCell>{formatRate(activity.questionnaireCompletionRate)}</TableCell><TableCell>{formatRate(activity.submissionRate)}</TableCell><TableCell>{activity.topAgeRange}</TableCell><TableCell>{activity.topCultureRegion}</TableCell></TableRow>
+                        <TableRow key={activity.id}><TableCell><div className="font-medium">{activity.title}</div><div className="text-xs text-muted-foreground">{activity.endsAt ? t("comparisonDialog.endsAt", { date: formatActivityDate(activity.endsAt, locale) }) : t("comparisonDialog.longRunning")}</div></TableCell><TableCell>{activity.registrationCount}</TableCell><TableCell>{formatRate(activity.questionnaireCompletionRate)}</TableCell><TableCell>{formatRate(activity.submissionRate)}</TableCell><TableCell>{activity.topAgeRange}</TableCell><TableCell>{activity.topCultureRegion}</TableCell></TableRow>
                       ))}
                       {!(rows as ComparisonActivity[]).length && <TableRow><TableCell colSpan={6} className="h-20 text-center text-muted-foreground">{t("comparisonDialog.empty")}</TableCell></TableRow>}
                     </TableBody>

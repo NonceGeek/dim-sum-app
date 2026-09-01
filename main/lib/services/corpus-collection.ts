@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { parseActivityDateTime } from "@/lib/activity-time";
 import {
   assertQuestionnaireActivitySubmittable,
   resolveQuestionnaireSubmissionJourney,
@@ -142,14 +143,16 @@ export function parseActivityMediaRequirements(value: unknown) {
 }
 
 export function parseActivityWindow(startsAtValue: unknown, endsAtValue: unknown) {
-  const startsAt =
-    typeof startsAtValue === "string" && startsAtValue ? new Date(startsAtValue) : null;
-  const endsAt = typeof endsAtValue === "string" && endsAtValue ? new Date(endsAtValue) : null;
-
-  if (startsAt && Number.isNaN(startsAt.getTime())) {
+  let startsAt: Date | null;
+  let endsAt: Date | null;
+  try {
+    startsAt = parseActivityDateTime(startsAtValue);
+  } catch {
     throw new Error("Invalid start time");
   }
-  if (endsAt && Number.isNaN(endsAt.getTime())) {
+  try {
+    endsAt = parseActivityDateTime(endsAtValue);
+  } catch {
     throw new Error("Invalid end time");
   }
   if (startsAt && endsAt && startsAt.getTime() >= endsAt.getTime()) {

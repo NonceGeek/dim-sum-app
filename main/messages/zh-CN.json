@@ -709,7 +709,7 @@
     "create": { "title": "创建活动", "description": "配置新的公开采集活动。" },
     "fields": {
       "title": "活动标题", "tag": "活动标签", "tagPlaceholder": "饮食文化", "tagHelp": "请正好填写 4 个字。例如：饮食文化、粤语表达、城市记忆、传统技艺",
-      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间", "endsAt": "结束时间", "bannerUrl": "封面地址",
+      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间（北京时间 UTC+8）", "endsAt": "结束时间（北京时间 UTC+8）", "bannerUrl": "封面地址",
       "requiredMediaTypes": "必需媒体类型", "mediaHelp": "小程序将根据此配置显示对应的上传控件。"
     },
     "media": {

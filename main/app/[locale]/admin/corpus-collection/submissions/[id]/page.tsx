@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { formatActivityDateTime } from "@/lib/activity-time";
 
 type Submission = {
   id: string;
@@ -67,11 +68,6 @@ const statusColor: Record<string, string> = {
   approved: "bg-success text-success-foreground",
   rejected: "bg-destructive text-destructive-foreground",
 };
-
-function formatDate(value: string | null | undefined, locale: string) {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
-}
 
 function JsonBlock({ value }: { value: unknown }) {
   const t = useTranslations("SubmissionDetail");
@@ -291,11 +287,11 @@ export default function CorpusCollectionSubmissionDetailPage() {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">{t("fields.created")}</span>
-                  <span>{formatDate(data.createdAt, locale)}</span>
+                  <span>{formatActivityDateTime(data.createdAt, locale)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">{t("fields.updated")}</span>
-                  <span>{formatDate(data.updatedAt, locale)}</span>
+                  <span>{formatActivityDateTime(data.updatedAt, locale)}</span>
                 </div>
               </div>
               <Separator />
@@ -361,7 +357,7 @@ export default function CorpusCollectionSubmissionDetailPage() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                  <span>{formatDate(data.activity.startsAt, locale)} - {formatDate(data.activity.endsAt, locale)}</span>
+                  <span>{formatActivityDateTime(data.activity.startsAt, locale)} - {formatActivityDateTime(data.activity.endsAt, locale)}</span>
                 </div>
               </CardContent>
             </Card>
