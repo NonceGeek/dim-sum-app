@@ -1111,7 +1111,73 @@ visibility = private
 
 ---
 
-## 八、通用错误
+## 八、分类配置接口
+
+### 8.1 获取投稿类型和分类标签
+
+用于加载运营后台配置的投稿类型和分类标签。接口只返回状态为 `active` 的配置，并按照后台拖拽确定的 `sortOrder` 升序排列。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/corpus_collection/categories`
+- **方法**: `GET`
+- **认证**: 无需登录
+
+#### 请求参数 (Query String)
+
+| 参数名 | 类型 | 必填 | 说明 |
+|-------|------|-----|------|
+| `type` | string | 否 | `submission_type` 或 `tag`；不传时返回全部启用配置 |
+
+#### 请求示例
+
+```text
+GET /api/miniprogram/corpus_collection/categories
+GET /api/miniprogram/corpus_collection/categories?type=submission_type
+GET /api/miniprogram/corpus_collection/categories?type=tag
+```
+
+#### 成功响应 (200)
+
+```json
+{
+  "items": [
+    {
+      "id": "2",
+      "name": "古诗词",
+      "type": "submission_type",
+      "status": "active",
+      "sortOrder": 0
+    },
+    {
+      "id": "1",
+      "name": "婚嫁习俗",
+      "type": "tag",
+      "status": "active",
+      "sortOrder": 1
+    }
+  ]
+}
+```
+
+字段使用规则：
+
+- `submission_type` 用于投稿表单的投稿类型选项，提交时写入 `submissionType`。
+- `tag` 用于投稿表单的分类标签选项，提交时写入 `tags[]`。
+- 小程序应保持接口返回顺序，不要按名称重新排序。
+- 后台停用的配置不会出现在响应中；已有投稿中的历史值不受影响。
+
+**400 Bad Request**
+
+```json
+{
+  "error": "invalid category type"
+}
+```
+
+---
+
+## 九、通用错误
 
 **401 Unauthorized** - Token 缺失、无效或过期
 

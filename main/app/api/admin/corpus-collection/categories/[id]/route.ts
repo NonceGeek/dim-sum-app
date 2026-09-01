@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
 import { requireAdmin } from "@/lib/auth";
+import { serializeCorpusCollectionCategory } from "@/lib/corpus-collection-category";
 import { prisma } from "@/lib/prisma";
 import { parseBigIntId } from "@/lib/services/corpus-collection";
 
@@ -19,13 +20,7 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
         sort_order: body.sortOrder,
       },
     });
-    return NextResponse.json({
-      id: category.id.toString(),
-      name: category.name,
-      type: category.type,
-      status: category.status,
-      sortOrder: category.sort_order,
-    });
+    return NextResponse.json(serializeCorpusCollectionCategory(category));
   });
 }
 

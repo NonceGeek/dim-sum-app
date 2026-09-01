@@ -339,9 +339,9 @@
   },
   "CorpusCollectionCategories": {
     "title": "Categories", "description": "Configure submission types and public tags.", "created": "Category created", "createFailed": "Unable to create category", "updated": "Category updated", "updateFailed": "Unable to update category", "deleted": "Category deleted", "deleteFailed": "Unable to delete category", "nameRequired": "Name is required",
-    "name": "Name", "type": "Type", "sort": "Sort", "status": "Status", "actions": "Actions", "submissionType": "Submission Type", "tag": "Tag", "allTypes": "All Types", "active": "Active", "inactive": "Inactive", "enable": "Enable", "disable": "Disable", "delete": "Delete category", "loading": "Loading…", "empty": "No categories found.",
+    "name": "Name", "type": "Type", "sort": "Sort", "status": "Status", "actions": "Actions", "submissionType": "Submission Type", "tag": "Tag", "allTypes": "All Types", "active": "Active", "inactive": "Inactive", "enable": "Enable", "disable": "Disable", "delete": "Delete category", "loading": "Loading…", "empty": "No categories found.", "dragToSort": "Drag to reorder {name}", "reordered": "Sort order updated", "reorderFailed": "Failed to update sort order",
     "add": { "title": "Add Category", "description": "Tags configured here are shown in submission forms.", "button": "Add" },
-    "list": { "title": "Category List", "description": "Enable, disable, or remove categories." }
+    "list": { "title": "Category List", "description": "Drag to reorder, enable, disable, or remove categories." }
   },
   "CorpusCollectionComments": {
     "title": "Comments", "description": "Review user comments before they appear publicly.", "search": "Search comments", "updated": "Comment updated", "updateFailed": "Unable to update comment",

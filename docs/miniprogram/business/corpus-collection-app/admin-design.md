@@ -223,7 +223,14 @@ isSystemAdmin = true
 - 新增分类标签
 - 编辑分类标签
 - 启用/停用
-- 排序
+- 拖拽排序
+
+排序规则：
+
+- 新增时不要求运营填写排序值，系统自动追加到同类型配置的末尾。
+- 列表通过拖拽调整相对顺序，并批量保存 `sort_order`；键盘聚焦拖拽手柄后也可使用上下方向键调整。
+- 小程序分类配置接口只返回启用项，并保持后台确定的顺序。
+- 停用不会删除历史投稿里的类型或标签；删除操作不会回写历史投稿。
 
 分类建议：
 
@@ -344,8 +351,15 @@ POST   /api/admin/corpus-collection/webhooks/reviews
 ```text
 GET    /api/admin/corpus-collection/categories
 POST   /api/admin/corpus-collection/categories
+PATCH  /api/admin/corpus-collection/categories          # 批量保存 orderedIds 排序
 PATCH  /api/admin/corpus-collection/categories/{id}
 DELETE /api/admin/corpus-collection/categories/{id}
+```
+
+小程序只读接口：
+
+```text
+GET    /api/miniprogram/corpus_collection/categories
 ```
 
 ### 5.5 Banner 生成

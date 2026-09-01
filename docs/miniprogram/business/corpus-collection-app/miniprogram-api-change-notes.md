@@ -416,6 +416,7 @@ GET /api/miniprogram/corpus_collection/submissions/{id}
 9. 投稿编辑使用 `PATCH /submissions/{id}`。
 10. 不做投稿删除入口。
 11. 精选角标使用 `isFeatured`。
+12. 投稿类型和分类标签改为调用 `GET /api/miniprogram/corpus_collection/categories` 获取，只展示启用项并保持接口返回顺序。
 
 ## 十、首页投稿流分页接口
 
