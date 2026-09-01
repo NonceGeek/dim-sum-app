@@ -340,9 +340,9 @@
   },
   "CorpusCollectionCategories": {
     "title": "采集分类", "description": "配置投稿类型和公开标签。", "created": "分类已创建", "createFailed": "分类创建失败", "updated": "分类已更新", "updateFailed": "分类更新失败", "deleted": "分类已删除", "deleteFailed": "分类删除失败", "nameRequired": "分类名称不能为空",
-    "name": "名称", "type": "类型", "sort": "排序", "status": "状态", "actions": "操作", "submissionType": "投稿类型", "tag": "标签", "allTypes": "全部类型", "active": "启用", "inactive": "停用", "enable": "启用", "disable": "停用", "delete": "删除分类", "loading": "加载中…", "empty": "暂无分类。",
+    "name": "名称", "type": "类型", "sort": "排序", "status": "状态", "actions": "操作", "submissionType": "投稿类型", "tag": "标签", "allTypes": "全部类型", "active": "启用", "inactive": "停用", "enable": "启用", "disable": "停用", "delete": "删除分类", "loading": "加载中…", "empty": "暂无分类。", "dragToSort": "拖拽调整{name}的排序", "reordered": "排序已更新", "reorderFailed": "排序更新失败",
     "add": { "title": "新增分类", "description": "此处配置的标签会显示在投稿表单中。", "button": "新增" },
-    "list": { "title": "分类列表", "description": "启用、停用或删除分类。" }
+    "list": { "title": "分类列表", "description": "拖拽调整排序，或启用、停用和删除分类。" }
   },
   "CorpusCollectionComments": {
     "title": "评论管理", "description": "在评论公开显示前进行审核。", "search": "搜索评论", "updated": "评论已更新", "updateFailed": "评论更新失败",

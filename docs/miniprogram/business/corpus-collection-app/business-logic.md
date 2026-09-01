@@ -153,6 +153,8 @@ showOnHome = true
 
 投稿前安全检查只检查文本和图片。音频、视频在后续 AI 审核或人工审核阶段处理。
 
+投稿类型和分类标签通过 `GET /api/miniprogram/corpus_collection/categories` 获取。小程序只展示接口返回的启用项，并保持运营后台的拖拽顺序：`submission_type` 写入投稿请求的 `submissionType`，`tag` 写入 `tags[]`。
+
 ### 5.2.1 投稿编辑规则
 
 小程序端允许作者在有限窗口内编辑投稿，但不开放删除投稿。
@@ -400,7 +402,9 @@ show_on_home
 | `name` | 分类名称 |
 | `type` | 分类类型，如投稿类型、标签 |
 | `status` | 是否启用 |
-| `sort_order` | 排序 |
+| `sort_order` | 展示顺序；新增时自动追加到同类型末尾，运营后台可拖拽调整 |
+
+分类配置由运营后台维护。小程序只读接口仅返回 `status = active` 的记录，并按 `sort_order`、`created_at` 升序输出。停用或删除配置不回写已有活动和历史投稿。
 
 ### 7.3 投稿表 `corpus_collection_submissions`
 

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,14 +21,18 @@ type Category = {
   sortOrder: number;
 };
 
+type CategoriesResponse = { items: Category[] };
+
 export default function CorpusCollectionCategoriesPage() {
   const t = useTranslations("CorpusCollectionCategories");
   const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState("all");
-  const [form, setForm] = useState({ name: "", type: "tag", sortOrder: "0" });
+  const [form, setForm] = useState({ name: "", type: "tag" });
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const categoryQueryKey = ["corpus-collection-categories", filterType] as const;
 
-  const { data, isLoading } = useQuery<{ items: Category[] }>({
-    queryKey: ["corpus-collection-categories", filterType],
+  const { data, isLoading } = useQuery<CategoriesResponse>({
+    queryKey: categoryQueryKey,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filterType !== "all") params.set("type", filterType);
@@ -43,14 +47,14 @@ export default function CorpusCollectionCategoriesPage() {
       const response = await fetch("/api/admin/corpus-collection/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, sortOrder: Number(form.sortOrder) }),
+        body: JSON.stringify(form),
       });
       if (!response.ok) throw new Error("Failed to create category");
       return response.json();
     },
     onSuccess: () => {
       toast.success(t("created"));
-      setForm({ name: "", type: "tag", sortOrder: "0" });
+      setForm({ name: "", type: "tag" });
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-categories"] });
     },
     onError: () => toast.error(t("createFailed")),
@@ -86,6 +90,41 @@ export default function CorpusCollectionCategoriesPage() {
     onError: () => toast.error(t("deleteFailed")),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      const response = await fetch("/api/admin/corpus-collection/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!response.ok) throw new Error("Failed to reorder categories");
+      return response.json();
+    },
+    onMutate: async (orderedIds) => {
+      await queryClient.cancelQueries({ queryKey: categoryQueryKey });
+      const previous = queryClient.getQueryData<CategoriesResponse>(categoryQueryKey);
+      const itemById = new Map(previous?.items.map((item) => [item.id, item]));
+      const items = orderedIds
+        .map((id, sortOrder) => {
+          const item = itemById.get(id);
+          return item ? { ...item, sortOrder } : null;
+        })
+        .filter((item): item is Category => item !== null);
+      queryClient.setQueryData<CategoriesResponse>(categoryQueryKey, { items });
+      return { previous };
+    },
+    onSuccess: () => toast.success(t("reordered")),
+    onError: (_error, _orderedIds, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(categoryQueryKey, context.previous);
+      }
+      toast.error(t("reorderFailed"));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["corpus-collection-categories"] });
+    },
+  });
+
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.name.trim()) {
@@ -93,6 +132,35 @@ export default function CorpusCollectionCategoriesPage() {
       return;
     }
     createMutation.mutate();
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (!draggedId || draggedId === targetId || !data?.items.length) {
+      setDraggedId(null);
+      return;
+    }
+    const reordered = [...data.items];
+    const sourceIndex = reordered.findIndex((item) => item.id === draggedId);
+    const targetIndex = reordered.findIndex((item) => item.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) {
+      setDraggedId(null);
+      return;
+    }
+    const [moved] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+    setDraggedId(null);
+    reorderMutation.mutate(reordered.map((item) => item.id));
+  };
+
+  const handleKeyboardReorder = (categoryId: string, direction: -1 | 1) => {
+    if (!data?.items.length || reorderMutation.isPending) return;
+    const sourceIndex = data.items.findIndex((item) => item.id === categoryId);
+    const targetIndex = sourceIndex + direction;
+    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= data.items.length) return;
+    const reordered = [...data.items];
+    const [moved] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+    reorderMutation.mutate(reordered.map((item) => item.id));
   };
 
   return (
@@ -108,7 +176,7 @@ export default function CorpusCollectionCategoriesPage() {
           <CardDescription>{t("add.description")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4 md:grid-cols-[1fr_180px_120px_auto]" onSubmit={handleCreate}>
+          <form className="grid gap-4 md:grid-cols-[1fr_180px_auto]" onSubmit={handleCreate}>
             <div className="space-y-2">
               <Label>{t("name")}</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -122,10 +190,6 @@ export default function CorpusCollectionCategoriesPage() {
                   <SelectItem value="tag">{t("tag")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{t("sort")}</Label>
-              <Input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} />
             </div>
             <div className="flex items-end">
               <Button type="submit" disabled={createMutation.isPending}>
@@ -170,8 +234,38 @@ export default function CorpusCollectionCategoriesPage() {
                 <TableRow><TableCell colSpan={5}>{t("loading")}</TableCell></TableRow>
               ) : data?.items.length ? (
                 data.items.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableRow
+                    key={category.id}
+                    className={draggedId === category.id ? "opacity-50" : undefined}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => handleDrop(category.id)}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span
+                          draggable={!reorderMutation.isPending}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={t("dragToSort", { name: category.name })}
+                          className="cursor-grab text-muted-foreground active:cursor-grabbing"
+                          onDragStart={(event) => {
+                            event.dataTransfer.effectAllowed = "move";
+                            event.dataTransfer.setData("text/plain", category.id);
+                            setDraggedId(category.id);
+                          }}
+                          onDragEnd={() => setDraggedId(null)}
+                          onKeyDown={(event) => {
+                            if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                              event.preventDefault();
+                              handleKeyboardReorder(category.id, event.key === "ArrowUp" ? -1 : 1);
+                            }
+                          }}
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        {category.name}
+                      </div>
+                    </TableCell>
                     <TableCell>{category.type === "submission_type" ? t("submissionType") : t("tag")}</TableCell>
                     <TableCell>
                       <Badge className={category.status === "active" ? "bg-success text-success-foreground" : "bg-secondary text-secondary-foreground"}>
