@@ -708,7 +708,7 @@
     "create": { "title": "Create Activity", "description": "Configure a new public collection campaign." },
     "fields": {
       "title": "Title", "tag": "Activity Tag", "tagPlaceholder": "饮食文化", "tagHelp": "Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺",
-      "description": "Description", "rules": "Rules", "startsAt": "Starts At", "endsAt": "Ends At", "bannerUrl": "Banner URL",
+      "description": "Description", "rules": "Rules", "startsAt": "Starts At (China Standard Time, UTC+8)", "endsAt": "Ends At (China Standard Time, UTC+8)", "bannerUrl": "Banner URL",
       "requiredMediaTypes": "Required Media Types", "mediaHelp": "The miniprogram uses this to decide which upload controls to show."
     },
     "media": {

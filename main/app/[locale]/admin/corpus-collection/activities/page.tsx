@@ -33,6 +33,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  activityDateTimeToISOString,
+  formatActivityDateTime,
+  parseActivityDateTime,
+} from "@/lib/activity-time";
 
 type Activity = {
   id: string;
@@ -129,8 +134,8 @@ export default function CorpusCollectionActivitiesPage() {
           ...form,
           tags: [form.tag.trim()],
           tag: undefined,
-          startsAt: form.startsAt || undefined,
-          endsAt: form.endsAt || undefined,
+          startsAt: activityDateTimeToISOString(form.startsAt),
+          endsAt: activityDateTimeToISOString(form.endsAt),
           bannerUrl: form.bannerUrl || undefined,
           requiredMediaTypes: undefined,
           mediaRequirements: { requiredTypes: form.requiredMediaTypes },
@@ -252,7 +257,9 @@ export default function CorpusCollectionActivitiesPage() {
       toast.error(t("validation.rulesLength", { count: textLimits.rules }));
       return;
     }
-    if (form.startsAt && form.endsAt && new Date(form.startsAt) >= new Date(form.endsAt)) {
+    const startsAt = parseActivityDateTime(form.startsAt);
+    const endsAt = parseActivityDateTime(form.endsAt);
+    if (startsAt && endsAt && startsAt >= endsAt) {
       toast.error(t("validation.dateOrder"));
       return;
     }
@@ -532,7 +539,7 @@ export default function CorpusCollectionActivitiesPage() {
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4" />
-                        {activity.startsAt ? new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric" }).format(new Date(activity.startsAt)) : t("window.anytime")} - {activity.endsAt ? new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric" }).format(new Date(activity.endsAt)) : t("window.open")}
+                        {activity.startsAt ? formatActivityDateTime(activity.startsAt, dateLocale) : t("window.anytime")} - {activity.endsAt ? formatActivityDateTime(activity.endsAt, dateLocale) : t("window.open")}
                       </div>
                     </TableCell>
                     <TableCell>{activity.submissionCount ?? 0}</TableCell>

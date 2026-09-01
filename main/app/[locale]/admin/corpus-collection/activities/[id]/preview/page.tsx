@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { formatActivityDateTime } from "@/lib/activity-time";
 
 type Activity = {
   id: string;
@@ -50,11 +51,6 @@ const statusColor: Record<string, string> = {
   offline: "bg-warning text-warning-foreground",
   archived: "bg-muted text-muted-foreground",
 };
-
-function formatDate(value: string | null | undefined, locale: string) {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
-}
 
 function JsonBlock({ value }: { value: unknown }) {
   const t = useTranslations("ActivityPreview");
@@ -94,7 +90,7 @@ export default function CorpusCollectionActivityPreviewPage() {
 
   const activityWindow = useMemo(() => {
     if (!data) return "-";
-    return `${formatDate(data.startsAt, locale)} - ${formatDate(data.endsAt, locale)}`;
+    return `${formatActivityDateTime(data.startsAt, locale)} - ${formatActivityDateTime(data.endsAt, locale)}`;
   }, [data, locale]);
 
   if (isLoading) {
