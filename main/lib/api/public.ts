@@ -19,16 +19,13 @@ export function useBasicInfo() {
   });
 }
 
-export function useHotTerms(count = 6) {
-  return useQuery<string[]>({
-    queryKey: ["hotTerms", count],
-    queryFn: () =>
-      api
-        .get<{ terms: string[] }>(`/api/public/hot-terms?count=${count}`)
-        .then((r) => r.terms ?? []),
-    // Cache for 1 day — terms stay stable within a session; user can force-refresh via "试试手气"
-    staleTime: 24 * 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-} 
+/** Fixed trending phrases shown on the homepage and search empty states. */
+export const HOT_TERMS = [
+  "帆船（哥德堡一号）",
+  "行",
+  "鹅鹅鹅， 曲项向天歌",
+  "落花流水",
+  "Peppa",
+  "月光光，照地堂",
+  "亚姨",
+] as const; 

@@ -19,7 +19,7 @@ import { useSearchParams } from "next/navigation";
 import { EditCorpusDialog } from "@/components/dialogs/edit-corpus-dialog";
 import { DictionaryNote } from "@/lib/types";
 import { useAllCategories } from "@/lib/api/category";
-import { useHotTerms } from "@/lib/api/public";
+import { HOT_TERMS } from "@/lib/api/public";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import SearchResultItem from "../_components/search-result-item";
@@ -76,7 +76,6 @@ export default function SearchPage() {
 
   // Fetch available categories
   const { data: categories } = useAllCategories();
-  const { data: hotTerms, isLoading: hotTermsLoading } = useHotTerms();
   const globalSearchLabel = th("globalSearch");
   const fiter_not_in = useMemo(() => [
     { id: "all", name: "all", nickname: globalSearchLabel },
@@ -330,28 +329,21 @@ export default function SearchPage() {
                     {th("trending")}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {hotTermsLoading
-                      ? [20, 24, 16, 28, 20, 24].map((w, i) => (
-                          <Skeleton
-                            key={i}
-                            className={`h-9 w-${w} rounded-lg`}
-                          />
-                        ))
-                      : (hotTerms ?? [])
-                          .filter((term) => term !== searchPrompt)
-                          .map((term) => (
-                            <button
-                              key={term}
-                              onClick={() => {
-                                if (isPending) return;
-                                handleExampleSearch(term);
-                              }}
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
-                            >
-                              <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                              {term}
-                            </button>
-                          ))}
+                    {HOT_TERMS.filter((term) => term !== searchPrompt).map(
+                      (term) => (
+                        <button
+                          key={term}
+                          onClick={() => {
+                            if (isPending) return;
+                            handleExampleSearch(term);
+                          }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                          {term}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -460,25 +452,21 @@ export default function SearchPage() {
                   {th("trending")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {hotTermsLoading
-                    ? [20, 24, 16, 28, 20, 24].map((w, i) => (
-                        <Skeleton key={i} className={`h-9 w-${w} rounded-lg`} />
-                      ))
-                    : (hotTerms ?? [])
-                        .filter((term) => term !== searchPrompt)
-                        .map((term) => (
-                          <button
-                            key={term}
-                            onClick={() => {
-                              if (isPending) return;
-                              handleExampleSearch(term);
-                            }}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
-                          >
-                            <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                            {term}
-                          </button>
-                        ))}
+                  {HOT_TERMS.filter((term) => term !== searchPrompt).map(
+                    (term) => (
+                      <button
+                        key={term}
+                        onClick={() => {
+                          if (isPending) return;
+                          handleExampleSearch(term);
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                        {term}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
 
@@ -572,26 +560,21 @@ export default function SearchPage() {
                     {th("trending")}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      { title: t("exampleLyrics"), prompt: "落花流水" },
-                      { title: t("exampleWords"), prompt: "姐姐" },
-                      { title: t("exampleCharacter"), prompt: "行" },
-                      { title: t("exampleVideo"), prompt: "歡聚一堂" },
-                    ]
-                      .filter((e) => e.prompt !== searchPrompt)
-                      .map((example) => (
+                    {HOT_TERMS.filter((term) => term !== searchPrompt).map(
+                      (term) => (
                         <button
-                          key={example.prompt}
+                          key={term}
                           onClick={() => {
                             if (isPending) return;
-                            handleExampleSearch(example.prompt);
+                            handleExampleSearch(term);
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
                         >
                           <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                          {example.title}「{example.prompt}」
+                          {term}
                         </button>
-                      ))}
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -619,25 +602,21 @@ export default function SearchPage() {
                   {th("trending")}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {hotTermsLoading
-                    ? [20, 24, 16, 28, 20, 24].map((w, i) => (
-                        <Skeleton key={i} className={`h-9 w-${w} rounded-lg`} />
-                      ))
-                    : (hotTerms ?? [])
-                        .filter((term) => term !== searchPrompt)
-                        .map((term) => (
-                          <button
-                            key={term}
-                            onClick={() => {
-                              if (isPending) return;
-                              handleExampleSearch(term);
-                            }}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
-                          >
-                            <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                            {term}
-                          </button>
-                        ))}
+                  {HOT_TERMS.filter((term) => term !== searchPrompt).map(
+                    (term) => (
+                      <button
+                        key={term}
+                        onClick={() => {
+                          if (isPending) return;
+                          handleExampleSearch(term);
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                        {term}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
             </div>

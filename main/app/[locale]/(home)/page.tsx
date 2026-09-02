@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Search,
@@ -23,7 +23,7 @@ import SplitText from "@/components/ui/split-text";
 import TextType from "@/components/ui/text-type";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import { useAllCategories } from "@/lib/api/category";
-import { useHotTerms } from "@/lib/api/public";
+import { HOT_TERMS } from "@/lib/api/public";
 import GradientText from "@/components/ui/gradient-text";
 import {
   Popover,
@@ -108,18 +108,10 @@ export default function HomePage() {
     onSearchTerm: navigateToSearch,
   });
 
-  const {
-    data: hotTerms,
-    refetch: refetchHotTerms,
-    isFetching: hotTermsFetching,
-    isLoading: hotTermsLoading,
-  } = useHotTerms();
-
-  // Mobile: mouseenter fires on tap but mouseleave never fires after touch ends,
-  // so reset luckyHovered when fetching completes to ensure the dice disappears.
-  useEffect(() => {
-    if (!hotTermsFetching) setLuckyHovered(false);
-  }, [hotTermsFetching]);
+  const handleLuckySearch = () => {
+    const term = HOT_TERMS[Math.floor(Math.random() * HOT_TERMS.length)];
+    navigateToSearch(term);
+  };
 
   const handleManualSearch = () => {
     if (!query.trim()) return;
@@ -485,73 +477,59 @@ export default function HomePage() {
           <span className="text-xs font-medium text-muted-foreground">
             {t("trending")}
           </span>
-          {hotTermsLoading ? (
-            // Widths designed to naturally fill ~2 rows in a 720px container
-            [200, 120, 280, 160, 220, 140].map((w, i) => (
-              <div
-                key={i}
-                className="skeleton-shimmer h-7 rounded-full"
-                style={{ width: w }}
-              />
-            ))
-          ) : (
-            <>
-              {(hotTerms ?? []).map((term, i) => (
-                <motion.button
-                  key={term}
-                  title={term}
-                  onClick={() => navigateToSearch(term)}
-                  className="max-w-[14rem] truncate rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.04, ease: "easeOut" }}
-                >
-                  {term}
-                </motion.button>
-              ))}
-              <motion.div
-                className="relative"
-                onMouseEnter={() => setLuckyHovered(true)}
-                onMouseLeave={() => setLuckyHovered(false)}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: (hotTerms?.length ?? 0) * 0.04, ease: "easeOut" }}
+          {HOT_TERMS.map((term, i) => (
+            <motion.button
+              key={term}
+              title={term}
+              onClick={() => navigateToSearch(term)}
+              className="max-w-[14rem] truncate rounded-full border px-3 py-1 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.04, ease: "easeOut" }}
+            >
+              {term}
+            </motion.button>
+          ))}
+          <motion.div
+            className="relative"
+            onMouseEnter={() => setLuckyHovered(true)}
+            onMouseLeave={() => setLuckyHovered(false)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: HOT_TERMS.length * 0.04, ease: "easeOut" }}
+          >
+            <button
+              onClick={handleLuckySearch}
+              className="rounded-full px-3 py-1 text-sm transition-all"
+              style={{
+                border: "1px solid transparent",
+                backgroundImage: `linear-gradient(var(--background), var(--background)), linear-gradient(to right, #3193ff4d, #a855f74d, #ec48994d)`,
+                backgroundOrigin: "padding-box, border-box",
+                backgroundClip: "padding-box, border-box",
+              }}
+            >
+              <GradientText
+                colors={["#3193ff", "#a855f7", "#ec4899"]}
+                animationSpeed={3.5}
+                className="text-xs font-medium"
               >
-                <button
-                  onClick={() => refetchHotTerms()}
-                  disabled={hotTermsFetching}
-                  className="rounded-full px-3 py-1 text-sm transition-all disabled:opacity-40"
-                  style={{
-                    border: "1px solid transparent",
-                    backgroundImage: `linear-gradient(var(--background), var(--background)), linear-gradient(to right, #3193ff4d, #a855f74d, #ec48994d)`,
-                    backgroundOrigin: "padding-box, border-box",
-                    backgroundClip: "padding-box, border-box",
-                  }}
+                {t("luckyButton")}
+              </GradientText>
+            </button>
+            <AnimatePresence>
+              {luckyHovered && (
+                <motion.div
+                  className="absolute left-full top-1/2 -translate-y-1/2 ml-2.5"
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.4 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <GradientText
-                    colors={["#3193ff", "#a855f7", "#ec4899"]}
-                    animationSpeed={3.5}
-                    className="text-xs font-medium"
-                  >
-                    {t("luckyButton")}
-                  </GradientText>
-                </button>
-                <AnimatePresence>
-                  {(luckyHovered || hotTermsFetching) && (
-                    <motion.div
-                      className="absolute left-full top-1/2 -translate-y-1/2 ml-2.5"
-                      initial={{ opacity: 0, scale: 0.4 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.4 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                    >
-                      <Dice3D rolling={hotTermsFetching} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </>
-          )}
+                  <Dice3D rolling={false} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </motion.div>
       </main>
 

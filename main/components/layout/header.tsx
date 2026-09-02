@@ -22,8 +22,6 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { LoginDialog } from "@/components/dialogs/login-dialog";
-import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
 import { getAccountSubmenuItems, workplaceSubmenuItems } from "./sidebar/menu-config";
 import { Role } from "@prisma/client";
 import { cn } from "@/lib/utils";
@@ -61,9 +59,6 @@ export function Header() {
   const { data: session } = useSession();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showRoleSelect, setShowRoleSelect] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const t = useTranslations("Nav");
   const tCommon = useTranslations("Common");
 
@@ -73,11 +68,6 @@ export function Header() {
     await signOut({ redirect: false });
     clearUser();
     router.push("/");
-  };
-
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    setShowLoginDialog(true);
   };
 
   const isActive = (href: string) => {
@@ -140,15 +130,7 @@ export function Header() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  ) : (
-    <Button
-      variant="default"
-      size="sm"
-      onClick={() => setShowRoleSelect(true)}
-    >
-      {tCommon("signIn")}
-    </Button>
-  );
+  ) : null;
 
   return (
     <>
@@ -248,24 +230,6 @@ export function Header() {
           </div>
         </div>
       </header>
-
-      {/* Auth dialogs */}
-      <RoleSelectDialog
-        isOpen={showRoleSelect}
-        onClose={() => setShowRoleSelect(false)}
-        onConfirm={handleRoleSelect}
-      />
-      {selectedRole && (
-        <LoginDialog
-          isOpen={showLoginDialog}
-          onClose={() => {
-            setShowLoginDialog(false);
-            setSelectedRole(null);
-          }}
-          callbackUrl={`/?role=${selectedRole}`}
-          role={selectedRole}
-        />
-      )}
     </>
   );
 }

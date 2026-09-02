@@ -22,8 +22,6 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { LoginDialog } from "@/components/dialogs/login-dialog";
-import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
 import { getAccountSubmenuItems, workplaceSubmenuItems } from "./sidebar/menu-config";
 import { Role } from "@prisma/client";
 
@@ -38,9 +36,6 @@ export function FloatingNav() {
   const { data: session } = useSession();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showRoleSelect, setShowRoleSelect] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const t = useTranslations('Nav');
   const tCommon = useTranslations('Common');
 
@@ -50,11 +45,6 @@ export function FloatingNav() {
     await signOut({ redirect: false });
     clearUser();
     router.push("/");
-  };
-
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    setShowLoginDialog(true);
   };
 
   return (
@@ -77,7 +67,7 @@ export function FloatingNav() {
         <LocaleSwitcher />
         <ThemeToggle />
 
-        {/* User menu / Sign In */}
+        {/* User menu */}
         {isAuthenticated ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -122,15 +112,7 @@ export function FloatingNav() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setShowRoleSelect(true)}
-          >
-            {tCommon('signIn')}
-          </Button>
-        )}
+        ) : null}
       </nav>
 
       {/* Mobile nav — hamburger left, user right */}
@@ -204,34 +186,8 @@ export function FloatingNav() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setShowRoleSelect(true)}
-          >
-            {tCommon('signIn')}
-          </Button>
-        )}
+        ) : null}
       </nav>
-
-      {/* Auth dialogs */}
-      <RoleSelectDialog
-        isOpen={showRoleSelect}
-        onClose={() => setShowRoleSelect(false)}
-        onConfirm={handleRoleSelect}
-      />
-      {selectedRole && (
-        <LoginDialog
-          isOpen={showLoginDialog}
-          onClose={() => {
-            setShowLoginDialog(false);
-            setSelectedRole(null);
-          }}
-          callbackUrl={`/?role=${selectedRole}`}
-          role={selectedRole}
-        />
-      )}
     </>
   );
 }

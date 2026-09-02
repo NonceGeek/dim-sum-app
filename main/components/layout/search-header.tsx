@@ -55,11 +55,6 @@ import { signOut } from "next-auth/react";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { LoginDialog } from "@/components/dialogs/login-dialog";
-import {
-  RoleSelectDialog,
-  UserRole,
-} from "@/components/dialogs/role-select-dialog";
 import {
   getAccountSubmenuItems,
   workplaceSubmenuItems,
@@ -490,9 +485,6 @@ export function SearchHeader({
   const { data: session } = useSession();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showRoleSelect, setShowRoleSelect] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [inputValue, setInputValue] = useState("");
 
   const t = useTranslations("Nav");
@@ -511,11 +503,6 @@ export function SearchHeader({
     await signOut({ redirect: false });
     clearUser();
     router.push("/");
-  };
-
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    setShowLoginDialog(true);
   };
 
   const toggleDataset = (name: string) => {
@@ -664,15 +651,7 @@ export function SearchHeader({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setShowRoleSelect(true)}
-              >
-                {tCommon("signIn")}
-              </Button>
-            )}
+            ) : null}
 
             {/* Desktop: More options dropdown (⋮) */}
             <DropdownMenu>
@@ -795,15 +774,7 @@ export function SearchHeader({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setShowRoleSelect(true)}
-                >
-                  {tCommon("signIn")}
-                </Button>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -831,24 +802,6 @@ export function SearchHeader({
           </div>
         </div>
       </header>
-
-      {/* Auth dialogs */}
-      <RoleSelectDialog
-        isOpen={showRoleSelect}
-        onClose={() => setShowRoleSelect(false)}
-        onConfirm={handleRoleSelect}
-      />
-      {selectedRole && (
-        <LoginDialog
-          isOpen={showLoginDialog}
-          onClose={() => {
-            setShowLoginDialog(false);
-            setSelectedRole(null);
-          }}
-          callbackUrl={`/?role=${selectedRole}`}
-          role={selectedRole}
-        />
-      )}
     </>
   );
 }
