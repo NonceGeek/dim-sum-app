@@ -37,7 +37,7 @@ export type CorpusCollectionMediaType = (typeof CORPUS_COLLECTION_MEDIA_TYPES)[n
 export const ACTIVITY_TEXT_LIMITS = {
   title: 20,
   description: 100,
-  rules: 100,
+  rules: 200,
 } as const;
 
 export const ACTIVITY_TAG_LENGTH = 4;
