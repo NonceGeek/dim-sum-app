@@ -70,7 +70,7 @@ const textLimits = {
   title: 20,
   tag: 4,
   description: 100,
-  rules: 100,
+  rules: 200,
 } as const;
 
 const statusColor: Record<string, string> = {
