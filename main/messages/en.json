@@ -462,28 +462,28 @@
     }
   },
   "QuestionnaireSettings": {
-    "title": "Questionnaire Gate Settings",
+    "title": "Questionnaire Switch Settings",
     "description": "Choose whether activity submissions require the pre-participation questionnaire. Existing and new activities are enabled by default.",
     "enableAll": "Enable all",
     "disableAll": "Disable all",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "gateLabel": "Questionnaire gate for {activity}",
-    "summary": { "total": "Total activities", "enabled": "Gate enabled", "disabled": "Gate disabled" },
+    "gateLabel": "Questionnaire switch for {activity}",
+    "summary": { "total": "Total activities", "enabled": "Switch enabled", "disabled": "Switch disabled" },
     "list": {
       "title": "Configure by Activity",
-      "description": "When disabled, that activity temporarily follows the legacy submission flow. Submissions without an activity are never affected.",
-      "loadFailed": "Unable to load gate settings.",
+      "description": "When disabled, that activity temporarily follows the legacy submission flow. Free submissions always require the questionnaire and have no switch.",
+      "loadFailed": "Unable to load questionnaire switch settings.",
       "reload": "Reload",
       "empty": "No activities found.",
       "columns": { "activity": "Activity", "status": "Status", "tag": "Activity tag", "gate": "Require questionnaire" }
     },
     "toast": {
-      "activityEnabled": "Questionnaire gate enabled for this activity",
-      "activityDisabled": "Questionnaire gate disabled for this activity",
-      "allEnabled": "Questionnaire gate enabled for all activities",
-      "allDisabled": "Questionnaire gate disabled for all activities",
-      "failed": "Unable to update questionnaire gate settings"
+      "activityEnabled": "Questionnaire switch enabled for this activity",
+      "activityDisabled": "Questionnaire switch disabled for this activity",
+      "allEnabled": "Questionnaire switch enabled for all activities",
+      "allDisabled": "Questionnaire switch disabled for all activities",
+      "failed": "Unable to update questionnaire switch settings"
     }
   },
   "QuestionnairePermissions": {
