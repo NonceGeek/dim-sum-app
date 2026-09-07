@@ -463,28 +463,28 @@
     }
   },
   "QuestionnaireSettings": {
-    "title": "问卷门禁设置",
+    "title": "问卷开关设置",
     "description": "配置活动投稿是否强制完成参赛前问卷。现有活动和新活动默认全部开启。",
     "enableAll": "全部开启",
     "disableAll": "全部关闭",
     "enabled": "已开启",
     "disabled": "已关闭",
-    "gateLabel": "{activity}问卷门禁",
-    "summary": { "total": "活动总数", "enabled": "门禁已开启", "disabled": "门禁已关闭" },
+    "gateLabel": "{activity}问卷开关",
+    "summary": { "total": "活动总数", "enabled": "开关已开启", "disabled": "开关已关闭" },
     "list": {
       "title": "按活动配置",
-      "description": "关闭后，该活动投稿暂时兼容旧流程；普通非活动投稿始终不受问卷门禁影响。",
-      "loadFailed": "门禁配置加载失败。",
+      "description": "关闭后，该活动投稿暂时兼容旧流程；自由投稿始终要求完成问卷，不提供开关。",
+      "loadFailed": "问卷开关配置加载失败。",
       "reload": "重新加载",
       "empty": "暂无活动。",
-      "columns": { "activity": "活动", "status": "状态", "tag": "活动标签", "gate": "强制问卷门禁" }
+      "columns": { "activity": "活动", "status": "状态", "tag": "活动标签", "gate": "问卷开关" }
     },
     "toast": {
-      "activityEnabled": "该活动问卷门禁已开启",
-      "activityDisabled": "该活动问卷门禁已关闭",
-      "allEnabled": "全部活动问卷门禁已开启",
-      "allDisabled": "全部活动问卷门禁已关闭",
-      "failed": "门禁设置更新失败"
+      "activityEnabled": "该活动问卷开关已开启",
+      "activityDisabled": "该活动问卷开关已关闭",
+      "allEnabled": "全部活动问卷开关已开启",
+      "allDisabled": "全部活动问卷开关已关闭",
+      "failed": "问卷开关设置更新失败"
     }
   },
   "QuestionnairePermissions": {
@@ -574,7 +574,7 @@
       "analytics": "数据分析",
       "questionnaireInsights": "问卷洞察",
       "questionnairePermissions": "问卷权限",
-      "questionnaireSettings": "问卷门禁",
+      "questionnaireSettings": "问卷开关",
       "questionnaireDefinition": "问卷定义"
     },
     "roles": {
