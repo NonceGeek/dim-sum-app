@@ -286,6 +286,11 @@
     "emptyPrimary": "No exact entry found",
     "emptyPrimaryInDataset": "No exact entry found in {dataset}",
     "emptyResults": "No results yet",
+    "emptyMediaResults": "No related results for this media type",
+    "mediaFilterLabel": "Filter related expressions by media type",
+    "mediaAll": "All",
+    "mediaText": "Text only",
+    "mediaModel3d": "3D model",
     "share": "Share",
     "sharePreviewTitle": "Share card preview",
     "downloadImage": "Download image",
@@ -314,9 +319,15 @@
     "video": "Video",
     "image": "Image",
     "model3d": "3D model",
-    "openModel3d": "Open model asset",
     "videoTranscript": "View video transcript",
-    "openVideoSource": "Open video source",
+    "previewImage": "View larger image",
+    "imageUnavailable": "Image is temporarily unavailable",
+    "fullscreenVideo": "Play fullscreen",
+    "videoPlayFailed": "Video is temporarily unavailable",
+    "listenAudio": "Preview audio",
+    "pauseAudio": "Pause",
+    "audioLoading": "Loading",
+    "viewModel3d": "View 3D model",
     "audioPlayFailed": "Failed to play audio",
     "emotion": "Emotion",
     "emotionIntensity": "Emotion Intensity",
@@ -332,9 +343,9 @@
     "meaning": "Meaning",
     "media": "Media",
     "model3d": "3D model",
-    "openModel3d": "Open model asset",
     "videoTranscript": "View video transcript",
-    "openVideoSource": "Open video source",
+    "previewImage": "View larger image",
+    "imageUnavailable": "Image is temporarily unavailable",
     "tags": "Tags",
     "info": "Entry info",
     "source": "Source corpus",
@@ -347,9 +358,9 @@
   },
   "CorpusCollectionCategories": {
     "title": "Categories", "description": "Configure submission types and public tags.", "created": "Category created", "createFailed": "Unable to create category", "updated": "Category updated", "updateFailed": "Unable to update category", "deleted": "Category deleted", "deleteFailed": "Unable to delete category", "nameRequired": "Name is required",
-    "name": "Name", "type": "Type", "sort": "Sort", "status": "Status", "actions": "Actions", "submissionType": "Submission Type", "tag": "Tag", "allTypes": "All Types", "active": "Active", "inactive": "Inactive", "enable": "Enable", "disable": "Disable", "delete": "Delete category", "loading": "Loading…", "empty": "No categories found.", "dragToSort": "Drag to reorder {name}", "reordered": "Sort order updated", "reorderFailed": "Failed to update sort order",
+    "name": "Name", "type": "Type", "sort": "Sort", "status": "Status", "actions": "Actions", "submissionType": "Submission Type", "tag": "Tag", "allTypes": "All Types", "active": "Active", "inactive": "Inactive", "enable": "Enable", "disable": "Disable", "delete": "Delete category", "loading": "Loading…", "empty": "No categories found.",
     "add": { "title": "Add Category", "description": "Tags configured here are shown in submission forms.", "button": "Add" },
-    "list": { "title": "Category List", "description": "Drag to reorder, enable, disable, or remove categories." }
+    "list": { "title": "Category List", "description": "Enable, disable, or remove categories." }
   },
   "CorpusCollectionComments": {
     "title": "Comments", "description": "Review user comments before they appear publicly.", "search": "Search comments", "updated": "Comment updated", "updateFailed": "Unable to update comment",
@@ -470,28 +481,28 @@
     }
   },
   "QuestionnaireSettings": {
-    "title": "Questionnaire Switch Settings",
+    "title": "Questionnaire Gate Settings",
     "description": "Choose whether activity submissions require the pre-participation questionnaire. Existing and new activities are enabled by default.",
     "enableAll": "Enable all",
     "disableAll": "Disable all",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "gateLabel": "Questionnaire switch for {activity}",
-    "summary": { "total": "Total activities", "enabled": "Switch enabled", "disabled": "Switch disabled" },
+    "gateLabel": "Questionnaire gate for {activity}",
+    "summary": { "total": "Total activities", "enabled": "Gate enabled", "disabled": "Gate disabled" },
     "list": {
       "title": "Configure by Activity",
-      "description": "When disabled, that activity temporarily follows the legacy submission flow. Free submissions always require the questionnaire and have no switch.",
-      "loadFailed": "Unable to load questionnaire switch settings.",
+      "description": "When disabled, that activity temporarily follows the legacy submission flow. Submissions without an activity are never affected.",
+      "loadFailed": "Unable to load gate settings.",
       "reload": "Reload",
       "empty": "No activities found.",
       "columns": { "activity": "Activity", "status": "Status", "tag": "Activity tag", "gate": "Require questionnaire" }
     },
     "toast": {
-      "activityEnabled": "Questionnaire switch enabled for this activity",
-      "activityDisabled": "Questionnaire switch disabled for this activity",
-      "allEnabled": "Questionnaire switch enabled for all activities",
-      "allDisabled": "Questionnaire switch disabled for all activities",
-      "failed": "Unable to update questionnaire switch settings"
+      "activityEnabled": "Questionnaire gate enabled for this activity",
+      "activityDisabled": "Questionnaire gate disabled for this activity",
+      "allEnabled": "Questionnaire gate enabled for all activities",
+      "allDisabled": "Questionnaire gate disabled for all activities",
+      "failed": "Unable to update questionnaire gate settings"
     }
   },
   "QuestionnairePermissions": {
@@ -716,7 +727,7 @@
     "create": { "title": "Create Activity", "description": "Configure a new public collection campaign." },
     "fields": {
       "title": "Title", "tag": "Activity Tag", "tagPlaceholder": "饮食文化", "tagHelp": "Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺",
-      "description": "Description", "rules": "Rules", "startsAt": "Starts At (China Standard Time, UTC+8)", "endsAt": "Ends At (China Standard Time, UTC+8)", "bannerUrl": "Banner URL",
+      "description": "Description", "rules": "Rules", "startsAt": "Starts At", "endsAt": "Ends At", "bannerUrl": "Banner URL",
       "requiredMediaTypes": "Required Media Types", "mediaHelp": "The miniprogram uses this to decide which upload controls to show."
     },
     "media": {

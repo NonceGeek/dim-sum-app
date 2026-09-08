@@ -121,9 +121,17 @@ Production 的 5 条 `text + video` 语料均为旧结构，全部使用 `note.c
 | 转写 | 5 条均有非空 `subtitle` |
 | 直接打开源文件 | 其中 4 条 OSS 响应带强制下载头 |
 
-据此采用以下实现：精准结果和词条详情使用浏览器原生播放器，设置 `preload=metadata` 与 `playsInline`；转写默认折叠，用户按需展开；始终保留“打开视频源文件”作为播放降级。相关结果列表不挂载播放器、不请求视频 metadata，视频按钮进入词条详情，避免批量预载大文件及直接触发 OSS 下载。
+据此采用以下实现：精准结果和词条详情使用浏览器原生播放器，设置 `preload=metadata` 与 `playsInline`；转写默认折叠，用户按需展开。相关表达和继续探索卡片使用固定高度的视频槽，但初始 video 元素不设置 `src`，不请求 metadata；用户点击明确的“全屏播放”后才赋值并加载，Fullscreen API 不可用时降级为卡片内播放器。
+
+公开 Search UI 不展示源文件 URL 或下载入口。播放失败只显示轻量状态，不把 OSS 技术资源暴露为用户操作。
 
 Entry DTO 增加 `assets.videoTranscript`，兼容正式 `subtitle/transcript/transcription` block 和旧 `note.context.subtitle/transcript/transcription/字幕/转写/视频转写`。该字段只是读取现有事实数据，不增加数据库列。
+
+### 3.5 现有 10 条图片的展示约束
+
+Production 的 10 条 `text + image` 语料全部是旧结构：5 条使用 `note.context.img`，5 条使用 `note.context.photo_url`，`structured_note` 均为空。资源来自两个 Aliyun OSS bucket，抽查两侧响应均为正确的 `image/png` 或 `image/jpeg`，但同时带 `Content-Disposition: attachment` 和 `x-oss-force-download: true`。
+
+因此图片可直接在页面 `<img>` 中展示，但不能提供直连 OSS 的公开按钮，否则会触发下载。S6 在相关表达和继续探索卡片的正文与标签之间提供固定图片槽；列表缩略图使用懒加载和 `object-cover` 填满媒体槽，点击后的站内灯箱以及精准结果、详情页使用 `object-contain` 展示完整原图。加载失败时显示明确占位，不展示源文件入口。该实现继续读取 `assets.coverImage`，不增加数据库字段或图片代理服务。
 
 ## 四、字段定义
 

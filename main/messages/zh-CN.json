@@ -287,6 +287,11 @@
     "emptyPrimary": "未找到完全匹配词条",
     "emptyPrimaryInDataset": "在「{dataset}」中未找到完全匹配词条",
     "emptyResults": "暂无结果",
+    "emptyMediaResults": "此媒体类型暂无相关结果",
+    "mediaFilterLabel": "筛选相关表达的媒体类型",
+    "mediaAll": "全部",
+    "mediaText": "纯文本",
+    "mediaModel3d": "3D 模型",
     "share": "分享",
     "sharePreviewTitle": "分享卡片预览",
     "downloadImage": "下载图片",
@@ -315,9 +320,15 @@
     "video": "视频",
     "image": "图片",
     "model3d": "3D 模型",
-    "openModel3d": "打开模型资源",
     "videoTranscript": "查看视频转写",
-    "openVideoSource": "打开视频源文件",
+    "previewImage": "查看大图",
+    "imageUnavailable": "图片暂时无法加载",
+    "fullscreenVideo": "全屏播放",
+    "videoPlayFailed": "视频暂时无法播放",
+    "listenAudio": "试听",
+    "pauseAudio": "暂停",
+    "audioLoading": "加载中",
+    "viewModel3d": "查看 3D 模型",
     "audioPlayFailed": "音频播放失败",
     "emotion": "情感",
     "emotionIntensity": "情感强度",
@@ -333,9 +344,9 @@
     "meaning": "释义",
     "media": "多媒体",
     "model3d": "3D 模型",
-    "openModel3d": "打开模型资源",
     "videoTranscript": "查看视频转写",
-    "openVideoSource": "打开视频源文件",
+    "previewImage": "查看大图",
+    "imageUnavailable": "图片暂时无法加载",
     "tags": "标签",
     "info": "词条信息",
     "source": "来源语料集",
@@ -348,9 +359,9 @@
   },
   "CorpusCollectionCategories": {
     "title": "采集分类", "description": "配置投稿类型和公开标签。", "created": "分类已创建", "createFailed": "分类创建失败", "updated": "分类已更新", "updateFailed": "分类更新失败", "deleted": "分类已删除", "deleteFailed": "分类删除失败", "nameRequired": "分类名称不能为空",
-    "name": "名称", "type": "类型", "sort": "排序", "status": "状态", "actions": "操作", "submissionType": "投稿类型", "tag": "标签", "allTypes": "全部类型", "active": "启用", "inactive": "停用", "enable": "启用", "disable": "停用", "delete": "删除分类", "loading": "加载中…", "empty": "暂无分类。", "dragToSort": "拖拽调整{name}的排序", "reordered": "排序已更新", "reorderFailed": "排序更新失败",
+    "name": "名称", "type": "类型", "sort": "排序", "status": "状态", "actions": "操作", "submissionType": "投稿类型", "tag": "标签", "allTypes": "全部类型", "active": "启用", "inactive": "停用", "enable": "启用", "disable": "停用", "delete": "删除分类", "loading": "加载中…", "empty": "暂无分类。",
     "add": { "title": "新增分类", "description": "此处配置的标签会显示在投稿表单中。", "button": "新增" },
-    "list": { "title": "分类列表", "description": "拖拽调整排序，或启用、停用和删除分类。" }
+    "list": { "title": "分类列表", "description": "启用、停用或删除分类。" }
   },
   "CorpusCollectionComments": {
     "title": "评论管理", "description": "在评论公开显示前进行审核。", "search": "搜索评论", "updated": "评论已更新", "updateFailed": "评论更新失败",
@@ -471,28 +482,28 @@
     }
   },
   "QuestionnaireSettings": {
-    "title": "问卷开关设置",
+    "title": "问卷门禁设置",
     "description": "配置活动投稿是否强制完成参赛前问卷。现有活动和新活动默认全部开启。",
     "enableAll": "全部开启",
     "disableAll": "全部关闭",
     "enabled": "已开启",
     "disabled": "已关闭",
-    "gateLabel": "{activity}问卷开关",
-    "summary": { "total": "活动总数", "enabled": "开关已开启", "disabled": "开关已关闭" },
+    "gateLabel": "{activity}问卷门禁",
+    "summary": { "total": "活动总数", "enabled": "门禁已开启", "disabled": "门禁已关闭" },
     "list": {
       "title": "按活动配置",
-      "description": "关闭后，该活动投稿暂时兼容旧流程；自由投稿始终要求完成问卷，不提供开关。",
-      "loadFailed": "问卷开关配置加载失败。",
+      "description": "关闭后，该活动投稿暂时兼容旧流程；普通非活动投稿始终不受问卷门禁影响。",
+      "loadFailed": "门禁配置加载失败。",
       "reload": "重新加载",
       "empty": "暂无活动。",
-      "columns": { "activity": "活动", "status": "状态", "tag": "活动标签", "gate": "问卷开关" }
+      "columns": { "activity": "活动", "status": "状态", "tag": "活动标签", "gate": "强制问卷门禁" }
     },
     "toast": {
-      "activityEnabled": "该活动问卷开关已开启",
-      "activityDisabled": "该活动问卷开关已关闭",
-      "allEnabled": "全部活动问卷开关已开启",
-      "allDisabled": "全部活动问卷开关已关闭",
-      "failed": "问卷开关设置更新失败"
+      "activityEnabled": "该活动问卷门禁已开启",
+      "activityDisabled": "该活动问卷门禁已关闭",
+      "allEnabled": "全部活动问卷门禁已开启",
+      "allDisabled": "全部活动问卷门禁已关闭",
+      "failed": "门禁设置更新失败"
     }
   },
   "QuestionnairePermissions": {
@@ -582,7 +593,7 @@
       "analytics": "数据分析",
       "questionnaireInsights": "问卷洞察",
       "questionnairePermissions": "问卷权限",
-      "questionnaireSettings": "问卷开关",
+      "questionnaireSettings": "问卷门禁",
       "questionnaireDefinition": "问卷定义"
     },
     "roles": {
@@ -717,7 +728,7 @@
     "create": { "title": "创建活动", "description": "配置新的公开采集活动。" },
     "fields": {
       "title": "活动标题", "tag": "活动标签", "tagPlaceholder": "饮食文化", "tagHelp": "请正好填写 4 个字。例如：饮食文化、粤语表达、城市记忆、传统技艺",
-      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间（北京时间 UTC+8）", "endsAt": "结束时间（北京时间 UTC+8）", "bannerUrl": "封面地址",
+      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间", "endsAt": "结束时间", "bannerUrl": "封面地址",
       "requiredMediaTypes": "必需媒体类型", "mediaHelp": "小程序将根据此配置显示对应的上传控件。"
     },
     "media": {
