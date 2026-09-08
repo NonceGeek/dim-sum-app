@@ -14,25 +14,29 @@ import {
 import {
   Box,
   Copy,
-  ImageIcon,
+  LoaderCircle,
+  Pause,
+  Play,
   RefreshCcw,
   Share2,
-  Video,
   Volume2,
 } from "lucide-react";
 import { Model3dCard } from "@/components/media/model3d-card";
 import { VideoCard } from "@/components/media/video-card";
+import { AudioCard } from "@/components/media/audio-card";
+import { ImageCard } from "@/components/media/image-card";
+import { CardVideoPreview } from "@/components/media/card-video-preview";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
 import domtoimage from "dom-to-image";
+import { cn } from "@/lib/utils";
 
 type EntrySearchSectionsProps = {
   result: EntrySearchResponse;
@@ -44,9 +48,13 @@ type EntrySearchSectionsProps = {
   isRefreshingRecommended?: boolean;
   onRefreshSimilar?: () => void;
   onRefreshRecommended?: () => void;
+  mediaType?: SearchMediaFilter;
+  onMediaTypeChange?: (mediaType?: SearchMediaFilter) => void;
   setEditingResult?: React.Dispatch<React.SetStateAction<SearchResult | null>>;
   setUpdateDialogOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
+
+type SearchMediaFilter = "text" | "audio" | "video" | "image" | "model3d";
 
 function displayCategory(entry: EntryIdentity): string {
   return (
@@ -249,92 +257,81 @@ function canEditEntry(entry: EntryIdentity, user: { role?: string } | null | und
   return true;
 }
 
-function playAudio(url: string, errorMessage: string) {
-  const audio = new Audio(url);
-  audio.play().catch(() => {
-    toast.error(errorMessage);
-  });
-}
+type CardAudioPlayback = {
+  entryId: string | null;
+  status: "idle" | "loading" | "playing" | "paused";
+};
 
-function MediaControls({
+function CardMediaPreview({
   entry,
   labels,
-  compact = false,
   returnQuery,
+  audioPlayback,
+  onToggleAudio,
 }: {
   entry: EntryIdentity;
-  labels: {
-    audio: string;
-    video: string;
-    image: string;
-    model3d: string;
-    audioPlayFailed: string;
-  };
-  compact?: boolean;
+  labels: MediaLabels;
   returnQuery?: string;
+  audioPlayback: CardAudioPlayback;
+  onToggleAudio: (entry: EntryIdentity) => void;
 }) {
   const { audioUrl, videoUrl, coverImage, model3dUrl } = entry.assets;
   if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
 
-  const buttonClass = compact
-    ? "h-7 rounded px-2 text-xs"
-    : "h-8 rounded px-2.5 text-xs";
-  const iconClass = compact ? "h-3.5 w-3.5" : "h-4 w-4";
+  const isCurrentAudio = audioPlayback.entryId === entry.entryId;
+  const audioLabel =
+    isCurrentAudio && audioPlayback.status === "playing"
+      ? labels.pauseAudio
+      : isCurrentAudio && audioPlayback.status === "loading"
+        ? labels.audioLoading
+        : labels.listenAudio;
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="space-y-2">
+      {videoUrl ? (
+        <CardVideoPreview
+          url={videoUrl}
+          poster={coverImage}
+          fullscreenLabel={labels.fullscreenVideo}
+          playFailedLabel={labels.videoPlayFailed}
+        />
+      ) : coverImage ? (
+        <ImageCard
+          url={coverImage}
+          alt={entry.entryName}
+          previewLabel={labels.previewImage}
+          unavailableLabel={labels.imageUnavailable}
+          compact
+        />
+      ) : model3dUrl ? (
+        <Link
+          href={entryHref(entry, returnQuery)}
+          className="flex h-24 items-center justify-center gap-2 rounded-md border border-border bg-muted/30 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+        >
+          <Box className="h-5 w-5" />
+          {labels.viewModel3d}
+        </Link>
+      ) : null}
+
       {audioUrl && (
         <Button
           type="button"
           variant="secondary"
           size="sm"
-          className={buttonClass}
-          onClick={() => playAudio(audioUrl, labels.audioPlayFailed)}
+          className="h-8 rounded-md px-3 text-xs"
+          aria-pressed={isCurrentAudio && audioPlayback.status === "playing"}
+          onClick={() => onToggleAudio(entry)}
         >
-          <Volume2 className={`${iconClass} mr-1`} />
-          {labels.audio}
-        </Button>
-      )}
-      {videoUrl && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className={buttonClass}
-          asChild
-        >
-          <Link href={entryHref(entry, returnQuery)}>
-            <Video className={`${iconClass} mr-1`} />
-            {labels.video}
-          </Link>
-        </Button>
-      )}
-      {coverImage && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className={buttonClass}
-          asChild
-        >
-          <a href={coverImage} target="_blank" rel="noopener noreferrer">
-            <ImageIcon className={`${iconClass} mr-1`} />
-            {labels.image}
-          </a>
-        </Button>
-      )}
-      {model3dUrl && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className={buttonClass}
-          asChild
-        >
-          <a href={model3dUrl} target="_blank" rel="noopener noreferrer">
-            <Box className={`${iconClass} mr-1`} />
-            {labels.model3d}
-          </a>
+          {isCurrentAudio && audioPlayback.status === "loading" ? (
+            <LoaderCircle className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          ) : isCurrentAudio && audioPlayback.status === "playing" ? (
+            <Pause className="mr-1.5 h-3.5 w-3.5 fill-current" />
+          ) : isCurrentAudio && audioPlayback.status === "paused" ? (
+            <Play className="mr-1.5 h-3.5 w-3.5 fill-current" />
+          ) : (
+            <Volume2 className="mr-1.5 h-3.5 w-3.5" />
+          )}
+          {audioLabel}
         </Button>
       )}
     </div>
@@ -344,11 +341,9 @@ function MediaControls({
 function PrimaryMediaPreview({
   entry,
   labels,
-  returnQuery,
 }: {
   entry: EntryIdentity;
   labels: MediaLabels;
-  returnQuery?: string;
 }) {
   const { audioUrl, videoUrl, videoTranscript, coverImage, model3dUrl } =
     entry.assets;
@@ -357,7 +352,7 @@ function PrimaryMediaPreview({
   return (
     <div className="space-y-3">
       {audioUrl && (
-        <audio src={audioUrl} controls className="h-10 w-full max-w-3xl" />
+        <AudioCard url={audioUrl} />
       )}
 
       {(coverImage || videoUrl) && (
@@ -368,17 +363,12 @@ function PrimaryMediaPreview({
           )}
         >
           {coverImage && (
-            <Link
-              href={entryHref(entry, returnQuery)}
-              className="block overflow-hidden rounded-md border border-border bg-muted/30"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={coverImage}
-                alt={entry.entryName}
-                className="aspect-video w-full object-cover"
-              />
-            </Link>
+            <ImageCard
+              url={coverImage}
+              alt={entry.entryName}
+              previewLabel={labels.previewImage}
+              unavailableLabel={labels.imageUnavailable}
+            />
           )}
           {videoUrl && (
             <VideoCard
@@ -386,7 +376,6 @@ function PrimaryMediaPreview({
               poster={coverImage}
               transcript={videoTranscript}
               transcriptLabel={labels.videoTranscript}
-              openSourceLabel={labels.openVideoSource}
             />
           )}
         </div>
@@ -397,7 +386,6 @@ function PrimaryMediaPreview({
           url={model3dUrl}
           entryName={entry.entryName}
           modelLabel={labels.model3d}
-          openLabel={labels.openModel3d}
         />
       )}
     </div>
@@ -878,7 +866,6 @@ function PrimaryEntry({
           <PrimaryMediaPreview
             entry={entry}
             labels={labels.media}
-            returnQuery={returnQuery}
           />
 
           <PrimaryIdentityInfo
@@ -961,6 +948,8 @@ function EntryTile({
   labels,
   dense = false,
   returnQuery,
+  audioPlayback,
+  onToggleAudio,
 }: {
   entry: EntryIdentity;
   labels: {
@@ -968,6 +957,8 @@ function EntryTile({
   };
   dense?: boolean;
   returnQuery?: string;
+  audioPlayback: CardAudioPlayback;
+  onToggleAudio: (entry: EntryIdentity) => void;
 }) {
   const displayJyutping = primaryJyutping(entry);
 
@@ -992,11 +983,12 @@ function EntryTile({
         )}
       </Link>
       <div className="mt-auto space-y-3">
-        <MediaControls
+        <CardMediaPreview
           entry={entry}
           labels={labels.media}
-          compact
           returnQuery={returnQuery}
+          audioPlayback={audioPlayback}
+          onToggleAudio={onToggleAudio}
         />
         <TagList
           entry={entry}
@@ -1045,6 +1037,9 @@ function ResultSection({
   columns = 3,
   dense = false,
   returnQuery,
+  headerAccessory,
+  audioPlayback,
+  onToggleAudio,
 }: {
   title: string;
   entries: EntryIdentity[];
@@ -1058,6 +1053,9 @@ function ResultSection({
   columns?: 3 | 4;
   dense?: boolean;
   returnQuery?: string;
+  headerAccessory?: React.ReactNode;
+  audioPlayback: CardAudioPlayback;
+  onToggleAudio: (entry: EntryIdentity) => void;
 }) {
   const gridClass =
     columns === 4
@@ -1067,22 +1065,25 @@ function ResultSection({
 
   return (
     <section className="px-4 py-7 sm:px-0">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-        {onRefresh && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCcw
-              className={`mr-1.5 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            {refreshLabel}
-          </Button>
-        )}
+      <div className="mb-5 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          {onRefresh && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCcw
+                className={`mr-1.5 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {refreshLabel}
+            </Button>
+          )}
+        </div>
+        {headerAccessory}
       </div>
       <AnimatePresence mode="wait" initial={false}>
         {isRefreshing && !entries.length ? (
@@ -1114,6 +1115,8 @@ function ResultSection({
                 labels={labels}
                 dense={dense}
                 returnQuery={returnQuery}
+                audioPlayback={audioPlayback}
+                onToggleAudio={onToggleAudio}
               />
             ))}
           </motion.div>
@@ -1134,14 +1137,75 @@ function ResultSection({
   );
 }
 
+function MediaFilter({
+  value,
+  onChange,
+  labels,
+}: {
+  value?: SearchMediaFilter;
+  onChange: (value?: SearchMediaFilter) => void;
+  labels: {
+    group: string;
+    all: string;
+    text: string;
+    audio: string;
+    video: string;
+    image: string;
+    model3d: string;
+  };
+}) {
+  const options: Array<{ value?: SearchMediaFilter; label: string }> = [
+    { label: labels.all },
+    { value: "text", label: labels.text },
+    { value: "audio", label: labels.audio },
+    { value: "video", label: labels.video },
+    { value: "image", label: labels.image },
+    { value: "model3d", label: labels.model3d },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label={labels.group}
+      className="flex max-w-full flex-wrap items-center gap-1.5"
+    >
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Button
+            key={option.value ?? "all"}
+            type="button"
+            size="sm"
+            variant={selected ? "secondary" : "ghost"}
+            aria-pressed={selected}
+            className={cn(
+              "h-8 rounded-full px-3 text-xs font-medium",
+              selected && "bg-primary/10 text-primary hover:bg-primary/15",
+            )}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
 type MediaLabels = {
   audio: string;
   video: string;
   image: string;
   model3d: string;
-  openModel3d: string;
   videoTranscript: string;
-  openVideoSource: string;
+  previewImage: string;
+  imageUnavailable: string;
+  fullscreenVideo: string;
+  videoPlayFailed: string;
+  listenAudio: string;
+  pauseAudio: string;
+  audioLoading: string;
+  viewModel3d: string;
   audioPlayFailed: string;
 };
 
@@ -1155,6 +1219,8 @@ export function EntrySearchSections({
   isRefreshingRecommended,
   onRefreshSimilar,
   onRefreshRecommended,
+  mediaType,
+  onMediaTypeChange,
   setEditingResult,
   setUpdateDialogOpen,
 }: EntrySearchSectionsProps) {
@@ -1163,19 +1229,82 @@ export function EntrySearchSections({
   const { user } = useAuthStore();
   const [shareEntry, setShareEntry] = useState<EntryIdentity | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [audioPlayback, setAudioPlayback] = useState<CardAudioPlayback>({
+    entryId: null,
+    status: "idle",
+  });
+  const cardAudioRef = useRef<HTMLAudioElement | null>(null);
   const mediaLabels: MediaLabels = {
     audio: t("audio"),
     video: t("video"),
     image: t("image"),
     model3d: t("model3d"),
-    openModel3d: t("openModel3d"),
     videoTranscript: t("videoTranscript"),
-    openVideoSource: t("openVideoSource"),
+    previewImage: t("previewImage"),
+    imageUnavailable: t("imageUnavailable"),
+    fullscreenVideo: t("fullscreenVideo"),
+    videoPlayFailed: t("videoPlayFailed"),
+    listenAudio: t("listenAudio"),
+    pauseAudio: t("pauseAudio"),
+    audioLoading: t("audioLoading"),
+    viewModel3d: t("viewModel3d"),
     audioPlayFailed: t("audioPlayFailed"),
   };
   const commonLabels = {
     media: mediaLabels,
   };
+  const toggleCardAudio = useCallback(
+    (entry: EntryIdentity) => {
+      const url = entry.assets.audioUrl;
+      if (!url) return;
+
+      const currentAudio = cardAudioRef.current;
+      if (currentAudio && audioPlayback.entryId === entry.entryId) {
+        if (audioPlayback.status === "playing") {
+          currentAudio.pause();
+          setAudioPlayback({ entryId: entry.entryId, status: "paused" });
+          return;
+        }
+
+        setAudioPlayback({ entryId: entry.entryId, status: "loading" });
+        currentAudio.play().catch(() => {
+          setAudioPlayback({ entryId: null, status: "idle" });
+          toast.error(mediaLabels.audioPlayFailed);
+        });
+        return;
+      }
+
+      currentAudio?.pause();
+      const audio = new Audio();
+      audio.preload = "none";
+      audio.src = url;
+      cardAudioRef.current = audio;
+      setAudioPlayback({ entryId: entry.entryId, status: "loading" });
+
+      audio.onplaying = () => {
+        setAudioPlayback({ entryId: entry.entryId, status: "playing" });
+      };
+      audio.onended = () => {
+        setAudioPlayback({ entryId: null, status: "idle" });
+      };
+      audio.onerror = () => {
+        setAudioPlayback({ entryId: null, status: "idle" });
+        toast.error(mediaLabels.audioPlayFailed);
+      };
+      audio.play().catch(() => {
+        setAudioPlayback({ entryId: null, status: "idle" });
+        toast.error(mediaLabels.audioPlayFailed);
+      });
+    },
+    [audioPlayback.entryId, audioPlayback.status, mediaLabels.audioPlayFailed],
+  );
+
+  useEffect(() => {
+    return () => {
+      cardAudioRef.current?.pause();
+      cardAudioRef.current = null;
+    };
+  }, []);
   const handleEditEntry =
     setEditingResult && setUpdateDialogOpen
       ? async (entry: EntryIdentity) => {
@@ -1237,11 +1366,30 @@ export function EntrySearchSections({
         title={t("similarTitle")}
         entries={result.similar}
         refreshLabel={t("refresh")}
-        emptyLabel={t("emptyResults")}
+        emptyLabel={mediaType ? t("emptyMediaResults") : t("emptyResults")}
         labels={commonLabels}
         isRefreshing={isLoadingSimilar || isRefreshingSimilar}
         onRefresh={result.cursors.similarNext ? onRefreshSimilar : undefined}
         returnQuery={result.query}
+        audioPlayback={audioPlayback}
+        onToggleAudio={toggleCardAudio}
+        headerAccessory={
+          onMediaTypeChange ? (
+            <MediaFilter
+              value={mediaType}
+              onChange={onMediaTypeChange}
+              labels={{
+                group: t("mediaFilterLabel"),
+                all: t("mediaAll"),
+                text: t("mediaText"),
+                audio: t("audio"),
+                video: t("video"),
+                image: t("image"),
+                model3d: t("mediaModel3d"),
+              }}
+            />
+          ) : undefined
+        }
       />
       <ResultSection
         title={t("recommendedTitle")}
@@ -1254,6 +1402,8 @@ export function EntrySearchSections({
         columns={4}
         dense
         returnQuery={result.query}
+        audioPlayback={audioPlayback}
+        onToggleAudio={toggleCardAudio}
       />
       <SharePreview
         entry={shareEntry}

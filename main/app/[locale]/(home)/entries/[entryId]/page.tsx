@@ -15,6 +15,8 @@ import { getTranslations } from "next-intl/server";
 import { CopyEntryIdButton } from "./copy-entry-id-button";
 import { Model3dCard } from "@/components/media/model3d-card";
 import { VideoCard } from "@/components/media/video-card";
+import { AudioCard } from "@/components/media/audio-card";
+import { ImageCard } from "@/components/media/image-card";
 
 type EntryPageProps = {
   params: Promise<{
@@ -161,11 +163,11 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
           {hasMedia && (
             <section className="mt-8 max-w-3xl space-y-4">
               {entry.assets.coverImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={entry.assets.coverImage}
+                <ImageCard
+                  url={entry.assets.coverImage}
                   alt={entry.entryName}
-                  className="max-h-[420px] w-full rounded-lg border border-border object-contain"
+                  previewLabel={t("previewImage")}
+                  unavailableLabel={t("imageUnavailable")}
                 />
               )}
               {entry.assets.videoUrl && (
@@ -174,18 +176,18 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                   poster={entry.assets.coverImage}
                   transcript={entry.assets.videoTranscript}
                   transcriptLabel={t("videoTranscript")}
-                  openSourceLabel={t("openVideoSource")}
                 />
               )}
               {entry.assets.audioUrl && (
-                <audio src={entry.assets.audioUrl} controls className="h-10 w-full" />
+                <AudioCard
+                  url={entry.assets.audioUrl}
+                />
               )}
               {entry.assets.model3dUrl && (
                 <Model3dCard
                   url={entry.assets.model3dUrl}
                   entryName={entry.entryName}
                   modelLabel={t("model3d")}
-                  openLabel={t("openModel3d")}
                 />
               )}
             </section>

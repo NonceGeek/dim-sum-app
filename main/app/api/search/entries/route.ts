@@ -421,15 +421,13 @@ async function fetchAggregatedSearchRows(params: {
         where cg.category_id = (select secondary_category_id from primary_row)
           and cg.corpus_id <> (select id from primary_row)
       ),
-      similar_ranked as (
+      similar_scored as (
         select
           c.id,
-          row_number() over (
-            order by
-              sum(sc.score) + ln(c.view_num::float + 1) desc,
-              c.bookmark_num desc,
-              c.liked_num desc
-          ) as item_order
+          sum(sc.score) + ln(c.view_num::float + 1) as score,
+          c.bookmark_num,
+          c.liked_num,
+          c.media_types
         from similar_candidates sc
         join cantonese_corpus_all c on c.id = sc.id
         where true
@@ -437,11 +435,27 @@ async function fetchAggregatedSearchRows(params: {
             Prisma.sql`c.content_attribute`,
             params.contentAttribute,
           )}
+        group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
+      ),
+      similar_exclusion_ids as (
+        select id
+        from similar_scored
+        order by score desc, bookmark_num desc, liked_num desc
+        limit ${SIMILAR_LIMIT}
+        offset ${params.similarOffset}
+      ),
+      similar_ranked as (
+        select
+          s.id,
+          row_number() over (
+            order by s.score desc, s.bookmark_num desc, s.liked_num desc
+          ) as item_order
+        from similar_scored s
+        where true
           ${buildRelatedMediaFilter(
-            Prisma.sql`c.media_types`,
+            Prisma.sql`s.media_types`,
             params.mediaType,
           )}
-        group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
       similar_ids as (
         select id, item_order
@@ -536,7 +550,7 @@ async function fetchAggregatedSearchRows(params: {
         from recommended_candidates rc
         join cantonese_corpus_all c on c.id = rc.id
         where not exists (
-          select 1 from similar_ids s where s.id = c.id
+          select 1 from similar_exclusion_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
             Prisma.sql`c.content_attribute`,
@@ -813,15 +827,13 @@ async function fetchSemanticSearchRows(params: {
         where cg.category_id = (select secondary_category_id from primary_seed)
           and cg.corpus_id <> coalesce((select id from primary_seed), -1)
       ),
-      similar_ranked as (
+      similar_scored as (
         select
           c.id,
-          row_number() over (
-            order by
-              sum(sc.score) + ln(c.view_num::float + 1) desc,
-              c.bookmark_num desc,
-              c.liked_num desc
-          ) as item_order
+          sum(sc.score) + ln(c.view_num::float + 1) as score,
+          c.bookmark_num,
+          c.liked_num,
+          c.media_types
         from similar_candidates sc
         join cantonese_corpus_all c on c.id = sc.id
         where true
@@ -829,11 +841,27 @@ async function fetchSemanticSearchRows(params: {
             Prisma.sql`c.content_attribute`,
             params.contentAttribute,
           )}
+        group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
+      ),
+      similar_exclusion_ids as (
+        select id
+        from similar_scored
+        order by score desc, bookmark_num desc, liked_num desc
+        limit ${SIMILAR_LIMIT}
+        offset ${params.similarOffset}
+      ),
+      similar_ranked as (
+        select
+          s.id,
+          row_number() over (
+            order by s.score desc, s.bookmark_num desc, s.liked_num desc
+          ) as item_order
+        from similar_scored s
+        where true
           ${buildRelatedMediaFilter(
-            Prisma.sql`c.media_types`,
+            Prisma.sql`s.media_types`,
             params.mediaType,
           )}
-        group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
       similar_ids as (
         select id, item_order
@@ -898,7 +926,7 @@ async function fetchSemanticSearchRows(params: {
         from recommended_candidates rc
         join cantonese_corpus_all c on c.id = rc.id
         where not exists (
-          select 1 from similar_ids s where s.id = c.id
+          select 1 from similar_exclusion_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
             Prisma.sql`c.content_attribute`,
