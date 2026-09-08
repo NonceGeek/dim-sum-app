@@ -7,7 +7,10 @@ type Entry = {
   entryName: string;
   contentAttribute: "unclassified" | "oral" | "cultural_knowledge";
   mediaTypes: string[];
-  assets: { model3dUrl: string | null };
+  assets: {
+    model3dUrl: string | null;
+    videoTranscript: string | null;
+  };
 };
 
 type SearchResponse = {
@@ -74,16 +77,24 @@ async function main() {
     ),
   );
 
-  const ship = await request({
+  const filteredShip = await request({
     q: "帆船",
     section: "primary",
     contentAttribute: "cultural_knowledge",
   });
-  assert.equal(ship.response.status, 200);
-  const shipEntry = (ship.body as SearchResponse).primary;
+  assert.equal(filteredShip.response.status, 200);
+  const shipEntry = (filteredShip.body as SearchResponse).primary;
   assert.equal(shipEntry?.entryName, "帆船（哥德堡一号）");
   assert.deepEqual(shipEntry?.mediaTypes, ["text", "audio", "model3d"]);
   assert.equal(shipEntry?.assets.model3dUrl, "https://oss.aidimsum.com/vox-ship");
+
+  for (const query of ["讲你又唔听", "鹅鹅鹅，曲项向天歌"]) {
+    const videoEntry = await request({ q: query, section: "primary" });
+    assert.equal(videoEntry.response.status, 200);
+    const primary = (videoEntry.body as SearchResponse).primary;
+    assert.equal(primary?.entryName, query);
+    assert.ok(primary?.assets.videoTranscript);
+  }
 
   const invalidAttribute = await request({
     q: "船",
@@ -106,6 +117,7 @@ async function main() {
       oralPrimary: oralSeed.entryName,
       oralSimilarCount: oralSemanticBody.similar.length,
       oralRecommendedCount: oralSemanticBody.recommended.length,
+      filteredShip: shipEntry?.entryName,
       shipMediaTypes: shipEntry?.mediaTypes,
       invalidAttributeStatus: invalidAttribute.response.status,
       invalidMediaStatus: invalidMedia.response.status,

@@ -95,6 +95,37 @@ test("prefers structured video transcript blocks over legacy subtitles", () => {
   assert.equal(entry.assets.videoTranscript, "结构化视频转写");
 });
 
+test("preserves legacy subtitles for 讲你又唔听 and 咏鹅 search results", () => {
+  const fixtures = [
+    {
+      entryName: "讲你又唔听",
+      subtitle: "讲你又唔听，听你又唔明。",
+    },
+    {
+      entryName: "鹅鹅鹅，曲项向天歌",
+      subtitle: "鹅鹅鹅，曲项向天歌。",
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const entry = buildEntryIdentity(
+      buildRow({
+        data: fixture.entryName,
+        media_types: ["text", "video"],
+        note: {
+          context: {
+            video: `https://example.com/${encodeURIComponent(fixture.entryName)}.mp4`,
+            subtitle: fixture.subtitle,
+          },
+        },
+      }),
+    );
+
+    assert.equal(entry.entryName, fixture.entryName);
+    assert.equal(entry.assets.videoTranscript, fixture.subtitle);
+  }
+});
+
 test("prefers structured model3d link blocks over legacy context", () => {
   const entry = buildEntryIdentity(
     buildRow({

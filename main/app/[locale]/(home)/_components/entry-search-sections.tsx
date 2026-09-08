@@ -24,6 +24,7 @@ import { Model3dCard } from "@/components/media/model3d-card";
 import { VideoCard } from "@/components/media/video-card";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Fragment, useRef, useState } from "react";
 import { useTranslations } from "next-intl";

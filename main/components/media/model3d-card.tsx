@@ -1,4 +1,5 @@
 import { Box, ExternalLink } from "lucide-react";
+import { isEmbeddableModel3dViewerUrl } from "@/lib/search/model3d";
 
 type Model3dCardProps = {
   url: string;
@@ -7,22 +8,13 @@ type Model3dCardProps = {
   openLabel: string;
 };
 
-function isViewerPage(url: string): boolean {
-  try {
-    const pathname = new URL(url).pathname.toLowerCase();
-    return !/\.(?:glb|gltf|usdz)$/.test(pathname);
-  } catch {
-    return false;
-  }
-}
-
 export function Model3dCard({
   url,
   entryName,
   modelLabel,
   openLabel,
 }: Model3dCardProps) {
-  const canEmbed = isViewerPage(url);
+  const canEmbed = isEmbeddableModel3dViewerUrl(url);
 
   return (
     <div className="max-w-3xl overflow-hidden rounded-lg border border-border bg-muted/20">
