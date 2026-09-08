@@ -4,9 +4,17 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fetchEntryIdentityByUniqueId } from "@/lib/search/entry-query";
-import { ArrowLeft, CalendarDays, Database, Share2, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Database,
+  Share2,
+  UserRound,
+} from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { CopyEntryIdButton } from "./copy-entry-id-button";
+import { Model3dCard } from "@/components/media/model3d-card";
+import { VideoCard } from "@/components/media/video-card";
 
 type EntryPageProps = {
   params: Promise<{
@@ -82,7 +90,10 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
   const relatedTags = entry.tags.related.slice(0, 10);
   const recommendedTags = entry.tags.recommended.slice(0, 10);
   const hasMedia = Boolean(
-    entry.assets.audioUrl || entry.assets.videoUrl || entry.assets.coverImage,
+    entry.assets.audioUrl ||
+      entry.assets.videoUrl ||
+      entry.assets.coverImage ||
+      entry.assets.model3dUrl,
   );
   const jsonLd = {
     "@context": "https://schema.org",
@@ -158,15 +169,24 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                 />
               )}
               {entry.assets.videoUrl && (
-                <video
-                  src={entry.assets.videoUrl}
-                  controls
-                  className="w-full rounded-lg border border-border"
-                  poster={entry.assets.coverImage ?? undefined}
+                <VideoCard
+                  url={entry.assets.videoUrl}
+                  poster={entry.assets.coverImage}
+                  transcript={entry.assets.videoTranscript}
+                  transcriptLabel={t("videoTranscript")}
+                  openSourceLabel={t("openVideoSource")}
                 />
               )}
               {entry.assets.audioUrl && (
                 <audio src={entry.assets.audioUrl} controls className="h-10 w-full" />
+              )}
+              {entry.assets.model3dUrl && (
+                <Model3dCard
+                  url={entry.assets.model3dUrl}
+                  entryName={entry.entryName}
+                  modelLabel={t("model3d")}
+                  openLabel={t("openModel3d")}
+                />
               )}
             </section>
           )}

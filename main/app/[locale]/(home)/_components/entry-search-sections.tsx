@@ -11,9 +11,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, ImageIcon, RefreshCcw, Share2, Video, Volume2 } from "lucide-react";
+import {
+  Box,
+  Copy,
+  ImageIcon,
+  RefreshCcw,
+  Share2,
+  Video,
+  Volume2,
+} from "lucide-react";
+import { Model3dCard } from "@/components/media/model3d-card";
+import { VideoCard } from "@/components/media/video-card";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Fragment, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -249,18 +260,21 @@ function MediaControls({
   entry,
   labels,
   compact = false,
+  returnQuery,
 }: {
   entry: EntryIdentity;
   labels: {
     audio: string;
     video: string;
     image: string;
+    model3d: string;
     audioPlayFailed: string;
   };
   compact?: boolean;
+  returnQuery?: string;
 }) {
-  const { audioUrl, videoUrl, coverImage } = entry.assets;
-  if (!audioUrl && !videoUrl && !coverImage) return null;
+  const { audioUrl, videoUrl, coverImage, model3dUrl } = entry.assets;
+  if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
 
   const buttonClass = compact
     ? "h-7 rounded px-2 text-xs"
@@ -289,10 +303,10 @@ function MediaControls({
           className={buttonClass}
           asChild
         >
-          <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+          <Link href={entryHref(entry, returnQuery)}>
             <Video className={`${iconClass} mr-1`} />
             {labels.video}
-          </a>
+          </Link>
         </Button>
       )}
       {coverImage && (
@@ -309,19 +323,36 @@ function MediaControls({
           </a>
         </Button>
       )}
+      {model3dUrl && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className={buttonClass}
+          asChild
+        >
+          <a href={model3dUrl} target="_blank" rel="noopener noreferrer">
+            <Box className={`${iconClass} mr-1`} />
+            {labels.model3d}
+          </a>
+        </Button>
+      )}
     </div>
   );
 }
 
 function PrimaryMediaPreview({
   entry,
+  labels,
   returnQuery,
 }: {
   entry: EntryIdentity;
+  labels: MediaLabels;
   returnQuery?: string;
 }) {
-  const { audioUrl, videoUrl, coverImage } = entry.assets;
-  if (!audioUrl && !videoUrl && !coverImage) return null;
+  const { audioUrl, videoUrl, videoTranscript, coverImage, model3dUrl } =
+    entry.assets;
+  if (!audioUrl && !videoUrl && !coverImage && !model3dUrl) return null;
 
   return (
     <div className="space-y-3">
@@ -330,7 +361,12 @@ function PrimaryMediaPreview({
       )}
 
       {(coverImage || videoUrl) && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div
+          className={cn(
+            "grid gap-3",
+            coverImage && videoUrl && "sm:grid-cols-2",
+          )}
+        >
           {coverImage && (
             <Link
               href={entryHref(entry, returnQuery)}
@@ -345,15 +381,24 @@ function PrimaryMediaPreview({
             </Link>
           )}
           {videoUrl && (
-            <video
-              src={videoUrl}
-              controls
-              preload="metadata"
-              poster={coverImage ?? undefined}
-              className="aspect-video w-full rounded-md border border-border bg-muted/30 object-cover"
+            <VideoCard
+              url={videoUrl}
+              poster={coverImage}
+              transcript={videoTranscript}
+              transcriptLabel={labels.videoTranscript}
+              openSourceLabel={labels.openVideoSource}
             />
           )}
         </div>
+      )}
+
+      {model3dUrl && (
+        <Model3dCard
+          url={model3dUrl}
+          entryName={entry.entryName}
+          modelLabel={labels.model3d}
+          openLabel={labels.openModel3d}
+        />
       )}
     </div>
   );
@@ -830,7 +875,11 @@ function PrimaryEntry({
             </p>
           )}
 
-          <PrimaryMediaPreview entry={entry} returnQuery={returnQuery} />
+          <PrimaryMediaPreview
+            entry={entry}
+            labels={labels.media}
+            returnQuery={returnQuery}
+          />
 
           <PrimaryIdentityInfo
             entry={entry}
@@ -943,7 +992,12 @@ function EntryTile({
         )}
       </Link>
       <div className="mt-auto space-y-3">
-        <MediaControls entry={entry} labels={labels.media} compact />
+        <MediaControls
+          entry={entry}
+          labels={labels.media}
+          compact
+          returnQuery={returnQuery}
+        />
         <TagList
           entry={entry}
           relatedLimit={dense ? 3 : 4}
@@ -1084,6 +1138,10 @@ type MediaLabels = {
   audio: string;
   video: string;
   image: string;
+  model3d: string;
+  openModel3d: string;
+  videoTranscript: string;
+  openVideoSource: string;
   audioPlayFailed: string;
 };
 
@@ -1109,6 +1167,10 @@ export function EntrySearchSections({
     audio: t("audio"),
     video: t("video"),
     image: t("image"),
+    model3d: t("model3d"),
+    openModel3d: t("openModel3d"),
+    videoTranscript: t("videoTranscript"),
+    openVideoSource: t("openVideoSource"),
     audioPlayFailed: t("audioPlayFailed"),
   };
   const commonLabels = {

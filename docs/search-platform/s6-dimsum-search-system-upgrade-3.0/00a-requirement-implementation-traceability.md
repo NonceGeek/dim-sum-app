@@ -54,7 +54,7 @@ media_types
 | 一级/二级分类 | `content_categories + corpus_category` | 无正式分类新表 | 已具备 |
 | 标签及三级扩散 | `tags + corpus_tags + tag_related` | 无 | 已具备 |
 | 贡献者 | update history + User，旧 note 也有 contributor | 无主表字段 | 已具备 |
-| 视频卡片、播放、转写 | `structured_note` parser 已支持媒体 URL；前端播放器需实现 | 优先扩展 JSON 读取和 UI，不先建媒体表 | 本期前端/API |
+| 视频卡片、播放、转写 | Production 5 条视频均位于旧 `note.context.video + subtitle` | Entry DTO 兼容转写，精准结果和详情使用原生播放器，列表只跳详情 | 已在 `s6-media-filter-ui` 实现，不建媒体表 |
 | Agent 二级分类建议 | 已有外部 Agent task API；正式分类表不能存待确认建议 | 等 Agent 返回契约后最多增加一张建议状态表 | 必做但暂不冻结 DDL |
 | 标注小程序任务 | 已有 `/api/miniprogram/task/*` 代理 | 扩展任务类型和 Fynn 回写接口 | 复用现有 Agent 任务体系 |
 | 分享卡片 | 已有 entry identity、固定 UUID 链路；AW 负责体验 | Fynn 只补公开上下文；事件方案等 AW | 不建本地分享系统 |

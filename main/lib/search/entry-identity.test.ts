@@ -62,6 +62,7 @@ test("reads numbered audio, photo_url and object-array video legacy values", () 
           photo_url: [
             { url: "https://example.com/cover.jpg" },
           ],
+          subtitle: "一段现有视频转写",
         },
         video_clips: [{ link: "https://example.com/video.mp4" }],
       },
@@ -70,7 +71,59 @@ test("reads numbered audio, photo_url and object-array video legacy values", () 
 
   assert.equal(entry.assets.audioUrl, "https://example.com/audio.m4a");
   assert.equal(entry.assets.videoUrl, "https://example.com/video.mp4");
+  assert.equal(entry.assets.videoTranscript, "一段现有视频转写");
   assert.equal(entry.assets.coverImage, "https://example.com/cover.jpg");
+});
+
+test("prefers structured video transcript blocks over legacy subtitles", () => {
+  const entry = buildEntryIdentity(
+    buildRow({
+      structured_note: {
+        data: [
+          {
+            blocks: [
+              { type: "video", url: "https://example.com/video.mp4" },
+              { type: "transcript", content: "结构化视频转写" },
+            ],
+          },
+        ],
+      },
+      note: { context: { subtitle: "旧视频转写" } },
+    }),
+  );
+
+  assert.equal(entry.assets.videoTranscript, "结构化视频转写");
+});
+
+test("preserves legacy subtitles for 讲你又唔听 and 咏鹅 search results", () => {
+  const fixtures = [
+    {
+      entryName: "讲你又唔听",
+      subtitle: "讲你又唔听，听你又唔明。",
+    },
+    {
+      entryName: "鹅鹅鹅，曲项向天歌",
+      subtitle: "鹅鹅鹅，曲项向天歌。",
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const entry = buildEntryIdentity(
+      buildRow({
+        data: fixture.entryName,
+        media_types: ["text", "video"],
+        note: {
+          context: {
+            video: `https://example.com/${encodeURIComponent(fixture.entryName)}.mp4`,
+            subtitle: fixture.subtitle,
+          },
+        },
+      }),
+    );
+
+    assert.equal(entry.entryName, fixture.entryName);
+    assert.equal(entry.assets.videoTranscript, fixture.subtitle);
+  }
 });
 
 test("prefers structured model3d link blocks over legacy context", () => {
