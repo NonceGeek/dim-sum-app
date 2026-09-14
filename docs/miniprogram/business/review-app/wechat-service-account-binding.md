@@ -248,3 +248,12 @@ WECHAT_TEST_DATABASE_URL='postgresql://USER@127.0.0.1:PORT/TEST_DB' pnpm test:we
 - 直接调用微信原始接口确认服务号 AppID 为 `wx6c2a6861fb6b945a`，关注者总数为 53。抽查 3 条已关注用户资料，API 无错误，但 JSON 均没有 `unionid` 字段；排除这些响应中的字段被 Zod 解析或入库时丢弃。未输出用户标识或凭据。
 - 目前无法仅凭接口结果确定缺失原因，不能据此认定用户没有绑定开放平台。后续需结合开放平台实际绑定状态/生效时间、具体服务号 AppID 及微信接口支持排查。
 - 关注/取消关注回调仍实时处理；新关注者补充资料与账号匹配可能等待至下一轮小时同步。此前同步成功但无 UnionID 的记录由每日全量再次核对。
+
+
+### UnionID 全量只读排查（2026-09-14 18:40 CST）
+
+- 已成功通过 HTTPS 读取微信官方[单条用户资料](https://developers.weixin.qq.com/doc/service/api/usermanage/userinfo/api_userinfo.html)、[批量用户资料](https://developers.weixin.qq.com/doc/service/api/usermanage/userinfo/api_batchuserinfo.html)与[网页授权资料](https://developers.weixin.qq.com/doc/service/api/webdev/access/api_snsuserinfo.html)文档。单条/批量均列出 unionid，条件是公众号绑定微信开放平台；网页授权接口另需 snsapi_userinfo 授权，不是可直接替换的后台查询接口。
+- 应区分“服务号自身绑定某个开放平台，具备返回 UnionID 的条件”与“服务号和小程序绑定同一个开放平台，可以用 UnionID 匹配”。不同平台本身不能解释服务号完全不返回该字段。
+- 2026-09-14T10:40:02Z，直接从 ECS 使用 AppID `wx6c2a6861fb6b945a` 获取当前关注者列表，并调用 `/cgi-bin/user/info/batchget`：列表总数 53、返回 53、已关注 53、返回身份集合与请求一致、API 无错误、存在 unionid 字段的记录为 0。仅输出汇总，无用户标识或凭据，无数据库写入、无发送消息。
+- 单条抽查与批量全部查询均未返回字段；已排除这些请求中的应用解析/入库丢字段，以及仅单条接口异常的假设。尚不能确定微信侧的具体原因，不将“绑定未完成”作为已证实结论。
+- 用户已确认服务号与小程序同属一个开放平台。尝试只读查看微信开发者后台时，被浏览器站点安全策略拒绝，未通过其他浏览器或后台请求绕过。需用户提供开放平台管理中心中该服务号 AppID 与绑定状态的截图（可遮盖身份信息），再判断是否需要向微信官方提交接口诊断。未更改绑定、未强制刷新 token。
