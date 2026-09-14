@@ -28,9 +28,7 @@ async function main() {
   const [audit] = await prisma.$queryRaw<AuditRow[]>`
     select
       count(*)::bigint as total,
-      count(*) filter (
-        where content_attribute not in ('unclassified', 'oral', 'cultural_knowledge')
-      )::bigint as bad_content_attribute_count,
+      (select count(*) from public.cantonese_categories where content_attribute not in ('unclassified', 'oral', 'cultural_knowledge'))::bigint as bad_content_attribute_count,
       count(*) filter (
         where cardinality(media_types) = 0 or media_types is null
       )::bigint as empty_media_types_count,
@@ -58,8 +56,8 @@ async function main() {
   const constraints = await prisma.$queryRaw<ConstraintRow[]>`
     select conname, convalidated
     from pg_constraint
-    where conrelid = 'public.cantonese_corpus_all'::regclass
-      and conname in ('corpus_content_attribute_ck', 'corpus_media_types_ck')
+    where (conrelid = 'public.cantonese_corpus_all'::regclass and conname = 'corpus_media_types_ck')
+       or (conrelid = 'public.cantonese_categories'::regclass and conname = 'dataset_content_attribute_ck')
     order by conname
   `;
 

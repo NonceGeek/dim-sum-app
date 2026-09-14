@@ -574,7 +574,7 @@
       "dashboard": "Dashboard",
       "users": "Users",
       "administrators": "Administrator Management",
-      "categories": "Categories",
+      "categories": "Datasets",
       "permissions": "Permissions",
       "corpusData": "Corpus Data",
       "corpusCollection": "Corpus Collection",
@@ -673,11 +673,47 @@
     "pagination": "Page {page} of {total}", "errors": { "fetch": "Failed to fetch audit logs" }
   },
   "AdminCategories": {
-    "title": "Categories", "description": "Manage corpus categories and visibility settings.",
-    "search": { "title": "Search Categories", "placeholder": "Search by name or nickname...", "button": "Search" },
-    "list": { "title": "Categories List ({count})", "description": "Toggle visibility for each category" },
-    "columns": { "name": "Name", "nickname": "Nickname", "entries": "Entries", "permissions": "Permissions", "status": "Status", "public": "Public", "created": "Created" },
-    "messages": { "updated": "Category visibility updated" }, "errors": { "fetch": "Failed to fetch categories", "update": "Failed to update category" }
+    "title": "Dataset management",
+    "description": "Manage dataset aliases, content attributes, and visibility.",
+    "search": {
+      "title": "Search Datasets",
+      "placeholder": "Search by name or nickname...",
+      "button": "Search"
+    },
+    "list": {
+      "title": "Datasets List ({count})",
+      "description": "Toggle visibility for each dataset"
+    },
+    "columns": {
+      "name": "Name",
+      "nickname": "Alias",
+      "entries": "Entries",
+      "permissions": "Permissions",
+      "status": "Status",
+      "public": "Public",
+      "created": "Created"
+    },
+    "messages": {
+      "updated": "Dataset visibility updated"
+    },
+    "errors": {
+      "fetch": "Failed to fetch datasets",
+      "update": "Failed to update dataset"
+    },
+    "dataset": {
+      "attribute": "Content attribute",
+      "activity": "Linked activity",
+      "actions": "Actions",
+      "edit": "Edit dataset",
+      "help": "The alias is used for display; the internal identifier stays unchanged.",
+      "description": "Description",
+      "unclassified": "Not configured",
+      "oral": "Oral corpus",
+      "cultural_knowledge": "Cultural knowledge",
+      "impact": "Changing the attribute affects search scope for all {count} entries in this dataset.",
+      "cancel": "Cancel",
+      "save": "Save"
+    }
   },
   "AdminCorpus": {
     "title": "Corpus Data", "description": "Manage Cantonese language corpus entries and annotations.",
@@ -724,28 +760,119 @@
   "CorpusCollectionActivities": {
     "title": "Activities",
     "description": "Create collection campaigns, generate banners, and manage publishing state.",
-    "create": { "title": "Create Activity", "description": "Configure a new public collection campaign." },
+    "create": {
+      "title": "Create Activity",
+      "description": "Configure a new public collection campaign."
+    },
     "fields": {
-      "title": "Title", "tag": "Activity Tag", "tagPlaceholder": "饮食文化", "tagHelp": "Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺",
-      "description": "Description", "rules": "Rules", "startsAt": "Starts At", "endsAt": "Ends At", "bannerUrl": "Banner URL",
-      "requiredMediaTypes": "Required Media Types", "mediaHelp": "The miniprogram uses this to decide which upload controls to show."
+      "title": "Title",
+      "tag": "Activity Tag",
+      "tagPlaceholder": "饮食文化",
+      "tagHelp": "Enter exactly 4 characters. Examples: 饮食文化、粤语表达、城市记忆、传统技艺",
+      "description": "Description",
+      "rules": "Rules",
+      "startsAt": "Starts At",
+      "endsAt": "Ends At",
+      "bannerUrl": "Banner URL",
+      "requiredMediaTypes": "Required Media Types",
+      "mediaHelp": "The miniprogram uses this to decide which upload controls to show."
     },
     "media": {
-      "image": { "label": "Images", "description": "This activity requires images." },
-      "video": { "label": "Video", "description": "This activity requires video." },
-      "audio": { "label": "Audio", "description": "This activity requires recordings." }
+      "image": {
+        "label": "Images",
+        "description": "This activity requires images."
+      },
+      "video": {
+        "label": "Video",
+        "description": "This activity requires video."
+      },
+      "audio": {
+        "label": "Audio",
+        "description": "This activity requires recordings."
+      }
     },
-    "banner": { "title": "AI Banner", "promptPlaceholder": "A warm, playful Cantonese nursery-rhyme event set among Liwan arcades...", "description": "Generate temporary candidates, then upload the selected image to OSS to get a permanent URL.", "candidateAlt": "Candidate {index}", "candidate": "Candidate {index}", "expires": "Expires {date}", "permanentUrl": "Permanent OSS URL", "urlHelp": "This URL has been filled into the Banner URL field and can also be copied here." },
-    "list": { "title": "Activity List", "description": "Filter and publish collection campaigns." },
-    "filters": { "uuidPlaceholder": "Activity UUID fragment", "titlePlaceholder": "Search activity title", "titleContains": "Title contains", "activityUuid": "Activity UUID" },
-    "status": { "all": "All Statuses", "draft": "Draft", "published": "Published", "offline": "Offline", "archived": "Archived" },
-    "columns": { "title": "Title", "uuid": "UUID", "status": "Status", "window": "Window", "submissions": "Submissions", "actions": "Actions" },
-    "actions": { "create": "Create", "generate": "Generate", "uploadOss": "Upload to OSS for URL", "preview": "Preview", "publish": "Publish", "offline": "Offline" },
-    "window": { "anytime": "Anytime", "open": "Open" },
-    "validation": { "titleRequired": "Title is required", "titleLength": "Title must be {count} characters or less", "tagRequired": "Activity tag is required", "tagLength": "Activity tag must be exactly {count} characters", "descriptionLength": "Description must be {count} characters or less", "rulesLength": "Rules must be {count} characters or less", "dateOrder": "Start time must be earlier than end time", "mediaRequired": "Select at least one media type" },
-    "messages": { "created": "Activity created", "statusUpdated": "Activity status updated", "generated": "Cover candidates generated", "uploaded": "Cover uploaded to OSS", "copied": "URL copied" },
-    "errors": { "load": "Failed to load activities", "create": "Failed to create activity", "status": "Failed to update activity status", "generate": "Failed to generate cover candidates", "upload": "Failed to upload cover" },
-    "loading": "Loading...", "empty": "No activities found."
+    "banner": {
+      "title": "AI Banner",
+      "promptPlaceholder": "A warm, playful Cantonese nursery-rhyme event set among Liwan arcades...",
+      "description": "Generate temporary candidates, then upload the selected image to OSS to get a permanent URL.",
+      "candidateAlt": "Candidate {index}",
+      "candidate": "Candidate {index}",
+      "expires": "Expires {date}",
+      "permanentUrl": "Permanent OSS URL",
+      "urlHelp": "This URL has been filled into the Banner URL field and can also be copied here."
+    },
+    "list": {
+      "title": "Activity List",
+      "description": "Filter and publish collection campaigns."
+    },
+    "filters": {
+      "uuidPlaceholder": "Activity UUID fragment",
+      "titlePlaceholder": "Search activity title",
+      "titleContains": "Title contains",
+      "activityUuid": "Activity UUID"
+    },
+    "status": {
+      "all": "All Statuses",
+      "draft": "Draft",
+      "published": "Published",
+      "offline": "Offline",
+      "archived": "Archived"
+    },
+    "columns": {
+      "title": "Title",
+      "uuid": "UUID",
+      "status": "Status",
+      "window": "Window",
+      "submissions": "Submissions",
+      "actions": "Actions"
+    },
+    "actions": {
+      "create": "Create",
+      "generate": "Generate",
+      "uploadOss": "Upload to OSS for URL",
+      "preview": "Preview",
+      "publish": "Publish",
+      "offline": "Offline"
+    },
+    "window": {
+      "anytime": "Anytime",
+      "open": "Open"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "titleLength": "Title must be {count} characters or less",
+      "tagRequired": "Activity tag is required",
+      "tagLength": "Activity tag must be exactly {count} characters",
+      "descriptionLength": "Description must be {count} characters or less",
+      "rulesLength": "Rules must be {count} characters or less",
+      "dateOrder": "Start time must be earlier than end time",
+      "mediaRequired": "Select at least one media type"
+    },
+    "messages": {
+      "created": "Activity created",
+      "statusUpdated": "Activity status updated",
+      "generated": "Cover candidates generated",
+      "uploaded": "Cover uploaded to OSS",
+      "copied": "URL copied"
+    },
+    "errors": {
+      "load": "Failed to load activities",
+      "create": "Failed to create activity",
+      "status": "Failed to update activity status",
+      "generate": "Failed to generate cover candidates",
+      "upload": "Failed to upload cover"
+    },
+    "loading": "Loading...",
+    "empty": "No activities found.",
+    "dataset": {
+      "attribute": "Dataset content attribute",
+      "required": "Choose a dataset content attribute",
+      "choose": "Choose an attribute",
+      "oral": "Oral corpus",
+      "cultural_knowledge": "Cultural knowledge",
+      "unclassified": "Not configured",
+      "help": "Creating an activity also creates its own dataset. Edit its alias and attribute in dataset management."
+    }
   },
   "Validation": {
     "enterCharacter": "Please enter a character",

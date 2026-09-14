@@ -248,6 +248,11 @@ export function serializeActivity(activity: any) {
     description: activity.description,
     rules: activity.rules,
     category: activity.category ?? null,
+    dataset: activity.dataset ? {
+      name: activity.dataset.name,
+      nickname: activity.dataset.nickname,
+      contentAttribute: activity.dataset.content_attribute,
+    } : null,
     activityTag,
     tags: activity.tags ?? [],
     submissionTypes: activity.submission_types ?? [],

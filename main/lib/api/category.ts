@@ -59,7 +59,7 @@ export function useAllCategories() {
   return useQuery<CategoryInfo[]>({
     queryKey: ['allCategories'],
     queryFn: fetchAllCategories,
-    staleTime: Infinity, // 会话内永不重新请求（分类数据基本不变）
+    staleTime: 0, // Dataset aliases can be edited in the admin.
     gcTime: Infinity,    // tab 关闭前始终保留在内存，不主动 GC
   });
 }

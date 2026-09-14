@@ -36,30 +36,13 @@ export async function fetchEntryIdentitiesByUniqueIds(
   const rows = await prisma.$queryRaw<EntryIdentityRow[]>(
     Prisma.sql`
       select
-        id,
-        unique_id::text as unique_id,
-        data,
-        note,
-        structured_note,
-        category,
-        category_display_name,
-        editable_level,
-        lifecycle_stage,
-        liked_num,
-        bookmark_num,
-        view_num,
-        created_at,
-        updated_at,
-        primary_category_id,
-        primary_category_slug,
-        primary_category_name,
-        secondary_category_id,
-        secondary_category_slug,
-        secondary_category_name,
-        related_tags,
-        recommended_tags,
-        contributor_ids
-      from public.get_entry_identities(array[${Prisma.join(ids)}]::uuid[])
+        entry.*,
+        entry.unique_id::text as unique_id,
+        dataset.content_attribute,
+        corpus.media_types
+      from public.get_entry_identities(array[${Prisma.join(ids)}]::uuid[]) entry
+      join public.cantonese_corpus_all corpus on corpus.unique_id = entry.unique_id
+      join public.cantonese_categories dataset on dataset.name = corpus.category
     `,
   );
 

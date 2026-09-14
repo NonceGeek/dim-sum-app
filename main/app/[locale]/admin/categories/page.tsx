@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -31,6 +34,8 @@ interface Category {
   name: string;
   nickname: string | null;
   description: string | null;
+  contentAttribute: string;
+  activity: { id: string; title: string } | null;
   is_public: boolean;
   created_at: string;
   status: string | null;
@@ -47,8 +52,28 @@ export default function AdminCategoriesPage() {
   const locale = useLocale();
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [draft, setDraft] = useState({ nickname: "", description: "", contentAttribute: "unclassified" });
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const response = await fetch("/api/admin/categories", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editing.name, nickname: draft.nickname, description: draft.description,
+          ...(draft.contentAttribute !== editing.contentAttribute ? { contentAttribute: draft.contentAttribute } : {}),
+        }),
+      });
+      if (!response.ok) throw new Error(t("errors.update"));
+    },
+    onSuccess: () => {
+      setEditing(null);
+      for (const key of ["admin-categories", "allCategories", "entry-search", "search", "corpus-collection-activities"]) queryClient.invalidateQueries({ queryKey: [key] });
+      toast.success(t("messages.updated"));
+    },
+    onError: () => toast.error(t("errors.update")),
+  });
 
-  const { data, isLoading } = useQuery<CategoriesResponse>({
+  const { data, isLoading, error } = useQuery<CategoriesResponse>({
     queryKey: ["admin-categories", search],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -127,6 +152,7 @@ export default function AdminCategoriesPage() {
         </CardContent>
       </Card>
 
+      {error && <p role="alert" className="text-destructive">{t("errors.fetch")}</p>}
       {/* Categories Table */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -173,6 +199,9 @@ export default function AdminCategoriesPage() {
                 <TableRow className="border-border">
                   <TableHead className="text-muted-foreground">{t("columns.name")}</TableHead>
                   <TableHead className="text-muted-foreground">{t("columns.nickname")}</TableHead>
+                  <TableHead>{t("dataset.attribute")}</TableHead>
+                  <TableHead>{t("dataset.activity")}</TableHead>
+                  <TableHead>{t("dataset.actions")}</TableHead>
                   <TableHead className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Database className="h-4 w-4" />
@@ -199,6 +228,11 @@ export default function AdminCategoriesPage() {
                     <TableCell className="text-muted-foreground">
                       {category.nickname || "-"}
                     </TableCell>
+                    <TableCell>{t(`dataset.${category.contentAttribute}`)}</TableCell>
+                    <TableCell>{category.activity ? <a className="underline" href={`/${locale}/admin/corpus-collection/activities`}>{category.activity.title}</a> : "—"}</TableCell>
+                    <TableCell><Button variant="outline" size="sm" onClick={() => {
+                      setEditing(category); setDraft({ nickname: category.nickname || category.name, description: category.description || "", contentAttribute: category.contentAttribute });
+                    }}>{t("dataset.edit")}</Button></TableCell>
                     <TableCell className="text-muted-foreground">
                       {category.corpusCount}
                     </TableCell>
@@ -221,6 +255,8 @@ export default function AdminCategoriesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch
+                          aria-label={t("columns.public")}
+                          disabled={updatePublicMutation.isPending}
                           checked={category.is_public}
                           onCheckedChange={(checked) =>
                             updatePublicMutation.mutate({
@@ -246,6 +282,24 @@ export default function AdminCategoriesPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={Boolean(editing)} onOpenChange={(open) => { if (!open && !saveMutation.isPending) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t("dataset.edit")}</DialogTitle><DialogDescription>{t("dataset.help")}</DialogDescription></DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); if (!saveMutation.isPending) saveMutation.mutate(); }}>
+            <p className="text-sm text-muted-foreground">{editing?.name}</p>
+            <div className="space-y-2"><Label htmlFor="dataset-alias">{t("columns.nickname")}</Label><Input id="dataset-alias" required maxLength={100} value={draft.nickname} onChange={(e) => setDraft({ ...draft, nickname: e.target.value })} /></div>
+            <div className="space-y-2"><Label htmlFor="dataset-description">{t("dataset.description")}</Label><Textarea id="dataset-description" maxLength={2000} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></div>
+            <div className="space-y-2"><Label htmlFor="dataset-attribute">{t("dataset.attribute")}</Label>
+              <select id="dataset-attribute" className="w-full rounded-md border bg-background p-2" value={draft.contentAttribute} onChange={(e) => setDraft({ ...draft, contentAttribute: e.target.value })}>
+                <option value="unclassified" disabled>{t("dataset.unclassified")}</option>
+                <option value="oral">{t("dataset.oral")}</option><option value="cultural_knowledge">{t("dataset.cultural_knowledge")}</option>
+              </select>
+              <p className="text-sm text-muted-foreground">{t("dataset.impact", { count: editing?.corpusCount ?? 0 })}</p>
+            </div>
+            <DialogFooter><Button type="button" variant="outline" disabled={saveMutation.isPending} onClick={() => setEditing(null)}>{t("dataset.cancel")}</Button><Button disabled={saveMutation.isPending || !draft.nickname.trim()} type="submit">{t("dataset.save")}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

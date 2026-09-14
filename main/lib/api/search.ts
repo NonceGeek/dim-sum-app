@@ -254,7 +254,7 @@ export function useEntrySearchQuery(
         recommendedCursor: options.recommendedCursor,
       }),
     enabled: (options.enabled ?? true) && !!keyword.trim(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 10 * 60 * 1000,
     retry: 1,
   });
@@ -281,7 +281,7 @@ export function useEntryPrimarySearchQuery(
         section: "primary",
       }),
     enabled: enabled && !!keyword.trim(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 10 * 60 * 1000,
     retry: 1,
   });
@@ -322,7 +322,7 @@ export function useEntrySemanticSearchQuery(
         mediaType: options.mediaType,
       }),
     enabled: (options.enabled ?? true) && !!keyword.trim(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 10 * 60 * 1000,
     retry: 1,
   });

@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
 
     const activity = await prisma.corpus_collection_activities.findUnique({
       where: { id },
-      include: { _count: { select: { submissions: true } } },
+      include: { dataset: true, _count: { select: { submissions: true } } },
     });
     if (!activity) return NextResponse.json({ error: "Activity not found" }, { status: 404 });
     return NextResponse.json(serializeActivity(activity));
@@ -33,6 +33,9 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
 
     const body = await req.json();
+    if (body.contentAttribute !== undefined || body.datasetName !== undefined || body.dataset_name !== undefined) {
+      return NextResponse.json({ error: "Edit content attribute in dataset management; activity dataset cannot be reassigned" }, { status: 400 });
+    }
     let textFields: ReturnType<typeof parseActivityTextFields>;
     let startsAt: Date | null | undefined;
     let endsAt: Date | null | undefined;
@@ -75,6 +78,7 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
     const activity = await prisma.corpus_collection_activities.update({
       where: { id },
       data,
+      include: { dataset: true },
     });
     return NextResponse.json(serializeActivity(activity));
   });

@@ -9,6 +9,7 @@
 
 | 文档 | 内容 |
 |---|---|
+| [embedding-and-neighbor-maintenance.md](embedding-and-neighbor-maintenance.md) | 语料向量与近邻的更新顺序、数据侧职责、维护频率和未确认的自动触发机制 |
 | `performance-analysis-and-current-optimization.md` | 线上基线、数据库证据、根因、已实施优化和验收标准 |
 | `offline-neighbor-table-implementation-plan.md` | 邻居表 DDL、离线构建、增量/全量任务、灰度和回滚 |
 | `local-neighbor-builder-runbook.md` | 本地首次全量、手动增量、激活、恢复和故障处理操作手册 |

@@ -1,5 +1,7 @@
 # 词条身份信息 Admin 后台设计
 
+2026-09-13 更新：语料集管理已在本地实现别名、说明、集级内容属性编辑及活动关联展示，创建活动自动建集。详见 [语料集属性实施记录](../s6-dimsum-search-system-upgrade-3.0/13-dataset-content-attribute-implementation.md)。其余身份/标签/分享后台内容仍为历史设计，不能视为已实现或全部纳入本期。
+
 ## 一、设计原则
 
 现有 Admin 已包含：
