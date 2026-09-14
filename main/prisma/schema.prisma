@@ -1256,3 +1256,22 @@ enum PermissionAction {
   MODIFY
   ROLE_CHANGE
 }
+
+/// 服务号关注者可早于平台账号存在；兼容 agent 读取 Account.openIdWxService。
+model WechatServiceFollower {
+  id            String   @id @default(cuid())
+  appId         String
+  openId        String
+  unionId       String?
+  subscribed    Boolean  @default(false)
+  eventTime     Int      @default(0)
+  version       Int      @default(0)
+  needsSync     Boolean  @default(true)
+  syncedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([appId, openId])
+  @@index([appId, unionId])
+  @@index([appId, needsSync])
+}
