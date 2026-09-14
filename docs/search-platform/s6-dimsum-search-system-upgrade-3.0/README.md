@@ -1,6 +1,8 @@
 # S6 · DimSum 搜索体系升级 3.0 实施文档
 
-状态：数据库、媒体回填、首批内容属性标记和现有 Search API 兼容升级已上线；前端交互和跨团队联调待实施
+**2026-09-13 规则修正：内容属性属于语料集，单条语料继承；活动创建时自动建立专属语料集。下文条目级属性描述为历史方案，以 [13 语料集属性实施记录](13-dataset-content-attribute-implementation.md) 为准。本次代码已完成本地验证，生产数据库已按用户授权完成 pull/backfill/push，旧字段已删除；应用尚未部署。**
+
+状态：数据库、媒体回填、首批内容属性标记和现有 Search API 兼容升级已有上线记录；媒体 UI 已合入本地 main。Agent 分类回写、分享权限与跨团队联调尚待补齐，详见 12 剩余开发记录（2026-09-11 核对，未重验生产）。
 业务基线：`S6 - DimSum 搜索体系升级 3.0.md`
 技术负责人：Fynn
 
@@ -31,6 +33,8 @@ S6 数据库基础已于 2026-08-28 在 Production 完成：新增 `content_attr
 
 | 文档 | 主要读者 | 用途 |
 |---|---|---|
+| [12-remaining-development-and-acceptance.md](12-remaining-development-and-acceptance.md) | Fynn、AW、Agent、QA | 2026-09-11 本地代码核对后的剩余开发、联调、验收与延后范围 |
+| [Agent 新旧数据处理对比](../agent-cleaning-old-vs-search-3.0.md) | 产品、Fynn、Agent | 旧清洗数据底座、新分类职责、已执行回填与表变更 |
 | [00-production-database-analysis.md](00-production-database-analysis.md) | Fynn、后端、DBA | Production 数据库真实结构、数量、覆盖率和 S6 建模结论 |
 | [00a-requirement-implementation-traceability.md](00a-requirement-implementation-traceability.md) | 产品、Fynn、后端 | 逐项判断本期需求、现有复用、必要新增和延后范围 |
 | [00b-production-media-data-analysis-and-design.md](00b-production-media-data-analysis-and-design.md) | Fynn、后端、DBA | Production 媒体组合、新旧结构重叠及多值派生列设计 |

@@ -32,7 +32,7 @@ const OFFLINE_NEIGHBORS_MAX_RANK = parsePositiveIntegerEnvironment(
   32,
 );
 const SEARCH_CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  "Cache-Control": "no-store",
 } as const;
 const SEARCH_NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
 const toSimplified = OpenCC.Converter({ from: "hk", to: "cn" });
@@ -116,7 +116,7 @@ function buildContentAttributeFilter(
   contentAttribute: ContentAttributeFilter | null,
 ): Prisma.Sql {
   return contentAttribute
-    ? Prisma.sql`and ${column} = ${contentAttribute}`
+    ? Prisma.sql`and exists (select 1 from public.cantonese_categories dataset_scope where dataset_scope.name = ${column} and dataset_scope.content_attribute = ${contentAttribute})`
     : Prisma.empty;
 }
 
@@ -247,7 +247,7 @@ async function fetchPrimarySearchRows(
         from public.cantonese_corpus_all c
         where ${buildPrimaryMatchCondition(query)}
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             contentAttribute,
           )}
           ${directDatasetFilter}
@@ -286,7 +286,7 @@ async function fetchPrimarySearchRows(
         entry.category_display_name,
         entry.editable_level,
         entry.lifecycle_stage,
-        scope.content_attribute,
+        (select ds.content_attribute from public.cantonese_categories ds where ds.name = scope.category) as content_attribute,
         scope.media_types,
         entry.liked_num,
         entry.bookmark_num,
@@ -355,7 +355,7 @@ async function fetchAggregatedSearchRows(params: {
         left join content_categories parent on parent.id = child.parent_id
         where ${buildPrimaryMatchCondition(params.query)}
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             params.contentAttribute,
           )}
         order by
@@ -432,7 +432,7 @@ async function fetchAggregatedSearchRows(params: {
         join cantonese_corpus_all c on c.id = sc.id
         where true
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             params.contentAttribute,
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
@@ -553,7 +553,7 @@ async function fetchAggregatedSearchRows(params: {
           select 1 from similar_exclusion_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             params.contentAttribute,
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
@@ -592,7 +592,7 @@ async function fetchAggregatedSearchRows(params: {
           cc.nickname as category_display_name,
           cc.editable_level as editable_level,
           c.lifecycle_stage,
-          c.content_attribute,
+          cc.content_attribute,
           c.media_types,
           c.liked_num,
           c.bookmark_num,
@@ -775,7 +775,7 @@ async function fetchSemanticSearchRows(params: {
         left join content_categories parent on parent.id = child.parent_id
         where ${primarySeedCondition}
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             params.contentAttribute,
           )}
         order by
@@ -802,7 +802,7 @@ async function fetchSemanticSearchRows(params: {
           where e.field_type = 'doc'
             and e.corpus_id <> coalesce((select id from primary_seed), -1)
             ${buildContentAttributeFilter(
-              Prisma.sql`candidate.content_attribute`,
+              Prisma.sql`candidate.category`,
               params.contentAttribute,
             )}
           order by e.embedding <=> ${params.queryEmbeddingText}::vector
@@ -838,7 +838,7 @@ async function fetchSemanticSearchRows(params: {
         join cantonese_corpus_all c on c.id = sc.id
         where true
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             params.contentAttribute,
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
@@ -929,7 +929,7 @@ async function fetchSemanticSearchRows(params: {
           select 1 from similar_exclusion_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
-            Prisma.sql`c.content_attribute`,
+            Prisma.sql`c.category`,
             params.contentAttribute,
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
@@ -957,7 +957,7 @@ async function fetchSemanticSearchRows(params: {
           cc.nickname as category_display_name,
           cc.editable_level as editable_level,
           c.lifecycle_stage,
-          c.content_attribute,
+          cc.content_attribute,
           c.media_types,
           c.liked_num,
           c.bookmark_num,

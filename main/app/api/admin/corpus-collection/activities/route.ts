@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth";
+import { ActivityCreationConflict, createActivityWithDataset, parseContentAttribute, type ContentAttribute } from "@/lib/dataset-management";
 import { prisma } from "@/lib/prisma";
 import {
   parseActivityMediaRequirements,
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_activities.findMany({
         where,
-        include: { _count: { select: { submissions: true } } },
+        include: { dataset: true, _count: { select: { submissions: true } } },
         orderBy: { created_at: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -62,7 +63,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return requireAdmin(req, async (_req, userId) => {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Invalid activity payload" }, { status: 400 });
+    let contentAttribute: ContentAttribute;
+    const creationKey = body.creationKey;
+    if (typeof creationKey !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(creationKey)) return NextResponse.json({ error: "A UUID creationKey is required" }, { status: 400 });
 
     let textFields: ReturnType<typeof parseActivityTextFields>;
     let startsAt: Date | null;
@@ -70,6 +75,7 @@ export async function POST(req: NextRequest) {
     let mediaRequirements: Prisma.InputJsonValue;
     let tags: Prisma.InputJsonValue;
     try {
+      contentAttribute = parseContentAttribute(body.contentAttribute);
       textFields = parseActivityTextFields(body, { requireTitle: true });
       tags = parseActivityTags(body.tags, { required: true }) ?? [];
       const parsedWindow = parseActivityWindow(body.startsAt, body.endsAt);
@@ -98,8 +104,15 @@ export async function POST(req: NextRequest) {
       created_by: userId,
     } as Prisma.corpus_collection_activitiesUncheckedCreateInput;
 
-    const activity = await prisma.corpus_collection_activities.create({ data });
-
-    return NextResponse.json(serializeActivity(activity), { status: 201 });
+    try {
+      const { activity, replayed } = await createActivityWithDataset(prisma, data, contentAttribute, creationKey);
+      return NextResponse.json(serializeActivity(activity), { status: replayed ? 200 : 201 });
+    } catch (error) {
+      if (error instanceof ActivityCreationConflict || (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
+        return NextResponse.json({ error: "Activity creation conflict; use the same details when retrying" }, { status: 409 });
+      }
+      console.error("Activity creation failed", error instanceof Error ? error.name : "UnknownError");
+      return NextResponse.json({ error: "Failed to create activity" }, { status: 500 });
+    }
   });
 }

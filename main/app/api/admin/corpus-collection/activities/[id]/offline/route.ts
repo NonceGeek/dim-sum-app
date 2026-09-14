@@ -11,6 +11,7 @@ export async function POST(req: NextRequest, context: AppRouteContext) {
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
     const activity = await prisma.corpus_collection_activities.update({
       where: { id },
+      include: { dataset: true },
       data: { status: "offline" },
     });
     return NextResponse.json(serializeActivity(activity));

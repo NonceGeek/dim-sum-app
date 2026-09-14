@@ -113,30 +113,33 @@ model api_key {
 }
 
 model cantonese_categories {
-  id                   BigInt                    @default(autoincrement())
-  name                 String                    @unique
+  id                   BigInt                        @default(autoincrement())
+  name                 String                        @unique
   nickname             String?
   description          String?
-  likes                BigInt?                   @default(0)
-  created_at           DateTime                  @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime?                 @default(now()) @db.Timestamp(6)
+  likes                BigInt?                       @default(0)
+  created_at           DateTime                      @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?                     @default(now()) @db.Timestamp(6)
   cover                String?
   link                 String?
   tags                 Json?
-  pinned               Boolean                   @default(false)
-  editable_level       BigInt                    @default(0)
-  if_in_all_data       Boolean                   @default(false)
-  related              Json                      @default("{\"apps\": [], \"links\": []}")
-  size                 Float?                    @db.Real
-  taggers              Json                      @default("[]")
-  sorting              BigInt                    @default(0)
-  status               CategoryStatus            @default(RAW)
-  is_public            Boolean                   @default(true)
-  recommend_words      Json                      @default("[]")
+  pinned               Boolean                       @default(false)
+  editable_level       BigInt                        @default(0)
+  if_in_all_data       Boolean                       @default(false)
+  related              Json                          @default("{\"apps\": [], \"links\": []}")
+  size                 Float?                        @db.Real
+  taggers              Json                          @default("[]")
+  sorting              BigInt                        @default(0)
+  status               CategoryStatus                @default(RAW)
+  is_public            Boolean                       @default(true)
+  recommend_words      Json                          @default("[]")
+  content_attribute    String                        @default("unclassified")
   cantonese_corpus_all cantonese_corpus_all[]
+  activity             corpus_collection_activities?
   userPermissions      user_corpus_permissions[]
 
   @@id([id, name])
+  @@index([content_attribute])
 }
 
 model cantonese_corpus_all {
@@ -153,9 +156,8 @@ model cantonese_corpus_all {
   view_num                      BigInt                       @default(0)
   updated_at                    DateTime                     @default(now()) @db.Timestamptz(6)
   lifecycle_stage               String                       @default("draft")
-  content_attribute             String                       @default("unclassified")
-  media_types                   String[]                     @default(["text"])
   structured_note               Json?
+  media_types                   String[]                     @default(["text"])
   cantonese_categories          cantonese_categories         @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
   corpus_category               corpus_category?
   embedding_neighbors_as_source corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_source")
@@ -166,8 +168,7 @@ model cantonese_corpus_all {
 
   @@id([id, data])
   @@index([data], map: "cantonese_corpus_all_data_pgroonga_idx")
-  @@index([content_attribute], map: "cantonese_corpus_all_content_attribute_idx")
-  @@index([media_types], type: Gin, map: "cantonese_corpus_all_media_types_gin_idx")
+  @@index([media_types], map: "cantonese_corpus_all_media_types_gin_idx", type: Gin)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -599,7 +600,11 @@ model corpus_collection_activities {
   tags                       Json                                       @default("[]")
   display_uuid               String                                     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   questionnaire_gate_enabled Boolean                                    @default(true)
+  dataset_name               String                                     @unique
+  creation_key               String?                                    @unique @db.Uuid
+  creation_hash              String?
   creator                    User?                                      @relation(fields: [created_by], references: [id])
+  dataset                    cantonese_categories                       @relation(fields: [dataset_name], references: [name], onUpdate: Restrict)
   questionnaire_permissions  corpus_collection_activity_permissions[]
   questionnaire_events       corpus_collection_questionnaire_events[]
   questionnaire_journeys     corpus_collection_questionnaire_journeys[]
@@ -1183,7 +1188,8 @@ model app_lib_h5_survey {
   content    Json?     @default("{}")
   created_at DateTime  @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  wechat_id  String?
+  phone      String?
+  event_id   String?
 
   @@ignore
 }

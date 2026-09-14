@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Check, Copy, Eye, Image, Loader2, Plus, Search, Upload } from "lucide-react";
@@ -43,6 +43,7 @@ type Activity = {
   id: string;
   displayUuid: string;
   title: string;
+  dataset?: { name: string; nickname: string | null; contentAttribute: string } | null;
   tags?: string[];
   description?: string | null;
   rules?: string | null;
@@ -94,11 +95,13 @@ export default function CorpusCollectionActivitiesPage() {
     { value: "video", label: t("media.video.label"), description: t("media.video.description") },
     { value: "audio", label: t("media.audio.label"), description: t("media.audio.description") },
   ];
+  const creationRequest = useRef<{ key: string; payload: string } | null>(null);
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
   const [qMode, setQMode] = useState("title");
   const [form, setForm] = useState({
     title: "",
+    contentAttribute: "",
     tag: "",
     description: "",
     rules: "",
@@ -127,19 +130,23 @@ export default function CorpusCollectionActivitiesPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      const payload = JSON.stringify({
+        ...form,
+        tags: [form.tag.trim()],
+        tag: undefined,
+        startsAt: activityDateTimeToISOString(form.startsAt),
+        endsAt: activityDateTimeToISOString(form.endsAt),
+        bannerUrl: form.bannerUrl || undefined,
+        requiredMediaTypes: undefined,
+        mediaRequirements: { requiredTypes: form.requiredMediaTypes },
+      });
+      if (!creationRequest.current || creationRequest.current.payload !== payload) {
+        creationRequest.current = { key: crypto.randomUUID(), payload };
+      }
       const response = await fetch("/api/admin/corpus-collection/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          tags: [form.tag.trim()],
-          tag: undefined,
-          startsAt: activityDateTimeToISOString(form.startsAt),
-          endsAt: activityDateTimeToISOString(form.endsAt),
-          bannerUrl: form.bannerUrl || undefined,
-          requiredMediaTypes: undefined,
-          mediaRequirements: { requiredTypes: form.requiredMediaTypes },
-        }),
+        body: JSON.stringify({ ...JSON.parse(payload), creationKey: creationRequest.current.key }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
@@ -149,8 +156,11 @@ export default function CorpusCollectionActivitiesPage() {
     },
     onSuccess: () => {
       toast.success(t("messages.created"));
+      creationRequest.current = null;
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
       setForm({
         title: "",
+        contentAttribute: "",
         tag: "",
         description: "",
         rules: "",
@@ -233,6 +243,8 @@ export default function CorpusCollectionActivitiesPage() {
 
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (createMutation.isPending) return;
+    if (!form.contentAttribute) { toast.error(t("dataset.required")); return; }
     if (!form.title.trim()) {
       toast.error(t("validation.titleRequired"));
       return;
@@ -287,14 +299,23 @@ export default function CorpusCollectionActivitiesPage() {
           </CardHeader>
           <CardContent>
             <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
+              <fieldset disabled={createMutation.isPending} className="contents">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="activity-content-attribute">{t("dataset.attribute")}</Label>
+                <select id="activity-content-attribute" required className="w-full rounded-md border bg-background p-2" value={form.contentAttribute} onChange={(e) => setForm({ ...form, contentAttribute: e.target.value })}>
+                  <option value="" disabled>{t("dataset.choose")}</option>
+                  <option value="oral">{t("dataset.oral")}</option><option value="cultural_knowledge">{t("dataset.cultural_knowledge")}</option>
+                </select><p className="text-sm text-muted-foreground">{t("dataset.help")}</p>
+              </div>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <Label>{t("fields.title")}</Label>
+                  <Label htmlFor="activity-title">{t("fields.title")}</Label>
                   <span className="text-xs text-muted-foreground">
                     {countCharacters(form.title)}/{textLimits.title}
                   </span>
                 </div>
                 <Input
+                  id="activity-title"
                   value={form.title}
                   maxLength={textLimits.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -386,6 +407,7 @@ export default function CorpusCollectionActivitiesPage() {
                   {t("actions.create")}
                 </Button>
               </div>
+              </fieldset>
             </form>
           </CardContent>
         </Card>
@@ -523,6 +545,9 @@ export default function CorpusCollectionActivitiesPage() {
                   <TableRow key={activity.id}>
                     <TableCell>
                       <div className="font-medium text-foreground">{activity.title}</div>
+                      {activity.dataset && <a className="block text-sm underline text-muted-foreground" href={`/${locale}/admin/categories`}>
+                        {activity.dataset.nickname || activity.dataset.name} · {t(`dataset.${activity.dataset.contentAttribute}`)}
+                      </a>}
                       {activity.tags?.[0] && (
                         <Badge variant="secondary" className="mt-1">
                           {activity.tags[0]}
@@ -534,7 +559,7 @@ export default function CorpusCollectionActivitiesPage() {
                       <code className="text-xs text-muted-foreground">{activity.displayUuid}</code>
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColor[activity.status] ?? "bg-secondary"}>{t(`status.`)}</Badge>
+                      <Badge className={statusColor[activity.status] ?? "bg-secondary"}>{t(`status.${activity.status}`)}</Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">

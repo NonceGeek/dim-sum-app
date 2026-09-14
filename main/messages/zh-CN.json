@@ -575,7 +575,7 @@
       "dashboard": "概览",
       "users": "用户管理",
       "administrators": "管理员管理",
-      "categories": "分类管理",
+      "categories": "语料集管理",
       "permissions": "权限管理",
       "corpusData": "语料数据",
       "corpusCollection": "语料采集",
@@ -674,11 +674,47 @@
     "pagination": "第 {page} 页，共 {total} 页", "errors": { "fetch": "获取审计日志失败" }
   },
   "AdminCategories": {
-    "title": "分类管理", "description": "管理语料分类及其可见性设置。",
-    "search": { "title": "搜索分类", "placeholder": "按名称或别名搜索...", "button": "搜索" },
-    "list": { "title": "分类列表（{count}）", "description": "设置每个分类的公开可见性" },
-    "columns": { "name": "名称", "nickname": "别名", "entries": "条目数", "permissions": "权限数", "status": "状态", "public": "公开", "created": "创建时间" },
-    "messages": { "updated": "分类可见性已更新" }, "errors": { "fetch": "获取分类失败", "update": "更新分类失败" }
+    "title": "语料集管理",
+    "description": "管理语料集别名、内容属性和公开状态。",
+    "search": {
+      "title": "搜索语料集",
+      "placeholder": "按名称或别名搜索...",
+      "button": "搜索"
+    },
+    "list": {
+      "title": "语料集列表（{count}）",
+      "description": "设置每个语料集的公开可见性"
+    },
+    "columns": {
+      "name": "名称",
+      "nickname": "别名",
+      "entries": "条目数",
+      "permissions": "权限数",
+      "status": "状态",
+      "public": "公开",
+      "created": "创建时间"
+    },
+    "messages": {
+      "updated": "语料集可见性已更新"
+    },
+    "errors": {
+      "fetch": "获取语料集失败",
+      "update": "更新语料集失败"
+    },
+    "dataset": {
+      "attribute": "内容属性",
+      "activity": "关联活动",
+      "actions": "操作",
+      "edit": "编辑语料集",
+      "help": "别名用于显示，内部标识保持不变。",
+      "description": "说明",
+      "unclassified": "待配置",
+      "oral": "口语语料",
+      "cultural_knowledge": "文化知识",
+      "impact": "修改属性将影响此语料集下 {count} 条正式语料的搜索归属。",
+      "cancel": "取消",
+      "save": "保存"
+    }
   },
   "AdminCorpus": {
     "title": "语料数据", "description": "管理粤语语料条目及标注。",
@@ -725,28 +761,119 @@
   "CorpusCollectionActivities": {
     "title": "活动管理",
     "description": "创建采集活动、生成活动封面并管理发布状态。",
-    "create": { "title": "创建活动", "description": "配置新的公开采集活动。" },
+    "create": {
+      "title": "创建活动",
+      "description": "配置新的公开采集活动。"
+    },
     "fields": {
-      "title": "活动标题", "tag": "活动标签", "tagPlaceholder": "饮食文化", "tagHelp": "请正好填写 4 个字。例如：饮食文化、粤语表达、城市记忆、传统技艺",
-      "description": "活动简介", "rules": "活动规则", "startsAt": "开始时间", "endsAt": "结束时间", "bannerUrl": "封面地址",
-      "requiredMediaTypes": "必需媒体类型", "mediaHelp": "小程序将根据此配置显示对应的上传控件。"
+      "title": "活动标题",
+      "tag": "活动标签",
+      "tagPlaceholder": "饮食文化",
+      "tagHelp": "请正好填写 4 个字。例如：饮食文化、粤语表达、城市记忆、传统技艺",
+      "description": "活动简介",
+      "rules": "活动规则",
+      "startsAt": "开始时间",
+      "endsAt": "结束时间",
+      "bannerUrl": "封面地址",
+      "requiredMediaTypes": "必需媒体类型",
+      "mediaHelp": "小程序将根据此配置显示对应的上传控件。"
     },
     "media": {
-      "image": { "label": "图片", "description": "该活动需要上传图片。" },
-      "video": { "label": "视频", "description": "该活动需要上传视频。" },
-      "audio": { "label": "音频", "description": "该活动需要上传录音。" }
+      "image": {
+        "label": "图片",
+        "description": "该活动需要上传图片。"
+      },
+      "video": {
+        "label": "视频",
+        "description": "该活动需要上传视频。"
+      },
+      "audio": {
+        "label": "音频",
+        "description": "该活动需要上传录音。"
+      }
     },
-    "banner": { "title": "AI 活动封面", "promptPlaceholder": "粤语童谣月光光主题活动，温馨童趣，荔湾骑楼...", "description": "生成临时封面候选图，然后将选中的图片上传到 OSS，获得永久地址。", "candidateAlt": "候选图 {index}", "candidate": "候选图 {index}", "expires": "{date} 过期", "permanentUrl": "永久 OSS 地址", "urlHelp": "该地址已自动填入封面地址字段，也可以在此复制。" },
-    "list": { "title": "活动列表", "description": "筛选并发布采集活动。" },
-    "filters": { "uuidPlaceholder": "活动 UUID 片段", "titlePlaceholder": "搜索活动标题", "titleContains": "标题包含", "activityUuid": "活动 UUID" },
-    "status": { "all": "全部状态", "draft": "草稿", "published": "已发布", "offline": "已下线", "archived": "已归档" },
-    "columns": { "title": "标题", "uuid": "UUID", "status": "状态", "window": "活动时间", "submissions": "投稿数", "actions": "操作" },
-    "actions": { "create": "创建", "generate": "生成", "uploadOss": "上传到 OSS 并获取地址", "preview": "预览", "publish": "发布", "offline": "下线" },
-    "window": { "anytime": "不限开始时间", "open": "长期开放" },
-    "validation": { "titleRequired": "请填写活动标题", "titleLength": "活动标题不能超过 {count} 个字", "tagRequired": "请填写活动标签", "tagLength": "活动标签必须正好为 {count} 个字", "descriptionLength": "活动简介不能超过 {count} 个字", "rulesLength": "活动规则不能超过 {count} 个字", "dateOrder": "开始时间必须早于结束时间", "mediaRequired": "请至少选择一种媒体类型" },
-    "messages": { "created": "活动已创建", "statusUpdated": "活动状态已更新", "generated": "封面候选图已生成", "uploaded": "封面已上传到 OSS", "copied": "地址已复制" },
-    "errors": { "load": "加载活动失败", "create": "创建活动失败", "status": "更新活动状态失败", "generate": "生成封面候选图失败", "upload": "上传封面失败" },
-    "loading": "加载中...", "empty": "未找到活动。"
+    "banner": {
+      "title": "AI 活动封面",
+      "promptPlaceholder": "粤语童谣月光光主题活动，温馨童趣，荔湾骑楼...",
+      "description": "生成临时封面候选图，然后将选中的图片上传到 OSS，获得永久地址。",
+      "candidateAlt": "候选图 {index}",
+      "candidate": "候选图 {index}",
+      "expires": "{date} 过期",
+      "permanentUrl": "永久 OSS 地址",
+      "urlHelp": "该地址已自动填入封面地址字段，也可以在此复制。"
+    },
+    "list": {
+      "title": "活动列表",
+      "description": "筛选并发布采集活动。"
+    },
+    "filters": {
+      "uuidPlaceholder": "活动 UUID 片段",
+      "titlePlaceholder": "搜索活动标题",
+      "titleContains": "标题包含",
+      "activityUuid": "活动 UUID"
+    },
+    "status": {
+      "all": "全部状态",
+      "draft": "草稿",
+      "published": "已发布",
+      "offline": "已下线",
+      "archived": "已归档"
+    },
+    "columns": {
+      "title": "标题",
+      "uuid": "UUID",
+      "status": "状态",
+      "window": "活动时间",
+      "submissions": "投稿数",
+      "actions": "操作"
+    },
+    "actions": {
+      "create": "创建",
+      "generate": "生成",
+      "uploadOss": "上传到 OSS 并获取地址",
+      "preview": "预览",
+      "publish": "发布",
+      "offline": "下线"
+    },
+    "window": {
+      "anytime": "不限开始时间",
+      "open": "长期开放"
+    },
+    "validation": {
+      "titleRequired": "请填写活动标题",
+      "titleLength": "活动标题不能超过 {count} 个字",
+      "tagRequired": "请填写活动标签",
+      "tagLength": "活动标签必须正好为 {count} 个字",
+      "descriptionLength": "活动简介不能超过 {count} 个字",
+      "rulesLength": "活动规则不能超过 {count} 个字",
+      "dateOrder": "开始时间必须早于结束时间",
+      "mediaRequired": "请至少选择一种媒体类型"
+    },
+    "messages": {
+      "created": "活动已创建",
+      "statusUpdated": "活动状态已更新",
+      "generated": "封面候选图已生成",
+      "uploaded": "封面已上传到 OSS",
+      "copied": "地址已复制"
+    },
+    "errors": {
+      "load": "加载活动失败",
+      "create": "创建活动失败",
+      "status": "更新活动状态失败",
+      "generate": "生成封面候选图失败",
+      "upload": "上传封面失败"
+    },
+    "loading": "加载中...",
+    "empty": "未找到活动。",
+    "dataset": {
+      "attribute": "语料集内容属性",
+      "required": "请选择语料集内容属性",
+      "choose": "请选择",
+      "oral": "口语语料",
+      "cultural_knowledge": "文化知识",
+      "unclassified": "待配置",
+      "help": "创建活动时会自动创建一个同名语料集，后续可在语料集管理中修改别名和属性。"
+    }
   },
   "Validation": {
     "enterCharacter": "请输入字符",

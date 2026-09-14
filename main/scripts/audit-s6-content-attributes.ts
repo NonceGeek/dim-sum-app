@@ -38,7 +38,7 @@ async function main() {
       count(*)::bigint as total_rows,
       count(distinct corpus.category)::bigint as source_count,
       count(*) filter (where source.name is null)::bigint as missing_source_count,
-      count(*) filter (where corpus.content_attribute = 'unclassified')::bigint
+      count(*) filter (where source.content_attribute = 'unclassified')::bigint
         as unclassified_count
     from public.cantonese_corpus_all corpus
     left join public.cantonese_categories source
