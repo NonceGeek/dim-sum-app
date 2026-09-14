@@ -66,7 +66,7 @@ systemctl enable --now dimsum-wechat-sync-pending.timer dimsum-wechat-sync-full.
 systemctl list-timers 'dimsum-wechat-sync-*'
 ```
 
-增量每五分钟、全量每天北京时间 03:20。两个任务共用 flock 锁；锁忙时本次跳过。
+增量每小时、全量每天北京时间 03:20。两个任务共用 flock 锁；锁忙时本次跳过。
 任务运行上限两小时，容器限制 512 MiB 内存和 0.5 CPU；超时后待后续执行重试。
 全量同步为一轮完整扫描，大规模关注者需再实现持久化游标。
 
