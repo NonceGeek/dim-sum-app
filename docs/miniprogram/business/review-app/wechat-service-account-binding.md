@@ -1,5 +1,36 @@
 # 服务号关注者自动绑定与 agent 推送
 
+## 当前状态与下一步（2026-09-13 更新）
+
+**代码与生产数据库已上线，自动绑定业务尚未启用。**
+
+已完成：
+
+- [x] 自动绑定代码通过 PR #443 合入 `main`，合并提交 `a36a0ad`。
+- [x] 生产关注者表、三个索引及迁移登记完成，没有修改用户或语料数据；无需重复执行本次迁移。
+- [x] Vercel 生产部署 `dpl_E3MrKQiyY9guoSd2ZxMGcY46Lkpv` 已 Ready，确认 `search.aidimsum.com` 指向该版本（后续正常发布可替换此部署）。
+- [x] 通过正式域名验证回调返回 HTTP 503 `Service account callback is not configured`，符合环境变量尚未配置的状态。
+- [x] 本机 `/etc/hosts` 的域名覆盖已按用户要求移除，DNS 缓存已刷新；随后使用正常域名访问验证线上响应。
+
+接下来按以下顺序执行：
+
+1. **确认微信配置前置条件**：服务号和 Review App 绑定同一个微信开放平台账号；检查现有消息回调 URL，如已承载客服/自动回复，先合并处理逻辑。
+2. **配置生产环境变量并重新部署**：准备服务号 AppID、现有 AppSecret、原始 ID（`gh_...`）、回调 Token 和 EncodingAESKey，填入下文 `WECHAT_SERVICE_*` 变量。凭据仅存服务端，不提交 Git、不在聊天中传递。
+3. **启用微信后台回调**：填写正式回调 URL、相同 Token/EncodingAESKey，使用安全模式与 XML，完成地址校验。检查用户信息/关注者列表接口权限，将同步进程的出口公网 IP 加入白名单。
+4. **首次同步历史关注者**：执行 `pnpm sync:wechat-service --full`，核对 bound/unmatched/missing_unionid/conflict/failed 计数；这一操作只维护绑定，不发送消息。
+5. **部署定时任务**：选定常驻后端或定时作业平台，配置每分钟 `--pending`、每日 `--full`，防止作业重叠并监控失败。当前只有 CLI 实现，尚未部署调度器；仅发布 Vercel API 不会自动运行同步。
+6. **真实账号验收**：测试先关注后登录、先登录后关注、取消关注与再次关注，核对 `Account.openIdWxService` 自动写入/清空及标注角色不变。
+7. **agent 推送联调**：确认 agent 读取同一数据库与字段、没有缓存旧地址、采用相同服务号 AppID；用测试标注员验证合法消息发送及小程序任务跳转。当前尚未执行真实推送。
+
+上述第 1—7 项仍待完成；此文档不是微信后台已经配置完成的凭据。
+
+## Git 发布约定
+
+统一执行 `dev → PR → main`：先同步最新远程状态，在 `dev` 提交并推送，再提 `dev → main` PR；合并后将 `main` 快进同步回 `dev`，核验双方没有独有提交。
+
+PR #443 曾从功能分支直接合入 `main`，不符合用户确认的流程。本次将已发布提交同步回 `dev`，本文档与仓库 `AGENTS.md` 的修订按 `dev → main` PR 发布。原工作区的未提交改动保留。
+
+
 ## 目标与现状
 
 用户不再手工提供 OpenID。后端接收服务号关注事件，保存服务号 OpenID，通过 UnionID 关联平台账号，并维护 `Account.openIdWxService`，供 agent 继续直接读取数据库推送。
@@ -109,9 +140,9 @@ WECHAT_TEST_DATABASE_URL='postgresql://USER@127.0.0.1:PORT/TEST_DB' pnpm test:we
 用户授权先进行 Git 提交、生产迁移与线上发布，再配置微信后台与定时任务。
 
 - 发布基线：`origin/main` 的 `1d0ed87`；独立分支 `feat/wechat-service-binding`，功能提交 `3b9a7c1`。
-- 发布入口：[PR #443](https://github.com/NonceGeek/dim-sum-app/pull/443)，通过 main 的 Vercel 自动部署流程发布；构建与合并状态以 PR 检查为准。
+- 发布入口：[PR #443](https://github.com/NonceGeek/dim-sum-app/pull/443)，已合并为 `a36a0ad`，Vercel 生产部署 Ready，并已核验正式域名回调响应。
 - 生产目标：与 Vercel `aid-im-sum-lab/dim-sum-app` Production 环境关联的数据库。
 - 只读确认原 `Account.userId / unionId / openIdWxService` 字段存在，新关注者表不存在后，在事务中执行本次 SQL（5 秒锁超时、30 秒语句超时）。仅创建新表和三个索引；未执行所有历史待迁移项，也未修改用户或语料数据。
 - 执行 `prisma migrate resolve --applied 20260913090000_add_wechat_service_followers` 登记本次迁移，复核表存在且迁移完成。
-- 当前 Production 未配置 `WECHAT_SERVICE_*`，因此代码发布后回调应返回 HTTP 503“Service account callback is not configured”，不会提前启用绑定。
+- 当前 Production 未配置 `WECHAT_SERVICE_*`，已验证发布后的回调返回 HTTP 503“Service account callback is not configured”，不会提前启用绑定。
 - 后续：配置开放平台绑定与微信回调、服务号环境变量、同步任务，完成真实账号和推送联调。
