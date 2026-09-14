@@ -566,3 +566,9 @@ const { summary, assignees } = response.data;
 | `cancelled` | 已取消 |
 
 ---
+
+## 三、服务号回调与自动绑定
+
+新增 `GET/POST /api/public/wechat/service-account`，专供微信服务器验证与推送关注事件，不使用小程序 JWT。必须验证微信签名；默认使用 AES 安全模式。
+
+回调参数、部署配置、存量关注者同步和 agent 数据库兼容说明见 [服务号自动绑定方案](./wechat-service-account-binding.md)。小程序任务接口保持不变。

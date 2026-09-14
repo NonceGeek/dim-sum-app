@@ -365,3 +365,5 @@ Review App 接口错误分为三类：
 接口请求、响应和错误码请参见：
 
 - [`./api.md`](./api.md)
+
+服务号关注者自动获取 OpenID、绑定平台账号和部署同步任务，参见 [服务号自动绑定方案](./wechat-service-account-binding.md)。

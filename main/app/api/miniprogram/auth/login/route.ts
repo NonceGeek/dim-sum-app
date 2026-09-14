@@ -345,6 +345,17 @@ async function handleWeChatLogin(
     }
   }
 
+  // Covers users who followed the service account before their first login.
+  // Roll out the follower table before enabling WECHAT_SERVICE_APPID.
+  if (process.env.WECHAT_SERVICE_APPID) {
+    try {
+      const { WechatFollowerStore } = await import("@/lib/wechat-service/store");
+      await new WechatFollowerStore(prisma, process.env.WECHAT_SERVICE_APPID).bindUnionId(unionid);
+    } catch {
+      console.error("WeChat service account binding deferred; login continues");
+    }
+  }
+
   // Generate tokens
   const tokenPayload = {
     userId: user.id,
