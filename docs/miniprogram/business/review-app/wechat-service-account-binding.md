@@ -33,7 +33,7 @@ agent 仍按平台用户与角色分配任务，读取 `Account.openIdWxService`
 
 ## 部署与验证
 
-本次已实现后端回调、持久化关注者表、UnionID 自动绑定、取消关注清理、登录补绑定和 CLI 同步任务。未部署到线上，未修改生产数据库、微信后台配置或发送消息。
+本次已实现后端回调、持久化关注者表、UnionID 自动绑定、取消关注清理、登录补绑定和 CLI 同步任务。初次本地实现时未部署、未修改生产数据库；后续生产迁移与发布记录见文末。微信后台配置和真实消息发送仍未执行。
 
 ### 环境变量
 
@@ -102,3 +102,16 @@ WECHAT_TEST_DATABASE_URL='postgresql://USER@127.0.0.1:PORT/TEST_DB' pnpm test:we
 ```
 
 2026-09-13 已在隔离本地 PostgreSQL 中应用本次新增 SQL 迁移，并通过全部 8 个用例（无跳过），覆盖签名、AES 解密与 AppID 校验、令牌缓存/重试、分页、身份冲突、先关注后登录、取消关注、重复/乱序事件、网络失败及取消关注竞态。TypeScript 全量类型检查通过。尚未连接真实服务号进行端到端联调。
+
+
+## 2026-09-13 生产迁移与发布执行记录
+
+用户授权先进行 Git 提交、生产迁移与线上发布，再配置微信后台与定时任务。
+
+- 发布基线：`origin/main` 的 `1d0ed87`；独立分支 `feat/wechat-service-binding`，功能提交 `3b9a7c1`。
+- 发布入口：[PR #443](https://github.com/NonceGeek/dim-sum-app/pull/443)，通过 main 的 Vercel 自动部署流程发布；构建与合并状态以 PR 检查为准。
+- 生产目标：与 Vercel `aid-im-sum-lab/dim-sum-app` Production 环境关联的数据库。
+- 只读确认原 `Account.userId / unionId / openIdWxService` 字段存在，新关注者表不存在后，在事务中执行本次 SQL（5 秒锁超时、30 秒语句超时）。仅创建新表和三个索引；未执行所有历史待迁移项，也未修改用户或语料数据。
+- 执行 `prisma migrate resolve --applied 20260913090000_add_wechat_service_followers` 登记本次迁移，复核表存在且迁移完成。
+- 当前 Production 未配置 `WECHAT_SERVICE_*`，因此代码发布后回调应返回 HTTP 503“Service account callback is not configured”，不会提前启用绑定。
+- 后续：配置开放平台绑定与微信回调、服务号环境变量、同步任务，完成真实账号和推送联调。
