@@ -1,0 +1,11 @@
+[Unit]
+Description=Reconcile WeChat followers daily
+
+[Timer]
+OnCalendar=*-*-* 03:20:00 Asia/Shanghai
+Persistent=true
+RandomizedDelaySec=60
+Unit=dimsum-wechat-sync@full.service
+
+[Install]
+WantedBy=timers.target
