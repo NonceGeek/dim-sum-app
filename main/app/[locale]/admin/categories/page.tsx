@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Globe, Lock, Users, Database } from "lucide-react";
+import { Search, Globe, Lock, Users, Database, Pencil } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -230,9 +231,9 @@ export default function AdminCategoriesPage() {
                     </TableCell>
                     <TableCell>{t(`dataset.${category.contentAttribute}`)}</TableCell>
                     <TableCell>{category.activity ? <a className="underline" href={`/${locale}/admin/corpus-collection/activities`}>{category.activity.title}</a> : "—"}</TableCell>
-                    <TableCell><Button variant="outline" size="sm" onClick={() => {
+                    <TableCell><Button size="sm" onClick={() => {
                       setEditing(category); setDraft({ nickname: category.nickname || category.name, description: category.description || "", contentAttribute: category.contentAttribute });
-                    }}>{t("dataset.edit")}</Button></TableCell>
+                    }}><Pencil aria-hidden="true" />{t("dataset.edit")}</Button></TableCell>
                     <TableCell className="text-muted-foreground">
                       {category.corpusCount}
                     </TableCell>
@@ -284,16 +285,20 @@ export default function AdminCategoriesPage() {
       </Card>
       <Dialog open={Boolean(editing)} onOpenChange={(open) => { if (!open && !saveMutation.isPending) setEditing(null); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t("dataset.edit")}</DialogTitle><DialogDescription>{t("dataset.help")}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{t("dataset.editTitle")}</DialogTitle><DialogDescription>{t("dataset.help")}</DialogDescription></DialogHeader>
           <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); if (!saveMutation.isPending) saveMutation.mutate(); }}>
             <p className="text-sm text-muted-foreground">{editing?.name}</p>
             <div className="space-y-2"><Label htmlFor="dataset-alias">{t("columns.nickname")}</Label><Input id="dataset-alias" required maxLength={100} value={draft.nickname} onChange={(e) => setDraft({ ...draft, nickname: e.target.value })} /></div>
             <div className="space-y-2"><Label htmlFor="dataset-description">{t("dataset.description")}</Label><Textarea id="dataset-description" maxLength={2000} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></div>
             <div className="space-y-2"><Label htmlFor="dataset-attribute">{t("dataset.attribute")}</Label>
-              <select id="dataset-attribute" className="w-full rounded-md border bg-background p-2" value={draft.contentAttribute} onChange={(e) => setDraft({ ...draft, contentAttribute: e.target.value })}>
-                <option value="unclassified" disabled>{t("dataset.unclassified")}</option>
-                <option value="oral">{t("dataset.oral")}</option><option value="cultural_knowledge">{t("dataset.cultural_knowledge")}</option>
-              </select>
+              <Select value={draft.contentAttribute} onValueChange={(contentAttribute) => setDraft({ ...draft, contentAttribute })} disabled={saveMutation.isPending}>
+                <SelectTrigger id="dataset-attribute" className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unclassified" disabled>{t("dataset.unclassified")}</SelectItem>
+                  <SelectItem value="oral">{t("dataset.oral")}</SelectItem>
+                  <SelectItem value="cultural_knowledge">{t("dataset.cultural_knowledge")}</SelectItem>
+                </SelectContent>
+              </Select>
               <p className="text-sm text-muted-foreground">{t("dataset.impact", { count: editing?.corpusCount ?? 0 })}</p>
             </div>
             <DialogFooter><Button type="button" variant="outline" disabled={saveMutation.isPending} onClick={() => setEditing(null)}>{t("dataset.cancel")}</Button><Button disabled={saveMutation.isPending || !draft.nickname.trim()} type="submit">{t("dataset.save")}</Button></DialogFooter>

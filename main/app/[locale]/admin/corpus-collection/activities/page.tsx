@@ -302,10 +302,13 @@ export default function CorpusCollectionActivitiesPage() {
               <fieldset disabled={createMutation.isPending} className="contents">
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="activity-content-attribute">{t("dataset.attribute")}</Label>
-                <select id="activity-content-attribute" required className="w-full rounded-md border bg-background p-2" value={form.contentAttribute} onChange={(e) => setForm({ ...form, contentAttribute: e.target.value })}>
-                  <option value="" disabled>{t("dataset.choose")}</option>
-                  <option value="oral">{t("dataset.oral")}</option><option value="cultural_knowledge">{t("dataset.cultural_knowledge")}</option>
-                </select><p className="text-sm text-muted-foreground">{t("dataset.help")}</p>
+                <Select required value={form.contentAttribute} onValueChange={(contentAttribute) => setForm({ ...form, contentAttribute })} disabled={createMutation.isPending}>
+                  <SelectTrigger id="activity-content-attribute" className="w-full"><SelectValue placeholder={t("dataset.choose")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oral">{t("dataset.oral")}</SelectItem>
+                    <SelectItem value="cultural_knowledge">{t("dataset.cultural_knowledge")}</SelectItem>
+                  </SelectContent>
+                </Select><p className="text-sm text-muted-foreground">{t("dataset.help")}</p>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between gap-3">
