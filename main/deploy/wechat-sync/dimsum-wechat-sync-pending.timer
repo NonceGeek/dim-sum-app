@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync pending WeChat followers hourly
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+Persistent=true
+RandomizedDelaySec=20
+Unit=dimsum-wechat-sync@pending.service
+
+[Install]
+WantedBy=timers.target

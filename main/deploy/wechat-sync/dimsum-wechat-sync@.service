@@ -1,0 +1,10 @@
+[Unit]
+Description=DimSum WeChat follower sync (%i)
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/dimsum-wechat-sync/run.sh %i
+TimeoutStartSec=2h

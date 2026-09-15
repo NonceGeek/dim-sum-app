@@ -1,0 +1,18 @@
+# Fallback for this ECS: reuse its existing base without contacting Docker Hub.
+FROM alibaba-cloud-linux-3-registry.cn-hangzhou.cr.aliyuncs.com/alinux3/node:20.16
+USER root
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ARG PRISMA_ENGINES_MIRROR=https://binaries.prisma.sh
+RUN npm install --prefix /opt/node-runtime --no-audit --no-fund node@22.22.1
+ENV PATH="/opt/node-runtime/node_modules/node/bin:${PATH}"
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY prisma/schema.prisma prisma/schema.prisma
+RUN npx prisma generate
+COPY lib lib
+COPY scripts scripts
+COPY preflight.mjs ./
+USER node
+ENV NODE_ENV=production
+CMD ["node", "--import", "tsx", "scripts/sync-wechat-service-followers.ts", "--pending"]
