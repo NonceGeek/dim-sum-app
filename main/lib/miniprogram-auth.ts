@@ -27,6 +27,8 @@ export async function requireMiniprogramAuth(
   req: NextRequest,
   handler: (req: NextRequest, user: MiniprogramTokenPayload) => Promise<NextResponse>
 ): Promise<NextResponse> {
+  let user: MiniprogramTokenPayload;
+
   try {
     const token = extractToken(req);
 
@@ -37,15 +39,15 @@ export async function requireMiniprogramAuth(
       );
     }
 
-    const user = await verifyMiniprogramToken(token);
-
-    return handler(req, user);
-  } catch (error) {
+    user = await verifyMiniprogramToken(token);
+  } catch {
     return NextResponse.json(
       { error: "Invalid or expired token" },
       { status: 401 }
     );
   }
+
+  return handler(req, user);
 }
 
 /**
