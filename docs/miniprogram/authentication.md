@@ -90,12 +90,14 @@ wx.login({
           }
         });
 
-        const { accessToken, refreshToken, user } = loginRes.data;
+        const { accessToken, refreshToken, user, allowedCorpora } = loginRes.data;
 
         // 3. 保存 token 到本地存储
         wx.setStorageSync('accessToken', accessToken);
         wx.setStorageSync('refreshToken', refreshToken);
         wx.setStorageSync('userInfo', user);
+        // 初始化授权列表；后续通过 profile 接口刷新
+        wx.setStorageSync('allowedCorpora', allowedCorpora);
 
         // 4. 跳转到首页
         wx.switchTab({
@@ -146,11 +148,19 @@ wx.login({
       "phoneVerified": true,
       "completedAt": "2026-08-20T08:00:00.000Z"
     }
-  }
+  },
+  "allowedCorpora": [
+    {
+      "category_name": "corpus_a",
+      "permission": "READ"
+    }
+  ]
 }
 ```
 
 `questionnaireStatus` 同时由 `GET /api/miniprogram/user/profile` 返回。语料采集小程序可将其保存在本地用于 UI 分流；活动投稿和自由投稿都需调用 questionnaire `/entry` 准备 journey，自由投稿调用时省略 `activityId`。
+
+`allowedCorpora` 是微信登录和手机号登录均返回的顶层字段，表示登录时的显式语料库授权，无记录时为 `[]`，不自动补充公开语料库或系统管理员的隐含权限。客户端可用于初始化，后续通过 `GET /api/miniprogram/user/profile` 获取最新授权并替换本地列表（包括空数组），无需重新登录。字段定义见[通用接口文档「1.1 小程序登录」](./api-reference.md#11-小程序登录)。
 
 **错误响应**:
 

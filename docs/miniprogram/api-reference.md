@@ -90,12 +90,14 @@ wx.login({
         }
       });
 
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, refreshToken, user, allowedCorpora } = response.data;
 
       // 保存 token
       wx.setStorageSync('accessToken', accessToken);
       wx.setStorageSync('refreshToken', refreshToken);
       wx.setStorageSync('userInfo', user);
+      // 初始化授权列表；后续通过 profile 接口刷新
+      wx.setStorageSync('allowedCorpora', allowedCorpora);
     }
   }
 });
@@ -114,12 +116,14 @@ const response = await wx.request({
   }
 });
 
-const { accessToken, refreshToken, user } = response.data;
+const { accessToken, refreshToken, user, allowedCorpora } = response.data;
 
 // 保存 token
 wx.setStorageSync('accessToken', accessToken);
 wx.setStorageSync('refreshToken', refreshToken);
 wx.setStorageSync('userInfo', user);
+// 初始化授权列表；后续通过 profile 接口刷新
+wx.setStorageSync('allowedCorpora', allowedCorpora);
 ```
 
 #### 成功响应 (200)
@@ -139,7 +143,13 @@ wx.setStorageSync('userInfo', user);
       "phoneVerified": true,
       "completedAt": "2026-08-20T08:00:00.000Z"
     }
-  }
+  },
+  "allowedCorpora": [
+    {
+      "category_name": "corpus_a",
+      "permission": "READ"
+    }
+  ]
 }
 ```
 
@@ -157,6 +167,11 @@ wx.setStorageSync('userInfo', user);
 | `user.questionnaireStatus.completed` | boolean | 是否已有不可变的参赛前问卷档案 |
 | `user.questionnaireStatus.phoneVerified` | boolean | 是否已绑定手机号 |
 | `user.questionnaireStatus.completedAt` | string \| null | 首次完成问卷时间，ISO 8601；未完成时为 `null` |
+| `allowedCorpora` | array | 登录时的显式语料库授权，无授权记录时返回 `[]` |
+| `allowedCorpora[].category_name` | string | 语料库分类名称 |
+| `allowedCorpora[].permission` | string | 权限级别：`READ`、`WRITE`、`CREATE` 或 `FULL` |
+
+微信登录和手机号登录均返回顶层 `allowedCorpora`，供客户端初始化授权列表。它只包含显式授权，不自动包含公开语料库或系统管理员的隐含权限。授权可能在登录后变化，进入相关页面或刷新权限时，请调用[获取用户信息接口](#21-获取用户信息)，用返回的 `allowedCorpora` 替换本地列表（包括空数组）；实际操作仍由服务端鉴权。
 
 #### 错误响应
 
