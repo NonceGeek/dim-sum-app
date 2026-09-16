@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
+import { getUserCorpusList } from "@/lib/permission";
 import { buildQuestionnaireStatus } from "@/lib/services/questionnaire-status";
 
 /**
@@ -42,17 +43,22 @@ export async function GET(req: NextRequest) {
       }
 
       const { questionnaireProfile, ...profile } = user;
+      const allowedCorpora = await getUserCorpusList(user.id);
 
-      return NextResponse.json({
-        user: {
-          ...profile,
-          avatar: user.wechatAvatar || user.image,
-          questionnaireStatus: buildQuestionnaireStatus({
-            phoneNumber: user.phoneNumber,
-            questionnaireProfile,
-          }),
+      return NextResponse.json(
+        {
+          user: {
+            ...profile,
+            avatar: user.wechatAvatar || user.image,
+            questionnaireStatus: buildQuestionnaireStatus({
+              phoneNumber: user.phoneNumber,
+              questionnaireProfile,
+            }),
+          },
+          allowedCorpora,
         },
-      });
+        { headers: { "Cache-Control": "private, no-store" } }
+      );
     } catch (error) {
       console.error("Get profile error:", error);
       return NextResponse.json(
