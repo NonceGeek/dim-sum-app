@@ -337,7 +337,7 @@ wx.setStorageSync('refreshToken', newRefreshToken);
 
 ### 2.1 获取用户信息
 
-获取当前登录用户的详细信息。
+获取当前登录用户的详细信息及最新的显式语料库授权。所有已登录用户均可调用，不限制为标注员或研究员角色。
 
 #### 接口信息
 
@@ -364,8 +364,9 @@ const response = await wx.request({
   }
 });
 
-const { user } = response.data;
+const { user, allowedCorpora } = response.data;
 console.log('用户信息:', user);
+console.log('当前语料库授权:', allowedCorpora);
 ```
 
 #### 成功响应 (200)
@@ -386,7 +387,13 @@ console.log('用户信息:', user);
       "phoneVerified": true,
       "completedAt": "2026-08-20T08:00:00.000Z"
     }
-  }
+  },
+  "allowedCorpora": [
+    {
+      "category_name": "corpus_a",
+      "permission": "READ"
+    }
+  ]
 }
 ```
 
@@ -405,6 +412,13 @@ console.log('用户信息:', user);
 | `user.questionnaireStatus.completed` | boolean | 是否已完成参赛前问卷 |
 | `user.questionnaireStatus.phoneVerified` | boolean | 是否已绑定手机号 |
 | `user.questionnaireStatus.completedAt` | string \| null | 首次完成问卷时间，未完成时为 `null` |
+| `allowedCorpora` | array | 当前用户的显式语料库授权，无授权记录时返回 `[]` |
+| `allowedCorpora[].category_name` | string | 语料库分类名称 |
+| `allowedCorpora[].permission` | string | 权限级别：`READ`、`WRITE`、`CREATE` 或 `FULL` |
+
+`allowedCorpora` 每次请求均通过 `getUserCorpusList` 查询当前用户在 `user_corpus_permissions` 中的最新记录。它不自动包含公开语料库，也不因系统管理员身份而返回全部语料库，因此不代表完整的可访问语料库列表；实际业务操作仍由服务端鉴权。
+
+登录响应保留同名顶层字段，供客户端初始化。进入需要选择语料库的页面或刷新权限时，应重新调用本接口并替换本地授权列表（包括返回 `[]` 的情况），无需重新登录。响应设置 `Cache-Control: private, no-store`，客户端不应长期沿用登录时的授权快照。
 
 `questionnaireStatus` 用于小程序提前决定问卷相关 UI。活动投稿和自由投稿都受问卷门禁影响，并调用 `/api/miniprogram/corpus_collection/questionnaire/entry` 准备对应的 `questionnaireJourneyId`；自由投稿调用时省略 `activityId`。
 

@@ -265,6 +265,12 @@ status = created,notified,in_progress,reassigning
 
 统计接口中 `corpusName` 必填，多个语料库用英文逗号分隔。
 
+### 6.9 刷新当前用户的语料库授权
+
+进入需要选择语料库的页面时，调用公共接口 `GET /api/miniprogram/user/profile`，使用响应顶层的 `allowedCorpora` 更新本地授权列表。登录返回的授权仅用于初始化；管理员新增或撤销授权后，重新获取 profile 即可刷新，无需重新登录。返回空数组时也应清空旧列表。
+
+该字段仅表示显式分配的语料库授权，不包含公开语料库或系统管理员的隐含权限，不能代替服务端对实际操作的权限校验。接口认证、响应结构和字段说明见[公共 API 文档「2.1 获取用户信息」](../../api-reference.md#21-获取用户信息)。
+
 ---
 
 ## 七、actorRef 与 assigneeRef
