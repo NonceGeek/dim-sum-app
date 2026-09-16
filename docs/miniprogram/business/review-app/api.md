@@ -525,7 +525,106 @@ const { summary, assignees } = response.data;
 
 ---
 
-## 二、数据类型定义
+## 二、用户权限接口
+
+### 2.1 获取当前用户的语料库授权
+
+获取当前登录用户在 `user_corpus_permissions` 中的显式语料库授权，可用于生成任务筛选项或限制前端可选择的语料库范围。
+
+> 本接口只返回数据库中分配给当前用户的显式授权，不会自动补充公开语料库，也不会因为用户是系统管理员而返回全部语料库。
+
+#### 接口信息
+
+- **URL**: `/api/miniprogram/user/allowed-corpora`
+- **方法**: `GET`
+- **认证**: 需要 Bearer Token (标注员或研究员)
+- **允许角色**: `TAGGER_PARTNER`、`TAGGER_OUTSOURCING`、`RESEARCHER`
+
+#### 请求参数
+
+无。
+
+#### 请求示例
+
+```javascript
+const accessToken = wx.getStorageSync('accessToken');
+
+const response = await wx.request({
+  url: 'https://search.aidimsum.com/api/miniprogram/user/allowed-corpora',
+  method: 'GET',
+  header: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const allowedCorpora = response.data;
+```
+
+#### 成功响应 (200)
+
+```json
+[
+  {
+    "category_name": "corpus_a",
+    "permission": "WRITE"
+  },
+  {
+    "category_name": "corpus_b",
+    "permission": "READ"
+  }
+]
+```
+
+没有显式授权时返回空数组：
+
+```json
+[]
+```
+
+#### 响应字段说明
+
+| 字段 | 类型 | 说明 |
+|-----|------|-----|
+| `[].category_name` | string | 语料库分类名称 |
+| `[].permission` | string | 权限级别：`READ`、`WRITE`、`CREATE` 或 `FULL` |
+
+#### 错误响应
+
+**400 Bad Request** - Token 中缺少用户 ID
+
+```json
+{
+  "error": "Missing user identifier"
+}
+```
+
+**401 Unauthorized** - Token 缺失
+
+```json
+{
+  "error": "Missing authentication token"
+}
+```
+
+**401 Unauthorized** - Token 无效或过期
+
+```json
+{
+  "error": "Invalid or expired token"
+}
+```
+
+**403 Forbidden** - 当前用户角色无权调用
+
+```json
+{
+  "error": "Insufficient permissions"
+}
+```
+
+---
+
+## 三、数据类型定义
 
 ### 任务对象
 
@@ -567,7 +666,7 @@ const { summary, assignees } = response.data;
 
 ---
 
-## 三、服务号回调与自动绑定
+## 四、服务号回调与自动绑定
 
 新增 `GET/POST /api/public/wechat/service-account`，专供微信服务器验证与推送关注事件，不使用小程序 JWT。必须验证微信签名；默认使用 AES 安全模式。
 

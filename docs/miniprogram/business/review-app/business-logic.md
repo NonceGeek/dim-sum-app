@@ -265,6 +265,28 @@ status = created,notified,in_progress,reassigning
 
 统计接口中 `corpusName` 必填，多个语料库用英文逗号分隔。
 
+### 6.9 获取当前用户的语料库授权
+
+```text
+用户进入需要选择语料库的页面
+  -> 调用 /api/miniprogram/user/allowed-corpora
+  -> 后端从 Token 获取当前用户 ID
+  -> 查询 user_corpus_permissions 中该用户的授权记录
+  -> 返回 category_name 和 permission
+  -> 前端生成语料库筛选项或限制可选范围
+```
+
+该接口沿用 Review App 的标注员认证，只允许 `TAGGER_PARTNER`、`TAGGER_OUTSOURCING` 和 `RESEARCHER` 调用。
+
+返回结果的边界：
+
+- 只包含 `user_corpus_permissions` 中的显式授权
+- 不自动包含未建立授权记录的公开语料库
+- 不因 `isSystemAdmin` 为 `true` 而自动返回全部语料库
+- 没有显式授权时返回空数组
+
+因此，接口名称中的 `allowed-corpora` 在当前实现中表示“当前用户被显式分配权限的语料库”，不能直接理解为对该用户执行完整权限判定后得到的全部可读语料库。
+
 ---
 
 ## 七、actorRef 与 assigneeRef
