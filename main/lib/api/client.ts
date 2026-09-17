@@ -1,6 +1,7 @@
 type RequestConfig = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
+  cache?: RequestCache;
   headers?: Record<string, string>;
 };
 
@@ -23,6 +24,7 @@ async function request<T>(url: string, config: RequestConfig = {}): Promise<T> {
 
   const response = await fetch(url, {
     method: config.method || 'GET',
+    cache: config.cache,
     headers,
     body: config.body instanceof FormData ? config.body : config.body ? JSON.stringify(config.body) : undefined,
     credentials: 'include',

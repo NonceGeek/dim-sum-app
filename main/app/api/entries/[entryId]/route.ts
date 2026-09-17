@@ -26,6 +26,7 @@ function jsonWithCors(body: unknown, init?: ResponseInit) {
     ...init,
     headers: {
       ...corsHeaders,
+      "Cache-Control": "no-store",
       ...init?.headers,
     },
   });

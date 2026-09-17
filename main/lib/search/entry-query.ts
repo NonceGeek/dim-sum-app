@@ -43,6 +43,7 @@ export async function fetchEntryIdentitiesByUniqueIds(
       from public.get_entry_identities(array[${Prisma.join(ids)}]::uuid[]) entry
       join public.cantonese_corpus_all corpus on corpus.unique_id = entry.unique_id
       join public.cantonese_categories dataset on dataset.name = corpus.category
+      where dataset.is_public = true
     `,
   );
 

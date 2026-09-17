@@ -225,7 +225,7 @@ async function fetchEntrySearch({
   if (similarCursor) params.set("similarCursor", similarCursor);
   if (recommendedCursor) params.set("recommendedCursor", recommendedCursor);
 
-  return api.get<EntrySearchResponse>(`/api/search/entries?${params.toString()}`);
+  return api.get<EntrySearchResponse>(`/api/search/entries?${params.toString()}`, { cache: "no-store" });
 }
 
 /**
@@ -255,7 +255,7 @@ export function useEntrySearchQuery(
       }),
     enabled: (options.enabled ?? true) && !!keyword.trim(),
     staleTime: 0,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 0,
     retry: 1,
   });
 }
@@ -282,7 +282,7 @@ export function useEntryPrimarySearchQuery(
       }),
     enabled: enabled && !!keyword.trim(),
     staleTime: 0,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 0,
     retry: 1,
   });
 }
@@ -323,7 +323,7 @@ export function useEntrySemanticSearchQuery(
       }),
     enabled: (options.enabled ?? true) && !!keyword.trim(),
     staleTime: 0,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 0,
     retry: 1,
   });
 }

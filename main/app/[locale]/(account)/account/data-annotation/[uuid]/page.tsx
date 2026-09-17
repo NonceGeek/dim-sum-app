@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getCorpusItemByUniqueId, SearchResult } from "@/lib/api/search";
+import { type SearchResult } from "@/lib/api/search";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -49,7 +49,7 @@ export default function CorpusItemDetailsPage() {
   const { user } = useAuthStore();
   
   // Check if user can edit
-  const canEdit = user?.role === 'TAGGER_PARTNER' || user?.role === 'TAGGER_OUTSOURCING';
+  const canEdit = item !== null; // The editor endpoint requires current WRITE permission.
 
   // Handle back to list
   const handleBack = () => {
@@ -62,8 +62,9 @@ export default function CorpusItemDetailsPage() {
     async function loadItem() {
       setIsLoading(true);
       setError(null);
+      setItem(null);
       try {
-        const result = await getCorpusItemByUniqueId(uuid);
+        const result = await editApi.getCorpusItem(uuid);
         if (result) {
           setItem(result);
           
@@ -134,25 +135,29 @@ export default function CorpusItemDetailsPage() {
     setIsSubmitting(true);
     try {
       const noteData = {
-        pinyin: editPinyin,
-        meaning: editMeanings,
-        sentence: editSentences,
-        related_documents: editRelatedDocs,
-        video_clips: editVideoClips,
+        ...item.note,
+        context: {
+          ...item.note?.context,
+          pinyin: editPinyin,
+          meaning: editMeanings,
+          sentence: editSentences,
+          related_documents: editRelatedDocs,
+          video_clips: editVideoClips,
+        },
         contributor: user?.name || "Anonymous",
       };
 
       const response = await editApi.updateCorpusItem({
         uuid: item.unique_id,
         note: noteData,
-        category: item.category || "zyzdv2",
+        category: item.category_name || item.category,
       });
 
-      toast.success(`数据保存成功！历史ID: ${response.history_id}, 状态: ${response.status}`);
+      toast.success(`修改已提交审核，状态: ${response.status}`);
       setIsEditing(false);
       
       // Reload item to get updated data
-      const result = await getCorpusItemByUniqueId(uuid);
+      const result = await editApi.getCorpusItem(uuid);
       if (result) {
         setItem(result);
       }

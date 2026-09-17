@@ -1,5 +1,9 @@
 # dim-sum-app
 
+## 项目文档
+
+需求、设计、接口与实施报告已统一迁至 [DimSum 项目文档](../../docs/project/dimsum-app/README.md)。本机知识库入口：`/Users/fun/Documents/docs/project/dimsum-app/README.md`。原 `docs/` 和 `main/docs/` 已删除，后续从项目文档进入代码开发。
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

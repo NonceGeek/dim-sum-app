@@ -1,3 +1,5 @@
+import type { SearchResult } from "./search";
+
 export interface CorpusNote {
   meaning?: string[];
   pinyin?: string[];
@@ -18,11 +20,17 @@ export interface UpdateCorpusData {
 
 export interface UpdateCorpusResponse {
   message: string;
-  history_id: number;
+  history_id?: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 export const editApi = {
+  getCorpusItem: async (uuid: string): Promise<SearchResult | null> => {
+    const response = await fetch(`/api/marker/corpus/items/${encodeURIComponent(uuid)}`, { cache: "no-store" });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error((await response.json()).error || "Failed to load corpus item");
+    return response.json();
+  },
 
   updateCorpusItem: async (data: UpdateCorpusData): Promise<UpdateCorpusResponse> => {
     try {

@@ -102,7 +102,12 @@ export default function AdminCategoriesPage() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      for (const key of ["search", "entry-search"]) {
+        queryClient.resetQueries({ queryKey: [key] });
+      }
+      for (const key of ["admin-categories", "allCategories"]) {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      }
       toast.success(t("messages.updated"));
     },
     onError: () => {
