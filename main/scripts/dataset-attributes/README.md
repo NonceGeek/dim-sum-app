@@ -1,6 +1,6 @@
 # Dataset attribute migration
 
-See [business rules and release order](../../../../../docs/project/dimsum-app/search-platform/s6-dimsum-search-system-upgrade-3.0/13-dataset-content-attribute-implementation.md).
+See [business rules and release order](../../../../../docs/project/dimsum-app/search-platform/s7-dimsum-search-system-upgrade-3.0/13-dataset-content-attribute-implementation.md).
 
 2026-09-13 execution: the user explicitly authorized pull followed by push and immediate removal of the old column. Production migration is complete: pull → `01-expand-and-backfill.sql` → reviewed target schema → `prisma db push --accept-data-loss` → pull with an empty target diff. `02-contract.sql` was not needed. The application has not been deployed; old code that reads the removed column must be replaced. The staged guidance below describes the original rollout plan.
 
