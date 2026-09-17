@@ -1,0 +1,201 @@
+{
+  "startedAt": "2026-09-17T03:38:48.319Z",
+  "method": "read-only sequential actual RPC; round 0 warmup then 3 samples; full primary projection",
+  "summary": [
+    {
+      "scenario": "common",
+      "samples": 3,
+      "median_ms": 67.026,
+      "min_ms": 65.184,
+      "max_ms": 70.662,
+      "planning_median_ms": 2.168,
+      "wall_median_ms": 1523.305
+    },
+    {
+      "scenario": "common_traditional",
+      "samples": 3,
+      "median_ms": 5.231,
+      "min_ms": 5.162,
+      "max_ms": 6.278,
+      "planning_median_ms": 2.127,
+      "wall_median_ms": 1526.674
+    },
+    {
+      "scenario": "greeting",
+      "samples": 3,
+      "median_ms": 47.482,
+      "min_ms": 46.96,
+      "max_ms": 51.408,
+      "planning_median_ms": 2.162,
+      "wall_median_ms": 1512.399
+    },
+    {
+      "scenario": "single_character",
+      "samples": 3,
+      "median_ms": 3.696,
+      "min_ms": 3.562,
+      "max_ms": 3.821,
+      "planning_median_ms": 2.169,
+      "wall_median_ms": 1462.338
+    },
+    {
+      "scenario": "rare",
+      "samples": 3,
+      "median_ms": 48.881,
+      "min_ms": 48.311,
+      "max_ms": 52.315,
+      "planning_median_ms": 2.189,
+      "wall_median_ms": 1523.409
+    },
+    {
+      "scenario": "no_match",
+      "samples": 3,
+      "median_ms": 46.404,
+      "min_ms": 45.985,
+      "max_ms": 46.411,
+      "planning_median_ms": 2.196,
+      "wall_median_ms": 1501.608
+    },
+    {
+      "scenario": "empty_scope",
+      "samples": 3,
+      "median_ms": 0.341,
+      "min_ms": 0.339,
+      "max_ms": 0.358,
+      "planning_median_ms": 2.133,
+      "wall_median_ms": 1567.668
+    },
+    {
+      "scenario": "missing_dataset",
+      "samples": 3,
+      "median_ms": 0.356,
+      "min_ms": 0.336,
+      "max_ms": 0.381,
+      "planning_median_ms": 2.142,
+      "wall_median_ms": 1598.032
+    },
+    {
+      "scenario": "private_scope",
+      "samples": 3,
+      "median_ms": 0.368,
+      "min_ms": 0.335,
+      "max_ms": 1.083,
+      "planning_median_ms": 2.19,
+      "wall_median_ms": 1464.752
+    },
+    {
+      "scenario": "public_scope_positive",
+      "samples": 3,
+      "median_ms": 3.539,
+      "min_ms": 3.497,
+      "max_ms": 3.541,
+      "planning_median_ms": 2.148,
+      "wall_median_ms": 1472.5
+    },
+    {
+      "scenario": "attribute_cultural_knowledge",
+      "samples": 3,
+      "median_ms": 3.576,
+      "min_ms": 3.52,
+      "max_ms": 3.594,
+      "planning_median_ms": 2.159,
+      "wall_median_ms": 1485.704
+    },
+    {
+      "scenario": "attribute_oral",
+      "samples": 3,
+      "median_ms": 3.742,
+      "min_ms": 3.635,
+      "max_ms": 4.608,
+      "planning_median_ms": 2.145,
+      "wall_median_ms": 1483.911
+    }
+  ],
+  "checks": [
+    {
+      "scenario": "common",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "2cf1437052efc530da96aba0f046b43ae8136bed6f92cf6565d7b5ad89d9ba92"
+    },
+    {
+      "scenario": "common_traditional",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "6bf0fc825d4089efaceaf2f0e40a7ad64e44643285f9cb5788df54c3cd9408b7"
+    },
+    {
+      "scenario": "greeting",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "3534dbcc6bd1f3560474245433d8f2535982ab687d2ca5778691a7a25c49b71c"
+    },
+    {
+      "scenario": "single_character",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "ff9b7d86986adb156fd43a24b08bb55020688bf0787d7066978c558c7e2dd477"
+    },
+    {
+      "scenario": "rare",
+      "rows": 0,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "scenario": "no_match",
+      "rows": 0,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "scenario": "empty_scope",
+      "rows": 0,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "scenario": "missing_dataset",
+      "rows": 0,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "scenario": "private_scope",
+      "rows": 0,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "scenario": "public_scope_positive",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "ff9b7d86986adb156fd43a24b08bb55020688bf0787d7066978c558c7e2dd477"
+    },
+    {
+      "scenario": "attribute_cultural_knowledge",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "12272f1d9c008c3db531b68a9c19e1bef4331d991083e4b2cea007489b72ef94"
+    },
+    {
+      "scenario": "attribute_oral",
+      "rows": 1,
+      "exactResult": true,
+      "rankingEquivalent": true,
+      "resultHash": "d10c51e6210a0c8b564574385f14a3cdd7c1d8da823d5e2ef110726ef34f4fd5"
+    }
+  ],
+  "limitations": "Warm sequential samples, not concurrent load or controlled cold-cache tests. Preliminary attempts hit the 5s statement timeout; those attempts are not in these successful-run samples."
+}

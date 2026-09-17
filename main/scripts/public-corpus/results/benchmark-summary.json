@@ -1,0 +1,412 @@
+{
+  "startedAt": "2026-09-17T03:18:43.258Z",
+  "method": "read-only sequential; round 0 first observed/warmup; timing off; complete primary query including identity aggregation",
+  "summary": [
+    {
+      "scenario": "common",
+      "keyword": "饮茶",
+      "datasets": null,
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 1462.109,
+        "min_ms": 1437.351,
+        "max_ms": 1503.443,
+        "planning_median_ms": 2.813,
+        "wall_median_ms": 3606.948
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 472.082,
+        "min_ms": 469.323,
+        "max_ms": 486.391,
+        "planning_median_ms": 2.76,
+        "wall_median_ms": 2678.725
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 56.722,
+        "min_ms": 56.126,
+        "max_ms": 58.942,
+        "planning_median_ms": 4.085,
+        "wall_median_ms": 2032.865
+      }
+    },
+    {
+      "scenario": "common_traditional",
+      "keyword": "粵語",
+      "datasets": null,
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 1433.672,
+        "min_ms": 1426.025,
+        "max_ms": 1461.792,
+        "planning_median_ms": 2.842,
+        "wall_median_ms": 3833.994
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 464.046,
+        "min_ms": 457.565,
+        "max_ms": 479.913,
+        "planning_median_ms": 2.768,
+        "wall_median_ms": 2749.125
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 7.331,
+        "min_ms": 7.25,
+        "max_ms": 9.02,
+        "planning_median_ms": 3.895,
+        "wall_median_ms": 2702.41
+      }
+    },
+    {
+      "scenario": "exact",
+      "keyword": "早晨",
+      "datasets": null,
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 295.431,
+        "min_ms": 281.728,
+        "max_ms": 303.188,
+        "planning_median_ms": 2.56,
+        "wall_median_ms": 2995.845
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 235.408,
+        "min_ms": 229.725,
+        "max_ms": 241.705,
+        "planning_median_ms": 2.745,
+        "wall_median_ms": 3078.832
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 50.982,
+        "min_ms": 50.563,
+        "max_ms": 51.007,
+        "planning_median_ms": 3.546,
+        "wall_median_ms": 2089.007
+      }
+    },
+    {
+      "scenario": "single_character",
+      "keyword": "的",
+      "datasets": null,
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 291.424,
+        "min_ms": 283.609,
+        "max_ms": 292.913,
+        "planning_median_ms": 2.587,
+        "wall_median_ms": 2398.658
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 249.149,
+        "min_ms": 248.465,
+        "max_ms": 251.197,
+        "planning_median_ms": 2.735,
+        "wall_median_ms": 2922.486
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 3.68,
+        "min_ms": 3.59,
+        "max_ms": 3.764,
+        "planning_median_ms": 3.649,
+        "wall_median_ms": 2130.055
+      }
+    },
+    {
+      "scenario": "rare",
+      "keyword": "龘",
+      "datasets": null,
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 296.661,
+        "min_ms": 282.541,
+        "max_ms": 300.214,
+        "planning_median_ms": 2.576,
+        "wall_median_ms": 2172.903
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 241.598,
+        "min_ms": 236.674,
+        "max_ms": 293.529,
+        "planning_median_ms": 2.767,
+        "wall_median_ms": 2041.71
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 56.236,
+        "min_ms": 53.56,
+        "max_ms": 58.149,
+        "planning_median_ms": 3.6,
+        "wall_median_ms": 1873.88
+      }
+    },
+    {
+      "scenario": "no_match",
+      "keyword": "dimsumvisibilitynomatch9f721b",
+      "datasets": null,
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 334.47,
+        "min_ms": 325.596,
+        "max_ms": 493.279,
+        "planning_median_ms": 2.656,
+        "wall_median_ms": 2722.11
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 275.747,
+        "min_ms": 271.939,
+        "max_ms": 287.985,
+        "planning_median_ms": 2.783,
+        "wall_median_ms": 2229.113
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 57.006,
+        "min_ms": 52.163,
+        "max_ms": 97.786,
+        "planning_median_ms": 3.97,
+        "wall_median_ms": 1841.431
+      }
+    },
+    {
+      "scenario": "requested_missing_dataset",
+      "keyword": "饮茶",
+      "datasets": [
+        "__nonexistent_benchmark_dataset__"
+      ],
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 21.342,
+        "min_ms": 21.131,
+        "max_ms": 25.388,
+        "planning_median_ms": 2.724,
+        "wall_median_ms": 2754.2
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 0.234,
+        "min_ms": 0.231,
+        "max_ms": 1.711,
+        "planning_median_ms": 2.827,
+        "wall_median_ms": 2219.222
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 44.385,
+        "min_ms": 29.902,
+        "max_ms": 1129.145,
+        "planning_median_ms": 3.859,
+        "wall_median_ms": 2049.413
+      }
+    },
+    {
+      "scenario": "specific_public_dataset",
+      "keyword": "早晨",
+      "datasets": [
+        "zyzdv2"
+      ],
+      "direct_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 48.859,
+        "min_ms": 48.794,
+        "max_ms": 48.917,
+        "planning_median_ms": 2.614,
+        "wall_median_ms": 2441.939
+      },
+      "existing_rpc_public_scope": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 60.847,
+        "min_ms": 60.662,
+        "max_ms": 81.196,
+        "planning_median_ms": 2.732,
+        "wall_median_ms": 3123.747
+      },
+      "staged_public_sql": {
+        "successful_runs": 3,
+        "timeouts_or_errors": 0,
+        "median_ms": 34.73,
+        "min_ms": 32.275,
+        "max_ms": 42.133,
+        "planning_median_ms": 3.731,
+        "wall_median_ms": 2425.427
+      }
+    }
+  ],
+  "checks": [
+    {
+      "scenario": "common",
+      "results": {
+        "direct_sql": {
+          "rows": 1,
+          "resultHash": "d147b3e3ee8f58e314589ce01ecd7bfdf1e549e390d0d0afe8adb8c29696497f"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 1,
+          "resultHash": "d147b3e3ee8f58e314589ce01ecd7bfdf1e549e390d0d0afe8adb8c29696497f"
+        },
+        "staged_public_sql": {
+          "rows": 1,
+          "resultHash": "d147b3e3ee8f58e314589ce01ecd7bfdf1e549e390d0d0afe8adb8c29696497f"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "common_traditional",
+      "results": {
+        "direct_sql": {
+          "rows": 1,
+          "resultHash": "9a1932f3a65108170cdaab76672ed622eef8c2b3d52a127f5460cb971fe3514b"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 1,
+          "resultHash": "9a1932f3a65108170cdaab76672ed622eef8c2b3d52a127f5460cb971fe3514b"
+        },
+        "staged_public_sql": {
+          "rows": 1,
+          "resultHash": "9a1932f3a65108170cdaab76672ed622eef8c2b3d52a127f5460cb971fe3514b"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "exact",
+      "results": {
+        "direct_sql": {
+          "rows": 1,
+          "resultHash": "94a9dab6189d434dba31847498f08b48ef0dbf0e6896a8ea156e792e5dd9b979"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 1,
+          "resultHash": "94a9dab6189d434dba31847498f08b48ef0dbf0e6896a8ea156e792e5dd9b979"
+        },
+        "staged_public_sql": {
+          "rows": 1,
+          "resultHash": "94a9dab6189d434dba31847498f08b48ef0dbf0e6896a8ea156e792e5dd9b979"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "single_character",
+      "results": {
+        "direct_sql": {
+          "rows": 1,
+          "resultHash": "bbccfeee5339c015d36c8ad212a74e48a3e2fbc808e5a08c379e0ef15f90b2a8"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 1,
+          "resultHash": "bbccfeee5339c015d36c8ad212a74e48a3e2fbc808e5a08c379e0ef15f90b2a8"
+        },
+        "staged_public_sql": {
+          "rows": 1,
+          "resultHash": "bbccfeee5339c015d36c8ad212a74e48a3e2fbc808e5a08c379e0ef15f90b2a8"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "rare",
+      "results": {
+        "direct_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "staged_public_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "no_match",
+      "results": {
+        "direct_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "staged_public_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "requested_missing_dataset",
+      "results": {
+        "direct_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "staged_public_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "equal": true
+    },
+    {
+      "scenario": "specific_public_dataset",
+      "results": {
+        "direct_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "existing_rpc_public_scope": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "staged_public_sql": {
+          "rows": 0,
+          "resultHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "equal": true
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# Large raw plans are retained as compressed evidence after summarization.
+*.json
+!benchmark-summary.json
+!rpc-summary.json

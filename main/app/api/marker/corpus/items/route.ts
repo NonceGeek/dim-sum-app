@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMarker } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CorpusEditAccessError, EDITOR_CACHE_HEADERS, requireCorpusEditor } from "@/lib/services/corpus-edit-access";
 
 export async function GET(req: NextRequest) {
-  return requireMarker(req, async (req: NextRequest, userId: string) => {
+  return requireAuth(req, async (req: NextRequest, userId: string) => {
     try {
       const { searchParams } = new URL(req.url);
       const page = parseInt(searchParams.get('page') || '1');
       const limit = parseInt(searchParams.get('limit') || '20');
       const q = searchParams.get('q');
+      const category = searchParams.get('category')?.trim() || 'zyzdv2';
+      await requireCorpusEditor(userId, category);
       const offset = (page - 1) * limit;
 
       // Validate pagination parameters
-      if (page < 1 || limit < 1 || limit > 100) {
+      if (!Number.isSafeInteger(page) || !Number.isSafeInteger(limit) || page < 1 || limit < 1 || limit > 100) {
         return NextResponse.json(
           { error: "Invalid pagination parameters. Page must be >= 1, limit must be 1-100" },
           { status: 400 }
@@ -21,7 +24,7 @@ export async function GET(req: NextRequest) {
 
       // Build where clause with optional search
       const whereClause = {
-        category: 'zyzdv2',
+        category,
         ...(q && {
           data: {
             contains: q,
@@ -66,7 +69,8 @@ export async function GET(req: NextRequest) {
         id: Number(item.id),
         liked_num: Number(item.liked_num),
         bookmark_num: Number(item.bookmark_num),
-        view_num: Number(item.view_num)
+        view_num: Number(item.view_num),
+        editable_level: Number(item.editable_level)
       }));
 
       return NextResponse.json({
@@ -79,10 +83,11 @@ export async function GET(req: NextRequest) {
           hasNext: page < totalPages,
           hasPrev: page > 1
         }
-      });
+      }, { headers: EDITOR_CACHE_HEADERS });
 
     } catch (error) {
-      console.error('Error fetching corpus items:', error);
+      if (error instanceof CorpusEditAccessError) return NextResponse.json({ error: error.message }, { status: error.status, headers: EDITOR_CACHE_HEADERS });
+      console.error("Error fetching corpus items:", error);
       return NextResponse.json(
         { error: "Failed to fetch corpus items" },
         { status: 500 }

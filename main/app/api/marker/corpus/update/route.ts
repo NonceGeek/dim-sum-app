@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
-import { CorpusPermission } from "@prisma/client";
-import { checkCorpusPermission } from "@/lib/permission";
+import { CorpusEditAccessError, EDITOR_CACHE_HEADERS, getCorpusItemForEditing } from "@/lib/services/corpus-edit-access";
 import { backendFetch } from "@/lib/api/backend";
 
 export async function POST(req: NextRequest) {
@@ -15,35 +14,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { uuid, note, category } = body;
+    const body = await req.json().catch(() => null);
+    const { uuid, note } = body ?? {};
 
-    if (!uuid || !note) {
+    if (typeof uuid !== "string" || !note || typeof note !== "object" || Array.isArray(note)) {
       return NextResponse.json(
         { error: "UUID and note are required" },
         { status: 400 },
       );
     }
 
-    // 使用新的权限检查
-    if (category) {
-      const permissionCheck = await checkCorpusPermission(
-        {
-          id: session.user.id,
-          role: session.user.role!,
-          isSystemAdmin: session.user.isSystemAdmin || false,
-        },
-        category,
-        CorpusPermission.WRITE,
-      );
-
-      if (!permissionCheck.allowed) {
-        return NextResponse.json(
-          { error: permissionCheck.reason || "Permission denied" },
-          { status: 403 },
-        );
-      }
-    }
+    await getCorpusItemForEditing(session.user.id, uuid);
 
     // Get API key from server environment (not exposed to frontend)
     const apiKey = process.env.BACKEND_API_KEY;
@@ -57,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     // Make request to backend with server-side API key
     const response = await backendFetch(
-      "/dev/insert_corpus_item",
+      "/dev/update_corpus_item",
       {
         method: "POST",
         headers: {
@@ -99,8 +80,11 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await response.json();
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: EDITOR_CACHE_HEADERS });
   } catch (error) {
+    if (error instanceof CorpusEditAccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status, headers: EDITOR_CACHE_HEADERS });
+    }
     console.error("Error updating corpus item:", error);
     return NextResponse.json(
       { error: "Failed to update corpus item" },
