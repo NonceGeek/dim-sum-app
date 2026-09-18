@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { Award, Bot, Check, Eye, Loader2, Search, Star, X } from "lucide-react";
+import { Award, Bot, Check, Eye, Heart, ImageOff, Loader2, MessageCircle, Search, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ type Submission = {
   commentCount: number;
   isAwarded: boolean;
   awardStatus: string;
+  coverUrl?: string | null;
   activity?: { id: string; displayUuid: string; title: string } | null;
   author?: { id: string; name?: string | null; avatar?: string | null } | null;
   media: Array<{ type: string; url: string; durationSec?: number | null }>;
@@ -294,16 +295,15 @@ export default function CorpusCollectionSubmissionsPage() {
                 <TableHead>{t("columns.status")}</TableHead>
                 <TableHead>{t("columns.media")}</TableHead>
                 <TableHead>{t("columns.display")}</TableHead>
-                <TableHead>{t("columns.stats")}</TableHead>
-                <TableHead>{t("columns.actions")}</TableHead>
+                <TableHead className="sticky right-0 z-10 border-l bg-card">{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8}>{t("loading")}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7}>{t("loading")}</TableCell></TableRow>
               ) : data?.items.length ? (
                 data.items.map((submission) => (
-                  <TableRow key={submission.id}>
+                  <TableRow key={submission.id} className="group">
                     <TableCell>
                       <Checkbox
                         checked={selected.includes(submission.id)}
@@ -312,21 +312,43 @@ export default function CorpusCollectionSubmissionsPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium text-foreground">{submission.title}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-1">{submission.intro}</div>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        <Badge variant="outline">{submission.submissionType}</Badge>
-                        {submission.isAwarded && <Badge className="bg-success text-success-foreground">{submission.awardStatus}</Badge>}
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {submission.author?.name || t("unknown")} · {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(submission.createdAt))}
+                      <div className="flex items-start gap-3">
+                        {submission.coverUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={submission.coverUrl} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-md border object-cover" />
+                        ) : (
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border bg-muted text-muted-foreground">
+                            <ImageOff className="h-5 w-5" />
+                          </div>
+                        )}
+                        <div className="w-64 whitespace-normal wrap-break-word xl:w-80">
+                          <div className="line-clamp-2 font-medium text-foreground" title={submission.title}>{submission.title}</div>
+                          <div className="line-clamp-1 break-all text-sm text-muted-foreground" title={submission.intro}>{submission.intro}</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <Badge variant="outline">{submission.submissionType}</Badge>
+                            {submission.isAwarded && <Badge className="bg-success text-success-foreground">{submission.awardStatus}</Badge>}
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span>
+                              {submission.author?.name || t("unknown")} · {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(submission.createdAt))}
+                            </span>
+                            <span className="flex items-center gap-1" title={t("stats.likes", { count: submission.likeCount })}>
+                              <Heart className="h-3 w-3" />
+                              {submission.likeCount}
+                            </span>
+                            <span className="flex items-center gap-1" title={t("stats.comments", { count: submission.commentCount })}>
+                              <MessageCircle className="h-3 w-3" />
+                              {submission.commentCount}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-48 text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground">
                       {submission.activity ? (
-                        <div className="space-y-1">
-                          <div className="line-clamp-1 text-foreground">{submission.activity.title}</div>
-                          <code className="line-clamp-1 text-xs text-muted-foreground">{submission.activity.displayUuid}</code>
+                        <div className="w-44 space-y-1 whitespace-normal">
+                          <div className="line-clamp-2 text-foreground" title={submission.activity.title}>{submission.activity.title}</div>
+                          <code className="block truncate text-xs text-muted-foreground" title={submission.activity.displayUuid}>{submission.activity.displayUuid}</code>
                         </div>
                       ) : (
                         "-"
@@ -337,11 +359,14 @@ export default function CorpusCollectionSubmissionsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {["image", "audio", "video"].map((type) => (
-                          <Badge key={type} variant="outline">
-                            {type}: {submission.media.filter((item) => item.type === type).length}
-                          </Badge>
-                        ))}
+                        {["image", "audio", "video"].map((type) => {
+                          const count = submission.media.filter((item) => item.type === type).length;
+                          return count > 0 ? (
+                            <Badge key={type} variant="outline">
+                              {type}: {count}
+                            </Badge>
+                          ) : null;
+                        })}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -362,12 +387,8 @@ export default function CorpusCollectionSubmissionsPage() {
                         </label>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div>{t("stats.likes", { count: submission.likeCount })}</div>
-                      <div>{t("stats.comments", { count: submission.commentCount })}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <TableCell className="sticky right-0 z-10 border-l bg-card transition-colors group-hover:bg-muted">
+                      <div className="flex gap-1">
                         {renderActionButton(
                           t("actions.view"),
                           <Eye className="h-4 w-4" />,
@@ -419,7 +440,7 @@ export default function CorpusCollectionSubmissionsPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={8}>{t("empty")}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7}>{t("empty")}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
