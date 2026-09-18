@@ -312,7 +312,12 @@ export default function CorpusCollectionSubmissionsPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-start gap-3">
+                      <a
+                        href={`/${locale}/admin/corpus-collection/submissions/${submission.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group/link flex items-start gap-3"
+                      >
                         {submission.coverUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={submission.coverUrl} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-md border object-cover" />
@@ -322,7 +327,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           </div>
                         )}
                         <div className="w-64 whitespace-normal wrap-break-word xl:w-80">
-                          <div className="line-clamp-2 font-medium text-foreground" title={submission.title}>{submission.title}</div>
+                          <div className="line-clamp-2 font-medium text-foreground group-hover/link:underline" title={submission.title}>{submission.title}</div>
                           <div className="line-clamp-1 break-all text-sm text-muted-foreground" title={submission.intro}>{submission.intro}</div>
                           <div className="mt-1 flex flex-wrap gap-1">
                             <Badge variant="outline">{submission.submissionType}</Badge>
@@ -342,7 +347,7 @@ export default function CorpusCollectionSubmissionsPage() {
                             </span>
                           </div>
                         </div>
-                      </div>
+                      </a>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {submission.activity ? (
