@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
         include: {
           _count: { select: { submissions: PUBLIC_SUBMISSION_COUNT } },
           submissions: {
-            where: PUBLIC_SUBMISSION_WHERE,
+            where: { ...PUBLIC_SUBMISSION_WHERE, is_featured: true },
             include: submissionInclude,
             orderBy: [
               { like_count: "desc" },
