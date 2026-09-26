@@ -64,6 +64,7 @@ export async function processReviewEvent(
       });
       const applicable =
         latest?.id === item.id &&
+        submission.channel_video == null &&
         submission.review_status === "ai_reviewing" &&
         item.status !== "completed" &&
         item.status !== "superseded";

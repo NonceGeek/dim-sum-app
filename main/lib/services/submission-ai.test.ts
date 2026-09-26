@@ -10,6 +10,7 @@ function fixture() {
     title: "作品",
     intro: "介绍",
     media: [],
+    channel_video: null as unknown,
   }));
   const state = {
     roleActive: true,
@@ -199,6 +200,7 @@ function callbackFixture() {
     updates: 0,
     logs: [] as any[],
     result: null as any,
+    channelVideo: null as unknown,
   };
   const tx = {
     $queryRaw: async () => [],
@@ -225,6 +227,7 @@ function callbackFixture() {
         id: BigInt(1),
         activity_id: BigInt(10),
         review_status: state.status,
+        channel_video: state.channelVideo,
       }),
       update: async ({ data }: any) => {
         state.updates++;
@@ -280,4 +283,26 @@ test("callback only requests human review and duplicate events have no effects",
   assert.equal(state.status, "review_needed");
   assert.equal(state.updates, 1);
   assert.equal(state.logs.length, 1);
+});
+
+
+test("AI refuses the entire mixed Channels batch before writes or external calls", async () => {
+  process.env.CORPUS_COLLECTION_WEBHOOK_TOKEN = "test-only";
+  const { state, rows, dependencies } = fixture();
+  state.grants.push({ activity_id: BigInt(20), submission_actions: ["view", "ai_review"] });
+  rows[1].channel_video = { finderUserName: "sphExample", feedId: "123" };
+  await assert.rejects(startSubmissionBatches("u", [BigInt(1), BigInt(2)], {}, "http://localhost", dependencies),
+    (e: unknown) => e instanceof AccessError && e.status === 422);
+  assert.equal(state.batches.length, 0);
+  assert.equal(state.calls.length, 0);
+  assert.equal(state.logs.length, 0);
+});
+
+
+test("late AI callback cannot review a Channels reference added after dispatch", async () => {
+  const { state, db, payload } = callbackFixture();
+  state.channelVideo = { finderUserName: "sphExample", feedId: "123" };
+  await processReviewEvent(payload, "event", db);
+  assert.equal(state.updates, 0);
+  assert.equal(state.itemStatus, "superseded");
 });

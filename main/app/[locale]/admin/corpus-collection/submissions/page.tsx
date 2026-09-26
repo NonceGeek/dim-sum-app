@@ -34,6 +34,7 @@ type Submission = {
   isAwarded: boolean;
   awardStatus: string;
   coverUrl?: string | null;
+  channelVideo?: { finderUserName: string; feedId: string } | null;
   activity?: { id: string; displayUuid: string; title: string } | null;
   author?: { id: string; name?: string | null; avatar?: string | null } | null;
   media: Array<{ type: string; url: string; durationSec?: number | null }>;
@@ -294,10 +295,11 @@ export default function CorpusCollectionSubmissionsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button disabled={!canBulk("ai_review") || selectedItems.some((item) => !["pending_review", "review_needed"].includes(item.reviewStatus))} onClick={() => batchMutation.mutate()}>
+            <Button disabled={!canBulk("ai_review") || selectedItems.some((item) => Boolean(item.channelVideo) || !["pending_review", "review_needed"].includes(item.reviewStatus))} onClick={() => batchMutation.mutate()}>
               {batchMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
               {t("sendReview", { count: selected.length })}
             </Button>
+            {selectedItems.some((item) => item.channelVideo) && <span className="text-sm text-muted-foreground">{t("channelManualReview")}</span>}
             <Button variant="outline" disabled={!canBulk("approve")} onClick={() => { if (window.confirm(t("batchConfirm"))) bulkMutation.mutate({ action: "approve" }); }}>{t("batchApprove")}</Button>
             <Button variant="outline" disabled={!canBulk("reject")} onClick={() => { const reason = window.prompt(t("prompts.reject")); if (reason?.trim()) bulkMutation.mutate({ action: "reject", reason }); }}>{t("batchReject")}</Button>
           </div>
@@ -389,7 +391,8 @@ export default function CorpusCollectionSubmissionsPage() {
                       <Badge className={statusColor[submission.reviewStatus] ?? "bg-secondary"}>{statusLabel(submission.reviewStatus)}</Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1">
+                        {submission.channelVideo && <Badge variant="outline">{t("channelVideo")}</Badge>}
                         {["image", "audio", "video"].map((type) => {
                           const count = submission.media.filter((item) => item.type === type).length;
                           return count > 0 ? (
