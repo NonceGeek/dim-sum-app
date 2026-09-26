@@ -37,6 +37,8 @@ export async function startSubmissionBatches(
         throw new AccessError(404, "投稿不存在或不可访问");
       if (rows.some((s) => !canAct(actor, s.activity_id, "ai_review")))
         throw new AccessError(403, "没有 AI 审核权限");
+      if (rows.some((s) => s.channel_video != null))
+        throw new AccessError(422, "视频号作品需要人工审核，请从 AI 审核批次中移除");
       if (
         rows.some(
           (s) => !["pending_review", "review_needed"].includes(s.review_status),

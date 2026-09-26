@@ -1,4 +1,6 @@
 "use client";
+import { ChannelVideoCard } from "@/components/admin/channel-video-card";
+import type { ChannelVideo } from "@/lib/channel-video";
 import { useSession } from "next-auth/react";
 
 import { useMemo } from "react";
@@ -45,6 +47,7 @@ type Submission = {
   awardStatus: string;
   awardInfo?: unknown;
   coverUrl?: string | null;
+  channelVideo?: ChannelVideo | null;
   imageUrls: string[];
   activity?: { id: string; displayUuid: string; title: string; startsAt?: string | null; endsAt?: string | null } | null;
   author?: { id: string; name?: string | null; avatar?: string | null } | null;
@@ -213,6 +216,7 @@ export default function CorpusCollectionSubmissionDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
+          {data.channelVideo && <ChannelVideoCard video={data.channelVideo} coverUrl={data.coverUrl} />}
           <Card>
             <CardHeader>
               <CardTitle>{t("media.title")}</CardTitle>

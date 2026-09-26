@@ -6,6 +6,7 @@ import {
   requireMiniprogramAuth,
 } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
+import { ChannelVideoError } from "@/lib/channel-video";
 import {
   PUBLIC_SUBMISSION_WHERE,
   parseBigIntId,
@@ -63,6 +64,9 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
         message: "修改已提交，等待审核",
       });
     } catch (error) {
+      if (error instanceof ChannelVideoError) {
+        return NextResponse.json({ error: error.message }, { status: 422 });
+      }
       const message = error instanceof Error ? error.message : "Failed to update submission";
       if (message === "Submission not found") {
         return NextResponse.json({ error: "Submission not found" }, { status: 404 });

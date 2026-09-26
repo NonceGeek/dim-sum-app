@@ -1,3 +1,4 @@
+import { parseChannelVideo, resolveChannelVideo } from "@/lib/channel-video";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseActivityDateTime } from "@/lib/activity-time";
@@ -335,6 +336,7 @@ export function serializeSubmission(
     awardInfo: submission.award_info,
     coverUrl: submission.cover_url ?? imageUrls[0] ?? null,
     imageUrls,
+    channelVideo: parseChannelVideo(submission.channel_video),
     liked: viewerLiked,
     activity: submission.activity
       ? {
@@ -382,6 +384,7 @@ export function serializePublicSubmission(submission: any) {
     activity: serialized.activity,
     author: serialized.author,
     media: serialized.media,
+    channelVideo: serialized.channelVideo,
     createdAt: serialized.createdAt,
     updatedAt: serialized.updatedAt,
   };
@@ -393,6 +396,7 @@ export function serializeHomeSubmission(submission: any) {
   return {
     id: submission.id.toString(),
     imageUrl: submission.cover_url ?? imageUrls[0] ?? "",
+    channelVideo: parseChannelVideo(submission.channel_video),
     author: author?.name ?? "用户昵称",
     avatar: author?.avatar ?? "",
     viewCount: submission.view_count,
@@ -417,6 +421,7 @@ export function serializeHomeFeedSubmission(submission: any, viewerLiked?: boole
     tags: submission.tags,
     coverUrl: cover.coverUrl ?? imageUrls[0] ?? "",
     imageUrls,
+    channelVideo: parseChannelVideo(submission.channel_video),
     audioUrls,
     coverWidth: cover.coverWidth,
     coverHeight: cover.coverHeight,
@@ -569,13 +574,14 @@ export async function listHomeFeedSubmissions(options: {
   };
 }
 
-export function validateSubmissionMedia(media: unknown[], coverUrlValue?: unknown) {
+export function validateSubmissionMedia(media: unknown[], coverUrlValue?: unknown, channelVideoValue?: unknown) {
+  const channelVideo = parseChannelVideo(channelVideoValue);
   const images = media.filter((item: any) => item?.type === "image");
   const audios = media.filter((item: any) => item?.type === "audio");
   const videos = media.filter((item: any) => item?.type === "video");
   const coverUrl = normalizeCoverUrl(coverUrlValue);
 
-  if (media.length < 1) return false;
+  if (media.length < 1 && !channelVideo) return false;
   if (media.some((item: any) => !CORPUS_COLLECTION_MEDIA_TYPES.includes(item?.type))) {
     return false;
   }
@@ -602,7 +608,7 @@ function buildSubmissionMediaCreateInput(media: any[]) {
   }));
 }
 
-export async function createCorpusSubmission(userId: string, body: any) {
+export async function createCorpusSubmission(userId: string, body: any, db = prisma) {
   const media = Array.isArray(body.media) ? body.media : [];
   if (
     !body.submissionType ||
@@ -614,13 +620,14 @@ export async function createCorpusSubmission(userId: string, body: any) {
     throw new Error("Missing required fields");
   }
 
-  if (!validateSubmissionMedia(media, body.coverUrl)) {
+  const channelVideo = parseChannelVideo(body.channelVideo);
+  if (!validateSubmissionMedia(media, body.coverUrl, channelVideo)) {
     throw new Error("Invalid media requirements");
   }
 
   const activityId = parseBigIntId(body.activityId);
   const coverUrl = normalizeCoverUrl(body.coverUrl);
-  return prisma.$transaction(async (tx) => {
+  return db.$transaction(async (tx) => {
     const activity = activityId
       ? await tx.corpus_collection_activities.findUnique({
           where: { id: activityId },
@@ -659,6 +666,7 @@ export async function createCorpusSubmission(userId: string, body: any) {
         intro: body.intro,
         tags: body.tags as Prisma.InputJsonValue,
         cover_url: coverUrl ?? null,
+        channel_video: channelVideo ?? Prisma.DbNull,
         precheck_result: jsonInput(body.precheckResult),
         review_status: "pending_review",
         visibility: "private",
@@ -689,7 +697,7 @@ export async function createCorpusSubmission(userId: string, body: any) {
   });
 }
 
-export async function updateCorpusSubmission(userId: string, id: bigint, body: any) {
+export async function updateCorpusSubmission(userId: string, id: bigint, body: any, db = prisma) {
   const media = Array.isArray(body.media) ? body.media : [];
   if (
     !body.submissionType ||
@@ -701,25 +709,27 @@ export async function updateCorpusSubmission(userId: string, id: bigint, body: a
     throw new Error("Missing required fields");
   }
 
-  if (!validateSubmissionMedia(media, body.coverUrl)) {
-    throw new Error("Invalid media requirements");
-  }
+  return db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM corpus_collection_submissions WHERE id = ${id} AND user_id = ${userId} FOR UPDATE`;
+    const existing = await tx.corpus_collection_submissions.findFirst({
+      where: { id, user_id: userId },
+      include: submissionInclude,
+    });
 
-  const existing = await prisma.corpus_collection_submissions.findFirst({
-    where: { id, user_id: userId },
-    include: submissionInclude,
-  });
+    if (!existing) {
+      throw new Error("Submission not found");
+    }
 
-  if (!existing) {
-    throw new Error("Submission not found");
-  }
+    const channelVideo = resolveChannelVideo(body, existing.channel_video);
+    if (!validateSubmissionMedia(media, body.coverUrl, channelVideo)) {
+      throw new Error("Invalid media requirements");
+    }
 
-  const editState = getSubmissionEditState(existing, userId);
-  if (!editState.canEdit) {
-    throw new Error("submission_edit_not_allowed");
-  }
+    const editState = getSubmissionEditState(existing, userId);
+    if (!editState.canEdit) {
+      throw new Error("submission_edit_not_allowed");
+    }
 
-  return prisma.$transaction(async (tx) => {
     await tx.corpus_collection_submission_media.deleteMany({
       where: { submission_id: id },
     });
@@ -732,6 +742,10 @@ export async function updateCorpusSubmission(userId: string, id: bigint, body: a
         intro: body.intro,
         tags: body.tags as Prisma.InputJsonValue,
         cover_url: normalizeCoverUrl(body.coverUrl) ?? null,
+        channel_video: channelVideo ?? Prisma.DbNull,
+        ai_review_result: Prisma.DbNull,
+        reviewed_by: null,
+        reviewed_at: null,
         precheck_result: jsonInput(body.precheckResult),
         review_status: "pending_review",
         review_reason: null,

@@ -660,6 +660,8 @@ model corpus_collection_submissions {
   view_count            Int                                       @default(0)
   is_locked             Boolean                                   @default(false)
   cover_url             String?
+  /// External WeChat Channels reference; not a downloadable video URL or ownership proof.
+  channel_video         Json?
   comments              corpus_collection_comments[]
   likes                 corpus_collection_likes[]
   messages              corpus_collection_messages[]

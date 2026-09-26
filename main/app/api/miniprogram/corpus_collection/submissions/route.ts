@@ -5,6 +5,7 @@ import {
   serializeSubmission,
 } from "@/lib/services/corpus-collection";
 import { questionnaireErrorResponse } from "@/lib/services/questionnaire-schema";
+import { ChannelVideoError } from "@/lib/channel-video";
 
 export async function POST(req: NextRequest) {
   return requireMiniprogramAuth(req, async (_req, user) => {
@@ -21,6 +22,9 @@ export async function POST(req: NextRequest) {
         { status: 201 }
       );
     } catch (error) {
+      if (error instanceof ChannelVideoError) {
+        return NextResponse.json({ error: error.message }, { status: 422 });
+      }
       const questionnaireError = questionnaireErrorResponse(error);
       if (questionnaireError.status !== 500) {
         return NextResponse.json(questionnaireError.body, { status: questionnaireError.status });
