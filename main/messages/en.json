@@ -672,7 +672,7 @@
   "AdminSettings": { "title": "Settings", "description": "Configure system parameters and administrative settings.", "placeholder": "System Settings" },
   "AdminAuditLogs": {
     "title": "Audit Logs", "description": "View permission change history and user activity.",
-    "filter": { "title": "Filter Logs", "operator": "Operator ID...", "targetUser": "Target User ID...", "category": "Category...", "search": "Search" },
+    "filter": { "title": "Filter Logs", "operator": "Operator: name, phone, email or UID", "targetUser": "Target user: name, phone, email or UID", "category": "Category...", "search": "Search" },
     "list": { "title": "Audit Logs ({count})", "description": "Permission and role change history" },
     "columns": { "time": "Time", "operator": "Operator", "targetUser": "Target User", "action": "Action", "category": "Category" },
     "actions": { "granted": "Granted", "revoked": "Revoked", "modified": "Modified", "roleChanged": "Role Changed" },
@@ -924,7 +924,9 @@
     "save": "Save permissions",
     "saving": "Saving…",
     "audit": "Submission audit log",
-    "operatorUid": "Filter by operator UID",
+    "auditSearch": "Search records",
+    "noAuditRecords": "No matching audit records",
+    "operatorUid": "Operator: name, phone, email or full UID",
     "previous": "Previous",
     "next": "Next",
     "actions": {

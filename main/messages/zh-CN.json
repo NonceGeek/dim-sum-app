@@ -673,7 +673,7 @@
   "AdminSettings": { "title": "系统设置", "description": "配置系统参数和后台管理设置。", "placeholder": "系统设置" },
   "AdminAuditLogs": {
     "title": "审计日志", "description": "查看权限变更记录和用户操作。",
-    "filter": { "title": "筛选日志", "operator": "操作人 ID...", "targetUser": "目标用户 ID...", "category": "分类...", "search": "搜索" },
+    "filter": { "title": "筛选日志", "operator": "操作人：昵称、手机号、邮箱或 UID", "targetUser": "目标用户：昵称、手机号、邮箱或 UID", "category": "分类...", "search": "搜索" },
     "list": { "title": "审计日志（{count}）", "description": "权限及角色变更记录" },
     "columns": { "time": "时间", "operator": "操作人", "targetUser": "目标用户", "action": "操作", "category": "分类" },
     "actions": { "granted": "已授予", "revoked": "已撤销", "modified": "已修改", "roleChanged": "角色已变更" },
@@ -925,7 +925,9 @@
     "save": "保存权限",
     "saving": "保存中…",
     "audit": "投稿操作审计",
-    "operatorUid": "筛选操作人 UID",
+    "auditSearch": "搜索记录",
+    "noAuditRecords": "未找到符合条件的审计记录",
+    "operatorUid": "操作人：昵称、手机号、邮箱或完整 UID",
     "previous": "上一页",
     "next": "下一页",
     "actions": {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
+import { userIdentityWhere } from "@/lib/services/collection-user-search";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -22,8 +24,32 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
+    const operatorQuery = (searchParams.get("operator_query") ?? "").trim();
+    const targetQuery = (searchParams.get("target_user_query") ?? "").trim();
+    if (operatorQuery.length > 100 || targetQuery.length > 100)
+      return NextResponse.json(
+        { error: "Search is too long" },
+        { status: 400 },
+      );
+
     // 构建查询条件
-    const whereClause: Record<string, unknown> = {};
+    const whereClause: Prisma.permission_audit_logsWhereInput = {};
+    const filters: Prisma.permission_audit_logsWhereInput[] = [];
+    if (operatorQuery)
+      filters.push({
+        OR: [
+          { operator_id: operatorQuery },
+          { operator: { is: userIdentityWhere(operatorQuery) } },
+        ],
+      });
+    if (targetQuery)
+      filters.push({
+        OR: [
+          { target_user_id: targetQuery },
+          { target_user: { is: userIdentityWhere(targetQuery) } },
+        ],
+      });
+    if (filters.length) whereClause.AND = filters;
     if (operatorId) whereClause.operator_id = operatorId;
     if (targetUserId) whereClause.target_user_id = targetUserId;
     if (categoryName) whereClause.category_name = categoryName;
