@@ -39,12 +39,6 @@ const adminNavItems = [
     icon: Users,
   },
   {
-    titleKey: "nav.administrators",
-    href: "/admin/administrators",
-    icon: Shield,
-    superAdminOnly: true,
-  },
-  {
     titleKey: "nav.categories",
     href: "/admin/categories",
     icon: FolderOpen,
@@ -53,6 +47,22 @@ const adminNavItems = [
     titleKey: "nav.permissions",
     href: "/admin/permissions",
     icon: Shield,
+    children: [
+      {
+        titleKey: "nav.administrators",
+        href: "/admin/administrators",
+        superAdminOnly: true,
+      },
+      { titleKey: "nav.corpusPermissions", href: "/admin/permissions" },
+      {
+        titleKey: "corpusNav.submissionPermissions",
+        href: "/admin/corpus-collection/submission-permissions",
+      },
+      {
+        titleKey: "corpusNav.questionnairePermissions",
+        href: "/admin/corpus-collection/questionnaire-permissions",
+      },
+    ],
   },
   {
     titleKey: "nav.corpusData",
@@ -65,24 +75,55 @@ const adminNavItems = [
     icon: ClipboardList,
     children: [
       { titleKey: "corpusNav.overview", href: "/admin/corpus-collection" },
-      { titleKey: "corpusNav.activities", href: "/admin/corpus-collection/activities" },
-      { titleKey: "corpusNav.submissionPermissions", href: "/admin/corpus-collection/submission-permissions" },
-      { titleKey: "corpusNav.submissionAudit", href: "/admin/corpus-collection/submission-audit" },
-      { titleKey: "corpusNav.submissions", href: "/admin/corpus-collection/submissions" },
-      { titleKey: "corpusNav.comments", href: "/admin/corpus-collection/comments" },
-      { titleKey: "corpusNav.categories", href: "/admin/corpus-collection/categories" },
-      { titleKey: "corpusNav.reviewBatches", href: "/admin/corpus-collection/review-batches" },
-      { titleKey: "corpusNav.analytics", href: "/admin/corpus-collection/analytics" },
-      { titleKey: "corpusNav.questionnaireInsights", href: "/admin/corpus-collection/questionnaire-insights" },
-      { titleKey: "corpusNav.questionnairePermissions", href: "/admin/corpus-collection/questionnaire-permissions" },
-      { titleKey: "corpusNav.questionnaireSettings", href: "/admin/corpus-collection/questionnaire-settings" },
-      { titleKey: "corpusNav.questionnaireDefinition", href: "/admin/corpus-collection/questionnaire-definition" },
+      {
+        titleKey: "corpusNav.activities",
+        href: "/admin/corpus-collection/activities",
+      },
+      {
+        titleKey: "corpusNav.submissions",
+        href: "/admin/corpus-collection/submissions",
+      },
+      {
+        titleKey: "corpusNav.comments",
+        href: "/admin/corpus-collection/comments",
+      },
+      {
+        titleKey: "corpusNav.categories",
+        href: "/admin/corpus-collection/categories",
+      },
+      {
+        titleKey: "corpusNav.reviewBatches",
+        href: "/admin/corpus-collection/review-batches",
+      },
+      {
+        titleKey: "corpusNav.analytics",
+        href: "/admin/corpus-collection/analytics",
+      },
+      {
+        titleKey: "corpusNav.questionnaireInsights",
+        href: "/admin/corpus-collection/questionnaire-insights",
+      },
+      {
+        titleKey: "corpusNav.questionnaireSettings",
+        href: "/admin/corpus-collection/questionnaire-settings",
+      },
+      {
+        titleKey: "corpusNav.questionnaireDefinition",
+        href: "/admin/corpus-collection/questionnaire-definition",
+      },
     ],
   },
   {
     titleKey: "nav.auditLogs",
     href: "/admin/audit-logs",
     icon: FileText,
+    children: [
+      { titleKey: "nav.permissionAudit", href: "/admin/audit-logs" },
+      {
+        titleKey: "corpusNav.submissionAudit",
+        href: "/admin/corpus-collection/submission-audit",
+      },
+    ],
   },
   {
     titleKey: "nav.ruleOps",
@@ -113,6 +154,20 @@ export default function AdminLayout({
     "/admin/corpus-collection": true,
   });
 
+  // Follow the selected child even when its URL belongs to another route family.
+  useEffect(() => {
+    const group = adminNavItems.find((item) =>
+      item.children?.some(
+        (child) =>
+          pathname === child.href ||
+          (child.href !== "/admin/corpus-collection" &&
+            pathname.startsWith(`${child.href}/`)),
+      ),
+    );
+    if (group)
+      setExpandedMenus((previous) => ({ ...previous, [group.href]: true }));
+  }, [pathname]);
+
   useEffect(() => {
     if (status === "loading") return;
 
@@ -121,15 +176,41 @@ export default function AdminLayout({
       return;
     }
     setCorpusAccess(null);
-    const submissionPath = pathname === "/admin" || pathname === "/admin/corpus-collection" || /^\/admin\/corpus-collection\/(submissions|review-batches)(\/|$)/.test(pathname);
+    const submissionPath =
+      pathname === "/admin" ||
+      pathname === "/admin/corpus-collection" ||
+      /^\/admin\/corpus-collection\/(submissions|review-batches)(\/|$)/.test(
+        pathname,
+      );
     if (submissionPath) {
       let active = true;
-      fetch("/api/admin/corpus-collection/submission-access", { cache: "no-store" })
-        .then((response) => { if (!response.ok) throw new Error("denied"); if (active) { setCorpusAccess(true); if (pathname === "/admin" || pathname === "/admin/corpus-collection") router.replace("/admin/corpus-collection/submissions"); } })
-        .catch(() => { if (active) { setCorpusAccess(false); router.push("/"); } });
-      return () => { active = false; };
+      fetch("/api/admin/corpus-collection/submission-access", {
+        cache: "no-store",
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("denied");
+          if (active) {
+            setCorpusAccess(true);
+            if (
+              pathname === "/admin" ||
+              pathname === "/admin/corpus-collection"
+            )
+              router.replace("/admin/corpus-collection/submissions");
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setCorpusAccess(false);
+            router.push("/");
+          }
+        });
+      return () => {
+        active = false;
+      };
     }
-    if (!pathname.startsWith("/admin/corpus-collection/questionnaire-insights")) {
+    if (
+      !pathname.startsWith("/admin/corpus-collection/questionnaire-insights")
+    ) {
       router.push("/");
       return;
     }
@@ -150,7 +231,10 @@ export default function AdminLayout({
     };
   }, [pathname, session, status, router]);
 
-  if (status === "loading" || (!session?.user?.isSystemAdmin && corpusAccess === null)) {
+  if (
+    status === "loading" ||
+    (!session?.user?.isSystemAdmin && corpusAccess === null)
+  ) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -167,7 +251,7 @@ export default function AdminLayout({
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -188,105 +272,117 @@ export default function AdminLayout({
           </Button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-2">
           {adminNavItems
-            .filter((item) => session.user.isSystemAdmin || item.href === "/admin/corpus-collection")
+            .filter(
+              (item) =>
+                session.user.isSystemAdmin ||
+                item.href === "/admin/corpus-collection",
+            )
             .map((item) => {
-            if (
-              "superAdminOnly" in item &&
-              item.superAdminOnly &&
-              !session.user.isSuperAdmin
-            ) {
-              return null;
-            }
+              const visibleChildren = item.children?.filter((child) => {
+                if (
+                  "superAdminOnly" in child &&
+                  child.superAdminOnly &&
+                  !session.user.isSuperAdmin
+                )
+                  return false;
+                return (
+                  session.user.isSystemAdmin ||
+                  (child.href ===
+                    "/admin/corpus-collection/questionnaire-insights" &&
+                    (!submissionAccess || submissionAccess.canViewInsights)) ||
+                  (hasSubmissionAccess &&
+                    [
+                      "/admin/corpus-collection/submissions",
+                      "/admin/corpus-collection/review-batches",
+                    ].includes(child.href))
+                );
+              });
+              const childActive = (href: string) =>
+                pathname === href ||
+                (href !== "/admin/corpus-collection" &&
+                  pathname.startsWith(`${href}/`));
+              const isSectionActive = item.children
+                ? visibleChildren?.some((child) => childActive(child.href))
+                : pathname === item.href;
+              const isExpanded = expandedMenus[item.href] ?? !!isSectionActive;
 
-            const isSectionActive =
-              pathname === item.href ||
-              (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
-            const isExpanded = expandedMenus[item.href] || isSectionActive;
-
-            if (item.children) {
-              return (
-                <div key={item.href} className="space-y-1">
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex w-full items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                      isSectionActive
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                    )}
-                    onClick={() =>
-                      setExpandedMenus((prev) => ({
-                        ...prev,
-                        [item.href]: !isExpanded,
-                      }))
-                    }
-                  >
-                    <span className="flex items-center space-x-3">
-                      <item.icon className="w-5 h-5" />
-                      <span>{t(item.titleKey)}</span>
-                    </span>
-                    <ChevronDown
+              if (item.children) {
+                return (
+                  <div key={item.href} className="space-y-1">
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
                       className={cn(
-                        "h-4 w-4 transition-transform",
-                        isExpanded && "rotate-180",
+                        "flex w-full items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                        isSectionActive
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
                       )}
-                    />
-                  </button>
-                  {isExpanded && (
-                    <div className="ml-8 space-y-1">
-                      {item.children
-                        .filter(
-                          (child) =>
-                            session.user.isSystemAdmin ||
-                            (child.href === "/admin/corpus-collection/questionnaire-insights" && (!submissionAccess || submissionAccess.canViewInsights)) ||
-                            (hasSubmissionAccess && ["/admin/corpus-collection/submissions", "/admin/corpus-collection/review-batches"].includes(child.href)),
-                        )
-                        .map((child) => {
-                        const isChildActive = pathname === child.href;
-                        return (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            className={cn(
-                              "block rounded-md px-3 py-2 text-sm transition-colors",
-                              isChildActive
-                                ? "bg-accent text-foreground"
-                                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                            )}
-                            onClick={() => setSidebarOpen(false)}
-                          >
-                            {t(child.titleKey)}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
+                      onClick={() =>
+                        setExpandedMenus((prev) => ({
+                          ...prev,
+                          [item.href]: !isExpanded,
+                        }))
+                      }
+                    >
+                      <span className="flex items-center space-x-3">
+                        <item.icon className="w-5 h-5" />
+                        <span>{t(item.titleKey)}</span>
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          isExpanded && "rotate-180",
+                        )}
+                      />
+                    </button>
+                    {isExpanded && (
+                      <div className="ml-8 space-y-1">
+                        {visibleChildren?.map((child) => {
+                          const isChildActive = childActive(child.href);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              aria-current={isChildActive ? "page" : undefined}
+                              className={cn(
+                                "block rounded-md px-3 py-2 text-sm transition-colors",
+                                isChildActive
+                                  ? "bg-accent text-foreground"
+                                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                              )}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              {t(child.titleKey)}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                  isActive
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>
-                  {t(item.titleKey)}
-                </span>
-              </Link>
-            );
-          })}
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                    isActive
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{t(item.titleKey)}</span>
+                </Link>
+              );
+            })}
         </nav>
 
         <div className="p-4 border-t border-border">
@@ -354,7 +450,9 @@ export default function AdminLayout({
               <LocaleSwitcher />
               <ThemeToggle />
               <span className="text-sm text-muted-foreground">
-                {t("welcomeBack", { name: session.user.name ?? t("unnamedUser") })}
+                {t("welcomeBack", {
+                  name: session.user.name ?? t("unnamedUser"),
+                })}
               </span>
             </div>
           </div>
