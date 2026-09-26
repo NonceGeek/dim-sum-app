@@ -1,4 +1,5 @@
 "use client";
+import { useSession } from "next-auth/react";
 
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
@@ -126,6 +127,7 @@ function MediaPreview({ item }: { item: Submission["media"][number] }) {
 }
 
 export default function CorpusCollectionSubmissionDetailPage() {
+  const { data: session } = useSession();
   const t = useTranslations("SubmissionDetail");
   const locale = useLocale();
   const statusLabel = (value: string) => t(`status.${value}`);
@@ -134,7 +136,8 @@ export default function CorpusCollectionSubmissionDetailPage() {
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const { data, isLoading, error } = useQuery<Submission>({
-    queryKey: ["corpus-collection-submission", id],
+    queryKey: ["corpus-collection-submission", session?.user?.id, id],
+    staleTime: 0, retry: false, refetchOnWindowFocus: "always",
     queryFn: async () => {
       const response = await fetch(`/api/admin/corpus-collection/submissions/${id}`);
       if (!response.ok) {

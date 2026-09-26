@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { requireAdmin } from "@/lib/auth";
+import { withSubmissionAccess, submissionScope } from "@/lib/services/submission-access";
+import { COLLECTION_ACTIONS, canAct } from "@/lib/collection-permissions";
 import { prisma } from "@/lib/prisma";
 import {
   parseBigIntId,
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q");
   const qMode = searchParams.get("qMode");
 
-  return requireAdmin(req, async () => {
+  return withSubmissionAccess(req, async (access) => {
     const activityUuidIds =
       q && qMode === "activityUuid" ? await findActivityIdsByUuidFragment(q) : undefined;
     const activityIdFilter = activityId
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
           : undefined;
 
     const where: Prisma.corpus_collection_submissionsWhereInput = {
+      AND: [submissionScope(access)],
       activity_id: activityIdFilter,
       review_status: reviewStatus || undefined,
       submission_type: submissionType || undefined,
@@ -72,8 +74,9 @@ export async function GET(req: NextRequest) {
       prisma.corpus_collection_submissions.count({ where }),
     ]);
     return NextResponse.json({
-      items: items.map((item) => serializeSubmission(item)),
+      items: items.map((item) => ({ ...serializeSubmission(item), allowedActions: COLLECTION_ACTIONS.filter((action) => canAct(access, item.activity_id, action)) })),
       pagination: { page, pageSize, total },
+      isSystemAdmin: access.isAdmin,
     });
   });
 }

@@ -1,4 +1,5 @@
 "use client";
+import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
 
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
@@ -45,6 +46,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { data: submissionAccess } = useSubmissionAccess();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
@@ -108,11 +110,11 @@ export function Header() {
             {t(item.labelKey)}
           </DropdownMenuItem>
         ))}
-        {session?.user?.isSystemAdmin && (
+        {(session?.user?.isSystemAdmin || submissionAccess) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => window.open("/admin", "_blank")}
+              onClick={() => window.open(session?.user?.isSystemAdmin ? "/admin" : "/admin/corpus-collection/submissions", "_blank")}
             >
               <Settings className="mr-2 h-4 w-4" />
               {t("admin")}

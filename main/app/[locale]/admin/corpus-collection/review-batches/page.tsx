@@ -1,4 +1,5 @@
 "use client";
+import { useSession } from "next-auth/react";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -38,14 +39,16 @@ const statusColor: Record<string, string> = {
 };
 
 export default function CorpusCollectionReviewBatchesPage() {
+  const { data: session } = useSession();
   const t = useTranslations("ReviewBatches");
   const locale = useLocale();
   const statusLabel = (value: string) => ({ queued: t("status.queued"), running: t("status.running"), completed: t("status.completed"), failed: t("status.failed"), cancelled: t("status.cancelled") }[value] || value);
   const [status, setStatus] = useState("all");
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery<{ items: Batch[] }>({
-    queryKey: ["corpus-collection-review-batches", status],
+  const { data: listData, isLoading, error: listError } = useQuery<{ items: Batch[] }>({
+    queryKey: ["corpus-collection-review-batches", session?.user?.id, status],
+    staleTime: 0, retry: false, refetchOnWindowFocus: "always",
     queryFn: async () => {
       const params = new URLSearchParams({ pageSize: "50" });
       if (status !== "all") params.set("status", status);
@@ -55,8 +58,9 @@ export default function CorpusCollectionReviewBatchesPage() {
     },
   });
 
-  const { data: detail } = useQuery<BatchDetail>({
-    queryKey: ["corpus-collection-review-batch", selectedBatchId],
+  const { data: detailData, error: detailError } = useQuery<BatchDetail>({
+    queryKey: ["corpus-collection-review-batch", session?.user?.id, selectedBatchId],
+    staleTime: 0, retry: false, refetchOnWindowFocus: "always",
     queryFn: async () => {
       const response = await fetch(`/api/admin/corpus-collection/review-batches/${selectedBatchId}`);
       if (!response.ok) throw new Error(t("errors.loadDetail"));
@@ -65,6 +69,8 @@ export default function CorpusCollectionReviewBatchesPage() {
     enabled: Boolean(selectedBatchId),
   });
 
+  const data = listError ? undefined : listData;
+  const detail = detailError ? undefined : detailData;
   return (
     <div className="space-y-8">
       <div>

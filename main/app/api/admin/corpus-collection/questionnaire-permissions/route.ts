@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireCollectionAdmin as requireAdmin } from "@/lib/services/submission-access";
 import { prisma } from "@/lib/prisma";
 
 const permissionSchema = z.object({
@@ -162,7 +162,7 @@ export async function DELETE(req: NextRequest) {
     });
     if (!permission) return NextResponse.json({ error: "PERMISSION_NOT_FOUND" }, { status: 404 });
     await prisma.$transaction([
-      prisma.corpus_collection_activity_permissions.delete({ where: { id: permissionId } }),
+      prisma.corpus_collection_activity_permissions.update({ where: { id: permissionId }, data: { can_view_insights: false, can_export_insights: false } }),
       prisma.corpus_collection_audit_logs.create({
         data: {
           operator_id: operatorId,
