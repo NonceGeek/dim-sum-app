@@ -3,6 +3,7 @@ import { routing } from './i18n/routing';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { Role } from '@prisma/client';
+import { isDelegatedCollectionPage, isReviewWebhook } from '@/lib/admin-route-access';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -35,6 +36,9 @@ function getPathnameWithoutLocale(pathname: string): string {
 
 export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // Service callbacks must reach their own mandatory Bearer-token validation.
+  if (isReviewWebhook(pathname, request.method)) return NextResponse.next();
 
   // Skip i18n for API routes and static files
   if (
@@ -81,7 +85,7 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(`/${locale}`, request.url));
     }
 
-    if (adminPattern.test(strippedPathname) && !token.isSystemAdmin) {
+    if (adminPattern.test(strippedPathname) && !token.isSystemAdmin && !token.isSuperAdmin && !isDelegatedCollectionPage(strippedPathname)) {
       const locale = routing.locales.find(l => pathname.startsWith(`/${l}`)) || routing.defaultLocale;
       return NextResponse.redirect(new URL(`/${locale}`, request.url));
     }

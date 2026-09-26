@@ -15,7 +15,34 @@ import { toast } from "sonner";
 type Activity = { id: string; title: string; displayUuid: string };
 export default function SubmissionPermissionsPage() {
   const t = useTranslations("CollectionPermissions");
-  const [uid, setUid] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Array<{
+    id: string;
+    name: string | null;
+    phoneHint: string | null;
+    emailHint: string | null;
+    isSystemAdmin: boolean;
+  }> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const search = async () => {
+    setBusy(true);
+    setUser(null);
+    setResults(null);
+    try {
+      const response = await fetch(
+        `/api/admin/corpus-collection/submission-permissions?q=${encodeURIComponent(query.trim())}`,
+        { cache: "no-store" },
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setResults(data.users);
+      setHasMore(data.hasMore);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("error"));
+    } finally {
+      setBusy(false);
+    }
+  };
   const [user, setUser] = useState<{
     id: string;
     name: string;
@@ -29,7 +56,7 @@ export default function SubmissionPermissionsPage() {
   const [grants, setGrants] = useState<Record<string, CollectionAction[]>>({});
   const [activityId, setActivityId] = useState("");
   const [busy, setBusy] = useState(false);
-  const load = async () => {
+  const load = async (uid: string) => {
     setBusy(true);
     setUser(null);
     try {
@@ -107,20 +134,59 @@ export default function SubmissionPermissionsPage() {
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          void load();
+          void search();
         }}
       >
         <Input
-          aria-label="UID"
-          placeholder="UID"
-          value={uid}
+          aria-label={t("searchUsers")}
+          placeholder={t("searchPlaceholder")}
+          value={query}
+          disabled={busy}
+          maxLength={100}
           onChange={(e) => {
-            setUid(e.target.value);
+            setQuery(e.target.value);
+            setResults(null);
             setUser(null);
           }}
         />
-        <Button disabled={busy || !uid.trim()}>{t("lookup")}</Button>
+        <Button disabled={busy || query.trim().length < 2}>
+          {t("lookup")}
+        </Button>
       </form>
+      <p className="text-sm text-muted-foreground">{t("searchHint")}</p>
+      {results && (
+        <div className="space-y-2" aria-live="polite">
+          {!results.length && <p>{t("noUsers")}</p>}
+          {results.map((candidate) => (
+            <button
+              type="button"
+              key={candidate.id}
+              disabled={busy}
+              aria-pressed={user?.id === candidate.id}
+              className="block w-full rounded border p-3 text-left hover:bg-accent disabled:opacity-50"
+              onClick={() => void load(candidate.id)}
+            >
+              <span className="font-medium">
+                {candidate.name || t("unnamedUser")}
+              </span>
+              {candidate.isSystemAdmin && (
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {t("systemAdmin")}
+                </span>
+              )}
+              <span className="mt-1 block text-sm text-muted-foreground">
+                {[candidate.phoneHint, candidate.emailHint]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+              <span className="block break-all text-xs text-muted-foreground">
+                UID: {candidate.id}
+              </span>
+            </button>
+          ))}
+          {hasMore && <p>{t("moreResults")}</p>}
+        </div>
+      )}
       {user && (
         <Card>
           <CardHeader>
