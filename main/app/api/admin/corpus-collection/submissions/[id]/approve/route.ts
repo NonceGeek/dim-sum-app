@@ -1,43 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { parseBigIntId, serializeSubmission, submissionInclude } from "@/lib/services/corpus-collection";
+import { parseBigIntId, serializeSubmission } from "@/lib/services/corpus-collection";
+import { AccessError, withSubmissionAccess } from "@/lib/services/submission-access";
+import { mutateSubmissions } from "@/lib/services/submission-mutations";
 
 export async function POST(req: NextRequest, context: AppRouteContext) {
-  return requireAdmin(req, async (_req, userId) => {
+  return withSubmissionAccess(req, async (access) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
-    if (!id) return NextResponse.json({ error: "Invalid submission id" }, { status: 400 });
-    const submission = await prisma.$transaction(
-      async (tx) => {
-        const updated = await tx.corpus_collection_submissions.update({
-          where: { id },
-          data: {
-            review_status: "approved",
-            visibility: "public",
-            reviewed_by: userId,
-            reviewed_at: new Date(),
-            review_reason: null,
-          },
-          include: submissionInclude,
-        });
-
-        await tx.corpus_collection_messages.create({
-          data: {
-            user_id: updated.user_id,
-            submission_id: updated.id,
-            title: "审核通过",
-            content: `你的作品「${updated.title}」已通过审核。`,
-            type: "审核信息",
-          },
-        });
-
-        return updated;
-      },
-      { timeout: 15_000 }
-    );
-
+    if (!id) throw new AccessError(400, "Invalid submission id");
+    const body = await req.json().catch(() => ({}));
+    const [submission] = await mutateSubmissions(access.userId, [id], "approve", body);
     return NextResponse.json(serializeSubmission(submission));
   });
 }

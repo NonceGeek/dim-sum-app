@@ -1,7 +1,8 @@
 "use client";
+import { useSession } from "next-auth/react";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Award, Bot, Check, Eye, Heart, ImageOff, Loader2, MessageCircle, Search, Star, X } from "lucide-react";
@@ -17,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Submission = {
+  allowedActions: string[];
   id: string;
   title: string;
   intro: string;
@@ -39,6 +41,7 @@ type Submission = {
 };
 
 type SubmissionsResponse = {
+  isSystemAdmin: boolean;
   items: Submission[];
   pagination: { page: number; pageSize: number; total: number };
 };
@@ -67,6 +70,7 @@ const statusColor: Record<string, string> = {
 };
 
 export default function CorpusCollectionSubmissionsPage() {
+  const { data: session } = useSession();
   const t = useTranslations("SubmissionsAdmin");
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -78,16 +82,18 @@ export default function CorpusCollectionSubmissionsPage() {
   const [selected, setSelected] = useState<string[]>([]);
 
   const { data: activitiesData } = useQuery<ActivitiesResponse>({
-    queryKey: ["corpus-collection-activities-for-submission-filter"],
+    queryKey: ["corpus-collection-activities-for-submission-filter", session?.user?.id],
+    staleTime: 0, retry: false, refetchOnWindowFocus: "always",
     queryFn: async () => {
-      const response = await fetch("/api/admin/corpus-collection/activities?pageSize=100");
+      const response = await fetch("/api/admin/corpus-collection/submission-access");
       if (!response.ok) throw new Error(t("errors.activities"));
       return response.json();
     },
   });
 
-  const { data, isLoading } = useQuery<SubmissionsResponse>({
-    queryKey: ["corpus-collection-submissions", q, qMode, reviewStatus, activityFilter],
+  const { data: queryData, isLoading, error: loadError } = useQuery<SubmissionsResponse>({
+    queryKey: ["corpus-collection-submissions", session?.user?.id, q, qMode, reviewStatus, activityFilter],
+    staleTime: 0, retry: false, refetchOnWindowFocus: "always",
     queryFn: async () => {
       const params = new URLSearchParams({ pageSize: "50" });
       if (q) params.set("q", q);
@@ -104,6 +110,9 @@ export default function CorpusCollectionSubmissionsPage() {
     },
   });
 
+  const data = loadError ? undefined : queryData;
+  useEffect(() => { setSelected([]); }, [q, qMode, reviewStatus, activityFilter, loadError]);
+  const can = (item: Submission, action: string) => item.allowedActions?.includes(action) ?? false;
   const selectedItems = useMemo(
     () => data?.items.filter((item) => selected.includes(item.id)) ?? [],
     [data?.items, selected]
@@ -126,6 +135,7 @@ export default function CorpusCollectionSubmissionsPage() {
       toast.success(t("messages.updated"));
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
+    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] }); },
     onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.action")),
   });
 
@@ -146,6 +156,7 @@ export default function CorpusCollectionSubmissionsPage() {
       toast.success(t("messages.awardUpdated"));
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
+    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] }); },
     onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.award")),
   });
 
@@ -168,14 +179,26 @@ export default function CorpusCollectionSubmissionsPage() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      toast.success(t("messages.batchCreated"));
+    onSuccess: (result) => {
+      if (result.batches?.some((batch: any) => batch.status === "dispatch_unknown")) toast.warning(t("partialDispatch"));
+      else toast.success(t("messages.batchCreated"));
       setSelected([]);
       queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] });
     },
+    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] }); },
     onError: (error) => toast.error(error instanceof Error ? error.message : t("errors.batch")),
   });
 
+  const bulkMutation = useMutation({
+    mutationFn: async ({ action, reason }: { action: "approve" | "reject"; reason?: string }) => {
+      const response = await fetch("/api/admin/corpus-collection/submissions/batch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ submissionIds: selected, action, reason }) });
+      const result = await response.json(); if (!response.ok) throw new Error(result.error); return result;
+    },
+    onSuccess: () => { toast.success(t("messages.updated")); setSelected([]); queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] }); },
+    onSettled: () => { queryClient.invalidateQueries({ queryKey: ["corpus-collection-submissions"] }); },
+    onError: (error) => toast.error(error.message),
+  });
+  const canBulk = (action: string) => selected.length > 0 && selectedItems.length === selected.length && selectedItems.every((item) => can(item, action)) && !bulkMutation.isPending && !batchMutation.isPending;
   const toggleSelected = (id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   };
@@ -221,7 +244,7 @@ export default function CorpusCollectionSubmissionsPage() {
   const isAwardPending = (id: string) =>
     awardMutation.isPending && awardMutation.variables?.id === id;
 
-  const hasPendingRowAction = actionMutation.isPending || awardMutation.isPending;
+  const hasPendingRowAction = actionMutation.isPending || awardMutation.isPending || bulkMutation.isPending || batchMutation.isPending;
 
   return (
     <div className="space-y-8">
@@ -232,6 +255,7 @@ export default function CorpusCollectionSubmissionsPage() {
         </p>
       </div>
 
+      {loadError && <p role="alert" className="text-destructive">{loadError.message}</p>}
       <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="flex flex-col gap-3 lg:flex-row">
@@ -264,16 +288,18 @@ export default function CorpusCollectionSubmissionsPage() {
               <SelectTrigger className="w-full lg:w-64"><SelectValue placeholder={t("filters.activity")} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("filters.allActivities")}</SelectItem>
-                <SelectItem value="none">{t("filters.withoutActivity")}</SelectItem>
+                {data?.isSystemAdmin && <SelectItem value="none">{t("filters.withoutActivity")}</SelectItem>}
                 {activitiesData?.items.map((activity) => (
                   <SelectItem key={activity.id} value={activity.id}>{activity.title} · {activity.displayUuid}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button disabled={selected.length === 0 || batchMutation.isPending} onClick={() => batchMutation.mutate()}>
+            <Button disabled={!canBulk("ai_review") || selectedItems.some((item) => !["pending_review", "review_needed"].includes(item.reviewStatus))} onClick={() => batchMutation.mutate()}>
               {batchMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
               {t("sendReview", { count: selected.length })}
             </Button>
+            <Button variant="outline" disabled={!canBulk("approve")} onClick={() => { if (window.confirm(t("batchConfirm"))) bulkMutation.mutate({ action: "approve" }); }}>{t("batchApprove")}</Button>
+            <Button variant="outline" disabled={!canBulk("reject")} onClick={() => { const reason = window.prompt(t("prompts.reject")); if (reason?.trim()) bulkMutation.mutate({ action: "reject", reason }); }}>{t("batchReject")}</Button>
           </div>
         </CardContent>
       </Card>
@@ -307,7 +333,7 @@ export default function CorpusCollectionSubmissionsPage() {
                     <TableCell>
                       <Checkbox
                         checked={selected.includes(submission.id)}
-                        disabled={!["pending_review", "review_needed"].includes(submission.reviewStatus)}
+                        disabled={hasPendingRowAction || !["approve", "reject", "ai_review"].some((action) => can(submission, action))}
                         onCheckedChange={() => toggleSelected(submission.id)}
                       />
                     </TableCell>
@@ -378,6 +404,7 @@ export default function CorpusCollectionSubmissionsPage() {
                       <div className="space-y-2">
                         <label className="flex items-center gap-2 text-sm">
                           <Switch
+                            disabled={hasPendingRowAction || !can(submission, "feature")}
                             checked={submission.isFeatured}
                             onCheckedChange={(checked) => actionMutation.mutate({ id: submission.id, action: "display", body: { isFeatured: checked } })}
                           />
@@ -385,11 +412,13 @@ export default function CorpusCollectionSubmissionsPage() {
                         </label>
                         <label className="flex items-center gap-2 text-sm">
                           <Switch
+                            disabled={hasPendingRowAction || !can(submission, "home")}
                             checked={submission.showOnHome}
                             onCheckedChange={(checked) => actionMutation.mutate({ id: submission.id, action: "display", body: { showOnHome: checked } })}
                           />
                           {t("display.home")}
                         </label>
+                        <label className="flex items-center gap-2 text-sm"><Switch disabled={hasPendingRowAction || !can(submission, "visibility")} checked={submission.visibility === "public"} onCheckedChange={(checked) => actionMutation.mutate({ id: submission.id, action: "display", body: { visibility: checked ? "public" : "private" } })} />{t("publicVisibility")}</label>
                       </div>
                     </TableCell>
                     <TableCell className="sticky right-0 z-10 border-l bg-card transition-colors group-hover:bg-muted">
@@ -404,7 +433,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           <Check className="h-4 w-4" />,
                           () => actionMutation.mutate({ id: submission.id, action: "approve" }),
                           {
-                            disabled: hasPendingRowAction,
+                            disabled: hasPendingRowAction || !can(submission, "approve"),
                             loading: isActionPending(submission.id, "approve"),
                           }
                         )}
@@ -413,7 +442,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           <X className="h-4 w-4" />,
                           () => reject(submission.id),
                           {
-                            disabled: hasPendingRowAction,
+                            disabled: hasPendingRowAction || !can(submission, "reject"),
                             loading: isActionPending(submission.id, "reject"),
                           }
                         )}
@@ -422,7 +451,7 @@ export default function CorpusCollectionSubmissionsPage() {
                           <Star className="h-4 w-4" />,
                           () => markReviewNeeded(submission.id),
                           {
-                            disabled: hasPendingRowAction,
+                            disabled: hasPendingRowAction || !can(submission, "review_needed"),
                             loading: isActionPending(submission.id, "mark-review-needed"),
                           }
                         )}
@@ -436,7 +465,7 @@ export default function CorpusCollectionSubmissionsPage() {
                               awardStatus: submission.isAwarded ? "none" : "awarded",
                             }),
                           {
-                            disabled: hasPendingRowAction,
+                            disabled: hasPendingRowAction || !can(submission, "award"),
                             loading: isAwardPending(submission.id),
                           }
                         )}

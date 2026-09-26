@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
-import { requireAdmin } from "@/lib/auth";
+import { withSubmissionAccess, batchScope } from "@/lib/services/submission-access";
 import { prisma } from "@/lib/prisma";
 import { parseBigIntId, parsePositiveInt } from "@/lib/services/corpus-collection";
 
@@ -11,9 +11,11 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
   const pageSize = parsePositiveInt(searchParams.get("pageSize"), 20, 100);
   const status = searchParams.get("status");
 
-  return requireAdmin(req, async () => {
+  return withSubmissionAccess(req, async (access) => {
     const batchId = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!batchId) return NextResponse.json({ error: "Invalid batch id" }, { status: 400 });
+    const batch = await prisma.corpus_collection_review_batches.findFirst({ where: { id: batchId, ...batchScope(access) }, select: { id: true } });
+    if (!batch) return NextResponse.json({ error: "Batch not found" }, { status: 404 });
     const where = { batch_id: batchId, status: status || undefined };
     const [items, total] = await prisma.$transaction([
       prisma.corpus_collection_review_batch_items.findMany({

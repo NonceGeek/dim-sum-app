@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useRouter, usePathname, Link } from "@/i18n/navigation";
@@ -65,6 +66,8 @@ const adminNavItems = [
     children: [
       { titleKey: "corpusNav.overview", href: "/admin/corpus-collection" },
       { titleKey: "corpusNav.activities", href: "/admin/corpus-collection/activities" },
+      { titleKey: "corpusNav.submissionPermissions", href: "/admin/corpus-collection/submission-permissions" },
+      { titleKey: "corpusNav.submissionAudit", href: "/admin/corpus-collection/submission-audit" },
       { titleKey: "corpusNav.submissions", href: "/admin/corpus-collection/submissions" },
       { titleKey: "corpusNav.comments", href: "/admin/corpus-collection/comments" },
       { titleKey: "corpusNav.categories", href: "/admin/corpus-collection/categories" },
@@ -102,6 +105,8 @@ export default function AdminLayout({
   const t = useTranslations("AdminLayout");
   const router = useRouter();
   const pathname = usePathname();
+  const { data: submissionAccess } = useSubmissionAccess();
+  const hasSubmissionAccess = !!submissionAccess;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [corpusAccess, setCorpusAccess] = useState<boolean | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
@@ -114,6 +119,15 @@ export default function AdminLayout({
     if (session?.user?.isSystemAdmin) {
       setCorpusAccess(true);
       return;
+    }
+    setCorpusAccess(null);
+    const submissionPath = pathname === "/admin" || pathname === "/admin/corpus-collection" || /^\/admin\/corpus-collection\/(submissions|review-batches)(\/|$)/.test(pathname);
+    if (submissionPath) {
+      let active = true;
+      fetch("/api/admin/corpus-collection/submission-access", { cache: "no-store" })
+        .then((response) => { if (!response.ok) throw new Error("denied"); if (active) { setCorpusAccess(true); if (pathname === "/admin" || pathname === "/admin/corpus-collection") router.replace("/admin/corpus-collection/submissions"); } })
+        .catch(() => { if (active) { setCorpusAccess(false); router.push("/"); } });
+      return () => { active = false; };
     }
     if (!pathname.startsWith("/admin/corpus-collection/questionnaire-insights")) {
       router.push("/");
@@ -226,7 +240,8 @@ export default function AdminLayout({
                         .filter(
                           (child) =>
                             session.user.isSystemAdmin ||
-                            child.href === "/admin/corpus-collection/questionnaire-insights",
+                            (child.href === "/admin/corpus-collection/questionnaire-insights" && (!submissionAccess || submissionAccess.canViewInsights)) ||
+                            (hasSubmissionAccess && ["/admin/corpus-collection/submissions", "/admin/corpus-collection/review-batches"].includes(child.href)),
                         )
                         .map((child) => {
                         const isChildActive = pathname === child.href;

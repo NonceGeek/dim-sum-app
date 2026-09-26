@@ -8,6 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "test:submission-permissions": "node --import tsx --test lib/services/submission-permissions.test.ts lib/services/submission-ai.test.ts",
     "test:questionnaire": "node --import tsx --test lib/services/questionnaire-status.test.ts",
     "test:activity-time": "node --import tsx --test lib/activity-time.test.ts",
     "test:collection-category": "node --import tsx --test lib/corpus-collection-category.test.ts",

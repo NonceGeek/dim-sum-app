@@ -257,6 +257,7 @@ const getAgentAuthHeader = () => {
 };
 
 type AgentFetchOptions = {
+  signal?: AbortSignal;
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   headers?: Record<string, string>;
@@ -288,6 +289,7 @@ async function agentFetch<T>(
     method: options.method ?? "GET",
     headers,
     cache: "no-store",
+    signal: options.signal,
   };
 
   if (options.body !== undefined) {
@@ -485,9 +487,11 @@ export async function precheckCorpusSubmission(payload: SubmissionPrecheckPayloa
 }
 
 export async function createSubmissionReviewBatch(
-  payload: SubmissionReviewBatchPayload
+  payload: SubmissionReviewBatchPayload,
+  signal?: AbortSignal
 ) {
   return agentFetch<SubmissionReviewBatchResponse>("/reviews/batches", {
+    signal,
     method: "POST",
     body: payload,
   });
