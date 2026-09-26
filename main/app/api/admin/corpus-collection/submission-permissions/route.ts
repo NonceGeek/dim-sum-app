@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
+  collectionUserSearchWhere,
+  userSearchSummary,
+} from "@/lib/services/collection-user-search";
+import {
   COLLECTION_ACTIONS,
   COLLECTION_ROLES,
 } from "@/lib/collection-permissions";
@@ -37,7 +41,33 @@ const schema = z
   .strict();
 export async function GET(req: NextRequest) {
   return requireCollectionAdmin(req, async () => {
-    const userId = new URL(req.url).searchParams.get("userId");
+    const params = new URL(req.url).searchParams;
+    if (params.has("q")) {
+      const q = (params.get("q") ?? "").trim();
+      if (q.length < 2 || q.length > 100)
+        throw new AccessError(400, "请输入 2–100 个字符");
+      const users = await prisma.user.findMany({
+        where: collectionUserSearchWhere(q),
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          isSystemAdmin: true,
+          isSuperAdmin: true,
+        },
+        orderBy: [{ name: "asc" }, { id: "asc" }],
+        take: 21,
+      });
+      return NextResponse.json(
+        {
+          users: users.slice(0, 20).map(userSearchSummary),
+          hasMore: users.length > 20,
+        },
+        { headers: { "Cache-Control": "private, no-store" } },
+      );
+    }
+    const userId = params.get("userId");
     const activities = await prisma.corpus_collection_activities.findMany({
       select: { id: true, title: true, display_uuid: true },
       orderBy: { created_at: "desc" },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter, usePathname } from '@/i18n/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,14 +21,16 @@ const localeLabels: Record<string, string> = {
 export function LocaleSwitcher() {
   const locale = useLocale();
   const t = useTranslations('Common');
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   function switchLocale(newLocale: string) {
+    if (newLocale === locale || !routing.locales.includes(newLocale as typeof routing.locales[number])) return;
     const search = searchParams.toString();
-    const fullPath = search ? `${pathname}?${search}` : pathname;
-    router.replace(fullPath, { locale: newLocale });
+    // Explicit prefix lets middleware persist the preference before removing the
+    // default prefix. Reload also discards redirects prefetched in the old locale.
+    const target = `/${newLocale}${pathname === '/' ? '' : pathname}`;
+    window.location.assign(`${target}${search ? `?${search}` : ''}${window.location.hash}`);
   }
 
   return (

@@ -892,6 +892,14 @@
     "invalidPhone": "请输入有效的手机号格式"
   },
   "CollectionPermissions": {
+    "searchUsers": "搜索用户",
+    "searchPlaceholder": "姓名、手机号、邮箱或完整 UID",
+    "searchHint": "输入至少 2 个字符，搜索后选择用户再配置权限。",
+    "noUsers": "未找到匹配的有效用户",
+    "unnamedUser": "未命名用户",
+    "systemAdmin": "系统管理员",
+    "moreResults": "仅显示前 20 个结果，请补充关键词缩小范围。",
+
     "title": "活动投稿权限",
     "description": "先配置用户运营角色，再配置各活动的操作权限。只有系统管理员可以授权。",
     "lookup": "查找用户",

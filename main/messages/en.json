@@ -891,6 +891,14 @@
     "invalidPhone": "Please enter a valid phone number"
   },
   "CollectionPermissions": {
+    "searchUsers": "Search users",
+    "searchPlaceholder": "Name, phone, email or full UID",
+    "searchHint": "Enter at least 2 characters, then select a user to configure permissions.",
+    "noUsers": "No matching active users",
+    "unnamedUser": "Unnamed user",
+    "systemAdmin": "System administrator",
+    "moreResults": "Showing the first 20 results. Refine your search.",
+
     "title": "Activity submission permissions",
     "description": "Assign an operations role and actions per activity. Only system administrators can grant permissions.",
     "lookup": "Find user",
