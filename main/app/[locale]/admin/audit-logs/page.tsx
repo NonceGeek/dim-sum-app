@@ -66,6 +66,11 @@ export default function AdminAuditLogsPage() {
   const [targetUserId, setTargetUserId] = useState("");
   const [categoryName, setCategoryName] = useState("");
   const [offset, setOffset] = useState(0);
+  const [filters, setFilters] = useState({
+    operator: "",
+    target: "",
+    category: "",
+  });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const limit = 20;
 
@@ -79,21 +84,15 @@ export default function AdminAuditLogsPage() {
   };
 
   const { data, isLoading } = useQuery<AuditLogsResponse>({
-    queryKey: [
-      "admin-audit-logs",
-      operatorId,
-      targetUserId,
-      categoryName,
-      offset,
-    ],
+    queryKey: ["admin-audit-logs", filters, offset],
     queryFn: async () => {
       const params = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      if (operatorId) params.append("operator_id", operatorId);
-      if (targetUserId) params.append("target_user_id", targetUserId);
-      if (categoryName) params.append("category_name", categoryName);
+      if (filters.operator) params.append("operator_query", filters.operator);
+      if (filters.target) params.append("target_user_query", filters.target);
+      if (filters.category) params.append("category_name", filters.category);
 
       const response = await fetch(`/api/admin/audit-logs?${params}`);
       if (!response.ok) throw new Error(t("errors.fetch"));
@@ -133,8 +132,10 @@ export default function AdminAuditLogsPage() {
 
   const formatValue = (value: any) => {
     if (!value) return "-";
-    if (value.permission) return t("values.permission", { value: value.permission });
-    if (value.is_public !== undefined) return t("values.public", { value: String(value.is_public) });
+    if (value.permission)
+      return t("values.permission", { value: value.permission });
+    if (value.is_public !== undefined)
+      return t("values.public", { value: String(value.is_public) });
     if (value.role) return t("values.role", { value: value.role });
     return JSON.stringify(value);
   };
@@ -149,9 +150,7 @@ export default function AdminAuditLogsPage() {
         <h2 className="text-3xl font-bold tracking-tight text-foreground">
           {t("title")}
         </h2>
-        <p className="text-muted-foreground mt-2">
-          {t("description")}
-        </p>
+        <p className="text-muted-foreground mt-2">{t("description")}</p>
       </div>
 
       {/* Search and Filter */}
@@ -160,35 +159,51 @@ export default function AdminAuditLogsPage() {
           <CardTitle className="text-foreground">{t("filter.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
+          <form
+            className="flex flex-wrap gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setFilters({
+                operator: operatorId.trim(),
+                target: targetUserId.trim(),
+                category: categoryName.trim(),
+              });
+              setOffset(0);
+            }}
+          >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder={t("filter.operator")}
                 value={operatorId}
-                onChange={(e) => setOperatorId(e.target.value)}
+                onChange={(e) => {
+                  setOperatorId(e.target.value);
+                }}
+                aria-label={t("filter.operator")}
+                maxLength={100}
                 className="pl-10 bg-secondary border-border text-foreground"
               />
             </div>
             <Input
               placeholder={t("filter.targetUser")}
               value={targetUserId}
-              onChange={(e) => setTargetUserId(e.target.value)}
-              className="w-48 bg-secondary border-border text-foreground"
+              onChange={(e) => {
+                setTargetUserId(e.target.value);
+              }}
+              aria-label={t("filter.targetUser")}
+              maxLength={100}
+              className="min-w-0 flex-1 bg-secondary border-border text-foreground"
             />
             <Input
               placeholder={t("filter.category")}
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
-              className="w-48 bg-secondary border-border text-foreground"
+              className="min-w-0 flex-1 bg-secondary border-border text-foreground"
             />
-            <Button
-              onClick={() => setOffset(0)}
-              className="bg-primary hover:bg-primary/90"
-            >
+            <Button type="submit" className="bg-primary hover:bg-primary/90">
               {t("filter.search")}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -215,7 +230,10 @@ export default function AdminAuditLogsPage() {
               </div>
               {/* Skeleton table rows */}
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex gap-4 items-center px-4 py-3 border-b border-border">
+                <div
+                  key={i}
+                  className="flex gap-4 items-center px-4 py-3 border-b border-border"
+                >
                   <Skeleton className="h-4 w-24" />
                   <div className="flex items-center gap-2 w-32">
                     <Skeleton className="h-6 w-6 rounded-full" />
@@ -239,11 +257,21 @@ export default function AdminAuditLogsPage() {
                 <TableHeader>
                   <TableRow className="border-border">
                     <TableHead className="text-muted-foreground w-8"></TableHead>
-                    <TableHead className="text-muted-foreground">{t("columns.time")}</TableHead>
-                    <TableHead className="text-muted-foreground">{t("columns.operator")}</TableHead>
-                    <TableHead className="text-muted-foreground">{t("columns.targetUser")}</TableHead>
-                    <TableHead className="text-muted-foreground">{t("columns.action")}</TableHead>
-                    <TableHead className="text-muted-foreground">{t("columns.category")}</TableHead>
+                    <TableHead className="text-muted-foreground">
+                      {t("columns.time")}
+                    </TableHead>
+                    <TableHead className="text-muted-foreground">
+                      {t("columns.operator")}
+                    </TableHead>
+                    <TableHead className="text-muted-foreground">
+                      {t("columns.targetUser")}
+                    </TableHead>
+                    <TableHead className="text-muted-foreground">
+                      {t("columns.action")}
+                    </TableHead>
+                    <TableHead className="text-muted-foreground">
+                      {t("columns.category")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -257,12 +285,17 @@ export default function AdminAuditLogsPage() {
                         <TableCell className="w-8 px-2">
                           <ChevronDown
                             className={`h-4 w-4 text-muted-foreground transition-transform ${
-                              expandedRows.has(log.id) ? "rotate-0" : "-rotate-90"
+                              expandedRows.has(log.id)
+                                ? "rotate-0"
+                                : "-rotate-90"
                             }`}
                           />
                         </TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap">
-                          {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(log.created_at))}
+                          {new Intl.DateTimeFormat(locale, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(log.created_at))}
                         </TableCell>
                         <TableCell className="text-foreground">
                           <div className="flex items-center gap-2">
@@ -270,7 +303,9 @@ export default function AdminAuditLogsPage() {
                               <UserIcon className="w-3 h-3 text-muted-foreground" />
                             </div>
                             <span className="text-sm">
-                              {log.operator.name || log.operator.email || t("fallback.admin")}
+                              {log.operator.name ||
+                                log.operator.email ||
+                                t("fallback.admin")}
                             </span>
                           </div>
                         </TableCell>
@@ -299,16 +334,27 @@ export default function AdminAuditLogsPage() {
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(log.id) && (
-                        <TableRow key={`${log.id}-detail`} className="border-border bg-muted/30">
+                        <TableRow
+                          key={`${log.id}-detail`}
+                          className="border-border bg-muted/30"
+                        >
                           <TableCell colSpan={6} className="py-3 px-6">
                             <div className="flex gap-8 text-sm">
                               <div>
-                                <span className="text-muted-foreground font-medium">{t("details.before")}</span>
-                                <span className="text-foreground">{formatValue(log.old_value)}</span>
+                                <span className="text-muted-foreground font-medium">
+                                  {t("details.before")}
+                                </span>
+                                <span className="text-foreground">
+                                  {formatValue(log.old_value)}
+                                </span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground font-medium">{t("details.after")}</span>
-                                <span className="text-foreground">{formatValue(log.new_value)}</span>
+                                <span className="text-muted-foreground font-medium">
+                                  {t("details.after")}
+                                </span>
+                                <span className="text-foreground">
+                                  {formatValue(log.new_value)}
+                                </span>
                               </div>
                             </div>
                           </TableCell>

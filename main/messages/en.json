@@ -506,8 +506,8 @@
     }
   },
   "QuestionnairePermissions": {
-    "title": "Questionnaire Permissions",
-    "description": "Configure which questionnaire insights each activity operator can access.",
+    "title": "Activity questionnaire data permissions",
+    "description": "Grant staff access to questionnaire statistics and results by activity. This does not control who can complete a questionnaire.",
     "unnamedUser": "Unnamed user",
     "activityStatus": {
       "draft": "Draft",
@@ -578,6 +578,8 @@
       "permissions": "Permissions",
       "corpusData": "Corpus Data",
       "corpusCollection": "Corpus Collection",
+      "corpusPermissions": "Corpus access permissions",
+      "permissionAudit": "Permission change records",
       "auditLogs": "Audit Logs",
       "ruleOps": "Rule Ops",
       "settings": "Settings"
@@ -591,11 +593,11 @@
       "reviewBatches": "AI Review Batches",
       "analytics": "Analytics",
       "questionnaireInsights": "Questionnaire Insights",
-      "questionnairePermissions": "Questionnaire Permissions",
+      "questionnairePermissions": "Activity questionnaire data permissions",
       "questionnaireSettings": "Questionnaire Settings",
       "questionnaireDefinition": "Questionnaire Definition",
-      "submissionPermissions": "Activity submission permissions",
-      "submissionAudit": "Submission audit log"
+      "submissionPermissions": "Activity operations permissions",
+      "submissionAudit": "Submission operation records"
     },
     "roles": {
       "superAdministrator": "Super Administrator",
@@ -649,7 +651,7 @@
       "confirmRevoke": "Revoke access"
     }
   },
-  "AdminPermissions": { "title": "Permissions", "description": "Manage user access to corpus categories.", "filter": { "title": "Filter Permissions", "userPlaceholder": "Select user to view permissions", "searchUsers": "Search users...", "allUsers": "All Users", "categoryPlaceholder": "Filter by category", "allCategories": "All Categories", "clear": "Clear Filters" }, "add": { "button": "Add Permission", "title": "Add New Permission", "description": "Grant users access to corpus categories.", "users": "Users", "selectUsers": "Select users...", "searchUser": "Search user...", "categories": "Categories", "selectCategories": "Select categories...", "searchCategory": "Search category...", "level": "Permission Level", "autoRole": "Auto-set based on each user role", "selectUsersForLevel": "Select users to see their permission levels", "adding": "Adding...", "submit": "Add Permissions" }, "searching": "Searching...", "searchingUsers": "Searching users...", "noUsers": "No users found", "noUser": "No user found.", "noCategory": "No category found.", "selected": "{count} selected", "cancel": "Cancel", "na": "N/A", "viewingFor": "Viewing permissions for:", "permissionCount": "{count} permissions", "list": { "title": "Permissions List ({count})", "description": "User-corpus permission bindings" }, "loading": "Loading permissions...", "empty": "No permissions found. Click Add Permission to create one.", "columns": { "user": "User", "role": "Role", "category": "Category", "permission": "Permission", "created": "Created", "actions": "Actions" }, "permission": { "READ": "Read", "WRITE": "Write", "CREATE": "Create", "FULL": "Full" }, "role": { "LEARNER": "Learner", "TAGGER_PARTNER": "Partner Tagger", "TAGGER_OUTSOURCING": "Outsourced Tagger", "RESEARCHER": "Researcher" }, "delete": { "title": "Confirm Delete", "prefix": "Are you sure you want to revoke permission for", "on": "on", "warning": "This action cannot be undone.", "deleting": "Deleting...", "confirm": "Delete" }, "messages": { "added": "Successfully added {count} permissions", "revoked": "Permission revoked", "updated": "Permission updated" }, "errors": { "permissions": "Failed to fetch permissions", "categories": "Failed to fetch categories", "users": "Failed to fetch users", "add": "Failed to add permission", "delete": "Failed to revoke permission", "update": "Failed to update permission" } },
+  "AdminPermissions": { "title": "Corpus access permissions", "description": "Manage user access to corpus categories.", "filter": { "title": "Filter Permissions", "userPlaceholder": "Select user to view permissions", "searchUsers": "Search users...", "allUsers": "All Users", "categoryPlaceholder": "Filter by category", "allCategories": "All Categories", "clear": "Clear Filters" }, "add": { "button": "Add Permission", "title": "Add New Permission", "description": "Grant users access to corpus categories.", "users": "Users", "selectUsers": "Select users...", "searchUser": "Search user...", "categories": "Categories", "selectCategories": "Select categories...", "searchCategory": "Search category...", "level": "Permission Level", "autoRole": "Auto-set based on each user role", "selectUsersForLevel": "Select users to see their permission levels", "adding": "Adding...", "submit": "Add Permissions" }, "searching": "Searching...", "searchingUsers": "Searching users...", "noUsers": "No users found", "noUser": "No user found.", "noCategory": "No category found.", "selected": "{count} selected", "cancel": "Cancel", "na": "N/A", "viewingFor": "Viewing permissions for:", "permissionCount": "{count} permissions", "list": { "title": "Permissions List ({count})", "description": "User-corpus permission bindings" }, "loading": "Loading permissions...", "empty": "No permissions found. Click Add Permission to create one.", "columns": { "user": "User", "role": "Role", "category": "Category", "permission": "Permission", "created": "Created", "actions": "Actions" }, "permission": { "READ": "Read", "WRITE": "Write", "CREATE": "Create", "FULL": "Full" }, "role": { "LEARNER": "Learner", "TAGGER_PARTNER": "Partner Tagger", "TAGGER_OUTSOURCING": "Outsourced Tagger", "RESEARCHER": "Researcher" }, "delete": { "title": "Confirm Delete", "prefix": "Are you sure you want to revoke permission for", "on": "on", "warning": "This action cannot be undone.", "deleting": "Deleting...", "confirm": "Delete" }, "messages": { "added": "Successfully added {count} permissions", "revoked": "Permission revoked", "updated": "Permission updated" }, "errors": { "permissions": "Failed to fetch permissions", "categories": "Failed to fetch categories", "users": "Failed to fetch users", "add": "Failed to add permission", "delete": "Failed to revoke permission", "update": "Failed to update permission" } },
   "AdminRules": { "title": "Rules & Agent Management", "description": "Connect to Agent services for rule compilation, run triggering, and history.", "compile": { "title": "Rule Compilation", "description": "Validate whether an Agent can understand a natural-language rule.", "placeholder": "Enter a rule to compile...", "submit": "Compile", "result": "Result: ", "passed": "Passed", "rejected": "Rejected" }, "run": { "title": "Trigger Rule Manually", "description": "Call the /rules/run endpoint to create a run immediately.", "autoAgent": "Select Agent automatically", "auto": "Automatic", "rulePlaceholder": "Enter a natural-language rule...", "submit": "Call /rules/run", "ruleIdExample": "e.g. grammar_check_rule", "versionExample": "v1.0.0", "corpusExample": "zyzdv2" }, "fields": { "ruleText": "Rule Text", "ruleId": "Rule ID", "version": "Rule Version (optional)", "corpus": "Corpus Name", "corpusShort": "Corpus", "agent": "Agent (optional)", "status": "Status" }, "status": { "all": "All Statuses", "pending": "Pending", "running": "Running", "completed": "Completed", "failed": "Failed", "cancelled": "Cancelled" }, "history": { "title": "Run History", "description": "View runs returned by the Agent.", "refresh": "Refresh", "rulePlaceholder": "Filter by rule ID", "corpusPlaceholder": "Filter by corpus", "pageSize": "Page Size", "violations": "Violations", "started": "Started", "ended": "Ended", "loading": "Loading...", "empty": "No runs found", "pagination": "Page {page} of {pages}, {total} total", "previous": "Previous", "next": "Next" }, "agents": { "title": "Available Agents", "description": "Data returned by the /agents endpoint.", "empty": "No agents available" }, "messages": { "enterCompile": "Enter a rule to compile", "compileFailed": "Compilation failed", "compilePassed": "Rule compilation passed", "compileRejected": "Rule compilation did not pass", "completeForm": "Complete all required rule fields", "runFailed": "Failed to trigger rule", "runStarted": "Rule run started" } },
   "SubmissionDetail": { "noData": "No data", "audio": "Audio", "loading": "Loading submission...", "back": "Back", "backToSubmissions": "Back to submissions", "featured": "Featured", "home": "Home", "openJson": "Open JSON", "media": { "title": "Media", "count": "{count, plural, one {# uploaded file} other {# uploaded files}}", "empty": "No media uploaded." }, "review": { "title": "Review Data", "description": "Automated checks and AI review results.", "precheck": "Precheck Result", "ai": "AI Review Result" }, "submission": "Submission", "unknown": "Unknown", "fields": { "type": "Type", "activity": "Activity", "created": "Created", "updated": "Updated" }, "noTags": "No tags", "stats": { "title": "Stats", "likes": "Likes", "comments": "Comments", "shares": "Shares", "views": "Views" }, "files": { "title": "Files", "images": "Images", "audio": "Audio", "video": "Video" }, "activityWindow": "Activity Window", "status": { "pending_review": "Pending Review", "ai_reviewing": "AI Reviewing", "review_needed": "Review Needed", "approved": "Approved", "rejected": "Rejected" }, "visibility": { "public": "Public", "private": "Private", "hidden": "Hidden" }, "errors": { "load": "Failed to load submission", "notFound": "Submission not found" } },
   "SubmissionsAdmin": { "title": "Submissions", "description": "Review user submissions, manage display, and send batches to AI review.", "filters": { "uuidPlaceholder": "Activity UUID fragment", "contentPlaceholder": "Search title or intro", "content": "Title/Intro contains", "uuid": "Activity UUID", "activity": "Activity", "allActivities": "All Activities", "withoutActivity": "Without Activity" }, "status": { "all": "All Statuses", "pending_review": "Pending Review", "ai_reviewing": "AI Reviewing", "review_needed": "Review Needed", "approved": "Approved", "rejected": "Rejected" }, "sendReview": "Send AI Review ({count})", "list": { "title": "Submission List ({count})", "selected": "{count} selected for batch review.", "hint": "Select pending items for AI review." }, "columns": { "submission": "Submission", "activity": "Activity", "status": "Status", "media": "Media", "display": "Display", "stats": "Stats", "actions": "Actions" }, "display": { "featured": "Featured", "home": "Home" }, "stats": { "likes": "Likes: {count}", "comments": "Comments: {count}" }, "actions": { "view": "View details", "approve": "Approve", "reject": "Reject", "reviewNeeded": "Mark review needed", "removeAward": "Remove award", "markAwarded": "Mark awarded" }, "prompts": { "reject": "Reject reason", "review": "Review note" }, "messages": { "updated": "Submission updated", "awardUpdated": "Award status updated", "batchCreated": "AI review batch created" }, "errors": { "activities": "Failed to load activities", "submissions": "Failed to load submissions", "action": "Action failed", "award": "Failed to update award status", "batch": "Failed to create AI review batch" }, "unknown": "Unknown", "loading": "Loading...", "empty": "No submissions found.",
@@ -671,8 +673,8 @@
   },
   "AdminSettings": { "title": "Settings", "description": "Configure system parameters and administrative settings.", "placeholder": "System Settings" },
   "AdminAuditLogs": {
-    "title": "Audit Logs", "description": "View permission change history and user activity.",
-    "filter": { "title": "Filter Logs", "operator": "Operator ID...", "targetUser": "Target User ID...", "category": "Category...", "search": "Search" },
+    "title": "Permission change records", "description": "View changes to corpus access and user permissions.",
+    "filter": { "title": "Filter Logs", "operator": "Operator: name, phone, email or UID", "targetUser": "Target user: name, phone, email or UID", "category": "Category...", "search": "Search" },
     "list": { "title": "Audit Logs ({count})", "description": "Permission and role change history" },
     "columns": { "time": "Time", "operator": "Operator", "targetUser": "Target User", "action": "Action", "category": "Category" },
     "actions": { "granted": "Granted", "revoked": "Revoked", "modified": "Modified", "roleChanged": "Role Changed" },
@@ -899,8 +901,8 @@
     "systemAdmin": "System administrator",
     "moreResults": "Showing the first 20 results. Refine your search.",
 
-    "title": "Activity submission permissions",
-    "description": "Assign an operations role and actions per activity. Only system administrators can grant permissions.",
+    "title": "Activity operations permissions",
+    "description": "Configure submission review and display management permissions for each activity. Only system administrators can grant access.",
     "lookup": "Find user",
     "error": "Unable to load or perform operation",
     "saved": "Permissions saved",
@@ -923,8 +925,10 @@
     "note": "Authorization note (optional)",
     "save": "Save permissions",
     "saving": "Saving…",
-    "audit": "Submission audit log",
-    "operatorUid": "Filter by operator UID",
+    "audit": "Submission operation records",
+    "auditSearch": "Search records",
+    "noAuditRecords": "No matching audit records",
+    "operatorUid": "Operator: name, phone, email or full UID",
     "previous": "Previous",
     "next": "Next",
     "actions": {

@@ -3,8 +3,12 @@ import { Prisma } from "@prisma/client";
 export function collectionUserSearchWhere(
   query: string,
 ): Prisma.UserWhereInput {
+  return { status: "ACTIVE", ...userIdentityWhere(query) };
+}
+
+/** Audit searches include inactive users; authorization pickers explicitly filter ACTIVE. */
+export function userIdentityWhere(query: string): Prisma.UserWhereInput {
   return {
-    status: "ACTIVE",
     OR: [
       { id: { equals: query } },
       { name: { contains: query, mode: "insensitive" } },
