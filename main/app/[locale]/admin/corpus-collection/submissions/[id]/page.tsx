@@ -216,7 +216,7 @@ export default function CorpusCollectionSubmissionDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          {data.channelVideo && <ChannelVideoCard video={data.channelVideo} coverUrl={data.coverUrl} />}
+          {data.channelVideo && <ChannelVideoCard submissionId={String(data.id)} video={data.channelVideo} coverUrl={data.coverUrl} />}
           <Card>
             <CardHeader>
               <CardTitle>{t("media.title")}</CardTitle>

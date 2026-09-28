@@ -1,14 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Video } from "lucide-react";
+import { Video, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import type { ChannelVideo } from "@/lib/channel-video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function ChannelVideoCard({ video, coverUrl }: { video: ChannelVideo; coverUrl?: string | null }) {
+export function ChannelVideoCard({ video, coverUrl, submissionId }: { video: ChannelVideo; coverUrl?: string | null; submissionId: string }) {
   const t = useTranslations("ChannelVideo");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [environment, setEnvironment] = useState("release");
+  useEffect(() => { setCode(""); setError(""); }, [submissionId, video.finderUserName, video.feedId]);
+  async function generate() {
+    setLoading(true); setError(""); setCode("");
+    try {
+      const response = await fetch(`/api/admin/corpus-collection/submissions/${submissionId}/channel-code?env=${environment}`, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok || !result.image) throw new Error(result.error || t("codeFailed"));
+      setCode(result.image);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : t("codeFailed"));
+    } finally { setLoading(false); }
+  }
   async function copy(value: string) {
     try {
       await navigator.clipboard.writeText(value);
@@ -28,6 +45,23 @@ export function ChannelVideoCard({ video, coverUrl }: { video: ChannelVideo; cov
           <div className="flex h-32 items-center justify-center rounded-md bg-muted text-muted-foreground"><Video className="mr-2 h-6 w-6" />{t("noCover")}</div>
         )}
         <p className="text-sm text-muted-foreground">{t("manualReview")}</p>
+        <div className="space-y-3 rounded-md border p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <select aria-label={t("codeEnvironment")} className="rounded-md border bg-background px-3 py-2 text-sm" value={environment} disabled={loading} onChange={(event) => { setEnvironment(event.target.value); setCode(""); setError(""); }}>
+              <option value="release">{t("release")}</option>
+              <option value="trial">{t("trial")}</option>
+              <option value="develop">{t("develop")}</option>
+            </select>
+            <Button variant="outline" disabled={loading} onClick={generate}><QrCode className="mr-2 h-4 w-4" />{loading ? t("generating") : t("scanVideo")}</Button>
+          </div>
+          {environment !== "release" && <p className="text-sm text-muted-foreground">{t("trialHint")}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {code && <div className="space-y-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={code} alt={t("scanVideo")} className="h-56 w-56 rounded-md bg-white" />
+            <p className="text-sm text-muted-foreground">{t("scanHint")}</p>
+          </div>}
+        </div>
         <dl className="space-y-3">
           {(["finderUserName", "feedId"] as const).map((key) => (
             <div key={key}>
