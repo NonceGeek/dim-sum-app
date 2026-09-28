@@ -1,5 +1,14 @@
 {
   "ChannelVideo": {
+    "scanHint": "Scan with WeChat and tap to open the video. No login required. Return here to review.",
+    "trialHint": "Upload the version containing the scan page first. The scanning account needs access to that test version.",
+    "scanVideo": "Scan to watch",
+    "generating": "Generating…",
+    "develop": "Development",
+    "trial": "Trial",
+    "release": "Release",
+    "codeEnvironment": "Mini Program version",
+    "codeFailed": "Unable to generate code. Please retry.",
     "title": "WeChat Channels video",
     "cover": "Cover supplied by the author",
     "noCover": "No cover supplied",
@@ -10,7 +19,7 @@
     "copied": "Copied",
     "copyFailed": "Could not copy. Select and copy the ID manually.",
     "ownership": "These details were supplied by the submitter. Account ownership has not been verified.",
-    "viewing": "Open the original video in the WeChat mini program to review it. The QR entry will be available after client integration; these IDs cannot play the video in this browser."
+    "viewing": "Scanning opens only the Channels work, without private submission details. Visibility is controlled by WeChat."
 },
   "Common": {
     "signIn": "Sign In",
