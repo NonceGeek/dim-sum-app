@@ -5,7 +5,7 @@ import { z } from "zod";
 const identifier = z.string().trim().min(1).max(1024).regex(/^[A-Za-z0-9_-]+$/);
 const channelVideoSchema = z.object({
   finderUserName: identifier,
-  feedId: identifier,
+  feedId: z.string().trim().min(1).max(1024).regex(/^(?:export\/)?[A-Za-z0-9_-]+$/),
 }).strict();
 
 export type ChannelVideo = z.infer<typeof channelVideoSchema>;

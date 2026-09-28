@@ -92,3 +92,16 @@ test("all public and admin serializers return the reference, legacy rows return 
     assert.equal(serialize({ ...state.existing, channel_video: null }).channelVideo, null);
   }
 });
+
+
+test("export feed IDs remain intact across validation, storage and serialization", async () => {
+  const fullVideo = { ...video, feedId: "export/UzFfAgtgekIEAQAAAAAASPYFWC0gZQAAAAstQy6ubaLX4KHWvLEZgBPEm6I0eRMRIKWLzNPgMJpyElocHON4K1eMQqcia73t" };
+  assert.deepEqual(parseChannelVideo({ ...fullVideo, feedId: ` ${fullVideo.feedId} ` }), fullVideo);
+  for (const feedId of ["export/", "export/export/abc", "other/abc", "https://example.com/export/abc"]) {
+    assert.throws(() => parseChannelVideo({ ...video, feedId }), ChannelVideoError);
+  }
+  const { state, db } = fixture();
+  await createCorpusSubmission("owner", { ...body, channelVideo: fullVideo }, db);
+  assert.deepEqual(state.writes[0].channel_video, fullVideo);
+  assert.deepEqual(serializeSubmission({ ...state.existing, channel_video: fullVideo }).channelVideo, fullVideo);
+});
