@@ -6,6 +6,7 @@ import { Video, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import type { ChannelVideo } from "@/lib/channel-video";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function ChannelVideoCard({ video, coverUrl, submissionId }: { video: ChannelVideo; coverUrl?: string | null; submissionId: string }) {
@@ -47,11 +48,16 @@ export function ChannelVideoCard({ video, coverUrl, submissionId }: { video: Cha
         <p className="text-sm text-muted-foreground">{t("manualReview")}</p>
         <div className="space-y-3 rounded-md border p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <select aria-label={t("codeEnvironment")} className="rounded-md border bg-background px-3 py-2 text-sm" value={environment} disabled={loading} onChange={(event) => { setEnvironment(event.target.value); setCode(""); setError(""); }}>
-              <option value="release">{t("release")}</option>
-              <option value="trial">{t("trial")}</option>
-              <option value="develop">{t("develop")}</option>
-            </select>
+            <Select value={environment} disabled={loading} onValueChange={(value) => { setEnvironment(value); setCode(""); setError(""); }}>
+              <SelectTrigger aria-label={t("codeEnvironment")} className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="release">{t("release")}</SelectItem>
+                <SelectItem value="trial">{t("trial")}</SelectItem>
+                <SelectItem value="develop">{t("develop")}</SelectItem>
+              </SelectContent>
+            </Select>
             <Button variant="outline" disabled={loading} onClick={generate}><QrCode className="mr-2 h-4 w-4" />{loading ? t("generating") : t("scanVideo")}</Button>
           </div>
           {environment !== "release" && <p className="text-sm text-muted-foreground">{t("trialHint")}</p>}
