@@ -201,9 +201,12 @@ function NativeSelect({
 
 export function ContributionForm({
   onClose,
+  onSubmittedChange,
   className,
 }: {
   onClose: () => void;
+  /** Lets the container switch its title to the submitted state. */
+  onSubmittedChange?: (submitted: boolean) => void;
   className?: string;
 }) {
   const t = useTranslations("Library.contribute");
@@ -245,6 +248,7 @@ export function ContributionForm({
       if (!res.ok) throw new Error(data.error);
       setApplicationNo(data.applicationNo);
       setStep(5);
+      onSubmittedChange?.(true);
     } catch (e) {
       // Keep everything the user typed; only show the error.
       setError(e instanceof Error && e.message ? e.message : t("submitError"));
@@ -259,6 +263,7 @@ export function ContributionForm({
     else setStep((s) => s + 1);
   };
   const reset = () => {
+    onSubmittedChange?.(false);
     setForm(INITIAL);
     setApplicationNo(null);
     setError(null);
@@ -374,10 +379,12 @@ export function ContributionForm({
                     checked={form.modalities.includes(v)}
                     label={t(`options.modality.${v}`)}
                     onChange={(checked) =>
-                      set(
-                        "modalities",
-                        checked ? [...form.modalities, v] : form.modalities.filter((m) => m !== v),
-                      )
+                      setForm((f) => ({
+                        ...f,
+                        modalities: checked
+                          ? [...new Set([...f.modalities, v])]
+                          : f.modalities.filter((m) => m !== v),
+                      }))
                     }
                   />
                 ))}
@@ -518,7 +525,10 @@ export function ContributionForm({
                     className="mt-0.5"
                     checked={form.declarations[key]}
                     onCheckedChange={(checked) =>
-                      set("declarations", { ...form.declarations, [key]: checked === true })
+                      setForm((f) => ({
+                        ...f,
+                        declarations: { ...f.declarations, [key]: checked === true },
+                      }))
                     }
                   />
                   <span>{t(`confirmStep.declarations.${key}`)}</span>

@@ -155,6 +155,7 @@ export function LibraryExplorer() {
   const [pages, setPages] = useState(1);
   const [shareTarget, setShareTarget] = useState<PublicDataset | null>(null);
   const [contributeOpen, setContributeOpen] = useState(false);
+  const [contributeDone, setContributeDone] = useState(false);
   const [mobileFilters, setMobileFilters] = useState<Filters | null>(null);
   const [sortSheet, setSortSheet] = useState(false);
 
@@ -439,12 +440,26 @@ export function LibraryExplorer() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={contributeOpen} onOpenChange={setContributeOpen}>
+      <Sheet
+        open={contributeOpen}
+        onOpenChange={(open) => {
+          setContributeOpen(open);
+          if (!open) setContributeDone(false);
+        }}
+      >
         <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-xl">
           <SheetHeader className="border-b">
-            <SheetTitle>{t("contribute.title")}</SheetTitle>
+            <SheetTitle>
+              {t(contributeDone ? "contribute.submittedTitle" : "contribute.title")}
+            </SheetTitle>
           </SheetHeader>
-          <ContributionForm onClose={() => setContributeOpen(false)} />
+          <ContributionForm
+            onClose={() => {
+              setContributeOpen(false);
+              setContributeDone(false);
+            }}
+            onSubmittedChange={setContributeDone}
+          />
         </SheetContent>
       </Sheet>
 
