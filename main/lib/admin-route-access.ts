@@ -5,7 +5,14 @@ export function isDelegatedCollectionPage(pathname: string) {
     pathname === "/admin/corpus-collection" ||
     /^\/admin\/corpus-collection\/(submissions|review-batches|questionnaire-insights)(\/|$)/.test(
       pathname,
-    )
+    ) ||
+    isLibraryOpsPage(pathname)
+  );
+}
+/** Library ops pages are opened to operators holding a global capability. */
+export function isLibraryOpsPage(pathname: string) {
+  return /^\/admin\/(contribution-applications|ingestion-leads|dataset-contact-requests)(\/|$)/.test(
+    pathname,
   );
 }
 /** The review webhook has its own mandatory service authentication, not a browser session. */

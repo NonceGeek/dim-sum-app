@@ -12,6 +12,7 @@
     "test:channel-video": "node --import tsx --test lib/services/channel-video.test.ts lib/services/submission-ai.test.ts lib/channel-video-scan.test.ts",
     "test:questionnaire": "node --import tsx --test lib/services/questionnaire-status.test.ts",
     "test:activity-time": "node --import tsx --test lib/activity-time.test.ts",
+    "test:library": "node --import tsx --test lib/library/library.test.ts",
     "test:collection-category": "node --import tsx --test lib/corpus-collection-category.test.ts",
     "test:search-embedding": "node --import tsx --test lib/search/query-embedding.test.ts",
     "db:public-search:check": "node --import tsx scripts/public-corpus/publish-rpc.ts",

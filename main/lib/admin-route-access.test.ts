@@ -34,6 +34,9 @@ test("delegated collection pages reach their database authorization instead of r
     "/admin/corpus-collection/submissions/1",
     "/en/admin/corpus-collection/review-batches",
     "/admin/corpus-collection/questionnaire-insights",
+    "/admin/contribution-applications",
+    "/en/admin/ingestion-leads",
+    "/admin/dataset-contact-requests",
   ]) {
     const res = await proxy(await request(path));
     assert.equal(res.status, 200, path);

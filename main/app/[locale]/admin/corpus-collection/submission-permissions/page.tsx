@@ -4,9 +4,11 @@ import { useTranslations } from "next-intl";
 import {
   COLLECTION_ACTIONS,
   COLLECTION_ROLES,
+  GLOBAL_ACTIONS,
   ROLE_PRESETS,
   CollectionAction,
   CollectionRole,
+  GlobalAction,
 } from "@/lib/collection-permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,7 @@ export default function SubmissionPermissionsPage() {
   const [role, setRole] = useState<CollectionRole>("ACTIVITY_REVIEWER");
   const [active, setActive] = useState(true);
   const [note, setNote] = useState("");
+  const [globalActions, setGlobalActions] = useState<GlobalAction[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [grants, setGrants] = useState<Record<string, CollectionAction[]>>({});
   const [activityId, setActivityId] = useState("");
@@ -74,6 +77,7 @@ export default function SubmissionPermissionsPage() {
       );
       setActive(data.user.collectionOperatorRole?.active ?? true);
       setNote(data.user.collectionOperatorRole?.note ?? "");
+      setGlobalActions(data.user.collectionOperatorRole?.global_actions ?? []);
       setGrants(
         Object.fromEntries(
           data.grants
@@ -100,6 +104,7 @@ export default function SubmissionPermissionsPage() {
             role,
             active,
             note,
+            globalActions,
             grants: Object.entries(grants).map(([activityId, actions]) => ({
               activityId,
               actions,
@@ -229,6 +234,30 @@ export default function SubmissionPermissionsPage() {
                   {!active && (
                     <p className="text-destructive">{t("revokedHint")}</p>
                   )}
+                  <div className="space-y-2 rounded border p-4">
+                    <strong>{t("globalActionsTitle")}</strong>
+                    <p className="text-sm text-muted-foreground">
+                      {t("globalActionsHint")}
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                      {GLOBAL_ACTIONS.map((action) => (
+                        <label key={action} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={globalActions.includes(action)}
+                            onChange={(e) =>
+                              setGlobalActions((old) =>
+                                e.target.checked
+                                  ? [...new Set([...old, action])]
+                                  : old.filter((a) => a !== action),
+                              )
+                            }
+                          />
+                          {t(`globalActions.${action}`)}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <select
                       aria-label={t("activity")}

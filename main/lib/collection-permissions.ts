@@ -17,6 +17,18 @@ export const COLLECTION_ROLES = [
   "ACTIVITY_ADMIN",
 ] as const;
 export type CollectionRole = (typeof COLLECTION_ROLES)[number];
+/** Activity-independent capabilities granted on the operator role record. */
+export const GLOBAL_ACTIONS = [
+  "contribution_review",
+  "ingestion_assignee",
+] as const;
+export type GlobalAction = (typeof GLOBAL_ACTIONS)[number];
+export function validGlobalActions(value: unknown): GlobalAction[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(value.filter((v) => GLOBAL_ACTIONS.includes(v as GlobalAction))),
+  ] as GlobalAction[];
+}
 export const ROLE_PRESETS: Record<CollectionRole, CollectionAction[]> = {
   ACTIVITY_REVIEWER: [
     "view",

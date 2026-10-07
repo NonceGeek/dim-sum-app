@@ -62,10 +62,10 @@ model User {
   corpusCollectionActivities                                                                corpus_collection_activities[]
   assignedQuestionnairePermissions                                                          corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionAssigner")
   questionnairePermissions                                                                  corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionUser")
-  collectionOperatorRole                                                                   corpus_collection_operator_roles?
   corpusCollectionComments                                                                  corpus_collection_comments[]
   corpusCollectionLikes                                                                     corpus_collection_likes[]
   corpusCollectionMessages                                                                  corpus_collection_messages[]
+  collectionOperatorRole                                                                    corpus_collection_operator_roles?
   questionnaireEvents                                                                       corpus_collection_questionnaire_events[]
   questionnaireJourneys                                                                     corpus_collection_questionnaire_journeys[]
   questionnaireProfile                                                                      corpus_collection_questionnaire_profiles?
@@ -137,6 +137,7 @@ model cantonese_categories {
   cantonese_corpus_all cantonese_corpus_all[]
   activity             corpus_collection_activities?
   userPermissions      user_corpus_permissions[]
+  libraryProfile       library_dataset_profiles?
 
   @@id([id, name])
   @@index([content_attribute])
@@ -470,6 +471,7 @@ model agent_lib_cert_master {
   cert_id    String?  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at DateTime @default(now()) @db.Timestamptz(6)
   cert_name  String
+  link       String?
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -770,12 +772,12 @@ model corpus_collection_activity_permissions {
   user_id             String
   activity_id         BigInt
   can_view_insights   Boolean                      @default(false)
-  submission_actions Json                         @default("[]")
-  submission_note    String?
   can_export_insights Boolean                      @default(false)
   assigned_by         String?
   created_at          DateTime                     @default(now()) @db.Timestamptz(6)
   updated_at          DateTime                     @default(now()) @updatedAt @db.Timestamptz(6)
+  submission_actions  Json                         @default("[]")
+  submission_note     String?
   activity            corpus_collection_activities @relation(fields: [activity_id], references: [id], onDelete: Cascade)
   assigner            User?                        @relation("QuestionnairePermissionAssigner", fields: [assigned_by], references: [id])
   user                User                         @relation("QuestionnairePermissionUser", fields: [user_id], references: [id], onDelete: Cascade)
@@ -793,13 +795,12 @@ model corpus_collection_audit_logs {
   filters        Json     @default("{}")
   result_summary Json     @default("{}")
   created_at     DateTime @default(now()) @db.Timestamptz(6)
-  // Actor identifiers are retained even after account deletion.
-  operator_role  String?
-  submission_id  BigInt?
-  before_state   Json     @default("{}")
   after_state    Json     @default("{}")
-  outcome        String   @default("success")
+  before_state   Json     @default("{}")
   note           String?
+  operator_role  String?
+  outcome        String   @default("success")
+  submission_id  BigInt?
 
   @@index([operator_id, created_at])
   @@index([activity_id, created_at])
@@ -1223,6 +1224,20 @@ model WechatServiceFollower {
   @@index([appId, needsSync])
 }
 
+/// One independent operations role per user; null/revoked roles grant no access.
+model corpus_collection_operator_roles {
+  user_id        String   @id
+  role_code      String
+  active         Boolean  @default(true)
+  /// Activity-independent capabilities, e.g. contribution_review / ingestion_assignee.
+  global_actions String[] @default([])
+  assigned_by    String
+  note           String?
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
 enum Role {
   LEARNER
   TAGGER_PARTNER
@@ -1286,14 +1301,130 @@ enum PermissionAction {
   ROLE_CHANGE
 }
 
-/// One independent operations role per user; null/revoked roles grant no access.
-model corpus_collection_operator_roles {
-  user_id String @id
-  role_code String
-  active Boolean @default(true)
-  assigned_by String
-  note String?
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+/// Library - 公开语料集展示资料，与 cantonese_categories.name 一对一；只有 listed=true 才出现在前台
+model library_dataset_profiles {
+  dataset_name      String               @id
+  listed            Boolean              @default(false)
+  en_name           String?
+  modalities        String[]             @default([])
+  use_cases         String[]             @default([])
+  access_mode       String               @default("metadata_only")
+  is_official       Boolean              @default(false)
+  metadata_verified Boolean              @default(false)
+  scale_summary     String?
+  language_scope    String?
+  usage_notes       String?
+  updated_by        String?
+  created_at        DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
+  dataset           cantonese_categories @relation(fields: [dataset_name], references: [name], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([listed])
+}
+
+/// Library - 外部贡献语料申请（申请与预审入口，不含原始文件）
+model contribution_applications {
+  id                       BigInt                            @id @default(autoincrement())
+  application_no           String                            @unique
+  contribution_kind        String                            @default("dataset")
+  contributor_type         String
+  contact_name             String
+  contact_email            String
+  organization_name        String
+  contact_role             String?
+  region                   String?
+  other_contact            String?
+  dataset_name             String
+  short_description        String
+  modalities               String[]                          @default([])
+  use_case                 String
+  scale_description        String
+  source_collection_method String
+  rights_status            String
+  rights_holder            String
+  submitter_authority      String
+  intended_access_mode     String
+  license_status           String
+  license_name_or_url      String?
+  privacy_status           String
+  reference_url            String?
+  applicant_note           String?
+  declarations             Json                              @default("{}")
+  status                   String                            @default("PENDING_INITIAL_REVIEW")
+  current_handler_id       String?
+  allow_resubmit           Boolean?
+  locale                   String?
+  submitter_user_id        String?
+  submitter_ip_hash        String?
+  created_at               DateTime                          @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                          @default(now()) @updatedAt @db.Timestamptz(6)
+  events                   contribution_application_events[]
+  ingestionLead            ingestion_leads?
+
+  @@index([status, created_at])
+  @@index([current_handler_id, status])
+  @@index([submitter_ip_hash, created_at])
+}
+
+/// Library - 贡献申请审核历史与审计（含入库待办的操作）
+model contribution_application_events {
+  id             BigInt                    @id @default(autoincrement())
+  application_id BigInt
+  operator_id    String?
+  operator_role  String?
+  operation_type String
+  from_status    String?
+  to_status      String?
+  note           String?
+  payload        Json                      @default("{}")
+  created_at     DateTime                  @default(now()) @db.Timestamptz(6)
+  application    contribution_applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+
+  @@index([application_id, created_at])
+}
+
+/// Library - 审核接受后创建的系统内入库待办；ingestion_task_id 预留给 #431 入库任务
+model ingestion_leads {
+  id                          BigInt                    @id @default(autoincrement())
+  lead_no                     String                    @unique
+  contribution_application_id BigInt                    @unique
+  assignee_id                 String
+  priority                    String                    @default("normal")
+  target_ingestion_type       String
+  proposed_dataset_name       String
+  handover_note               String
+  rights_material_required    String
+  privacy_assessment_required String
+  rights_privacy_summary      Json                      @default("{}")
+  status                      String                    @default("PENDING_OWNER_ACCEPTANCE")
+  closing_note                String?
+  ingestion_task_id           String?
+  created_by                  String
+  accepted_at                 DateTime?                 @db.Timestamptz(6)
+  closed_at                   DateTime?                 @db.Timestamptz(6)
+  created_at                  DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime                  @default(now()) @updatedAt @db.Timestamptz(6)
+  application                 contribution_applications @relation(fields: [contribution_application_id], references: [id], onDelete: Restrict)
+
+  @@index([assignee_id, status])
+}
+
+/// Library - 详情页“联系数据方 / 提交访问合作意向”
+model dataset_contact_requests {
+  id                BigInt    @id @default(autoincrement())
+  dataset_name      String
+  request_type      String
+  contact_name      String
+  contact_email     String
+  organization_name String?
+  message           String
+  status            String    @default("OPEN")
+  handled_by        String?
+  handled_note      String?
+  handled_at        DateTime? @db.Timestamptz(6)
+  submitter_ip_hash String?
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([status, created_at])
+  @@index([submitter_ip_hash, created_at])
 }
