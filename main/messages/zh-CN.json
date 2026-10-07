@@ -1,4 +1,245 @@
 {
+  "LibraryOps": {
+    "title": "贡献语料申请审核",
+    "description": "审核外部个人及机构提交的语料贡献申请，核实联系人、数据概况、版权/授权、隐私风险及后续入库方式。",
+    "loading": "加载中…",
+    "chooseUser": "请选择人员",
+    "choose": "请选择",
+    "cancel": "取消",
+    "saving": "保存中…",
+    "confirm": "确认",
+    "saved": "已保存",
+    "copied": "已复制",
+    "copyFailed": "复制失败",
+    "applicant": "申请人",
+    "finished": "该申请已完成审核，不可再次操作。",
+    "leadCreated": "已接受并创建入库待办 {no}",
+    "leadBadge": "入库待办 {no} · {name}",
+    "detailTitle": "贡献申请详情 · {no}",
+    "copyContact": "复制联系信息",
+    "sendEmail": "发送邮件",
+    "review": "审核",
+    "reviewHint": "审核提示：在权属、授权链路、个人信息或第三方内容未完成确认前，不应创建入库待办或公开展示相关语料元数据。",
+    "acceptedThisMonth": "本月已转入库",
+    "searchPlaceholder": "搜索申请编号、语料集名称、联系人、机构或邮箱",
+    "search": "搜索",
+    "statusFilter": "状态筛选",
+    "allStatuses": "全部状态",
+    "onlyMine": "只看我处理的",
+    "refresh": "刷新",
+    "empty": "没有匹配的记录",
+    "total": "共 {count} 条",
+    "prev": "上一页",
+    "next": "下一页",
+    "status": {
+      "PENDING_INITIAL_REVIEW": "待初审",
+      "IN_REVIEW": "审核中",
+      "PENDING_APPLICANT_INFO": "待申请人补充",
+      "RIGHTS_PRIVACY_REVIEW": "权利/隐私复核",
+      "ACCEPTED": "已接受",
+      "REJECTED": "已拒绝"
+    },
+    "actions": {
+      "assign": "开始审核 / 分配处理人",
+      "contact-logs": "记录联系",
+      "request-info": "要求补充",
+      "info-received": "资料已补齐",
+      "rights-review": "转权利/隐私复核",
+      "review-complete": "复核完成",
+      "reject": "拒绝申请",
+      "accept": "接受并创建入库待办",
+      "reopen": "重新打开"
+    },
+    "form": {
+      "rightsOwner": "复核责任人",
+      "handler": "处理人",
+      "handlerHint": "不选择则由你本人处理。",
+      "infoTypes": "补充类型",
+      "channel": "联系渠道",
+      "contactedAt": "联系时间",
+      "result": "联系结果",
+      "resultPlaceholder": "例如：已电话沟通，对方将补充授权文件",
+      "rejectReason": "拒绝原因分类",
+      "allowResubmit": "允许申请人重新提交",
+      "assignee": "入库责任运营",
+      "priority": "优先级",
+      "targetIngestionType": "建议入库类型",
+      "proposedDatasetName": "建议语料集名称",
+      "rightsMaterialRequired": "是否需补权属材料",
+      "privacyAssessmentRequired": "是否需脱敏/隐私评估",
+      "handoverNote": "审核交接备注",
+      "noNotification": "仅在系统内创建待办并分配责任运营，不会发送邮件、短信或任何外部通知。",
+      "note": "备注"
+    },
+    "infoType": {
+      "rights": "权属",
+      "source": "来源",
+      "license": "许可证",
+      "privacy": "隐私",
+      "data_dictionary": "数据字典",
+      "other": "其他"
+    },
+    "channel": {
+      "email": "邮件",
+      "phone": "电话",
+      "wechat": "微信",
+      "meeting": "会议",
+      "other": "其他"
+    },
+    "rejectReason": {
+      "rights_unclear": "权属不清",
+      "privacy_risk": "隐私风险",
+      "quality": "质量不符",
+      "out_of_scope": "不在收录范围",
+      "duplicate": "重复申请",
+      "other": "其他"
+    },
+    "priority": {
+      "normal": "普通",
+      "high": "高",
+      "urgent": "紧急"
+    },
+    "ingestionType": {
+      "new_dataset": "新建语料集",
+      "supplement_existing": "补充已有语料集",
+      "to_be_confirmed": "待确认"
+    },
+    "yesNo": {
+      "yes": "是",
+      "no": "否",
+      "pending": "待补充"
+    },
+    "history": {
+      "handler": "处理人：{name}",
+      "assignee": "责任运营：{name}"
+    },
+    "event": {
+      "submit": "申请已提交",
+      "assign": "开始审核 / 分配处理人",
+      "contact_log": "记录联系",
+      "request_info": "要求补充",
+      "info_received": "资料已补齐",
+      "rights_review": "转权利/隐私复核",
+      "rights_review_complete": "复核完成",
+      "reject": "拒绝申请",
+      "accept": "接受申请",
+      "reopen": "重新打开",
+      "lead_created": "创建入库待办",
+      "lead_take": "入库待办已接手",
+      "lead_close": "入库待办已关闭",
+      "lead_reassign": "入库待办改派"
+    },
+    "kind": {
+      "dataset": "已有数据集",
+      "partnership": "数据合作"
+    },
+    "fields": {
+      "contactName": "联系人",
+      "organization": "机构 / 组织",
+      "email": "邮箱",
+      "otherContact": "其他联系方式",
+      "region": "地区",
+      "submittedAt": "提交时间",
+      "contributorType": "贡献主体",
+      "contributionKind": "申请类型",
+      "handler": "当前处理人",
+      "datasetName": "语料集名称",
+      "shortDescription": "简介",
+      "modalities": "数据模态",
+      "useCase": "主要用途",
+      "scale": "规模",
+      "referenceUrl": "项目链接",
+      "source": "数据来源与采集方式",
+      "applicantNote": "申请人备注",
+      "rightsStatus": "权利状态",
+      "rightsHolder": "权利主体",
+      "submitterAuthority": "提交人身份",
+      "licenseStatus": "许可证",
+      "privacyStatus": "个人信息状态",
+      "intendedAccessMode": "预期访问方式"
+    },
+    "sections": {
+      "contact": "申请者与联系信息",
+      "dataset": "语料集概况",
+      "rights": "权利、许可证与隐私",
+      "history": "审核处理记录"
+    },
+    "columns": {
+      "application": "申请编号 / 时间",
+      "dataset": "语料集概况",
+      "applicant": "申请者",
+      "rights": "权利与隐私",
+      "access": "预期访问方式",
+      "status": "审核状态",
+      "handler": "处理人"
+    },
+    "leads": {
+      "title": "入库待办",
+      "description": "贡献申请审核通过后分配给你的入库待办。接手后按现有入库流程处理；系统不会发送外部通知。",
+      "scope": {
+        "me": "分配给我",
+        "all": "全部"
+      },
+      "status": {
+        "PENDING_OWNER_ACCEPTANCE": "待接手",
+        "IN_PROGRESS": "处理中",
+        "CLOSED": "已关闭"
+      },
+      "empty": "暂无入库待办",
+      "from": "来自 {no}",
+      "closingNote": "关闭说明",
+      "meta": "责任运营 {assignee} · 由 {creator} 于 {time} 创建",
+      "takenAt": "接手于 {time}",
+      "actions": {
+        "take": "接手",
+        "close": "关闭待办",
+        "reassign": "改派"
+      }
+    },
+    "contactRequests": {
+      "title": "访问合作意向",
+      "description": "Library 详情页提交的“联系数据方 / 提交访问合作意向”。请通过邮箱联系后标记为已处理。",
+      "status": {
+        "OPEN": "未处理",
+        "HANDLED": "已处理"
+      },
+      "columns": {
+        "time": "提交时间",
+        "dataset": "语料集",
+        "contact": "联系人",
+        "message": "需求说明"
+      },
+      "type": {
+        "access_request": "访问合作意向",
+        "contact": "联系数据方"
+      },
+      "markHandled": "标记已处理",
+      "reopen": "改为未处理"
+    },
+    "profile": {
+      "title": "Library 展示资料",
+      "help": "仅以下公开元数据会出现在前台 Library，不会公开原始文件。",
+      "listed": "在 Library 展示",
+      "listedHint": "关闭后前台列表、详情页和接口都不可见。",
+      "zhName": "中文名（在“编辑”中修改）",
+      "enName": "英文名",
+      "modalities": "数据模态",
+      "useCases": "主要用途",
+      "accessMode": "访问方式",
+      "scaleSummary": "数据规模",
+      "scalePlaceholder": "例如：20 万样本 / 589 小时",
+      "languageScope": "语言范围",
+      "languagePlaceholder": "例如：粤语 / 繁中",
+      "tags": "公开标签（逗号分隔）",
+      "cover": "封面图 URL",
+      "link": "原始页面 / 外部来源 URL",
+      "linkHint": "填写即在详情页显示外链按钮。",
+      "usageNotes": "数据来源、用途与限制说明（公开）",
+      "cancel": "取消",
+      "save": "保存",
+      "saved": "Library 展示资料已保存"
+    }
+  },
   "ChannelVideo": {
     "scanHint": "微信扫码后点击打开原作品，无需登录；看完请回到后台审核。",
     "trialHint": "请先上传包含扫码页面的对应版本；扫码微信需拥有对应测试权限。",
@@ -41,6 +282,7 @@
     "theme": "主题"
   },
   "Nav": {
+    "contributeDataset": "＋ 贡献语料集",
     "home": "首页",
     "library": "语料库",
     "appStore": "应用商店",
@@ -95,6 +337,295 @@
     "luckyButton": "试试手气"
   },
   "Library": {
+    "explorer": {
+      "sortOption": "排序：{label}",
+      "breadcrumb": "语料库",
+      "title": "探索粤语语料集",
+      "subtitle": "发现、比较并分享用于粤语 AI、语言研究与文化传承的可信语料集。",
+      "contribute": "贡献语料集",
+      "hotLabel": "热门探索：",
+      "searchPlaceholder": "搜索数据集名称、简介或标签",
+      "resultCount": "{count} 个数据集",
+      "allResults": "已显示全部结果",
+      "applied": "已应用 {items}",
+      "clearAll": "清除全部",
+      "filters": "筛选",
+      "filterTitle": "筛选数据集",
+      "multi": "多选",
+      "sortLabel": "排序",
+      "cardView": "卡片",
+      "listView": "列表",
+      "emptyTitle": "没有找到匹配的数据集",
+      "emptyHint": "试试移除部分筛选条件，或更换关键词。",
+      "cancel": "取消",
+      "clear": "清除",
+      "showResults": "查看 {count} 个结果",
+      "loadError": "语料集加载失败",
+      "retry": "重试",
+      "loadMore": "加载更多"
+    },
+    "groups": {
+      "modalities": "数据模态",
+      "useCases": "主要用途",
+      "accessModes": "访问方式",
+      "quality": "数据质量"
+    },
+    "options": {
+      "modality": {
+        "text": "文本",
+        "audio": "音频",
+        "image_video": "图像 / 视频",
+        "multimodal": "多模态"
+      },
+      "useCase": {
+        "training": "模型训练",
+        "safety_eval": "安全评测",
+        "asr_tts": "ASR / TTS",
+        "culture_research": "文化研究"
+      },
+      "access": {
+        "metadata_only": "仅展示元数据",
+        "request_access": "申请访问",
+        "external": "外部来源"
+      },
+      "quality": {
+        "official": "官方发布",
+        "verified": "已验证元数据"
+      },
+      "sort": {
+        "relevance": "相关性",
+        "newest": "最近更新"
+      },
+      "flag": {
+        "official": "Official",
+        "featured": "Featured",
+        "verified": "Verified",
+        "new": "New",
+        "updated": "Updated"
+      }
+    },
+    "hot": {
+      "asr": "粤语 ASR",
+      "safety": "模型安全评测",
+      "hk": "香港文化",
+      "metadataOnly": "仅元数据",
+      "multimodal": "多模态"
+    },
+    "card": {
+      "share": "分享卡片",
+      "details": "查看详情",
+      "scale": "数据规模",
+      "language": "语言范围",
+      "access": "访问方式",
+      "updated": "最近更新",
+      "status": "状态",
+      "dataset": "数据集",
+      "modality": "模态 / 用途"
+    },
+    "detail": {
+      "back": "返回语料库",
+      "noDownload": "⚠️ 本平台不提供语料集直接下载。您可查看公开元数据、联系数据方，或生成分享卡片。",
+      "about": "简介",
+      "usageNotes": "数据来源、用途与限制说明",
+      "share": "生成分享卡片",
+      "requestAccess": "提交访问合作意向",
+      "contact": "联系数据方",
+      "viewOriginal": "查看原始页面 ↗",
+      "viewExternal": "查看外部来源 ↗",
+      "notFoundTitle": "语料集不存在",
+      "metadataSuffix": "DimSum AI 粤语语料集"
+    },
+    "share": {
+      "title": "生成分享卡片",
+      "note": "分享卡片仅包含公开的语料集元数据和平台链接，不包含原始数据、样本文件或下载入口。",
+      "brand": "DIMSUM AI · CANTONESE CORPUS",
+      "copyLink": "复制分享链接",
+      "saveCard": "保存卡片",
+      "copied": "分享链接已复制",
+      "copyFailed": "复制失败，请手动复制链接",
+      "saved": "卡片图片已保存",
+      "saveFailed": "生成图片失败，请重试"
+    },
+    "contact": {
+      "titleAccess": "提交访问合作意向",
+      "titleContact": "联系数据方",
+      "description": "填写联系方式与需求，平台运营会通过邮箱与您联系。提交后不会自动开放数据访问。",
+      "name": "联系人姓名",
+      "email": "联系邮箱",
+      "organization": "机构 / 组织（选填）",
+      "message": "需求说明",
+      "messagePlaceholder": "例如：用途、所需范围、期望合作方式等",
+      "submit": "提交",
+      "submitting": "提交中…",
+      "success": "已提交，我们会尽快通过邮箱与您联系",
+      "error": "提交失败，请稍后重试",
+      "required": "请填写联系人、有效邮箱和需求说明"
+    },
+    "contribute": {
+      "title": "贡献语料集",
+      "submittedTitle": "申请已提交",
+      "steps": {
+        "contact": "联系信息",
+        "overview": "语料概况",
+        "rights": "权利与隐私",
+        "confirm": "提交确认"
+      },
+      "intro": {
+        "lead": "提交语料集概况、联系方式与版权/使用权信息。审核通过后，我们将邀请您进入正式入库流程。此阶段无需上传原始语料。",
+        "noUpload": "此阶段无需上传原始语料。",
+        "bullet1": "支持开放数据、受限访问及联合建设",
+        "bullet2": "可仅提交元数据、项目链接或脱敏样本说明",
+        "bullet3": "平台不会因提交申请自动公开或分发您的数据",
+        "kindTitle": "您将提供什么？",
+        "kind": {
+          "dataset": "我有现成数据集",
+          "datasetHint": "申请收录、展示或发布",
+          "partnership": "我想开展数据合作",
+          "partnershipHint": "授权、共建、标注或研究合作"
+        }
+      },
+      "contactStep": {
+        "hint": "这些信息仅用于处理本次贡献申请和后续沟通。",
+        "contributorType": "贡献主体类型",
+        "contactName": "联系人姓名",
+        "contactEmail": "联系邮箱",
+        "organizationName": "机构或组织名称",
+        "organizationPlaceholder": "个人可填写“个人贡献者”",
+        "contactRole": "职位 / 角色",
+        "region": "所在地区",
+        "otherContact": "其他联系方式",
+        "otherContactPlaceholder": "电话、微信等（可选）"
+      },
+      "overviewStep": {
+        "hint": "先提供可供初步审核的基础信息；正式 Dataset Card 将在入库阶段完善。",
+        "datasetName": "语料集暂定名称",
+        "datasetNamePlaceholder": "可填写工作名称，后续可修改",
+        "shortDescription": "一句话简介",
+        "shortDescriptionPlaceholder": "例如：面向粤语 ASR 的带人工转写日常对话音频语料",
+        "modalities": "数据模态",
+        "useCase": "主要用途",
+        "scaleDescription": "规模概况",
+        "scalePlaceholder": "例如：12 万条 / 800 小时 / 5 GB",
+        "sourceCollectionMethod": "数据来源与采集方式",
+        "sourcePlaceholder": "例如：原创录制并取得授权；合作机构提供；公开资料整理等。"
+      },
+      "rightsStep": {
+        "hint": "这些信息用于初步评估版权、使用授权和访问策略；不确定的事项可如实选择“待确认”。",
+        "rightsStatus": "数据权利状态",
+        "rightsHolder": "版权 / 相关权利主体",
+        "rightsHolderPlaceholder": "个人或机构名称",
+        "submitterAuthority": "提交人身份",
+        "intendedAccessMode": "预期访问方式",
+        "licenseStatus": "许可证状态",
+        "licenseNameOrUrl": "许可证名称或链接",
+        "licensePlaceholder": "例如：CC BY 4.0 或项目链接",
+        "privacyStatus": "个人信息与敏感内容",
+        "notice": "如数据含录音、人脸/影像、未成年人、健康/金融/法律信息，或新闻、影视、书籍等第三方内容，请如实说明。审核前不会公开、托管或分发原始语料。"
+      },
+      "confirmStep": {
+        "hint": "请确认以下信息。提交后，我们会通过您填写的邮箱联系您。",
+        "rightsSummary": "权利状态：{rights} · 访问偏好：{access}",
+        "referenceUrl": "项目链接或补充资料",
+        "referencePlaceholder": "官网、论文、项目页、公开数据链接等（可选）",
+        "applicantNote": "备注与特别要求",
+        "notePlaceholder": "例如：需签署 NDA、署名方式、期望合作形式等（可选）",
+        "declarations": {
+          "accurate": "我确认提交的信息据我所知真实、准确，并已如实说明权利状态。",
+          "authorized": "我确认我拥有提交本申请所需的授权，或已明确标注待确认的权利事项。",
+          "noAutoPublish": "我理解：在 DimSum AI 审核确认前，语料不会被自动公开、下载、托管或用于模型训练。"
+        }
+      },
+      "options": {
+        "contributorType": {
+          "individual": "个人贡献者",
+          "individualHint": "独立研究者或创作者",
+          "research": "研究团队 / 学术机构",
+          "researchHint": "高校、实验室或项目组",
+          "enterprise": "企业 / 商业机构",
+          "enterpriseHint": "企业、平台或数据服务商",
+          "cultural_rights_holder": "文化机构 / 内容权利方",
+          "cultural_rights_holderHint": "媒体、档案馆、出版或版权方"
+        },
+        "modality": {
+          "text": "文本",
+          "audio": "音频",
+          "image": "图像",
+          "video": "视频",
+          "multimodal": "多模态",
+          "dictionary": "词典 / 知识库"
+        },
+        "useCase": {
+          "training": "模型训练 / 微调",
+          "asr_tts": "ASR / TTS",
+          "safety_eval": "模型安全评测",
+          "retrieval": "检索 / RAG",
+          "linguistics": "语言研究",
+          "culture": "文化保护",
+          "other": "其他"
+        },
+        "rightsStatus": {
+          "full_rights": "拥有全部必要权利",
+          "full_rightsHint": "我或我的组织是权利主体",
+          "written_authorization": "已取得权利方书面授权",
+          "written_authorizationHint": "可补充说明授权范围",
+          "partially_pending": "部分权利待确认",
+          "partially_pendingHint": "仍可提交，平台将人工评估",
+          "uncertain": "不确定，需要咨询",
+          "uncertainHint": "请在备注中说明情况"
+        },
+        "submitterAuthority": {
+          "rights_holder": "权利主体本人",
+          "authorized_representative": "获授权的代表",
+          "member_pending_authorization": "项目成员，待补充授权",
+          "other": "其他"
+        },
+        "intendedAccessMode": {
+          "controlled": "受控访问",
+          "after_review": "申请审核后访问",
+          "metadata_only": "仅展示元数据",
+          "to_discuss": "需讨论"
+        },
+        "licenseStatus": {
+          "has_license": "已有明确许可证",
+          "platform_template": "希望使用平台推荐模板",
+          "custom_agreement": "自定义 / 合作协议",
+          "undecided": "暂未确定，需要沟通"
+        },
+        "privacyStatus": {
+          "no_personal_info": "不包含可识别个人信息",
+          "deidentified": "已完成去标识化处理",
+          "may_contain": "可能包含，尚待评估",
+          "uncertain": "不确定，需要协助判断"
+        }
+      },
+      "choose": "请选择",
+      "required": "必填",
+      "cancel": "暂不提交",
+      "start": "开始申请 →",
+      "prev": "← 上一步",
+      "next": "下一步 →",
+      "submit": "提交贡献申请",
+      "submitting": "提交中…",
+      "validation": {
+        "contact": "请填写贡献主体类型、联系人姓名、有效邮箱与机构名称。",
+        "overview": "请完成语料集名称、简介、模态、用途、规模与来源信息。",
+        "rights": "请完成权利状态、权利主体、提交人身份、访问方式、许可证和隐私信息。",
+        "confirm": "请阅读并勾选全部提交声明。"
+      },
+      "submitError": "提交失败，您填写的内容已保留，请稍后重试。",
+      "success": {
+        "thanks": "感谢您参与粤语语料生态建设。",
+        "applicationNo": "申请编号",
+        "status": "当前状态：待初审",
+        "nextTitle": "下一步",
+        "next1": "我们将审核您的语料概况、权利状态与访问偏好。",
+        "next2": "如需补充材料，将通过 {email} 与您联系。",
+        "next3": "审核通过后，我们将邀请您进入正式语料入库流程。",
+        "notice": "在审核确认前，语料不会自动公开、托管、下载或用于模型训练。",
+        "back": "返回语料库",
+        "another": "提交另一份语料"
+      }
+    },
     "title": "粤语语料集",
     "selectTag": "选择一个标签",
     "classic": "经典",
@@ -588,12 +1119,18 @@
     }
   },
   "AdminLayout": {
+    "libraryNav": {
+      "contributionApplications": "贡献语料申请审核",
+      "ingestionLeads": "入库待办",
+      "contactRequests": "访问合作意向"
+    },
     "panelTitle": "管理后台",
     "dashboardTitle": "管理后台",
     "welcomeBack": "欢迎回来，{name}",
     "unnamedUser": "管理员",
     "backToMainApp": "返回主应用",
     "nav": {
+      "libraryOps": "语料运营",
       "dashboard": "概览",
       "users": "用户管理",
       "administrators": "管理员管理",
@@ -734,6 +1271,7 @@
       "update": "更新语料集失败"
     },
     "dataset": {
+      "library": "Library 展示",
       "attribute": "内容属性",
       "activity": "关联活动",
       "actions": "操作",
@@ -916,6 +1454,12 @@
     "invalidPhone": "请输入有效的手机号格式"
   },
   "CollectionPermissions": {
+    "globalActionsTitle": "语料运营权限（不按活动）",
+    "globalActionsHint": "用于 Library 贡献申请审核与入库待办；需要上方运营角色为有效状态。",
+    "globalActions": {
+      "contribution_review": "贡献申请审核",
+      "ingestion_assignee": "可被分配入库待办"
+    },
     "searchUsers": "搜索用户",
     "searchPlaceholder": "姓名、手机号、邮箱或完整 UID",
     "searchHint": "输入至少 2 个字符，搜索后选择用户再配置权限。",

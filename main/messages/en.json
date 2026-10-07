@@ -1,4 +1,245 @@
 {
+  "LibraryOps": {
+    "title": "Contribution review",
+    "description": "Review dataset contribution applications from individuals and organizations: contacts, dataset overview, rights, privacy risks and next steps.",
+    "loading": "Loading…",
+    "chooseUser": "Select a person",
+    "choose": "Select",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "confirm": "Confirm",
+    "saved": "Saved",
+    "copied": "Copied",
+    "copyFailed": "Copy failed",
+    "applicant": "Applicant",
+    "finished": "This application has been decided and cannot be changed.",
+    "leadCreated": "Accepted. Ingestion task {no} created",
+    "leadBadge": "Ingestion task {no} · {name}",
+    "detailTitle": "Application {no}",
+    "copyContact": "Copy contact",
+    "sendEmail": "Email",
+    "review": "Review",
+    "reviewHint": "Do not create an ingestion task or publish metadata until rights, authorization chain, personal data and third-party content are confirmed.",
+    "acceptedThisMonth": "Accepted this month",
+    "searchPlaceholder": "Search number, dataset, contact, organization or email",
+    "search": "Search",
+    "statusFilter": "Status",
+    "allStatuses": "All statuses",
+    "onlyMine": "Assigned to me",
+    "refresh": "Refresh",
+    "empty": "No matching records",
+    "total": "{count} total",
+    "prev": "Previous",
+    "next": "Next",
+    "status": {
+      "PENDING_INITIAL_REVIEW": "Pending review",
+      "IN_REVIEW": "In review",
+      "PENDING_APPLICANT_INFO": "Awaiting applicant",
+      "RIGHTS_PRIVACY_REVIEW": "Rights / privacy review",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected"
+    },
+    "actions": {
+      "assign": "Start review / assign",
+      "contact-logs": "Log contact",
+      "request-info": "Request information",
+      "info-received": "Information received",
+      "rights-review": "Send to rights / privacy review",
+      "review-complete": "Review complete",
+      "reject": "Reject",
+      "accept": "Accept and create ingestion task",
+      "reopen": "Reopen"
+    },
+    "form": {
+      "rightsOwner": "Reviewer",
+      "handler": "Handler",
+      "handlerHint": "Leave empty to handle it yourself.",
+      "infoTypes": "Information needed",
+      "channel": "Channel",
+      "contactedAt": "Contacted at",
+      "result": "Outcome",
+      "resultPlaceholder": "e.g. Called; they will send the license document",
+      "rejectReason": "Reason",
+      "allowResubmit": "Allow resubmission",
+      "assignee": "Ingestion owner",
+      "priority": "Priority",
+      "targetIngestionType": "Suggested ingestion type",
+      "proposedDatasetName": "Suggested dataset name",
+      "rightsMaterialRequired": "Rights documents needed",
+      "privacyAssessmentRequired": "De-identification / privacy assessment needed",
+      "handoverNote": "Handover note",
+      "noNotification": "Creates an in-system task only. No email, SMS or external notification is sent.",
+      "note": "Note"
+    },
+    "infoType": {
+      "rights": "Rights",
+      "source": "Source",
+      "license": "License",
+      "privacy": "Privacy",
+      "data_dictionary": "Data dictionary",
+      "other": "Other"
+    },
+    "channel": {
+      "email": "Email",
+      "phone": "Phone",
+      "wechat": "WeChat",
+      "meeting": "Meeting",
+      "other": "Other"
+    },
+    "rejectReason": {
+      "rights_unclear": "Unclear rights",
+      "privacy_risk": "Privacy risk",
+      "quality": "Quality",
+      "out_of_scope": "Out of scope",
+      "duplicate": "Duplicate",
+      "other": "Other"
+    },
+    "priority": {
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "ingestionType": {
+      "new_dataset": "New dataset",
+      "supplement_existing": "Add to existing dataset",
+      "to_be_confirmed": "To be confirmed"
+    },
+    "yesNo": {
+      "yes": "Yes",
+      "no": "No",
+      "pending": "To be provided"
+    },
+    "history": {
+      "handler": "Handler: {name}",
+      "assignee": "Owner: {name}"
+    },
+    "event": {
+      "submit": "Submitted",
+      "assign": "Review started / assigned",
+      "contact_log": "Contact logged",
+      "request_info": "Information requested",
+      "info_received": "Information received",
+      "rights_review": "Sent to rights / privacy review",
+      "rights_review_complete": "Rights review complete",
+      "reject": "Rejected",
+      "accept": "Accepted",
+      "reopen": "Reopened",
+      "lead_created": "Ingestion task created",
+      "lead_take": "Ingestion task taken",
+      "lead_close": "Ingestion task closed",
+      "lead_reassign": "Ingestion task reassigned"
+    },
+    "kind": {
+      "dataset": "Existing dataset",
+      "partnership": "Data partnership"
+    },
+    "fields": {
+      "contactName": "Contact",
+      "organization": "Organization",
+      "email": "Email",
+      "otherContact": "Other contact",
+      "region": "Region",
+      "submittedAt": "Submitted",
+      "contributorType": "Contributor type",
+      "contributionKind": "Application type",
+      "handler": "Handler",
+      "datasetName": "Dataset",
+      "shortDescription": "Summary",
+      "modalities": "Modality",
+      "useCase": "Primary use",
+      "scale": "Scale",
+      "referenceUrl": "Project link",
+      "source": "Source and collection",
+      "applicantNote": "Applicant notes",
+      "rightsStatus": "Rights status",
+      "rightsHolder": "Rights holder",
+      "submitterAuthority": "Applicant role",
+      "licenseStatus": "License",
+      "privacyStatus": "Personal data",
+      "intendedAccessMode": "Preferred access"
+    },
+    "sections": {
+      "contact": "Applicant and contact",
+      "dataset": "Dataset overview",
+      "rights": "Rights, license and privacy",
+      "history": "Review history"
+    },
+    "columns": {
+      "application": "Number / time",
+      "dataset": "Dataset",
+      "applicant": "Applicant",
+      "rights": "Rights & privacy",
+      "access": "Preferred access",
+      "status": "Status",
+      "handler": "Handler"
+    },
+    "leads": {
+      "title": "Ingestion tasks",
+      "description": "Ingestion tasks assigned to you after a contribution is accepted. Take them into the existing ingestion workflow; no external notifications are sent.",
+      "scope": {
+        "me": "Assigned to me",
+        "all": "All"
+      },
+      "status": {
+        "PENDING_OWNER_ACCEPTANCE": "Awaiting owner",
+        "IN_PROGRESS": "In progress",
+        "CLOSED": "Closed"
+      },
+      "empty": "No ingestion tasks",
+      "from": "From {no}",
+      "closingNote": "Closing note",
+      "meta": "Owner {assignee} · created by {creator} at {time}",
+      "takenAt": "taken at {time}",
+      "actions": {
+        "take": "Take",
+        "close": "Close",
+        "reassign": "Reassign"
+      }
+    },
+    "contactRequests": {
+      "title": "Access requests",
+      "description": "“Contact provider / request access” messages from Library dataset pages. Reply by email, then mark as handled.",
+      "status": {
+        "OPEN": "Open",
+        "HANDLED": "Handled"
+      },
+      "columns": {
+        "time": "Submitted",
+        "dataset": "Dataset",
+        "contact": "Contact",
+        "message": "Request"
+      },
+      "type": {
+        "access_request": "Access request",
+        "contact": "Contact provider"
+      },
+      "markHandled": "Mark handled",
+      "reopen": "Reopen"
+    },
+    "profile": {
+      "title": "Library profile",
+      "help": "Only these public metadata fields appear in the Library; raw files are never exposed.",
+      "listed": "Show in Library",
+      "listedHint": "When off, the dataset is hidden from the list, detail page and API.",
+      "zhName": "Chinese name (edit via “Edit”)",
+      "enName": "English name",
+      "modalities": "Modality",
+      "useCases": "Primary use",
+      "accessMode": "Access",
+      "scaleSummary": "Scale",
+      "scalePlaceholder": "e.g. 200k samples / 589 hours",
+      "languageScope": "Languages",
+      "languagePlaceholder": "e.g. Cantonese / Traditional Chinese",
+      "tags": "Public tags (comma separated)",
+      "cover": "Cover image URL",
+      "link": "Original page / external source URL",
+      "linkHint": "When set, the detail page shows an external link button.",
+      "usageNotes": "Source, use and limitations (public)",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saved": "Library profile saved"
+    }
+  },
   "ChannelVideo": {
     "scanHint": "Scan with WeChat and tap to open the video. No login required. Return here to review.",
     "trialHint": "Upload the version containing the scan page first. The scanning account needs access to that test version.",
@@ -41,6 +282,7 @@
     "theme": "Theme"
   },
   "Nav": {
+    "contributeDataset": "＋ Contribute a dataset",
     "home": "Home",
     "library": "Library",
     "appStore": "App Store",
@@ -94,6 +336,295 @@
     "luckyButton": "Feeling Lucky"
   },
   "Library": {
+    "explorer": {
+      "sortOption": "Sort: {label}",
+      "breadcrumb": "Library",
+      "title": "Explore Cantonese Corpora",
+      "subtitle": "Discover, compare and share trusted corpora for Cantonese AI, linguistics and cultural heritage.",
+      "contribute": "Contribute a dataset",
+      "hotLabel": "Popular:",
+      "searchPlaceholder": "Search by name, description or tag",
+      "resultCount": "{count} datasets",
+      "allResults": "Showing all results",
+      "applied": "Applied {items}",
+      "clearAll": "Clear all",
+      "filters": "Filters",
+      "filterTitle": "Filter datasets",
+      "multi": "Multi-select",
+      "sortLabel": "Sort",
+      "cardView": "Cards",
+      "listView": "List",
+      "emptyTitle": "No matching datasets",
+      "emptyHint": "Try removing some filters or using different keywords.",
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "showResults": "Show {count} results",
+      "loadError": "Failed to load datasets",
+      "retry": "Retry",
+      "loadMore": "Load more"
+    },
+    "groups": {
+      "modalities": "Modality",
+      "useCases": "Primary use",
+      "accessModes": "Access",
+      "quality": "Quality"
+    },
+    "options": {
+      "modality": {
+        "text": "Text",
+        "audio": "Audio",
+        "image_video": "Image / Video",
+        "multimodal": "Multimodal"
+      },
+      "useCase": {
+        "training": "Model training",
+        "safety_eval": "Safety evaluation",
+        "asr_tts": "ASR / TTS",
+        "culture_research": "Cultural research"
+      },
+      "access": {
+        "metadata_only": "Metadata only",
+        "request_access": "Request access",
+        "external": "External source"
+      },
+      "quality": {
+        "official": "Official release",
+        "verified": "Verified metadata"
+      },
+      "sort": {
+        "relevance": "Relevance",
+        "newest": "Recently updated"
+      },
+      "flag": {
+        "official": "Official",
+        "featured": "Featured",
+        "verified": "Verified",
+        "new": "New",
+        "updated": "Updated"
+      }
+    },
+    "hot": {
+      "asr": "Cantonese ASR",
+      "safety": "Safety evaluation",
+      "hk": "Hong Kong culture",
+      "metadataOnly": "Metadata only",
+      "multimodal": "Multimodal"
+    },
+    "card": {
+      "share": "Share card",
+      "details": "View details",
+      "scale": "Scale",
+      "language": "Languages",
+      "access": "Access",
+      "updated": "Updated",
+      "status": "Status",
+      "dataset": "Dataset",
+      "modality": "Modality / use"
+    },
+    "detail": {
+      "back": "Back to Library",
+      "noDownload": "⚠️ This platform does not offer direct dataset downloads. You can view public metadata, contact the data provider, or generate a share card.",
+      "about": "About",
+      "usageNotes": "Source, intended use and limitations",
+      "share": "Generate share card",
+      "requestAccess": "Request access / partnership",
+      "contact": "Contact data provider",
+      "viewOriginal": "View original page ↗",
+      "viewExternal": "View external source ↗",
+      "notFoundTitle": "Dataset not found",
+      "metadataSuffix": "DimSum AI Cantonese Corpus"
+    },
+    "share": {
+      "title": "Share card",
+      "note": "The share card contains only public metadata and the platform link — no raw data, samples or download links.",
+      "brand": "DIMSUM AI · CANTONESE CORPUS",
+      "copyLink": "Copy link",
+      "saveCard": "Save card",
+      "copied": "Link copied",
+      "copyFailed": "Copy failed. Please copy the link manually.",
+      "saved": "Card image saved",
+      "saveFailed": "Could not generate the image. Please try again."
+    },
+    "contact": {
+      "titleAccess": "Request access / partnership",
+      "titleContact": "Contact data provider",
+      "description": "Leave your contact details and needs; our team will reply by email. Submitting does not grant data access.",
+      "name": "Name",
+      "email": "Email",
+      "organization": "Organization (optional)",
+      "message": "Your request",
+      "messagePlaceholder": "e.g. purpose, scope needed, preferred collaboration",
+      "submit": "Submit",
+      "submitting": "Submitting…",
+      "success": "Submitted. We will contact you by email soon.",
+      "error": "Submission failed. Please try again later.",
+      "required": "Please fill in your name, a valid email and your request."
+    },
+    "contribute": {
+      "title": "Contribute a dataset",
+      "submittedTitle": "Application submitted",
+      "steps": {
+        "contact": "Contact",
+        "overview": "Overview",
+        "rights": "Rights & privacy",
+        "confirm": "Confirm"
+      },
+      "intro": {
+        "lead": "Share an overview of your dataset, your contact details and rights information. Once approved, we will invite you to the formal ingestion process. No raw data upload is needed at this stage.",
+        "noUpload": "No raw data upload is needed at this stage.",
+        "bullet1": "Open data, restricted access and co-development are all welcome",
+        "bullet2": "You may submit metadata, project links or de-identified sample notes only",
+        "bullet3": "Submitting does not publish or distribute your data",
+        "kindTitle": "What would you like to offer?",
+        "kind": {
+          "dataset": "I have a dataset",
+          "datasetHint": "Apply for listing or publication",
+          "partnership": "I want a data partnership",
+          "partnershipHint": "Licensing, co-building, annotation or research"
+        }
+      },
+      "contactStep": {
+        "hint": "Used only to process this application and follow up with you.",
+        "contributorType": "Contributor type",
+        "contactName": "Contact name",
+        "contactEmail": "Email",
+        "organizationName": "Organization",
+        "organizationPlaceholder": "Individuals may enter “Individual contributor”",
+        "contactRole": "Title / role",
+        "region": "Region",
+        "otherContact": "Other contact",
+        "otherContactPlaceholder": "Phone, WeChat, etc. (optional)"
+      },
+      "overviewStep": {
+        "hint": "Basic information for the initial review; the full dataset card is completed during ingestion.",
+        "datasetName": "Working dataset name",
+        "datasetNamePlaceholder": "A working title is fine",
+        "shortDescription": "One-line summary",
+        "shortDescriptionPlaceholder": "e.g. Conversational Cantonese audio with human transcripts for ASR",
+        "modalities": "Modality",
+        "useCase": "Primary use",
+        "scaleDescription": "Scale",
+        "scalePlaceholder": "e.g. 120k items / 800 hours / 5 GB",
+        "sourceCollectionMethod": "Source and collection method",
+        "sourcePlaceholder": "e.g. original recordings with consent; provided by a partner; compiled from public material."
+      },
+      "rightsStep": {
+        "hint": "Used for an initial assessment of copyright, licensing and access. Choose “to be confirmed” if unsure.",
+        "rightsStatus": "Rights status",
+        "rightsHolder": "Copyright / rights holder",
+        "rightsHolderPlaceholder": "Person or organization",
+        "submitterAuthority": "Your role",
+        "intendedAccessMode": "Preferred access",
+        "licenseStatus": "License status",
+        "licenseNameOrUrl": "License name or link",
+        "licensePlaceholder": "e.g. CC BY 4.0 or project link",
+        "privacyStatus": "Personal and sensitive information",
+        "notice": "Please disclose recordings, faces/images, minors, health/financial/legal information, or third-party content such as news, film or books. Raw data is never published, hosted or distributed before review."
+      },
+      "confirmStep": {
+        "hint": "Please review. We will contact you at the email you provided.",
+        "rightsSummary": "Rights: {rights} · Access: {access}",
+        "referenceUrl": "Project link or supporting material",
+        "referencePlaceholder": "Website, paper, project page, public data link (optional)",
+        "applicantNote": "Notes and special requirements",
+        "notePlaceholder": "e.g. NDA required, attribution, preferred collaboration (optional)",
+        "declarations": {
+          "accurate": "To the best of my knowledge the information is true and accurate, and the rights status is disclosed.",
+          "authorized": "I am authorized to submit this application, or I have marked the rights still to be confirmed.",
+          "noAutoPublish": "I understand that before DimSum AI approves it, the data will not be published, downloaded, hosted or used for model training."
+        }
+      },
+      "options": {
+        "contributorType": {
+          "individual": "Individual",
+          "individualHint": "Independent researcher or creator",
+          "research": "Research team / academia",
+          "researchHint": "University, lab or project team",
+          "enterprise": "Company",
+          "enterpriseHint": "Business, platform or data vendor",
+          "cultural_rights_holder": "Cultural institution / rights holder",
+          "cultural_rights_holderHint": "Media, archive, publisher or copyright owner"
+        },
+        "modality": {
+          "text": "Text",
+          "audio": "Audio",
+          "image": "Image",
+          "video": "Video",
+          "multimodal": "Multimodal",
+          "dictionary": "Dictionary / knowledge base"
+        },
+        "useCase": {
+          "training": "Training / fine-tuning",
+          "asr_tts": "ASR / TTS",
+          "safety_eval": "Safety evaluation",
+          "retrieval": "Retrieval / RAG",
+          "linguistics": "Linguistics",
+          "culture": "Cultural preservation",
+          "other": "Other"
+        },
+        "rightsStatus": {
+          "full_rights": "We hold all necessary rights",
+          "full_rightsHint": "I or my organization own the rights",
+          "written_authorization": "Written authorization obtained",
+          "written_authorizationHint": "You may describe the scope",
+          "partially_pending": "Some rights to be confirmed",
+          "partially_pendingHint": "Still welcome; we will review manually",
+          "uncertain": "Unsure, need advice",
+          "uncertainHint": "Please explain in the notes"
+        },
+        "submitterAuthority": {
+          "rights_holder": "Rights holder",
+          "authorized_representative": "Authorized representative",
+          "member_pending_authorization": "Project member, authorization pending",
+          "other": "Other"
+        },
+        "intendedAccessMode": {
+          "controlled": "Controlled access",
+          "after_review": "Access after approval",
+          "metadata_only": "Metadata only",
+          "to_discuss": "To be discussed"
+        },
+        "licenseStatus": {
+          "has_license": "Has a clear license",
+          "platform_template": "Use the platform template",
+          "custom_agreement": "Custom / partnership agreement",
+          "undecided": "Undecided"
+        },
+        "privacyStatus": {
+          "no_personal_info": "No identifiable personal information",
+          "deidentified": "De-identified",
+          "may_contain": "May contain, to be assessed",
+          "uncertain": "Unsure, need help"
+        }
+      },
+      "choose": "Select",
+      "required": "Required",
+      "cancel": "Not now",
+      "start": "Start →",
+      "prev": "← Back",
+      "next": "Next →",
+      "submit": "Submit application",
+      "submitting": "Submitting…",
+      "validation": {
+        "contact": "Please complete contributor type, name, a valid email and organization.",
+        "overview": "Please complete name, summary, modality, use, scale and source.",
+        "rights": "Please complete rights status, rights holder, your role, access, license and privacy.",
+        "confirm": "Please read and tick all declarations."
+      },
+      "submitError": "Submission failed. Your answers are kept — please try again later.",
+      "success": {
+        "thanks": "Thank you for contributing to the Cantonese data ecosystem.",
+        "applicationNo": "Application number",
+        "status": "Status: pending initial review",
+        "nextTitle": "Next steps",
+        "next1": "We will review your dataset overview, rights status and access preference.",
+        "next2": "If more information is needed, we will contact you at {email}.",
+        "next3": "Once approved, we will invite you to the formal ingestion process.",
+        "notice": "Until approved, the data will not be published, hosted, downloaded or used for model training.",
+        "back": "Back to Library",
+        "another": "Submit another dataset"
+      }
+    },
     "title": "Cantonese Corpus",
     "selectTag": "Select a tag",
     "classic": "Classic",
@@ -587,12 +1118,18 @@
     }
   },
   "AdminLayout": {
+    "libraryNav": {
+      "contributionApplications": "Contribution review",
+      "ingestionLeads": "Ingestion tasks",
+      "contactRequests": "Access requests"
+    },
     "panelTitle": "Admin Panel",
     "dashboardTitle": "Admin Dashboard",
     "welcomeBack": "Welcome back, {name}",
     "unnamedUser": "Administrator",
     "backToMainApp": "Back to Main App",
     "nav": {
+      "libraryOps": "Corpus operations",
       "dashboard": "Dashboard",
       "users": "Users",
       "administrators": "Administrator Management",
@@ -733,6 +1270,7 @@
       "update": "Failed to update dataset"
     },
     "dataset": {
+      "library": "Library",
       "attribute": "Content attribute",
       "activity": "Linked activity",
       "actions": "Actions",
@@ -915,6 +1453,12 @@
     "invalidPhone": "Please enter a valid phone number"
   },
   "CollectionPermissions": {
+    "globalActionsTitle": "Corpus operations (not activity-scoped)",
+    "globalActionsHint": "For Library contribution review and ingestion tasks; requires the operator role above to be active.",
+    "globalActions": {
+      "contribution_review": "Contribution review",
+      "ingestion_assignee": "Can be assigned ingestion tasks"
+    },
     "searchUsers": "Search users",
     "searchPlaceholder": "Name, phone, email or full UID",
     "searchHint": "Enter at least 2 characters, then select a user to configure permissions.",

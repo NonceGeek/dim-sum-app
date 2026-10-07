@@ -8,6 +8,7 @@ import {
 import {
   COLLECTION_ACTIONS,
   COLLECTION_ROLES,
+  GLOBAL_ACTIONS,
 } from "@/lib/collection-permissions";
 import {
   requireCollectionAdmin,
@@ -22,6 +23,7 @@ const schema = z
     role: z.enum(COLLECTION_ROLES),
     active: z.boolean(),
     note: z.string().trim().max(1000),
+    globalActions: z.array(z.enum(GLOBAL_ACTIONS)).max(GLOBAL_ACTIONS.length).default([]),
     grants: z
       .array(
         z
@@ -155,12 +157,14 @@ export async function PUT(req: NextRequest) {
             user_id: input.userId,
             role_code: input.role,
             active: input.active,
+            global_actions: [...new Set(input.globalActions)],
             assigned_by: operatorId,
             note: input.note,
           },
           update: {
             role_code: input.role,
             active: input.active,
+            global_actions: [...new Set(input.globalActions)],
             assigned_by: operatorId,
             note: input.note,
           },

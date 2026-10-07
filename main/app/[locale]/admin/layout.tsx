@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
+import { useLibraryOps } from "@/lib/hooks/use-library-ops";
+import { isLibraryOpsPage } from "@/lib/admin-route-access";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useRouter, usePathname, Link } from "@/i18n/navigation";
@@ -19,6 +21,7 @@ import {
   FileText,
   ClipboardList,
   ChevronDown,
+  Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -68,6 +71,22 @@ const adminNavItems = [
     titleKey: "nav.corpusData",
     href: "/admin/corpus",
     icon: Database,
+  },
+  {
+    titleKey: "nav.libraryOps",
+    href: "/admin/library-ops",
+    icon: Inbox,
+    children: [
+      {
+        titleKey: "libraryNav.contributionApplications",
+        href: "/admin/contribution-applications",
+      },
+      { titleKey: "libraryNav.ingestionLeads", href: "/admin/ingestion-leads" },
+      {
+        titleKey: "libraryNav.contactRequests",
+        href: "/admin/dataset-contact-requests",
+      },
+    ],
   },
   {
     titleKey: "nav.corpusCollection",
@@ -148,6 +167,22 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { data: submissionAccess } = useSubmissionAccess();
   const hasSubmissionAccess = !!submissionAccess;
+  const { data: libraryOps } = useLibraryOps();
+  const libraryBadges: Record<string, number> = {
+    "/admin/contribution-applications":
+      libraryOps?.counts.pendingInitialReview ?? 0,
+    "/admin/ingestion-leads": libraryOps?.counts.myOpenLeads ?? 0,
+    "/admin/dataset-contact-requests":
+      libraryOps?.counts.openContactRequests ?? 0,
+  };
+  const libraryChildAllowed = (href: string) =>
+    !!libraryOps &&
+    (libraryOps.isAdmin ||
+      libraryOps.actions.includes(
+        href === "/admin/ingestion-leads"
+          ? "ingestion_assignee"
+          : "contribution_review",
+      ));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [corpusAccess, setCorpusAccess] = useState<boolean | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
@@ -176,6 +211,23 @@ export default function AdminLayout({
       return;
     }
     setCorpusAccess(null);
+    if (isLibraryOpsPage(pathname)) {
+      let active = true;
+      fetch("/api/admin/library-ops", { cache: "no-store" })
+        .then((response) => {
+          if (!response.ok) throw new Error("denied");
+          if (active) setCorpusAccess(true);
+        })
+        .catch(() => {
+          if (active) {
+            setCorpusAccess(false);
+            router.push("/");
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }
     const submissionPath =
       pathname === "/admin" ||
       pathname === "/admin/corpus-collection" ||
@@ -277,7 +329,8 @@ export default function AdminLayout({
             .filter(
               (item) =>
                 session.user.isSystemAdmin ||
-                item.href === "/admin/corpus-collection",
+                item.href === "/admin/corpus-collection" ||
+                (item.href === "/admin/library-ops" && !!libraryOps),
             )
             .map((item) => {
               const visibleChildren = item.children?.filter((child) => {
@@ -287,6 +340,8 @@ export default function AdminLayout({
                   !session.user.isSuperAdmin
                 )
                   return false;
+                if (item.href === "/admin/library-ops")
+                  return libraryChildAllowed(child.href);
                 return (
                   session.user.isSystemAdmin ||
                   (child.href ===
@@ -355,7 +410,16 @@ export default function AdminLayout({
                               )}
                               onClick={() => setSidebarOpen(false)}
                             >
-                              {t(child.titleKey)}
+                              <span className="flex items-center justify-between gap-2">
+                                {t(child.titleKey)}
+                                {!!libraryBadges[child.href] && (
+                                  <span className="rounded-full bg-destructive px-1.5 text-xs font-medium leading-5 text-white">
+                                    {libraryBadges[child.href] > 99
+                                      ? "99+"
+                                      : libraryBadges[child.href]}
+                                  </span>
+                                )}
+                              </span>
                             </Link>
                           );
                         })}
