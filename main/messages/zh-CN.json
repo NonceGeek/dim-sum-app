@@ -1515,5 +1515,14 @@
       "award": "获奖",
       "visibility": "修改可见性"
     }
+  },
+  "VideoPlayer": {
+    "close": "关闭视频",
+    "dialogDescription": "视频播放器，关闭后返回列表。",
+    "enlarge": "放大播放",
+    "play": "播放视频",
+    "loading": "视频加载中…",
+    "failed": "视频暂时无法播放",
+    "retry": "重试"
   }
 }

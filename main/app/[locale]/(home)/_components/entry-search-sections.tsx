@@ -290,10 +290,9 @@ function CardMediaPreview({
     <div className="space-y-2">
       {videoUrl ? (
         <CardVideoPreview
+          title={entry.entryName}
           url={videoUrl}
           poster={coverImage}
-          fullscreenLabel={labels.fullscreenVideo}
-          playFailedLabel={labels.videoPlayFailed}
         />
       ) : coverImage ? (
         <ImageCard
@@ -1200,8 +1199,6 @@ type MediaLabels = {
   videoTranscript: string;
   previewImage: string;
   imageUnavailable: string;
-  fullscreenVideo: string;
-  videoPlayFailed: string;
   listenAudio: string;
   pauseAudio: string;
   audioLoading: string;
@@ -1242,8 +1239,6 @@ export function EntrySearchSections({
     videoTranscript: t("videoTranscript"),
     previewImage: t("previewImage"),
     imageUnavailable: t("imageUnavailable"),
-    fullscreenVideo: t("fullscreenVideo"),
-    videoPlayFailed: t("videoPlayFailed"),
     listenAudio: t("listenAudio"),
     pauseAudio: t("pauseAudio"),
     audioLoading: t("audioLoading"),

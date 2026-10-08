@@ -1514,5 +1514,14 @@
       "award": "Award",
       "visibility": "Change visibility"
     }
+  },
+  "VideoPlayer": {
+    "close": "Close video",
+    "dialogDescription": "Video player. Close to return to the results.",
+    "enlarge": "Play in larger view",
+    "play": "Play video",
+    "loading": "Loading video…",
+    "failed": "Video is temporarily unavailable",
+    "retry": "Retry"
   }
 }
