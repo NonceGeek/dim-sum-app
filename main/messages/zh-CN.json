@@ -217,11 +217,11 @@
       "reopen": "改为未处理"
     },
     "profile": {
-      "title": "语料库展示资料",
-      "help": "仅以下公开元数据会出现在前台语料库，不会公开原始文件。",
-      "listed": "在语料库展示",
-      "listedHint": "关闭后前台列表、详情页和接口都不可见。",
-      "zhName": "中文名（在“编辑”中修改）",
+      "title": "语料库展示设置",
+      "help": "此设置不会开放原始文件下载，也不会改变语料内容的公开权限。",
+      "listed": "在前台语料库展示",
+      "listedHint": "开启并保存后，访客可在语料库列表和详情页查看名称、简介、封面等展示资料；关闭并保存后，列表、详情页和公开接口均不再展示。",
+      "zhName": "中文名（在“编辑资料”中修改）",
       "enName": "英文名",
       "modalities": "数据模态",
       "useCases": "主要用途",
@@ -236,8 +236,8 @@
       "linkHint": "填写即在详情页显示外链按钮。",
       "usageNotes": "数据来源、用途与限制说明（公开）",
       "cancel": "取消",
-      "save": "保存",
-      "saved": "语料库展示资料已保存"
+      "save": "保存展示设置",
+      "saved": "语料库展示设置已保存"
     }
   },
   "ChannelVideo": {
@@ -1244,7 +1244,7 @@
   },
   "AdminCategories": {
     "title": "语料集管理",
-    "description": "管理语料集别名、内容属性和公开状态。",
+    "description": "管理语料集资料、前台语料库展示和语料内容公开权限。",
     "search": {
       "title": "搜索语料集",
       "placeholder": "按名称或别名搜索...",
@@ -1252,7 +1252,7 @@
     },
     "list": {
       "title": "语料集列表（{count}）",
-      "description": "设置每个语料集的公开可见性"
+      "description": "语料库展示与语料内容公开权限独立设置；展示资料不会自动开放原始文件下载。"
     },
     "columns": {
       "name": "名称",
@@ -1260,11 +1260,12 @@
       "entries": "条目数",
       "permissions": "权限数",
       "status": "状态",
-      "public": "公开",
-      "created": "创建时间"
+      "public": "语料内容公开",
+      "created": "创建时间",
+      "publicHint": "控制语料内容公开权限，不影响语料库展示。"
     },
     "messages": {
-      "updated": "语料集可见性已更新"
+      "updated": "语料集设置已更新"
     },
     "errors": {
       "fetch": "获取语料集失败",
@@ -1275,7 +1276,7 @@
       "attribute": "内容属性",
       "activity": "关联活动",
       "actions": "操作",
-      "edit": "编辑",
+      "edit": "编辑资料",
       "editTitle": "编辑语料集",
       "help": "别名用于显示，内部标识保持不变。",
       "description": "说明",
@@ -1284,7 +1285,12 @@
       "cultural_knowledge": "文化知识",
       "impact": "修改属性将影响此语料集下 {count} 条正式语料的搜索归属。",
       "cancel": "取消",
-      "save": "保存"
+      "save": "保存",
+      "listed": "已展示",
+      "unlisted": "未展示",
+      "librarySettings": "设置",
+      "librarySettingsFor": "设置“{name}”的语料库展示",
+      "viewLibrary": "查看前台"
     }
   },
   "AdminCorpus": {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,7 @@ export function LibraryProfileDialog({
   onClose: () => void;
 }) {
   const t = useTranslations("LibraryOps.profile");
+  const queryClient = useQueryClient();
   const tOpt = useTranslations("Library.options");
   const [draft, setDraft] = useState<Profile | null>(null);
   const [tagsText, setTagsText] = useState("");
@@ -71,7 +72,7 @@ export function LibraryProfileDialog({
   }, [name]);
   const save = useMutation({
     mutationFn: async () =>
-      json(
+      json<Profile>(
         await fetch("/api/admin/library-profiles", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -84,7 +85,11 @@ export function LibraryProfileDialog({
           }),
         }),
       ),
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["library-profile", name], saved);
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["library-datasets"] });
+      queryClient.invalidateQueries({ queryKey: ["library-datasets-count"] });
       toast.success(t("saved"));
       onClose();
     },
@@ -119,7 +124,7 @@ export function LibraryProfileDialog({
                 <b className="block text-sm">{t("listed")}</b>
                 <span className="text-xs text-muted-foreground">{t("listedHint")}</span>
               </span>
-              <Switch checked={draft.listed} onCheckedChange={(v) => set("listed", v)} />
+              <Switch aria-label={t("listed")} checked={draft.listed} onCheckedChange={(v) => set("listed", v)} />
             </label>
             <div className="space-y-1.5">
               <Label>{t("zhName")}</Label>

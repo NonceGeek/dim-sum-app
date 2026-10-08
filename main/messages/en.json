@@ -217,11 +217,11 @@
       "reopen": "Reopen"
     },
     "profile": {
-      "title": "Library profile",
-      "help": "Only these public metadata fields appear in the Library; raw files are never exposed.",
-      "listed": "Show in Library",
-      "listedHint": "When off, the dataset is hidden from the list, detail page and API.",
-      "zhName": "Chinese name (edit via “Edit”)",
+      "title": "Library display settings",
+      "help": "These settings do not enable raw file downloads or change public access to corpus content.",
+      "listed": "Show in the public Library",
+      "listedHint": "Enable and save to show the name, description, cover and other display information in the Library list and detail page. Disable and save to hide the dataset from the list, detail page and public API.",
+      "zhName": "Chinese name (change via “Edit details”)",
       "enName": "English name",
       "modalities": "Modality",
       "useCases": "Primary use",
@@ -236,8 +236,8 @@
       "linkHint": "When set, the detail page shows an external link button.",
       "usageNotes": "Source, use and limitations (public)",
       "cancel": "Cancel",
-      "save": "Save",
-      "saved": "Library profile saved"
+      "save": "Save display settings",
+      "saved": "Library display settings saved"
     }
   },
   "ChannelVideo": {
@@ -1243,7 +1243,7 @@
   },
   "AdminCategories": {
     "title": "Dataset management",
-    "description": "Manage dataset aliases, content attributes, and visibility.",
+    "description": "Manage dataset details, public Library display, and public access to corpus content.",
     "search": {
       "title": "Search Datasets",
       "placeholder": "Search by name or nickname...",
@@ -1251,7 +1251,7 @@
     },
     "list": {
       "title": "Datasets List ({count})",
-      "description": "Toggle visibility for each dataset"
+      "description": "Library display and public access to corpus content are configured separately. Displaying metadata does not enable raw file downloads."
     },
     "columns": {
       "name": "Name",
@@ -1259,22 +1259,23 @@
       "entries": "Entries",
       "permissions": "Permissions",
       "status": "Status",
-      "public": "Public",
-      "created": "Created"
+      "public": "Public corpus content",
+      "created": "Created",
+      "publicHint": "Controls public access to corpus content, independently of Library display."
     },
     "messages": {
-      "updated": "Dataset visibility updated"
+      "updated": "Dataset settings updated"
     },
     "errors": {
       "fetch": "Failed to fetch datasets",
       "update": "Failed to update dataset"
     },
     "dataset": {
-      "library": "Library",
+      "library": "Library display",
       "attribute": "Content attribute",
       "activity": "Linked activity",
       "actions": "Actions",
-      "edit": "Edit",
+      "edit": "Edit details",
       "editTitle": "Edit dataset",
       "help": "The alias is used for display; the internal identifier stays unchanged.",
       "description": "Description",
@@ -1283,7 +1284,12 @@
       "cultural_knowledge": "Cultural knowledge",
       "impact": "Changing the attribute affects search scope for all {count} entries in this dataset.",
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "listed": "Listed",
+      "unlisted": "Not listed",
+      "librarySettings": "Settings",
+      "librarySettingsFor": "Library display settings for {name}",
+      "viewLibrary": "View in Library"
     }
   },
   "AdminCorpus": {
