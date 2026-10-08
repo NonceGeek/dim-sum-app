@@ -240,7 +240,7 @@ export default function AdminCategoriesPage() {
                     <TableCell>{category.activity ? <a className="underline" href={`/${locale}/admin/corpus-collection/activities`}>{category.activity.title}</a> : "—"}</TableCell>
                     <TableCell><Button size="sm" onClick={() => {
                       setEditing(category); setDraft({ nickname: category.nickname || category.name, description: category.description || "", contentAttribute: category.contentAttribute });
-                    }}><Pencil aria-hidden="true" />{t("dataset.edit")}</Button>{!category.activity && <Button size="sm" variant="outline" className="ml-2" onClick={() => setLibraryEditing(category.name)}>{t("dataset.library")}</Button>}</TableCell>
+                    }}><Pencil aria-hidden="true" />{t("dataset.edit")}</Button><Button size="sm" variant="outline" className="ml-2" onClick={() => setLibraryEditing(category.name)}>{t("dataset.library")}</Button></TableCell>
                     <TableCell className="text-muted-foreground">
                       {category.corpusCount}
                     </TableCell>

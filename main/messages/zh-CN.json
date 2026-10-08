@@ -198,7 +198,7 @@
     },
     "contactRequests": {
       "title": "访问合作意向",
-      "description": "Library 详情页提交的“联系数据方 / 提交访问合作意向”。请通过邮箱联系后标记为已处理。",
+      "description": "语料库详情页提交的“联系数据方 / 提交访问合作意向”。请通过邮箱联系后标记为已处理。",
       "status": {
         "OPEN": "未处理",
         "HANDLED": "已处理"
@@ -217,9 +217,9 @@
       "reopen": "改为未处理"
     },
     "profile": {
-      "title": "Library 展示资料",
-      "help": "仅以下公开元数据会出现在前台 Library，不会公开原始文件。",
-      "listed": "在 Library 展示",
+      "title": "语料库展示资料",
+      "help": "仅以下公开元数据会出现在前台语料库，不会公开原始文件。",
+      "listed": "在语料库展示",
       "listedHint": "关闭后前台列表、详情页和接口都不可见。",
       "zhName": "中文名（在“编辑”中修改）",
       "enName": "英文名",
@@ -237,7 +237,7 @@
       "usageNotes": "数据来源、用途与限制说明（公开）",
       "cancel": "取消",
       "save": "保存",
-      "saved": "Library 展示资料已保存"
+      "saved": "语料库展示资料已保存"
     }
   },
   "ChannelVideo": {
@@ -397,11 +397,11 @@
         "newest": "最近更新"
       },
       "flag": {
-        "official": "Official",
-        "featured": "Featured",
-        "verified": "Verified",
-        "new": "New",
-        "updated": "Updated"
+        "official": "官方发布",
+        "featured": "精选",
+        "verified": "已验证元数据",
+        "new": "新增",
+        "updated": "已更新"
       }
     },
     "hot": {
@@ -1271,7 +1271,7 @@
       "update": "更新语料集失败"
     },
     "dataset": {
-      "library": "Library 展示",
+      "library": "语料库展示",
       "attribute": "内容属性",
       "activity": "关联活动",
       "actions": "操作",
@@ -1455,7 +1455,7 @@
   },
   "CollectionPermissions": {
     "globalActionsTitle": "语料运营权限（不按活动）",
-    "globalActionsHint": "用于 Library 贡献申请审核与入库待办；需要上方运营角色为有效状态。",
+    "globalActionsHint": "用于语料库贡献申请审核与入库待办；需要上方运营角色为有效状态。",
     "globalActions": {
       "contribution_review": "贡献申请审核",
       "ingestion_assignee": "可被分配入库待办"
