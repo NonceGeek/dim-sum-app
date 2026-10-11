@@ -8,10 +8,10 @@ type Tag = Prisma.tagsGetPayload<{ select: typeof tagSelect }>;
 
 export function parseTagInput(value: unknown) {
   const body = payload(value, ["name", "gloss"]);
-  if (body.gloss !== undefined && (typeof body.gloss !== "string" || body.gloss.includes("\0"))) {
+  if (body.gloss != null && (typeof body.gloss !== "string" || body.gloss.includes("\0"))) {
     throw new AppError(400, "gloss must be a string");
   }
-  const gloss = (body.gloss as string | undefined)?.trim() || null;
+  const gloss = (body.gloss as string | null | undefined)?.trim() || null;
   if (gloss && gloss.length > MAX_GLOSS_LENGTH) throw new AppError(400, `gloss must be at most ${MAX_GLOSS_LENGTH} characters`);
   return { name: parseName(body.name), gloss };
 }

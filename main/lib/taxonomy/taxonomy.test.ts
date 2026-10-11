@@ -63,6 +63,7 @@ test("parses trimmed names, optional gloss and root parent", () => {
   assert.deepEqual(parseTagInput({ name: " 茶樓 ", gloss: " 說明 " }), { name: "茶樓", gloss: "說明" });
   assert.equal(parseTagInput({ name: "茶樓", gloss: "  " }).gloss, null);
   assert.equal(parseTagInput({ name: "茶樓" }).gloss, null);
+  assert.equal(parseTagInput({ name: "茶樓", gloss: null }).gloss, null);
   assert.equal(parseParentId("9223372036854775807"), BigInt("9223372036854775807"));
 });
 
@@ -78,7 +79,7 @@ test("rejects malformed payloads, reserved fields and out-of-range IDs", () => {
   for (const value of [null, undefined, 10, "", "0", "-1", "01", "1.5", "1e2", " 1", "9223372036854775808"]) {
     assert.throws(() => parseParentId(value), errorStatus(400));
   }
-  for (const gloss of [null, 1, [], {}, "a\0b", "x".repeat(501)]) assert.throws(() => parseTagInput({ name: "茶樓", gloss }), errorStatus(400));
+  for (const gloss of [1, [], {}, "a\0b", "x".repeat(501)]) assert.throws(() => parseTagInput({ name: "茶樓", gloss }), errorStatus(400));
   assert.throws(() => parseCategoryInput({ name: "生".repeat(51) }), errorStatus(400));
   assert.throws(() => parseTagInput({ name: "生".repeat(51) }), errorStatus(400));
   assert.equal(parseTagInput({ name: ` ${"生".repeat(50)} `, gloss: "x".repeat(500) }).name.length, 50);
