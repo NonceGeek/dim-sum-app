@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { databaseErrorResponse } from "./prisma-errors";
 
 /** Expected server-side failure whose status and message can be returned to the caller. */
@@ -7,11 +7,6 @@ export class AppError extends Error {
     super(message);
     this.name = "AppError";
   }
-}
-
-export async function readJsonBody(req: NextRequest): Promise<unknown> {
-  try { return await req.json(); }
-  catch { throw new AppError(400, "Invalid JSON"); }
 }
 
 /** Map AppError to its status; log anything else and return 503 (transient DB) or 500. */
