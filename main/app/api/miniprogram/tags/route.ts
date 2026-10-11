@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import { assertCategoryTagCreator } from "@/lib/taxonomy/common";
 import { createTag, listTags, parseTagInput } from "@/lib/taxonomy/tags";
-import { categoryTagErrorResponse, readJsonBody } from "@/lib/taxonomy/route-helpers";
+import { appErrorResponse, readJsonBody } from "@/lib/app-error";
 
 export const runtime = "nodejs";
 
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       const items = await listTags(prisma, req.nextUrl.searchParams.get("q") ?? "");
       return NextResponse.json({ items });
     } catch (error) {
-      return categoryTagErrorResponse(error);
+      return appErrorResponse(error, "Miniprogram category/tag request failed");
     }
   });
 }
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       const result = await createTag(prisma, input);
       return NextResponse.json(result, { status: result.created ? 201 : 200 });
     } catch (error) {
-      return categoryTagErrorResponse(error);
+      return appErrorResponse(error, "Miniprogram category/tag request failed");
     }
   });
 }
