@@ -188,6 +188,9 @@ importers:
       opencc-js:
         specifier: ^1.0.5
         version: 1.0.5
+      pinyin-pro:
+        specifier: 3.29.5
+        version: 3.29.5
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.6))(@types/react@19.2.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -317,6 +320,9 @@ importers:
         version: 8.0.0(@types/node@20.19.25)(jiti@2.6.1)(terser@5.46.1)(tsx@4.20.6)
 
 packages:
+
+  pinyin-pro@3.29.5:
+    resolution: {integrity: sha512-Fk5YoRmtdHqJWqAuzYVG/NzvzeCbaG+ZEwbY6Nbps3QAIrvQQEtcm49frcyCM8i2b5najnzPDtYqrHRYTTiuwQ==}
 
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
@@ -8799,6 +8805,8 @@ packages:
     engines: {node: '>=16.0.0'}
 
 snapshots:
+
+  pinyin-pro@3.29.5: {}
 
   '@adobe/css-tools@4.4.4': {}
 
