@@ -33,7 +33,6 @@ function validateParent(parent: Category | null) {
 }
 
 export async function listContentCategories(db: PrismaClient, parentId: bigint | null) {
-  if (parentId !== null) validateParent(await db.content_categories.findUnique({ where: { id: parentId }, select: categorySelect }));
   const rows = await db.content_categories.findMany({
     where: { parent_id: parentId, level: parentId === null ? 1 : 2, status: "active" },
     select: categorySelect, orderBy: [{ sort_order: "asc" }, { id: "asc" }],

@@ -9,7 +9,6 @@ import * as tagRoutes from "../../app/api/miniprogram/tags/route";
 
 const databaseMethods = [
   [prisma.user, "findUnique"],
-  [prisma.content_categories, "findUnique"],
   [prisma.content_categories, "findMany"],
   [prisma.content_categories, "create"],
   [prisma.tags, "findMany"],
@@ -25,7 +24,6 @@ afterEach(() => {
 // them after each test. The actual route exports and JWT verification run here.
 function setupRoutes(db: PrismaClient, kind: "category" | "tag") {
   prisma.user.findUnique = db.user.findUnique;
-  prisma.content_categories.findUnique = db.content_categories.findUnique;
   prisma.content_categories.findMany = db.content_categories.findMany;
   prisma.content_categories.create = db.content_categories.create;
   prisma.tags.findMany = db.tags.findMany;
@@ -46,7 +44,6 @@ function fixture(user: any = { role: "TAGGER_PARTNER", status: "ACTIVE", isSyste
     },
     content_categories: {
       findMany: async () => { if (failure) throw failure; return []; },
-      findUnique: async () => null,
       create: async ({ data }: any) => ({ id: BigInt(102), ...data }),
     },
     $executeRaw: async () => 1,
@@ -149,10 +146,10 @@ for (const kind of ["category", "tag"] as const) {
   });
 }
 
-test("category routes distinguish invalid IDs and missing parents", async () => {
+test("category routes reject invalid IDs and missing parents on creation", async () => {
   const routes = setupRoutes(fixture().db, "category");
   const jwt = await token();
   assert.equal((await routes.GET(request("GET", jwt, undefined, "?parentId="))).status, 400);
-  assert.equal((await routes.GET(request("GET", jwt, undefined, "?parentId=10"))).status, 404);
+  assert.equal((await routes.GET(request("GET", jwt, undefined, "?parentId=10"))).status, 200);
   assert.equal((await routes.POST(request("POST", jwt, '{"name":"飲食","parentId":"10"}'))).status, 404);
 });

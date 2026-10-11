@@ -16,7 +16,6 @@ function database(options: { categories?: any[]; tags?: any[]; parent?: any; fai
   const ids = { content_categories: BigInt("9007199254740993"), tags: BigInt("9007199254740995") };
   const db = {
     content_categories: {
-      findUnique: async (args: any) => { record("parent", args); return options.parent ?? null; },
       findMany: async (args: any) => { record("categories", args); return options.categories ?? []; },
       create: async (args: any) => {
         record("createCategory", args);
@@ -86,7 +85,7 @@ test("rejects malformed payloads, reserved fields and out-of-range IDs", () => {
 });
 
 test("category reads filter active rows at the requested level and preserve bigint IDs", async () => {
-  const { db, calls } = database({ categories: [{ ...parent, id: BigInt("9007199254740993") }], parent });
+  const { db, calls } = database({ categories: [{ ...parent, id: BigInt("9007199254740993") }] });
   const roots = await listContentCategories(db, null);
   assert.equal(roots[0].id, "9007199254740993");
   assert.equal(roots[0].parentId, null);
@@ -96,10 +95,9 @@ test("category reads filter active rows at the requested level and preserve bigi
   assert.deepEqual(calls.at(-1)!.args.where, { parent_id: BigInt(10), level: 2, status: "active" });
 });
 
-test("invalid parents fail both listing and creation", async () => {
+test("invalid parents fail creation", async () => {
   for (const [value, status] of [[null, 404], [{ ...parent, status: "inactive" }, 404], [{ ...parent, level: 2 }, 400], [{ ...parent, parent_id: BigInt(1) }, 400]] as const) {
     const { db, calls } = database({ parent: value });
-    await assert.rejects(listContentCategories(db, BigInt(10)), errorStatus(status));
     await assert.rejects(createContentCategory(db, { name: "飲食", parentId: BigInt(10) }), errorStatus(status));
     assert.ok(!calls.some((call) => call.method === "createCategory"));
   }
