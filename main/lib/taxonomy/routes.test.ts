@@ -48,8 +48,18 @@ function fixture(user: any = { role: "TAGGER_PARTNER", status: "ACTIVE", isSyste
       create: async ({ data }: any) => { created.push(data); return { id: BigInt(102), ...data }; },
     },
     $executeRaw: async () => 1,
-    $queryRaw: async (sql: TemplateStringsArray, table: string) =>
-      sql.join("").includes("nextval") ? [{ id: BigInt(table === "tags" ? 201 : 102) }] : [],
+    $queryRaw: async (sql: TemplateStringsArray, ...values: any[]) => {
+      const text = sql.join("");
+      if (text.includes("INSERT INTO tags")) {
+        const [id, name, gloss, slug, created_by] = values;
+        return [await db.tags.create({ data: { id, name, gloss, slug, facet: "other", status: "active", created_by } })];
+      }
+      if (text.includes("INSERT INTO content_categories")) {
+        const [id, name, parent_id, level, slug, created_by] = values;
+        return [await db.content_categories.create({ data: { id, name, parent_id, level, slug, status: "active", created_by } })];
+      }
+      return text.includes("nextval") ? [{ id: BigInt(values[0] === "tags" ? 201 : 102) }] : [];
+    },
     $transaction: async (fn: any) => fn(db),
   };
   return { db: db as PrismaClient, queriedUsers, created };

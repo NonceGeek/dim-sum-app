@@ -39,9 +39,11 @@ export async function createTag(db: PrismaClient, input: ReturnType<typeof parse
     const existing = existingItem(await tx.tags.findMany({ where: { name: input.name }, select: tagSelect, take: 2 }));
     if (existing) return { item: tagItem(existing), created: false };
     const { id, slug } = await allocatePinyinSlug(tx, "tags", input.name);
-    const row = await tx.tags.create({
-      data: { ...input, id, slug, facet: "other", status: "active", created_by: creatorId }, select: tagSelect,
-    });
+    // id is GENERATED ALWAYS; the pre-reserved sequence value needs OVERRIDING SYSTEM VALUE.
+    const [row] = await tx.$queryRaw<Tag[]>`
+      INSERT INTO tags (id, name, gloss, slug, facet, status, created_by) OVERRIDING SYSTEM VALUE
+      VALUES (${id}, ${input.name}, ${input.gloss}, ${slug}, 'other', 'active', ${creatorId})
+      RETURNING id, name, slug, facet, status`;
     return { item: tagItem(row), created: true };
   });
 }
