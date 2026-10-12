@@ -36,22 +36,23 @@ process.env.NEXTAUTH_SECRET = "taxonomy-test-secret-not-for-production";
 
 function fixture(user: any = { role: "TAGGER_PARTNER", status: "ACTIVE", isSystemAdmin: false }, failure?: Error) {
   const queriedUsers: string[] = [];
+  const created: any[] = [];
   const db: any = {
     user: { findUnique: async ({ where }: any) => { queriedUsers.push(where.id); if (failure) throw failure; return user; } },
     tags: {
       findMany: async () => { if (failure) throw failure; return []; },
-      create: async ({ data }: any) => ({ id: BigInt(201), ...data }),
+      create: async ({ data }: any) => { created.push(data); return { id: BigInt(201), ...data }; },
     },
     content_categories: {
       findMany: async () => { if (failure) throw failure; return []; },
-      create: async ({ data }: any) => ({ id: BigInt(102), ...data }),
+      create: async ({ data }: any) => { created.push(data); return { id: BigInt(102), ...data }; },
     },
     $executeRaw: async () => 1,
     $queryRaw: async (sql: TemplateStringsArray, table: string) =>
       sql.join("").includes("nextval") ? [{ id: BigInt(table === "tags" ? 201 : 102) }] : [],
     $transaction: async (fn: any) => fn(db),
   };
-  return { db: db as PrismaClient, queriedUsers };
+  return { db: db as PrismaClient, queriedUsers, created };
 }
 
 async function token(overrides: Record<string, unknown> = {}) {
@@ -97,13 +98,14 @@ for (const kind of ["category", "tag"] as const) {
       { role: "RESEARCHER", status: "ACTIVE", isSystemAdmin: false },
       { role: "LEARNER", status: "ACTIVE", isSystemAdmin: true },
     ]) {
-      const { db, queriedUsers } = fixture(user);
+      const { db, queriedUsers, created } = fixture(user);
       const response = await setupRoutes(db, kind).POST(request("POST", await token(), '{"name":"  生活  "}'));
       assert.equal(response.status, 201);
       const body = await response.json();
       assert.equal(body.created, true);
       assert.equal(body.item.name, "生活");
       assert.deepEqual(queriedUsers, ["authenticated-user"]);
+      assert.equal(created[0].created_by, "authenticated-user");
     }
     for (const user of [null,
       { role: "LEARNER", status: "ACTIVE", isSystemAdmin: false },

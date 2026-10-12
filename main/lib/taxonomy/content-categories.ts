@@ -40,7 +40,7 @@ export async function listContentCategories(db: PrismaClient, parentId: bigint |
   return rows.map(categoryItem);
 }
 
-export async function createContentCategory(db: PrismaClient, input: ReturnType<typeof parseCategoryInput>) {
+export async function createContentCategory(db: PrismaClient, input: ReturnType<typeof parseCategoryInput>, creatorId: string) {
   const { name, parentId } = input;
   const lock = nameLockKey("category", name, parentId);
   return createTransaction(db, async (tx) => {
@@ -59,7 +59,7 @@ export async function createContentCategory(db: PrismaClient, input: ReturnType<
     }
     const { id, slug } = await allocatePinyinSlug(tx, "content_categories", name);
     const row = await tx.content_categories.create({
-      data: { id, name, parent_id: parentId, level: parentId === null ? 1 : 2, slug, status: "active" },
+      data: { id, name, parent_id: parentId, level: parentId === null ? 1 : 2, slug, status: "active", created_by: creatorId },
       select: categorySelect,
     });
     return { item: categoryItem(row), created: true };

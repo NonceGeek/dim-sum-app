@@ -99,20 +99,22 @@ test("category reads filter active rows at the requested level and preserve bigi
 test("invalid parents fail creation", async () => {
   for (const [value, status] of [[null, 404], [{ ...parent, status: "inactive" }, 404], [{ ...parent, level: 2 }, 400], [{ ...parent, parent_id: BigInt(1) }, 400]] as const) {
     const { db, calls } = database({ parent: value });
-    await assert.rejects(createContentCategory(db, { name: "飲食", parentId: BigInt(10) }), errorStatus(status));
+    await assert.rejects(createContentCategory(db, { name: "飲食", parentId: BigInt(10) }, "creator-1"), errorStatus(status));
     assert.ok(!calls.some((call) => call.method === "createCategory"));
   }
 });
 
 test("new categories derive levels, lock parent and append ID for cross-parent slug collisions", async () => {
   const { db, calls } = database({ parent });
-  const root = await createContentCategory(db, { name: "飲食", parentId: null });
-  const child = await createContentCategory(db, { name: "飲食", parentId: BigInt(10) });
+  const root = await createContentCategory(db, { name: "飲食", parentId: null }, "creator-1");
+  const child = await createContentCategory(db, { name: "飲食", parentId: BigInt(10) }, "creator-1");
   assert.deepEqual(root, { item: { id: "9007199254740993", name: "飲食", parentId: null, level: 1 }, created: true });
   assert.equal(child.item.level, 2);
   assert.equal(child.item.parentId, "10");
   const creates = calls.filter((call) => call.method === "createCategory");
   assert.equal(creates[0].args.data.slug, "yin-shi");
+  assert.equal(creates[0].args.data.created_by, "creator-1");
+  assert.equal(creates[1].args.data.created_by, "creator-1");
   assert.equal(creates[1].args.data.slug, `yin-shi-${creates[1].args.data.id}`);
   const parentLock = calls.find((call) => call.method === "parentLock")!;
   assert.match(parentLock.args[0].join("?"), /FOR SHARE/);
@@ -122,10 +124,10 @@ test("new categories derive levels, lock parent and append ID for cross-parent s
 
 test("same-parent category duplicates are reused; inconsistent levels conflict", async () => {
   const { db, calls } = database({ categories: [parent] });
-  assert.equal((await createContentCategory(db, { name: "生活", parentId: null })).created, false);
+  assert.equal((await createContentCategory(db, { name: "生活", parentId: null }, "creator-1")).created, false);
   assert.deepEqual(calls.find((call) => call.method === "categories")!.args.where, { parent_id: null, name: "生活" });
   assert.ok(!calls.some((call) => call.method === "createCategory"));
-  await assert.rejects(createContentCategory(database({ categories: [{ ...parent, level: 2 }] }).db, { name: "生活", parentId: null }), errorStatus(409));
+  await assert.rejects(createContentCategory(database({ categories: [{ ...parent, level: 2 }] }).db, { name: "生活", parentId: null }, "creator-1"), errorStatus(409));
 });
 
 test("tag query trims q, filters active tags and escapes literal LIKE characters", async () => {
@@ -142,7 +144,7 @@ test("tag query trims q, filters active tags and escapes literal LIKE characters
 
 test("tag creation reuses cross-facet exact names without overwriting gloss or slug", async () => {
   const { db, calls } = database({ tags: [tag] });
-  const result = await createTag(db, { name: "茶樓", gloss: "new gloss" });
+  const result = await createTag(db, { name: "茶樓", gloss: "new gloss" }, "creator-1");
   assert.deepEqual(result, { item: { id: "201", name: "茶樓", slug: "tea-house", facet: "scene" }, created: false });
   assert.deepEqual(calls.find((call) => call.method === "tags")!.args.where, { name: "茶樓" });
   assert.ok(!calls.some((call) => call.method === "createTag"));
@@ -150,31 +152,32 @@ test("tag creation reuses cross-facet exact names without overwriting gloss or s
 
 test("new tags use other and stable slugs and store gloss without exposing it", async () => {
   const { db, calls } = database();
-  const result = await createTag(db, { name: "茶樓", gloss: "說明" });
+  const result = await createTag(db, { name: "茶樓", gloss: "說明" }, "creator-1");
   const creates = calls.filter((call) => call.method === "createTag");
   assert.equal(result.created, true);
   assert.equal(result.item.id, "9007199254740995");
   assert.equal(result.item.facet, "other");
   assert.equal(creates[0].args.data.gloss, "說明");
+  assert.equal(creates[0].args.data.created_by, "creator-1");
   assert.equal(result.item.slug, "cha-lou");
   assert.ok(!("gloss" in result.item));
 });
 
 test("inactive and ambiguous duplicates conflict for both vocabularies", async () => {
   for (const rows of [[{ ...tag, status: "inactive" }], [tag, tag]]) {
-    await assert.rejects(createTag(database({ tags: rows }).db, { name: "茶樓", gloss: null }), errorStatus(409));
+    await assert.rejects(createTag(database({ tags: rows }).db, { name: "茶樓", gloss: null }, "creator-1"), errorStatus(409));
   }
   for (const rows of [[{ ...parent, status: "inactive" }], [parent, parent]]) {
-    await assert.rejects(createContentCategory(database({ categories: rows }).db, { name: "生活", parentId: null }), errorStatus(409));
+    await assert.rejects(createContentCategory(database({ categories: rows }).db, { name: "生活", parentId: null }, "creator-1"), errorStatus(409));
   }
 });
 
 test("unique conflicts do not retry with a different slug; other database errors propagate", async () => {
   const { db, calls } = database({ fail: { code: "P2002" } });
-  await assert.rejects(createTag(db, { name: "茶樓", gloss: null }), errorStatus(409));
+  await assert.rejects(createTag(db, { name: "茶樓", gloss: null }, "creator-1"), errorStatus(409));
   assert.equal(calls.filter((call) => call.method === "createTag").length, 1);
   const failure = new Error("connection failed");
-  await assert.rejects(createTag(database({ fail: failure }).db, { name: "茶樓", gloss: null }), (error) => error === failure);
+  await assert.rejects(createTag(database({ fail: failure }).db, { name: "茶樓", gloss: null }, "creator-1"), (error) => error === failure);
 });
 
 
@@ -188,22 +191,22 @@ test("pinyin slugs support traditional Chinese, mixed text, umlauts and punctuat
 
 test("different homophone names create distinct tags; occupied suffixes reserve a new ID", async () => {
   const { db } = database();
-  const first = await createTag(db, { name: "西安", gloss: null });
-  const second = await createTag(db, { name: "喜安", gloss: null });
+  const first = await createTag(db, { name: "西安", gloss: null }, "creator-1");
+  const second = await createTag(db, { name: "喜安", gloss: null }, "creator-1");
   assert.equal(first.item.slug, "xi-an");
   assert.equal(second.item.slug, `xi-an-${second.item.id}`);
   assert.equal(first.created, true);
   assert.equal(second.created, true);
   const occupied = database({ occupiedSlugs: ["xi-an", "xi-an-9007199254740995"] });
-  const third = await createTag(occupied.db, { name: "喜安", gloss: null });
+  const third = await createTag(occupied.db, { name: "喜安", gloss: null }, "creator-1");
   assert.equal(third.item.id, "9007199254740996");
   assert.equal(third.item.slug, "xi-an-9007199254740996");
 });
 
 test("different homophone category names are not treated as name duplicates", async () => {
   const { db, calls } = database();
-  const first = await createContentCategory(db, { name: "西安", parentId: null });
-  const second = await createContentCategory(db, { name: "喜安", parentId: null });
+  const first = await createContentCategory(db, { name: "西安", parentId: null }, "creator-1");
+  const second = await createContentCategory(db, { name: "喜安", parentId: null }, "creator-1");
   const creates = calls.filter((call) => call.method === "createCategory");
   assert.equal(creates[0].args.data.slug, "xi-an");
   assert.equal(creates[1].args.data.slug, `xi-an-${second.item.id}`);
@@ -212,15 +215,15 @@ test("different homophone category names are not treated as name duplicates", as
 
 test("untransliterable names use resource-ID fallbacks", async () => {
   const { db, calls } = database();
-  const tag = await createTag(db, { name: "!!!", gloss: null });
-  const category = await createContentCategory(db, { name: "😀", parentId: null });
+  const tag = await createTag(db, { name: "!!!", gloss: null }, "creator-1");
+  const category = await createContentCategory(db, { name: "😀", parentId: null }, "creator-1");
   assert.equal(tag.item.slug, `tag-${tag.item.id}`);
   assert.equal(calls.find((call) => call.method === "createCategory")!.args.data.slug, `category-${category.item.id}`);
 });
 
 test("existing names bypass slug allocation entirely, retaining historical slugs", async () => {
   const { db, calls } = database({ categories: [{ ...parent, slug: "old-category-hash" }], tags: [tag] });
-  assert.equal((await createContentCategory(db, { name: parent.name, parentId: null })).created, false);
-  assert.equal((await createTag(db, { name: tag.name, gloss: null })).item.slug, "tea-house");
+  assert.equal((await createContentCategory(db, { name: parent.name, parentId: null }, "creator-1")).created, false);
+  assert.equal((await createTag(db, { name: tag.name, gloss: null }, "creator-1")).item.slug, "tea-house");
   assert.ok(!calls.some((call) => ["reserveId", "slugLookup", "createCategory", "createTag"].includes(call.method)));
 });

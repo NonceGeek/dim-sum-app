@@ -32,7 +32,7 @@ export async function listTags(db: PrismaClient, query: string) {
   return rows.map(tagItem);
 }
 
-export async function createTag(db: PrismaClient, input: ReturnType<typeof parseTagInput>) {
+export async function createTag(db: PrismaClient, input: ReturnType<typeof parseTagInput>, creatorId: string) {
   const lock = nameLockKey("tag", input.name);
   return createTransaction(db, async (tx) => {
     await advisoryXactLock(tx, lock);
@@ -40,7 +40,7 @@ export async function createTag(db: PrismaClient, input: ReturnType<typeof parse
     if (existing) return { item: tagItem(existing), created: false };
     const { id, slug } = await allocatePinyinSlug(tx, "tags", input.name);
     const row = await tx.tags.create({
-      data: { ...input, id, slug, facet: "other", status: "active" }, select: tagSelect,
+      data: { ...input, id, slug, facet: "other", status: "active", created_by: creatorId }, select: tagSelect,
     });
     return { item: tagItem(row), created: true };
   });
