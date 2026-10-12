@@ -40,6 +40,22 @@ export async function listContentCategories(db: PrismaClient, parentId: bigint |
   return rows.map(categoryItem);
 }
 
+export async function listContentCategoryTree(db: PrismaClient) {
+  const rows = await db.content_categories.findMany({
+    where: { level: { in: [1, 2] }, status: "active" },
+    select: categorySelect, orderBy: [{ sort_order: "asc" }, { id: "asc" }],
+  });
+  const roots = rows
+    .filter((row) => row.level === 1 && row.parent_id === null)
+    .map((row) => ({ ...categoryItem(row), children: [] as ReturnType<typeof categoryItem>[] }));
+  const byId = new Map(roots.map((root) => [root.id, root]));
+  // Children of inactive or missing parents have no root to attach to and are dropped.
+  for (const row of rows) {
+    if (row.level === 2 && row.parent_id !== null) byId.get(row.parent_id.toString())?.children.push(categoryItem(row));
+  }
+  return roots;
+}
+
 export async function createContentCategory(db: PrismaClient, input: ReturnType<typeof parseCategoryInput>, creatorId: string) {
   const { name, parentId } = input;
   const lock = nameLockKey("category", name, parentId);

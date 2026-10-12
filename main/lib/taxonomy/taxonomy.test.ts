@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PrismaClient } from "@prisma/client";
 import { AppError } from "../app-error";
-import { createContentCategory, listContentCategories, parseCategoryInput, parseParentId } from "./content-categories";
+import { createContentCategory, listContentCategories, listContentCategoryTree, parseCategoryInput, parseParentId } from "./content-categories";
 import { createTag, listTags, parseTagInput } from "./tags";
 import { toPinyinSlug } from "./pinyin-slug";
 
@@ -102,6 +102,26 @@ test("category reads filter active rows at the requested level and preserve bigi
   assert.deepEqual(calls[0].args.orderBy, [{ sort_order: "asc" }, { id: "asc" }]);
   await listContentCategories(db, BigInt(10));
   assert.deepEqual(calls.at(-1)!.args.where, { parent_id: BigInt(10), level: 2, status: "active" });
+});
+
+test("category tree nests active children under roots in query order and drops orphans", async () => {
+  const { db, calls } = database({ categories: [
+    { id: BigInt("9007199254740993"), name: "生活", parent_id: null, level: 1, status: "active" },
+    { id: BigInt(21), name: "茶樓", parent_id: BigInt("9007199254740993"), level: 2, status: "active" },
+    { id: BigInt(11), name: "飲食", parent_id: null, level: 1, status: "active" },
+    { id: BigInt(22), name: "孤兒", parent_id: BigInt(99), level: 2, status: "active" },
+    { id: BigInt(20), name: "街市", parent_id: BigInt("9007199254740993"), level: 2, status: "active" },
+  ] });
+  const tree = await listContentCategoryTree(db);
+  assert.deepEqual(calls[0].args.where, { level: { in: [1, 2] }, status: "active" });
+  assert.deepEqual(calls[0].args.orderBy, [{ sort_order: "asc" }, { id: "asc" }]);
+  assert.deepEqual(tree, [
+    { id: "9007199254740993", name: "生活", parentId: null, level: 1, children: [
+      { id: "21", name: "茶樓", parentId: "9007199254740993", level: 2 },
+      { id: "20", name: "街市", parentId: "9007199254740993", level: 2 },
+    ] },
+    { id: "11", name: "飲食", parentId: null, level: 1, children: [] },
+  ]);
 });
 
 test("invalid parents fail creation", async () => {
