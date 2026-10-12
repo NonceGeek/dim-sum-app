@@ -36,6 +36,14 @@ function database(options: { categories?: any[]; tags?: any[]; parent?: any; fai
     $executeRaw: async (...args: any[]) => { record("lock", args); return 1; },
     $queryRaw: async (...args: any[]) => {
       const sql = args[0].join("?");
+      if (sql.includes("INSERT INTO tags")) {
+        const [id, name, gloss, slug, created_by] = args.slice(1);
+        return [await db.tags.create({ data: { id, name, gloss, slug, facet: "other", status: "active", created_by } })];
+      }
+      if (sql.includes("INSERT INTO content_categories")) {
+        const [id, name, parent_id, level, slug, created_by] = args.slice(1);
+        return [await db.content_categories.create({ data: { id, name, parent_id, level, slug, status: "active", created_by } })];
+      }
       if (sql.includes("nextval")) {
         record("reserveId", args);
         const table = args[1] as keyof typeof ids;

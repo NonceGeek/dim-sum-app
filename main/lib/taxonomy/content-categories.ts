@@ -58,10 +58,11 @@ export async function createContentCategory(db: PrismaClient, input: ReturnType<
       return { item: categoryItem(existing), created: false };
     }
     const { id, slug } = await allocatePinyinSlug(tx, "content_categories", name);
-    const row = await tx.content_categories.create({
-      data: { id, name, parent_id: parentId, level: parentId === null ? 1 : 2, slug, status: "active", created_by: creatorId },
-      select: categorySelect,
-    });
+    // id is GENERATED ALWAYS; the pre-reserved sequence value needs OVERRIDING SYSTEM VALUE.
+    const [row] = await tx.$queryRaw<Category[]>`
+      INSERT INTO content_categories (id, name, parent_id, level, slug, status, created_by) OVERRIDING SYSTEM VALUE
+      VALUES (${id}, ${name}, ${parentId}, ${parentId === null ? 1 : 2}, ${slug}, 'active', ${creatorId})
+      RETURNING id, name, parent_id, level, status`;
     return { item: categoryItem(row), created: true };
   });
 }
