@@ -47,3 +47,4 @@ scripts/mp3_slicer/segments/
 .cursor/
 out_audio/
 backend-linux
+.idea/
