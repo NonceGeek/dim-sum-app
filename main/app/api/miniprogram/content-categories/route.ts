@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     try {
       await assertCategoryTagCreator(prisma, user.userId);
       const input = parseCategoryInput(await req.json().catch(() => null));
-      const result = await createContentCategory(prisma, input);
+      const result = await createContentCategory(prisma, input, user.userId);
       return NextResponse.json(result, { status: result.created ? 201 : 200 });
     } catch (error) {
       return appErrorResponse(error, "Miniprogram category/tag request failed");
