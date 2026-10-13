@@ -197,6 +197,127 @@ async function getUsersByIds(ids: string[]): Promise<any[]> {
   return userMap;
 }
 
+// ↓↓↓ corpus taxonomy (content_categories / tags) helpers ↓↓↓
+type TaxonomyCategory = {
+  id: string;
+  name: string;
+  parent: { id: string; name: string } | null;
+};
+type TaxonomyTag = { id: string; name: string; slug: string; facet: string };
+type CorpusTaxonomy = {
+  contentAttribute: string | null;
+  category: TaxonomyCategory | null;
+  tags: TaxonomyTag[];
+};
+
+const MAX_TAXONOMY_BATCH_SIZE = 100;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BIGINT_ID_PATTERN = /^[1-9]\d{0,18}$/;
+
+function isTaxonomyId(value: unknown): value is string {
+  return typeof value === "string" && BIGINT_ID_PATTERN.test(value);
+}
+
+// Returns taxonomy keyed by unique_id; unknown unique_ids are omitted.
+async function fetchCorpusTaxonomies(
+  uniqueIds: string[],
+): Promise<Record<string, CorpusTaxonomy>> {
+  const result: Record<string, CorpusTaxonomy> = {};
+  if (!uniqueIds.length) return result;
+
+  const { data: corpusRows, error: corpusError } = await supabase
+    .from("cantonese_corpus_all")
+    .select("id, unique_id, category")
+    .in("unique_id", uniqueIds);
+  if (corpusError) throw corpusError;
+  if (!corpusRows?.length) return result;
+
+  const corpusIds = corpusRows.map((row) => String(row.id));
+  const datasetNames = Array.from(new Set(corpusRows.map((row) => row.category)));
+
+  const [datasetsRes, assignmentsRes, corpusTagsRes] = await Promise.all([
+    supabase
+      .from("cantonese_categories")
+      .select("name, content_attribute")
+      .in("name", datasetNames),
+    supabase
+      .from("corpus_category")
+      .select("corpus_id, category_id")
+      .in("corpus_id", corpusIds),
+    supabase
+      .from("corpus_tags")
+      .select("corpus_id, tag_id, tags(id, name, slug, facet)")
+      .in("corpus_id", corpusIds)
+      .order("tag_id", { ascending: true }),
+  ]);
+  if (datasetsRes.error) throw datasetsRes.error;
+  if (assignmentsRes.error) throw assignmentsRes.error;
+  if (corpusTagsRes.error) throw corpusTagsRes.error;
+
+  const leafIds = Array.from(
+    new Set((assignmentsRes.data ?? []).map((row) => String(row.category_id))),
+  );
+  const categoryById = new Map<string, { name: string; parentId: string | null }>();
+  let pendingIds = leafIds;
+  // Two rounds: leaf (level 2) categories, then their parents.
+  for (let round = 0; round < 2 && pendingIds.length; round++) {
+    const { data: categoryRows, error: categoryError } = await supabase
+      .from("content_categories")
+      .select("id, name, parent_id")
+      .in("id", pendingIds);
+    if (categoryError) throw categoryError;
+    for (const row of categoryRows ?? []) {
+      categoryById.set(String(row.id), {
+        name: row.name,
+        parentId: row.parent_id == null ? null : String(row.parent_id),
+      });
+    }
+    pendingIds = Array.from(
+      new Set(
+        (categoryRows ?? [])
+          .map((row) => (row.parent_id == null ? null : String(row.parent_id)))
+          .filter((id): id is string => id !== null && !categoryById.has(id)),
+      ),
+    );
+  }
+
+  const contentAttributeByDataset = new Map<string, string | null>(
+    (datasetsRes.data ?? []).map((row) => [row.name, row.content_attribute ?? null]),
+  );
+  const categoryIdByCorpus = new Map<string, string>(
+    (assignmentsRes.data ?? []).map((row) => [String(row.corpus_id), String(row.category_id)]),
+  );
+  const tagsByCorpus = new Map<string, TaxonomyTag[]>();
+  for (const row of (corpusTagsRes.data ?? []) as any[]) {
+    const tag = Array.isArray(row.tags) ? row.tags[0] : row.tags;
+    if (!tag) continue;
+    const key = String(row.corpus_id);
+    const list = tagsByCorpus.get(key) ?? [];
+    list.push({ id: String(tag.id), name: tag.name, slug: tag.slug, facet: tag.facet });
+    tagsByCorpus.set(key, list);
+  }
+
+  for (const row of corpusRows) {
+    const corpusId = String(row.id);
+    const categoryId = categoryIdByCorpus.get(corpusId);
+    const leaf = categoryId ? categoryById.get(categoryId) : undefined;
+    const parent = leaf?.parentId ? categoryById.get(leaf.parentId) : undefined;
+    result[row.unique_id] = {
+      contentAttribute: contentAttributeByDataset.get(row.category) ?? null,
+      category: categoryId && leaf
+        ? {
+          id: categoryId,
+          name: leaf.name,
+          parent: leaf.parentId && parent ? { id: leaf.parentId, name: parent.name } : null,
+        }
+        : null,
+      tags: tagsByCorpus.get(corpusId) ?? [],
+    };
+  }
+  return result;
+}
+
 // Supabase insert function
 async function insertCorpusItem(
   data: string,
@@ -1328,6 +1449,220 @@ url -X POST http://localhost:8000/dev/get_api_key_status \
 
     } catch (error) {
       console.error("Error in get_user_by_corpus_name:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  /*
+  INTERNAL — not in apidoc.md. Temporary bridge for yue-lint-agent (category_review tasks)
+  reading content_categories / tags; remove once it no longer calls across services.
+  Curl example:
+  curl -X POST http://localhost:8000/dev/internal/get_corpus_taxonomy \
+    -H "Content-Type: application/json" \
+    -d '{
+      "unique_ids": ["record-uuid"],
+      "api_key": "api-key-here"
+    }' | jq
+  */
+  .post("/dev/internal/get_corpus_taxonomy", async (context) => {
+    let body = await context.request.body({ type: "json" });
+    const content = await body.value;
+    const { unique_ids, api_key } = content ?? {};
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    if (!apiKeyData) {
+      return;
+    }
+
+    if (
+      !Array.isArray(unique_ids) ||
+      unique_ids.length === 0 ||
+      unique_ids.length > MAX_TAXONOMY_BATCH_SIZE ||
+      !unique_ids.every((id) => typeof id === "string" && UUID_PATTERN.test(id))
+    ) {
+      context.response.status = 400;
+      context.response.body = {
+        error: `unique_ids must be 1-${MAX_TAXONOMY_BATCH_SIZE} uuids`,
+      };
+      return;
+    }
+
+    try {
+      const items = await fetchCorpusTaxonomies(Array.from(new Set(unique_ids)));
+      context.response.status = 200;
+      context.response.body = { items };
+    } catch (error) {
+      console.error("Error in dev/get_corpus_taxonomy:", error);
+      context.response.status = 500;
+      context.response.body = { error: "Internal server error" };
+    }
+  })
+  /*
+  INTERNAL — not in apidoc.md. Temporary bridge for yue-lint-agent (category_review tasks)
+  writing corpus_category / corpus_tags; remove once it no longer calls across services.
+  Requires an ADMIN key. actor_ref must be a User.id (recorded as assigned_by / created_by).
+  Omitted category_id / tag_ids keep the current value; tag_ids is the final tag set ([] clears).
+  Curl example:
+  curl -X POST http://localhost:8000/dev/internal/update_corpus_taxonomy \
+    -H "Content-Type: application/json" \
+    -d '{
+      "unique_id": "record-uuid",
+      "category_id": "102",
+      "tag_ids": ["201", "202"],
+      "actor_ref": "user-id",
+      "api_key": "api-key-here"
+    }' | jq
+  */
+  .post("/dev/internal/update_corpus_taxonomy", async (context) => {
+    let body = await context.request.body({ type: "json" });
+    const content = await body.value;
+    const { unique_id, category_id, tag_ids, actor_ref, api_key } = content ?? {};
+    const apiKeyData = await verifyAPIKey(context, api_key);
+    if (!apiKeyData) {
+      return;
+    }
+    if (apiKeyData.type !== "ADMIN") {
+      context.response.status = 403;
+      context.response.body = { error: "the type of api key is not admin." };
+      return;
+    }
+
+    if (typeof unique_id !== "string" || !UUID_PATTERN.test(unique_id)) {
+      context.response.status = 400;
+      context.response.body = { error: "unique_id must be a uuid" };
+      return;
+    }
+    if (typeof actor_ref !== "string" || !actor_ref.trim()) {
+      context.response.status = 400;
+      context.response.body = { error: "actor_ref is required" };
+      return;
+    }
+    if (category_id !== undefined && !isTaxonomyId(category_id)) {
+      context.response.status = 400;
+      context.response.body = { error: "category_id must be a numeric string" };
+      return;
+    }
+    if (
+      tag_ids !== undefined &&
+      (!Array.isArray(tag_ids) || !tag_ids.every(isTaxonomyId))
+    ) {
+      context.response.status = 400;
+      context.response.body = { error: "tag_ids must be an array of numeric strings" };
+      return;
+    }
+    const finalTagIds: string[] | undefined = tag_ids === undefined
+      ? undefined
+      : Array.from(new Set(tag_ids as string[]));
+
+    try {
+      const { data: corpusRow, error: corpusError } = await supabase
+        .from("cantonese_corpus_all")
+        .select("id")
+        .eq("unique_id", unique_id)
+        .maybeSingle();
+      if (corpusError) throw corpusError;
+      if (!corpusRow) {
+        context.response.status = 404;
+        context.response.body = { error: "Corpus item not found" };
+        return;
+      }
+      const corpusId = String(corpusRow.id);
+
+      // Validate everything before writing; the writes below set a final state, so retries are safe.
+      let categoryChanged = false;
+      if (category_id !== undefined) {
+        const { data: category, error: categoryError } = await supabase
+          .from("content_categories")
+          .select("id, level, status")
+          .eq("id", category_id)
+          .maybeSingle();
+        if (categoryError) throw categoryError;
+        if (!category || category.level !== 2 || category.status !== "active") {
+          context.response.status = 400;
+          context.response.body = { error: "category_id must be an active second-level category" };
+          return;
+        }
+        const { data: current, error: currentError } = await supabase
+          .from("corpus_category")
+          .select("category_id")
+          .eq("corpus_id", corpusId)
+          .maybeSingle();
+        if (currentError) throw currentError;
+        categoryChanged = !current || String(current.category_id) !== category_id;
+      }
+
+      let addedTagIds: string[] = [];
+      let removedTagIds: string[] = [];
+      if (finalTagIds !== undefined) {
+        const { data: currentTags, error: currentTagsError } = await supabase
+          .from("corpus_tags")
+          .select("tag_id")
+          .eq("corpus_id", corpusId);
+        if (currentTagsError) throw currentTagsError;
+        const currentTagIds = new Set((currentTags ?? []).map((row) => String(row.tag_id)));
+        const finalSet = new Set(finalTagIds);
+        addedTagIds = finalTagIds.filter((id) => !currentTagIds.has(id));
+        removedTagIds = Array.from(currentTagIds).filter((id) => !finalSet.has(id));
+        // Tags already attached are kept even if later deactivated; only new ones must be active.
+        if (addedTagIds.length) {
+          const { data: tags, error: tagsError } = await supabase
+            .from("tags")
+            .select("id")
+            .in("id", addedTagIds)
+            .eq("status", "active");
+          if (tagsError) throw tagsError;
+          if ((tags ?? []).length !== addedTagIds.length) {
+            context.response.status = 400;
+            context.response.body = { error: "tag_ids contains unknown or inactive tags" };
+            return;
+          }
+        }
+      }
+
+      if (categoryChanged) {
+        const { error } = await supabase.from("corpus_category").upsert(
+          {
+            corpus_id: corpusId,
+            category_id,
+            source: "manual",
+            assigned_by: actor_ref,
+            assigned_at: new Date().toISOString(),
+          },
+          { onConflict: "corpus_id" },
+        );
+        if (error) throw error;
+      }
+      if (addedTagIds.length) {
+        const { error } = await supabase.from("corpus_tags").upsert(
+          addedTagIds.map((tagId) => ({
+            corpus_id: corpusId,
+            tag_id: tagId,
+            source: "manual",
+            created_by: actor_ref,
+          })),
+          { onConflict: "corpus_id,tag_id", ignoreDuplicates: true },
+        );
+        if (error) throw error;
+      }
+      if (removedTagIds.length) {
+        const { error } = await supabase
+          .from("corpus_tags")
+          .delete()
+          .eq("corpus_id", corpusId)
+          .in("tag_id", removedTagIds);
+        if (error) throw error;
+      }
+
+      const items = await fetchCorpusTaxonomies([unique_id]);
+      context.response.status = 200;
+      context.response.body = { unique_id, ...items[unique_id] };
+    } catch (error) {
+      // 23503: assigned_by / created_by must reference an existing User.id
+      if ((error as { code?: string })?.code === "23503") {
+        context.response.status = 400;
+        context.response.body = { error: "actor_ref is not a valid user id" };
+        return;
+      }
+      console.error("Error in dev/update_corpus_taxonomy:", error);
       context.response.status = 500;
       context.response.body = { error: "Internal server error" };
     }
