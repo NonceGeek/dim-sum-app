@@ -2,17 +2,37 @@
 
 import { useSearchParams } from "next/navigation";
 import { MessageCircle } from "lucide-react";
-import { Header } from "@/components/layout/header";
-import { Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { Suspense, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
 function SignInContent() {
+  const { status } = useSession();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const t = useTranslations("Auth");
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    // Accept the proxy's same-origin callback and avoid a sign-in loop.
+    try {
+      const destination = new URL(callbackUrl, window.location.origin);
+      if (
+        destination.origin === window.location.origin &&
+        !/\/auth\/signin\/?$/.test(destination.pathname)
+      ) {
+        window.location.replace(destination.href);
+        return;
+      }
+    } catch {
+      // Invalid callback URLs fall back to the localized home page.
+    }
+    router.replace("/");
+  }, [status, callbackUrl, router]);
 
   const handleWeChatLogin = async () => {
     try {
@@ -27,6 +47,8 @@ function SignInContent() {
       });
     }
   };
+
+  if (status !== "unauthenticated") return null;
 
   return (
     <>

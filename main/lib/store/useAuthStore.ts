@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 interface User {
   id: string;
@@ -16,16 +15,11 @@ interface AuthState {
   clearUser: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      clearUser: () => set({ user: null, isAuthenticated: false }),
-    }),
-    {
-      name: 'dimsum-app-auth-storage',
-    }
-  )
-); 
+// AuthProvider fills this store from the live NextAuth session.
+// Persisting it would restore a signed-in UI even after the session expires.
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  isAuthenticated: false,
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  clearUser: () => set({ user: null, isAuthenticated: false }),
+}));
