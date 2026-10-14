@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
-import { fetchAgentTasks } from "@/lib/services/agent";
+import { fetchAgentTasks, PROOFREADING_TASK_TYPES } from "@/lib/services/agent";
 import { handleAgentApiError } from "@/lib/services/agent-error";
 
 function parseNumber(value: string | null, fallback: number) {
@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
   const corpusName = searchParams.get("corpusName") || undefined;
   const violationType = searchParams.get("violationType") || undefined;
   const q = searchParams.get("q") || undefined;
+  const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
 
   return requireMiniprogramMarker(req, async (_req, user) => {
     if (!user.userId) {
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
         corpusName,
         violationType,
         q,
+        taskType,
       });
 
       return NextResponse.json(data);
