@@ -29,6 +29,7 @@ export const taskReviewApi = {
       violationType: params.violationType,
       assigneeRef: params.assigneeRef,
       q: params.q,
+      taskType: params.taskType,
     });
     return api.get<AgentTaskListResponse>(`${BASE}${query}`);
   },
@@ -53,6 +54,7 @@ export const taskReviewApi = {
     const query = buildQuery({
       corpusName: params.corpusName,
       assigneeRef: params.assigneeRef,
+      taskType: params.taskType,
     });
     return api.get<TaskStatsWithAssignees>(`${BASE}/stats${query}`);
   },

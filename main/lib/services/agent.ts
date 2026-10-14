@@ -6,12 +6,39 @@ export type AgentTaskStatus =
   | "completed"
   | "cancelled";
 
+export type AgentTaskType = "error_fix" | "data_review" | "category_review";
+
+// 内容校对（error_fix + data_review）；未指定 taskType 时路由默认只查这两类，避免混入分类抽检任务
+export const PROOFREADING_TASK_TYPES = "error_fix,data_review";
+
+export type AgentContentAttribute =
+  | "oral"
+  | "cultural_knowledge"
+  | "unclassified";
+
+export interface AgentTaxonomyCategory {
+  id: string;
+  name: string;
+  parent: { id: string; name: string } | null;
+}
+
+export interface AgentTaxonomyTag {
+  id: string;
+  name: string;
+  slug: string;
+  facet: string;
+}
+
 export interface AgentTaskContext {
   corpusName?: string;
   corpusUniqueId?: string;
   sentenceText?: string;
   problemChar?: string;
   text?: string;
+  // 已完成任务为提交后的值，其余为原始快照
+  contentAttribute?: AgentContentAttribute | null;
+  category?: AgentTaxonomyCategory | null;
+  tags?: AgentTaxonomyTag[];
 }
 
 export type AgentSuggestionSource = "lexicon" | "llm";
@@ -26,6 +53,7 @@ export interface AgentSuggestion {
 
 export interface AgentTask {
   id: string;
+  taskType?: AgentTaskType;
   status: AgentTaskStatus;
   violationType: string;
   context: AgentTaskContext;
@@ -216,6 +244,8 @@ export interface AgentTaskQuery {
   // assigneeRef: 要查看谁的任务列表，不传时默认查看 actorRef 自己的任务
   assigneeRef?: string;
   q?: string;
+  // taskType: 任务类型，多个用英文逗号分隔（如 error_fix,data_review / category_review）
+  taskType?: string;
 }
 
 export interface RuleRunPayload {
@@ -331,6 +361,7 @@ export async function fetchAgentTasks(query: AgentTaskQuery) {
       corpusName: query.corpusName,
       violationType: query.violationType,
       q: query.q,
+      taskType: query.taskType,
     },
   });
 }
@@ -422,6 +453,8 @@ export interface AgentTaskStatsQuery {
   corpusName: string;
   // assigneeRef: 标注员 ID，多个 ID 用英文逗号分隔；不传则统计所有标注员
   assigneeRef?: string;
+  // taskType: 任务类型，多个用英文逗号分隔；不传则统计所有类型
+  taskType?: string;
 }
 
 export interface AgentTaskStatsItem {
@@ -438,6 +471,7 @@ export interface AgentTaskStatsResponse {
   filters: {
     corpusIds: string[];
     assigneeRefs: string[];
+    taskTypes?: AgentTaskType[];
   };
   summary: {
     totalCount: number;
@@ -454,6 +488,7 @@ export async function fetchAgentTaskStats(query: AgentTaskStatsQuery) {
     query: {
       corpusName: query.corpusName,
       assigneeRef: query.assigneeRef,
+      taskType: query.taskType,
     },
   });
 }
