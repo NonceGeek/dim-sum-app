@@ -6,6 +6,7 @@ import { generateMiniprogramToken } from "../miniprogram-jwt";
 import { prisma } from "../prisma";
 import * as categoryRoutes from "../../app/api/miniprogram/content-categories/route";
 import * as tagRoutes from "../../app/api/miniprogram/tags/route";
+import * as categoryTreeRoute from "../../app/api/miniprogram/content-categories/tree/route";
 
 const databaseMethods = [
   [prisma.user, "findUnique"],
@@ -157,6 +158,17 @@ for (const kind of ["category", "tag"] as const) {
     assert.equal((await routes.POST(request("POST", jwt, '{"name":"生活"}'))).status, 409);
   });
 }
+
+test("category tree requires a token, serves learners and surfaces database failures as 500", async (t) => {
+  t.mock.method(console, "error", () => {});
+  setupRoutes(fixture().db, "category");
+  assert.equal((await categoryTreeRoute.GET(request("GET"))).status, 401);
+  const response = await categoryTreeRoute.GET(request("GET", await token()));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { items: [] });
+  setupRoutes(fixture(undefined, new Error("database unavailable")).db, "category");
+  assert.equal((await categoryTreeRoute.GET(request("GET", await token()))).status, 500);
+});
 
 test("category routes reject invalid IDs and missing parents on creation", async () => {
   const routes = setupRoutes(fixture().db, "category");
