@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import { assertCategoryTagCreator } from "@/lib/taxonomy/common";
-import { createContentCategory, listContentCategories, parseCategoryInput, parseParentId } from "@/lib/taxonomy/content-categories";
+import {
+  attachCategoryDatasets, createContentCategory, listContentCategories, parseCategoryInclude, parseCategoryInput, parseParentId,
+} from "@/lib/taxonomy/content-categories";
 import { appErrorResponse } from "@/lib/app-error";
 
 export const runtime = "nodejs";
@@ -11,8 +13,9 @@ export async function GET(req: NextRequest) {
   return requireMiniprogramAuth(req, async () => {
     try {
       const parentId = req.nextUrl.searchParams.get("parentId");
+      const include = parseCategoryInclude(req.nextUrl.searchParams.get("include"));
       const items = await listContentCategories(prisma, parentId === null ? null : parseParentId(parentId));
-      return NextResponse.json({ items });
+      return NextResponse.json({ items: include.datasets ? await attachCategoryDatasets(prisma, items) : items });
     } catch (error) {
       return appErrorResponse(error, "Miniprogram category/tag request failed");
     }
