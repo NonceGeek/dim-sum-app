@@ -175,5 +175,9 @@ test("category routes reject invalid IDs and missing parents on creation", async
   const jwt = await token();
   assert.equal((await routes.GET(request("GET", jwt, undefined, "?parentId="))).status, 400);
   assert.equal((await routes.GET(request("GET", jwt, undefined, "?parentId=10"))).status, 200);
+  assert.equal((await routes.GET(request("GET", jwt, undefined, "?include=tags"))).status, 400);
+  const withDatasets = await routes.GET(request("GET", jwt, undefined, "?parentId=10&include=datasets"));
+  assert.equal(withDatasets.status, 200);
+  assert.deepEqual(await withDatasets.json(), { items: [] });
   assert.equal((await routes.POST(request("POST", jwt, '{"name":"飲食","parentId":"10"}'))).status, 404);
 });

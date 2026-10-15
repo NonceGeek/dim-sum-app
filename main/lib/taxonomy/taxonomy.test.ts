@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PrismaClient } from "@prisma/client";
 import { AppError } from "../app-error";
-import { createContentCategory, listContentCategories, listContentCategoryTree, parseCategoryInput, parseParentId } from "./content-categories";
+import {
+  attachCategoryDatasets, createContentCategory, listContentCategories, listContentCategoryTree, parseCategoryInclude, parseCategoryInput, parseParentId,
+} from "./content-categories";
 import { createTag, listTags, parseTagInput } from "./tags";
 import { toPinyinSlug } from "./pinyin-slug";
 
@@ -102,6 +104,37 @@ test("category reads filter active rows at the requested level and preserve bigi
   assert.deepEqual(calls[0].args.orderBy, [{ sort_order: "asc" }, { id: "asc" }]);
   await listContentCategories(db, BigInt(10));
   assert.deepEqual(calls.at(-1)!.args.where, { parent_id: BigInt(10), level: 2, status: "active" });
+});
+
+test("category datasets are grouped per requested category in query order", async () => {
+  const queries: any[][] = [];
+  const db = { $queryRaw: async (...args: any[]) => {
+    queries.push(args);
+    return [
+      { category_id: BigInt("9007199254740993"), name: "yyjq", nickname: "粵語俗語", corpus_count: 128 },
+      { category_id: BigInt("9007199254740993"), name: "zyzdv2", nickname: null, corpus_count: 9 },
+      { category_id: BigInt(21), name: "yyjq", nickname: "粵語俗語", corpus_count: 3 },
+    ];
+  } } as unknown as PrismaClient;
+  const items = [
+    { id: "9007199254740993", name: "生活", parentId: null, level: 1 },
+    { id: "21", name: "茶樓", parentId: "9007199254740993", level: 2 },
+    { id: "22", name: "街市", parentId: "9007199254740993", level: 2 },
+  ];
+  assert.deepEqual(await attachCategoryDatasets(db, items), [
+    { ...items[0], datasets: [{ name: "yyjq", nickname: "粵語俗語", corpusCount: 128 }, { name: "zyzdv2", nickname: null, corpusCount: 9 }] },
+    { ...items[1], datasets: [{ name: "yyjq", nickname: "粵語俗語", corpusCount: 3 }] },
+    { ...items[2], datasets: [] },
+  ]);
+  assert.deepEqual(queries[0][1], [BigInt("9007199254740993"), BigInt(21), BigInt(22)]);
+  assert.deepEqual(await attachCategoryDatasets(db, []), []);
+  assert.equal(queries.length, 1);
+});
+
+test("category include accepts only datasets", () => {
+  assert.deepEqual(parseCategoryInclude(null), { datasets: false });
+  assert.deepEqual(parseCategoryInclude("datasets"), { datasets: true });
+  for (const value of ["", "dataset", "datasets,tags"]) assert.throws(() => parseCategoryInclude(value), errorStatus(400));
 });
 
 test("category tree nests active children under roots in query order and drops orphans", async () => {
