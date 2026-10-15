@@ -246,6 +246,10 @@ export interface AgentTaskQuery {
   q?: string;
   // taskType: 任务类型，多个用英文逗号分隔（如 error_fix,data_review / category_review）
   taskType?: string;
+  // contentAttribute: 语料大类，多个用英文逗号分隔（oral / cultural_knowledge / unclassified）
+  contentAttribute?: string;
+  // categoryId: 分类 ID，多个用英文逗号分隔；匹配该分类及其任意层级子分类
+  categoryId?: string;
 }
 
 export interface RuleRunPayload {
@@ -362,6 +366,8 @@ export async function fetchAgentTasks(query: AgentTaskQuery) {
       violationType: query.violationType,
       q: query.q,
       taskType: query.taskType,
+      contentAttribute: query.contentAttribute,
+      categoryId: query.categoryId,
     },
   });
 }
@@ -455,6 +461,10 @@ export interface AgentTaskStatsQuery {
   assigneeRef?: string;
   // taskType: 任务类型，多个用英文逗号分隔；不传则统计所有类型
   taskType?: string;
+  // contentAttribute: 语料大类，多个用英文逗号分隔
+  contentAttribute?: string;
+  // categoryId: 分类 ID，多个用英文逗号分隔；匹配该分类及其任意层级子分类
+  categoryId?: string;
 }
 
 export interface AgentTaskStatsItem {
@@ -472,6 +482,8 @@ export interface AgentTaskStatsResponse {
     corpusIds: string[];
     assigneeRefs: string[];
     taskTypes?: AgentTaskType[];
+    contentAttributes?: AgentContentAttribute[];
+    categoryIds?: string[];
   };
   summary: {
     totalCount: number;
@@ -489,6 +501,8 @@ export async function fetchAgentTaskStats(query: AgentTaskStatsQuery) {
       corpusName: query.corpusName,
       assigneeRef: query.assigneeRef,
       taskType: query.taskType,
+      contentAttribute: query.contentAttribute,
+      categoryId: query.categoryId,
     },
   });
 }
