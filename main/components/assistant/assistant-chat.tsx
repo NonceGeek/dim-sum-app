@@ -5,7 +5,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { BookOpen, MousePointerClick, Search, Sparkles, Target } from "lucide-react";
+import Image from "next/image";
+import { BookOpen, MousePointerClick, Search, Target } from "lucide-react";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
@@ -59,11 +60,7 @@ function messageText(message: AssistantUIMessage): string {
 }
 
 function AssistantAvatar() {
-  return (
-    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-      <Sparkles className="size-4" />
-    </div>
-  );
+  return <Image src="/logo.png" alt="" width={28} height={28} className="size-7 shrink-0" />;
 }
 
 /** 检索过程折叠为一行；生成中展开显示进度。 */
@@ -267,10 +264,10 @@ export function AssistantChat({
       <div className="flex h-full flex-col items-center justify-center px-4 pb-16">
         <div className="w-full max-w-2xl">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Sparkles className="size-6" />
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+            <h1 className="flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
+              <Image src="/logo.png" alt="" width={32} height={32} className="size-8" priority />
+              {t("title")}
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
           {composer}
