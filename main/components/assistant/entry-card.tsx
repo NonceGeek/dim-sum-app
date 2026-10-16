@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Pause, Play, Volume2 } from "lucide-react";
+import { ArrowUpRight, Pause, Volume2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { EntryIdentity } from "@/lib/search/entry-identity";
 import { displayCategory, entryHref, primaryJyutping } from "@/lib/search/entry-display";
@@ -48,7 +48,7 @@ export function AudioButton({
 }) {
   const t = useTranslations("Assistant");
   const { playing, toggle } = useAudio(url);
-  const Icon = playing ? Pause : prominent ? Volume2 : Play;
+  const Icon = playing ? Pause : Volume2;
   return (
     <button
       type="button"
@@ -62,7 +62,7 @@ export function AudioButton({
         className,
       )}
     >
-      <Icon className={cn(prominent ? "size-5" : "size-3.5", !playing && !prominent && "ml-0.5")} />
+      <Icon className={prominent ? "size-5" : "size-4"} />
     </button>
   );
 }

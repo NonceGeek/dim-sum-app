@@ -6,7 +6,7 @@ import { DefaultChatTransport } from "ai";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { BookOpen, MousePointerClick, Search, Target } from "lucide-react";
+import { BookOpen, MousePointerClick, Search, Sparkles, Target } from "lucide-react";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
@@ -60,7 +60,11 @@ function messageText(message: AssistantUIMessage): string {
 }
 
 function AssistantAvatar() {
-  return <Image src="/logo.png" alt="" width={28} height={28} className="size-7 shrink-0" />;
+  return (
+    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <Sparkles className="size-4" />
+    </div>
+  );
 }
 
 /** 检索过程折叠为一行；生成中展开显示进度。 */
