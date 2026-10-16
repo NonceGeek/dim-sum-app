@@ -6,9 +6,13 @@
     },
     "app/api/auth/sms-relay/route.ts": {
       "regions": ["iad1"]
+    },
+    "app/api/cron/corpus-embeddings/route.ts": {
+      "regions": ["iad1"]
     }
   },
   "crons": [
-    { "path": "/api/cron/tag-embeddings", "schedule": "0 19 * * *" }
+    { "path": "/api/cron/tag-embeddings", "schedule": "0 19 * * *" },
+    { "path": "/api/cron/corpus-embeddings", "schedule": "17 * * * *" }
   ]
 }
