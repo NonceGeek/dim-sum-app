@@ -1563,6 +1563,16 @@
     "quizMore": "再来一组",
     "actionQuizItem": "第 {index} 题「{stem}」选了「{chosen}」{result}，答案「{answer}」",
     "actionQuizDone": "我完成了练习，答对 {correct}/{total} 题：{details}。请讲解我答错的题。",
-    "actionQuizMore": "再来一组同类练习"
+    "actionQuizMore": "再来一组同类练习",
+    "examples": "例句",
+    "relatedCorpus": "相关语料",
+    "stepsDone": "查阅了 {count} 项资料",
+    "collapseSidebar": "收起侧栏",
+    "expandSidebar": "展开侧栏",
+    "group": {
+      "today": "今天",
+      "week": "最近 7 天",
+      "earlier": "更早"
+    }
   }
 }

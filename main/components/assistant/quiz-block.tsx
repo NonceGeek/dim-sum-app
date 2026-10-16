@@ -40,23 +40,26 @@ export function QuizBlock({
   };
 
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="mb-3 text-sm font-medium">{t("quizTitle")}</div>
-      <ol className="space-y-4">
+    <div className="rounded-2xl bg-muted/40 p-5">
+      <div className="mb-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+        <span>{t("quizTitle")}</span>
+        <span>{Object.keys(answers).length}/{questions.length}</span>
+      </div>
+      <ol className="space-y-6">
         {questions.map((q, index) => {
           const chosen = answers[q.questionId];
           const answered = chosen !== undefined;
           return (
             <li key={q.questionId}>
-              <p className="text-base leading-relaxed">
-                <span className="mr-1 text-muted-foreground">{index + 1}.</span>
+              <p className="text-[15px] leading-8">
+                <span className="mr-1.5 text-muted-foreground">{index + 1}.</span>
                 {q.stemPre}
-                <span className="mx-1 inline-block min-w-12 border-b-2 border-primary/60 text-center font-semibold">
+                <span className="mx-1 inline-block min-w-14 rounded-md bg-background px-2 text-center font-semibold text-primary">
                   {answered ? q.options[chosen]?.text : " "}
                 </span>
                 {q.stemPost}
               </p>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {q.options.map((option, optionIndex) => {
                   const isAnswer = optionIndex === q.answerIndex;
                   const isChosen = optionIndex === chosen;
@@ -67,26 +70,27 @@ export function QuizBlock({
                       disabled={answered}
                       onClick={() => setAnswers((prev) => ({ ...prev, [q.questionId]: optionIndex }))}
                       className={cn(
-                        "flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors",
-                        !answered && "hover:bg-accent",
-                        answered && isAnswer && "border-green-600 bg-green-600/10",
-                        answered && isChosen && !isAnswer && "border-destructive bg-destructive/10",
+                        "flex items-center justify-between rounded-xl bg-background px-4 py-2.5 text-left text-sm shadow-xs transition-colors",
+                        !answered && "hover:bg-primary/5 hover:text-primary",
+                        answered && !isAnswer && !isChosen && "opacity-60",
+                        answered && isAnswer && "bg-green-500/10 text-green-700 ring-1 ring-green-500/40 dark:text-green-400",
+                        answered && isChosen && !isAnswer && "bg-destructive/10 text-destructive ring-1 ring-destructive/40",
                       )}
                     >
                       <span>
                         {option.text}
                         {answered && option.jyutping && (
-                          <span className="ml-2 text-xs text-muted-foreground">{option.jyutping}</span>
+                          <span className="ml-2 font-mono text-xs opacity-70">{option.jyutping}</span>
                         )}
                       </span>
-                      {answered && isAnswer && <Check className="h-4 w-4 text-green-600" />}
-                      {answered && isChosen && !isAnswer && <X className="h-4 w-4 text-destructive" />}
+                      {answered && isAnswer && <Check className="size-4" />}
+                      {answered && isChosen && !isAnswer && <X className="size-4" />}
                     </button>
                   );
                 })}
               </div>
               {answered && (
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2.5 px-1 text-sm leading-6 text-muted-foreground">
                   {chosen === q.answerIndex
                     ? t("quizCorrect")
                     : t("quizWrong", { answer: q.options[q.answerIndex]?.text ?? "" })}
@@ -98,16 +102,16 @@ export function QuizBlock({
         })}
       </ol>
       {answeredAll && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
+        <div className="mt-6 flex flex-wrap items-center gap-2 rounded-xl bg-background px-4 py-3">
           <span className="mr-auto text-sm font-medium">
             {t("quizSummary", { correct, total: questions.length })}
           </span>
           {onAction && (
             <>
-              <Button size="sm" variant="outline" disabled={disabled} onClick={explain}>
+              <Button size="sm" variant="ghost" className="rounded-full" disabled={disabled} onClick={explain}>
                 {t("quizExplain")}
               </Button>
-              <Button size="sm" disabled={disabled} onClick={() => onAction(t("actionQuizMore"))}>
+              <Button size="sm" className="rounded-full" disabled={disabled} onClick={() => onAction(t("actionQuizMore"))}>
                 {t("quizMore")}
               </Button>
             </>

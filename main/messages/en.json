@@ -1562,6 +1562,16 @@
     "quizMore": "More questions",
     "actionQuizItem": "Q{index} “{stem}”: chose “{chosen}” {result}, answer “{answer}”",
     "actionQuizDone": "I finished the quiz with {correct}/{total} correct: {details}. Please explain the ones I got wrong.",
-    "actionQuizMore": "Give me another set of similar questions"
+    "actionQuizMore": "Give me another set of similar questions",
+    "examples": "Examples",
+    "relatedCorpus": "Related entries",
+    "stepsDone": "Checked {count} sources",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "group": {
+      "today": "Today",
+      "week": "Previous 7 days",
+      "earlier": "Earlier"
+    }
   }
 }
