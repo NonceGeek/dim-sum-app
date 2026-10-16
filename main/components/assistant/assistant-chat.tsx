@@ -11,12 +11,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
+  ArrowUp,
   BookOpen,
   MousePointerClick,
   Search,
-  Sparkles,
+  Square,
   Target,
 } from "lucide-react";
+import { useAiPalette } from "@/lib/assistant/ai-palette";
+import {
+  AiGlowFrame,
+  AiShimmerText,
+  AiSparkle,
+  type GlowState,
+} from "./ai-visuals";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
@@ -37,7 +45,6 @@ import {
   PromptInput,
   PromptInputBody,
   PromptInputFooter,
-  PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Suggestion } from "@/components/ai-elements/suggestion";
@@ -77,11 +84,64 @@ function messageText(message: AssistantUIMessage): string {
     .trim();
 }
 
-function AssistantAvatar() {
+function AssistantAvatar({ active = false }: { active?: boolean }) {
   return (
-    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-      <Sparkles className="size-4" />
+    <div className="relative flex size-7 shrink-0 items-center justify-center rounded-full bg-muted/60">
+      <AiSparkle active={active} className="size-4" />
     </div>
+  );
+}
+
+/** 发送按钮：空输入时低调；有内容时渐变填充并轻微放大；生成中为停止键，外圈渐变环旋转。 */
+function SendButton({
+  busy,
+  ready,
+  disabled,
+  label,
+}: {
+  busy: boolean;
+  ready: boolean;
+  disabled?: boolean;
+  label: string;
+}) {
+  const { linear, conic } = useAiPalette();
+  const lit = busy || ready;
+  return (
+    <motion.button
+      type="submit"
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      whileTap={{ scale: 0.9 }}
+      animate={{ scale: ready && !busy ? 1.06 : 1 }}
+      transition={{ type: "spring", bounce: 0.4, duration: 0.35 }}
+      className={cn(
+        "relative flex size-9 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-50",
+        lit
+          ? "text-white shadow-md"
+          : "bg-muted text-muted-foreground hover:text-foreground",
+      )}
+      style={lit ? { backgroundImage: linear } : undefined}
+    >
+      {busy && (
+        <span
+          aria-hidden
+          className="ai-spin absolute -inset-[3px] rounded-full"
+          style={{
+            background: conic,
+            animationDuration: "1.4s",
+            WebkitMask:
+              "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
+            mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
+          }}
+        />
+      )}
+      {busy ? (
+        <Square className="relative size-3 fill-current" />
+      ) : (
+        <ArrowUp className="relative size-4" />
+      )}
+    </motion.button>
   );
 }
 
@@ -120,7 +180,11 @@ function ToolSteps({
   return (
     <ChainOfThought defaultOpen={streaming && !done} className="max-w-none">
       <ChainOfThoughtHeader>
-        {done ? t("stepsDone", { count: parts.length }) : t("toolWorking")}
+        {done ? (
+          t("stepsDone", { count: parts.length })
+        ) : (
+          <AiShimmerText>{t("toolWorking")}</AiShimmerText>
+        )}
       </ChainOfThoughtHeader>
       <ChainOfThoughtContent>
         {parts.map((part) => {
@@ -155,7 +219,7 @@ function AssistantMessageView({
   );
   return (
     <Message from="assistant" className="max-w-full flex-row items-start gap-3">
-      <AssistantAvatar />
+      <AssistantAvatar active={streaming} />
       <MessageContent className="w-full flex-1 gap-4 overflow-visible pt-0.5">
         <ToolSteps parts={dataToolParts} streaming={streaming} />
         {message.parts.map((part, index) => {
@@ -238,6 +302,9 @@ export function AssistantChat({
   const queryClient = useQueryClient();
   const { data: quota } = useAssistantQuota();
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [hasText, setHasText] = useState(false);
+  const palette = useAiPalette();
+  const [focused, setFocused] = useState(false);
 
   const { messages, sendMessage, status, stop } = useChat<AssistantUIMessage>({
     id: conversationId,
@@ -281,6 +348,7 @@ export function AssistantChat({
     const value = text.trim();
     if (!value || busy || quotaExhausted) return;
     setErrorText(null);
+    setHasText(false);
     if (!messages.length) onFirstMessage?.();
     void sendMessage({
       text: value,
@@ -317,45 +385,88 @@ export function AssistantChat({
   };
 
   // 空状态与对话中共用 layoutId：首次提问时输入框从页面中间平滑移到底部
-  const composer = (
-    <motion.div layoutId="assistant-composer" transition={COMPOSER_TRANSITION}>
-      <PromptInput
-        onSubmit={({ text }) => {
-          if (busy) {
-            void stop();
-            return;
-          }
-          send(text);
-        }}
-        className="[&_[data-slot=input-group]]:rounded-3xl [&_[data-slot=input-group]]:bg-background [&_[data-slot=input-group]]:shadow-sm"
+  const glowState = (placement: "hero" | "dock"): GlowState => {
+    if (busy) return "active";
+    if (focused) return placement === "hero" ? "focus" : "idle";
+    return placement === "hero" ? "idle" : "off";
+  };
+
+  // 空状态居中与对话中底部共用 layoutId：首次提问时输入框从页面中间平滑移到底部
+  const renderComposer = (placement: "hero" | "dock") => {
+    const state = glowState(placement);
+    return (
+      <motion.div
+        layoutId="assistant-composer"
+        transition={COMPOSER_TRANSITION}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
       >
-        <PromptInputBody>
-          <PromptInputTextarea
-            maxLength={500}
-            disabled={quotaExhausted}
-            placeholder={quotaExhausted ? t("quotaExceeded") : t("placeholder")}
-            className="min-h-12 px-5 pt-4 text-[15px]"
-          />
-        </PromptInputBody>
-        <PromptInputFooter className="px-3 pb-3">
-          <span className="pl-2 text-xs text-muted-foreground">
-            {quota
-              ? t("quotaRemaining", {
-                  remaining: quota.remaining,
-                  limit: quota.limit,
-                })
-              : ""}
-          </span>
-          <PromptInputSubmit
-            status={status}
-            disabled={quotaExhausted}
-            className="rounded-full"
-            aria-label={busy ? t("stop") : t("send")}
-          />
-        </PromptInputFooter>
-      </PromptInput>
-    </motion.div>
-  );
+        <AiGlowFrame state={state}>
+          {/* 与首页一致：鼠标靠近边缘时光晕跟随，颜色使用 AI 配色 */}
+          <BorderGlow
+            borderRadius={24}
+            glowRadius={30}
+            glowIntensity={0.8}
+            edgeSensitivity={25}
+            coneSpread={30}
+            fillOpacity={0.3}
+            glowColor={palette.glowHsl}
+            backgroundColor="var(--background)"
+            colors={[...palette.colors]}
+            className="w-full border-transparent"
+          >
+            <PromptInput
+              onSubmit={({ text }) => {
+                if (busy) {
+                  void stop();
+                  return;
+                }
+                send(text);
+              }}
+              className={cn(
+                // 去掉 input-group 自带的 3px 聚焦光圈，聚焦效果只由外层细彩边表现（与首页一致）
+                "[&_[data-slot=input-group]]:rounded-3xl [&_[data-slot=input-group]]:bg-background [&_[data-slot=input-group]]:ring-0!",
+                // 有彩色边框时去掉原有边框，避免两层描边
+                state === "off"
+                  ? "[&_[data-slot=input-group]]:shadow-sm"
+                  : "[&_[data-slot=input-group]]:border-transparent! [&_[data-slot=input-group]]:shadow-none",
+              )}
+            >
+              <PromptInputBody>
+                <PromptInputTextarea
+                  maxLength={500}
+                  disabled={quotaExhausted}
+                  placeholder={
+                    quotaExhausted ? t("quotaExceeded") : t("placeholder")
+                  }
+                  className="min-h-12 px-5 pt-4 text-[15px]"
+                  onChange={(event) =>
+                    setHasText(Boolean(event.currentTarget.value.trim()))
+                  }
+                />
+              </PromptInputBody>
+              <PromptInputFooter className="px-3 pb-3">
+                <span className="pl-2 text-xs text-muted-foreground">
+                  {quota
+                    ? t("quotaRemaining", {
+                        remaining: quota.remaining,
+                        limit: quota.limit,
+                      })
+                    : ""}
+                </span>
+                <SendButton
+                  busy={busy}
+                  ready={hasText}
+                  disabled={quotaExhausted}
+                  label={busy ? t("stop") : t("send")}
+                />
+              </PromptInputFooter>
+            </PromptInput>
+          </BorderGlow>
+        </AiGlowFrame>
+      </motion.div>
+    );
+  };
 
   if (!messages.length) {
     const examples = [t("example1"), t("example2"), t("example3")];
@@ -381,11 +492,19 @@ export function AssistantChat({
         <div className="relative flex w-full max-w-[720px] flex-col items-center">
           <div className="flex items-center gap-3">
             <motion.div
+              className="relative"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <Image src="/logo.png" alt="" width={40} height={40} className="size-10" priority />
+              <Image
+                src="/logo.png"
+                alt=""
+                width={40}
+                height={40}
+                className="relative size-10"
+                priority
+              />
             </motion.div>
             <SplitText
               text={t("title")}
@@ -427,20 +546,7 @@ export function AssistantChat({
             transition={{ duration: 0.5, delay: 0.15 }}
             className="mt-6 w-full"
           >
-            <BorderGlow
-              borderRadius={24}
-              glowRadius={30}
-              glowIntensity={0.8}
-              edgeSensitivity={25}
-              coneSpread={30}
-              fillOpacity={0.3}
-              glowColor="210 80 70"
-              backgroundColor="var(--background)"
-              colors={["#3193ff", "#007fff", "#5aa8ff"]}
-              className="w-full"
-            >
-              {composer}
-            </BorderGlow>
+            {renderComposer("hero")}
           </motion.div>
           <motion.div
             initial={{ opacity: 0 }}
@@ -458,7 +564,11 @@ export function AssistantChat({
               />
             ))}
           </motion.div>
-          {errorText && <p className="mt-4 text-center text-sm text-destructive">{errorText}</p>}
+          {errorText && (
+            <p className="mt-4 text-center text-sm text-destructive">
+              {errorText}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -486,10 +596,8 @@ export function AssistantChat({
               from="assistant"
               className="max-w-full flex-row items-center gap-3"
             >
-              <AssistantAvatar />
-              <span className="animate-pulse text-sm text-muted-foreground">
-                {t("thinking")}
-              </span>
+              <AssistantAvatar active />
+              <AiShimmerText className="text-sm">{t("thinking")}</AiShimmerText>
             </Message>
           )}
           {errorText && <p className="text-sm text-destructive">{errorText}</p>}
@@ -499,7 +607,7 @@ export function AssistantChat({
       {/* 输入框悬浮在底部，上方渐隐过渡，不用分割线 */}
       <div className="relative mx-auto w-full max-w-3xl px-4 pb-4">
         <div className="pointer-events-none absolute inset-x-0 -top-8 h-8 bg-gradient-to-t from-background to-transparent" />
-        {composer}
+        {renderComposer("dock")}
       </div>
     </div>
   );

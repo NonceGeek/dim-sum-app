@@ -9,7 +9,6 @@ import {
   SlidersHorizontal,
   ChevronDown,
   Check,
-  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
@@ -27,6 +26,8 @@ import { getCategoryNickname, useAllCategories } from "@/lib/api/category";
 import { useHotTerms } from "@/lib/api/public";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useLoginGate } from "@/components/assistant/login-gate";
+import { AiSparkle } from "@/components/assistant/ai-visuals";
+import { useAiPalette } from "@/lib/assistant/ai-palette";
 import { toast } from "sonner";
 import GradientText from "@/components/ui/gradient-text";
 import {
@@ -62,6 +63,7 @@ export default function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const { openLogin, dialogs: loginDialogs } = useLoginGate();
   const isAssistantMode = inputMode === "assistant";
+  const aiPalette = useAiPalette();
 
   useEffect(() => {
     try {
@@ -307,16 +309,17 @@ export default function HomePage() {
             edgeSensitivity={25}
             coneSpread={30}
             fillOpacity={0.3}
-            glowColor="210 80 70"
+            // 问小助手模式切换为与小助手页一致的 AI 配色
+            glowColor={isAssistantMode ? aiPalette.glowHsl : "210 80 70"}
             backgroundColor="var(--background)"
-            colors={["#3193ff", "#007fff", "#5aa8ff"]}
+            colors={isAssistantMode ? [...aiPalette.colors] : ["#3193ff", "#007fff", "#5aa8ff"]}
             className="w-full"
           >
             <div className="px-2.5 py-2">
               {/* Input row */}
               <div className="flex items-center h-11">
                 {isAssistantMode ? (
-                  <Sparkles className="h-4 w-4 text-primary mr-2.5 flex-shrink-0" />
+                  <AiSparkle className="mr-2.5 h-4 w-4 flex-shrink-0" />
                 ) : (
                   <Search className="h-4 w-4 text-muted-foreground mr-2.5 flex-shrink-0" />
                 )}
@@ -341,39 +344,53 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
                 {/* 经典搜索切换按钮暂时隐藏，默认使用新版 entry 搜索。 */}
                 {/* 搜索 / 问小助手 分段切换，选中块滑动过渡 */}
-                <div className="flex items-center rounded-lg bg-muted/70 p-0.5" role="tablist">
-                  {(
-                    [
-                      { mode: "search", icon: Search, label: t("modeSearch") },
-                      { mode: "assistant", icon: Sparkles, label: t("askAssistant") },
-                    ] as const
-                  ).map(({ mode, icon: Icon, label }) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      role="tab"
-                      aria-selected={inputMode === mode}
-                      onClick={() => switchMode(mode)}
-                      className={cn(
-                        "relative flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition-colors",
-                        inputMode === mode
-                          ? mode === "assistant"
-                            ? "text-primary"
-                            : "text-foreground"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {inputMode === mode && (
-                        <motion.span
-                          layoutId="home-input-mode"
-                          className="absolute inset-0 rounded-md bg-background shadow-sm"
-                          transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-                        />
-                      )}
-                      <Icon className="relative h-3.5 w-3.5" />
-                      <span className="relative">{label}</span>
-                    </button>
-                  ))}
+                {/* 切换比右侧主按钮矮一档（约 30px 对 36px），突出“搜索 / 提问”是主操作 */}
+                <div className="flex items-center rounded-lg bg-muted/50 p-0.5" role="tablist">
+                  {(["search", "assistant"] as const).map((mode) => {
+                    const selected = inputMode === mode;
+                    const isAssistant = mode === "assistant";
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => switchMode(mode)}
+                        className={cn(
+                          "relative flex h-[26px] items-center gap-1 rounded-md px-2.5 text-[13px] transition-colors",
+                          selected ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {selected && (
+                          <motion.span
+                            layoutId="home-input-mode"
+                            className="absolute inset-0 rounded-md bg-background shadow-xs"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                          />
+                        )}
+                        {isAssistant ? (
+                          // 选中时星星弹出并转半圈
+                          <motion.span
+                            key={selected ? "on" : "off"}
+                            className="relative inline-flex"
+                            initial={selected ? { scale: 0.4, rotate: -120 } : false}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", bounce: 0.5, duration: 0.6 }}
+                          >
+                            <AiSparkle className="h-3 w-3" />
+                          </motion.span>
+                        ) : (
+                          <Search className="relative h-3 w-3" />
+                        )}
+                        <span
+                          className={cn("relative", isAssistant && selected && "bg-clip-text text-transparent")}
+                          style={isAssistant && selected ? { backgroundImage: aiPalette.linear } : undefined}
+                        >
+                          {isAssistant ? t("askAssistant") : t("modeSearch")}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="flex items-center justify-end gap-2 ml-auto">
@@ -477,7 +494,11 @@ export default function HomePage() {
 
                   <Button
                     onClick={isAssistantMode ? askAssistant : handleManualSearch}
-                    className="h-9 px-6 rounded-lg text-sm font-medium"
+                    className={cn(
+                      "h-9 px-6 rounded-lg text-sm font-medium",
+                      isAssistantMode && "text-white shadow-md hover:opacity-90",
+                    )}
+                    style={isAssistantMode ? { backgroundImage: aiPalette.linear } : undefined}
                   >
                     {isAssistantMode ? t("assistantSubmit") : t("searchButton")}
                   </Button>
