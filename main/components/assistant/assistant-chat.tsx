@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import BorderGlow from "@/components/ui/border-glow";
+import SplitText from "@/components/ui/split-text";
+import TextType from "@/components/ui/text-type";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useQueryClient } from "@tanstack/react-query";
@@ -357,31 +360,94 @@ export function AssistantChat({
   if (!messages.length) {
     const examples = [t("example1"), t("example2"), t("example3")];
     return (
-      <div className="flex h-full flex-col items-center justify-center px-4 pb-16">
-        <div className="w-full max-w-2xl">
+      // 与首页保持一致：输入框纵向位置对齐首页（logo 在标题同行，padding 补足高度差）、背景光晕、标题与副标题动效、发光输入框
+      <div className="relative flex h-full flex-col items-center overflow-y-auto px-4 pt-[calc(15svh-2.75rem)] md:pt-[calc(18vh-0.45rem)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 dark:hidden"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 35%, oklch(0.95 0.04 256 / 0.18), transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hidden dark:block"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 35%, oklch(0.20 0.03 256 / 0.18), transparent 70%)",
+          }}
+        />
+        <div className="relative flex w-full max-w-[720px] flex-col items-center">
+          <div className="flex items-center gap-3">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <Image src="/logo.png" alt="" width={40} height={40} className="size-10" priority />
+            </motion.div>
+            <SplitText
+              text={t("title")}
+              tag="h1"
+              className="text-2xl font-semibold text-foreground md:text-3xl"
+              delay={60}
+              duration={0.6}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 20 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="0px"
+              textAlign="center"
+            />
+          </div>
           <motion.div
-            className="mb-8 text-center"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+            className="mt-2 h-6 w-full text-center"
           >
-            <h1 className="flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
-              <Image
-                src="/logo.png"
-                alt=""
-                width={32}
-                height={32}
-                className="size-8"
-                priority
-              />
-              {t("title")}
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("subtitle")}
-            </p>
+            <TextType
+              text={[t("typing_0"), t("typing_1"), t("typing_2")]}
+              className="text-sm text-muted-foreground"
+              typingSpeed={60}
+              deletingSpeed={30}
+              pauseDuration={2000}
+              showCursor
+              cursorCharacter="|"
+              cursorClassName="text-muted-foreground/50"
+              cursorBlinkDuration={0.6}
+              loop
+            />
           </motion.div>
-          {composer}
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="mt-6 w-full"
+          >
+            <BorderGlow
+              borderRadius={24}
+              glowRadius={30}
+              glowIntensity={0.8}
+              edgeSensitivity={25}
+              coneSpread={30}
+              fillOpacity={0.3}
+              glowColor="210 80 70"
+              backgroundColor="var(--background)"
+              colors={["#3193ff", "#007fff", "#5aa8ff"]}
+              className="w-full"
+            >
+              {composer}
+            </BorderGlow>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="mt-4 flex flex-wrap justify-center gap-2"
+          >
             {examples.map((example) => (
               <Suggestion
                 key={example}
@@ -391,12 +457,8 @@ export function AssistantChat({
                 className="rounded-full border-0 bg-muted/60 font-normal text-muted-foreground hover:text-foreground"
               />
             ))}
-          </div>
-          {errorText && (
-            <p className="mt-4 text-center text-sm text-destructive">
-              {errorText}
-            </p>
-          )}
+          </motion.div>
+          {errorText && <p className="mt-4 text-center text-sm text-destructive">{errorText}</p>}
         </div>
       </div>
     );
