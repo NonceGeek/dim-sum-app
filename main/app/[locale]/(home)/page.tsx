@@ -28,7 +28,6 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useLoginGate } from "@/components/assistant/login-gate";
 import { AiSparkle } from "@/components/assistant/ai-visuals";
 import { useAiPalette } from "@/lib/assistant/ai-palette";
-import { toast } from "sonner";
 import GradientText from "@/components/ui/gradient-text";
 import {
   Popover,
@@ -154,7 +153,6 @@ export default function HomePage() {
     abortSuggestions();
     closeDropdown();
     if (!isAuthenticated) {
-      toast.info(t("assistantLoginHint"));
       openLogin(target);
       return;
     }
@@ -170,9 +168,8 @@ export default function HomePage() {
     }
     closeDropdown();
     inputRef.current?.focus();
-    // 未登录切到问小助手：提示并打开登录，登录后回到首页（模式已记住）
+    // 未登录切到问小助手：先弹窗询问是否登录，同意后走登录流程，登录后回到首页（模式已记住）
     if (mode === "assistant" && !isAuthenticated) {
-      toast.info(t("assistantLoginHint"));
       openLogin("/");
     }
   };

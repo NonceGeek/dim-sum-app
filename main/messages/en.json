@@ -338,8 +338,7 @@
     "askAssistant": "Ask assistant",
     "modeSearch": "Search",
     "assistantSubmit": "Ask",
-    "assistantPlaceholder": "Ask the Cantonese assistant, e.g. how to say canteen?",
-    "assistantLoginHint": "Sign in to use the Cantonese assistant"
+    "assistantPlaceholder": "Ask the Cantonese assistant, e.g. how to say canteen?"
   },
   "Library": {
     "explorer": {
@@ -1576,6 +1575,10 @@
     "typing_0": "Ask about a word or phrase, learn with cards and examples",
     "typing_1": "Hear pronunciations, compare similar words, see real usage",
     "typing_2": "Quiz yourself and get instant feedback",
+    "loginPromptTitle": "Sign in to use the Cantonese assistant",
+    "loginPromptDescription": "The assistant saves your conversations and counts daily questions per account, so you need to sign in first. Sign in now?",
+    "loginPromptCancel": "Not now",
+    "loginPromptConfirm": "Sign in",
     "stepsDone": "Checked {count} sources",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",

@@ -339,8 +339,7 @@
     "askAssistant": "问小助手",
     "modeSearch": "搜索",
     "assistantSubmit": "提问",
-    "assistantPlaceholder": "问粤语小助手，例如：饭堂点讲？",
-    "assistantLoginHint": "粤语小助手需要登录后使用"
+    "assistantPlaceholder": "问粤语小助手，例如：饭堂点讲？"
   },
   "Library": {
     "explorer": {
@@ -1577,6 +1576,10 @@
     "typing_0": "输入字词或问题，用卡片和例句学粤语",
     "typing_1": "查读音、比近义词、看地道用法",
     "typing_2": "考考你的粤语，即时判分讲解",
+    "loginPromptTitle": "登录后使用粤语小助手",
+    "loginPromptDescription": "粤语小助手会保存你的对话记录，并按账号计算每日提问次数，因此需要先登录。现在去登录吗？",
+    "loginPromptCancel": "暂不登录",
+    "loginPromptConfirm": "去登录",
     "stepsDone": "查阅了 {count} 项资料",
     "collapseSidebar": "收起侧栏",
     "expandSidebar": "展开侧栏",
