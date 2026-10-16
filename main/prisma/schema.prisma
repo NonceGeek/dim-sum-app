@@ -56,6 +56,7 @@ model User {
   sessions                                                                                  Session[]
   walletNonces                                                                              WalletNonce[]
   api_key                                                                                   api_key[]
+  assistantConversations                                                                    assistant_conversations[]
   cantonese_corpus_update_history_cantonese_corpus_update_history_contributor_user_idToUser cantonese_corpus_update_history[]          @relation("cantonese_corpus_update_history_contributor_user_idToUser")
   cantonese_corpus_update_history                                                           cantonese_corpus_update_history[]
   corpus_category                                                                           corpus_category[]
@@ -1435,4 +1436,39 @@ model dataset_contact_requests {
 
   @@index([status, created_at])
   @@index([submitter_ip_hash, created_at])
+}
+
+/// 小助手 - 对话会话（仅登录用户，软删除）
+model assistant_conversations {
+  id         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String
+  title      String?
+  created_at DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
+  deleted_at DateTime?            @db.Timestamptz(6)
+  user       User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages   assistant_messages[]
+
+  @@index([user_id, updated_at])
+}
+
+/// 小助手 - 对话消息；blocks 存 hydrate 前的组件声明，渲染时按 id 重新查库
+model assistant_messages {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id String                  @db.Uuid
+  /// 冗余存储，用于按用户统计每日限额
+  user_id         String
+  /// user | assistant | action
+  role            String
+  content         String                  @default("")
+  blocks          Json                    @default("[]")
+  tool_trace      Json?
+  model           String?
+  input_tokens    Int?
+  output_tokens   Int?
+  created_at      DateTime                @default(now()) @db.Timestamptz(6)
+  conversation    assistant_conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
+  @@index([user_id, role, created_at])
 }
