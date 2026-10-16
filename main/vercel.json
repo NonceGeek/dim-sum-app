@@ -7,5 +7,8 @@
     "app/api/auth/sms-relay/route.ts": {
       "regions": ["iad1"]
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/tag-embeddings", "schedule": "0 19 * * *" }
+  ]
 }

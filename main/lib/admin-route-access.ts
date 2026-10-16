@@ -16,6 +16,10 @@ export function isLibraryOpsPage(pathname: string) {
   );
 }
 /** The review webhook has its own mandatory service authentication, not a browser session. */
+export function isCronJob(pathname: string, method: string) {
+  return method === "GET" && pathname.startsWith("/api/cron/");
+}
+
 export function isReviewWebhook(pathname: string, method: string) {
   return (
     method === "POST" &&
