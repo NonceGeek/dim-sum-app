@@ -336,7 +336,11 @@
     "searchButton": "搜索",
     "viewDataStats": "查看数据情况",
     "luckyButton": "试试手气",
-    "askAssistant": "问小助手"
+    "askAssistant": "问小助手",
+    "modeSearch": "搜索",
+    "assistantSubmit": "提问",
+    "assistantPlaceholder": "问粤语小助手，例如：饭堂点讲？",
+    "assistantLoginHint": "粤语小助手需要登录后使用"
   },
   "Library": {
     "explorer": {

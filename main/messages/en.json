@@ -335,7 +335,11 @@
     "searchButton": "Search",
     "viewDataStats": "View Data Stats",
     "luckyButton": "Feeling Lucky",
-    "askAssistant": "Ask assistant"
+    "askAssistant": "Ask assistant",
+    "modeSearch": "Search",
+    "assistantSubmit": "Ask",
+    "assistantPlaceholder": "Ask the Cantonese assistant, e.g. how to say canteen?",
+    "assistantLoginHint": "Sign in to use the Cantonese assistant"
   },
   "Library": {
     "explorer": {
