@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { EntryIdentity, EntryMediaType } from "@/lib/search/entry-identity";
 import { fetchEntryIdentitiesByUniqueIds } from "@/lib/search/entry-query";
-import { getQueryEmbeddingText } from "@/lib/search/query-embedding";
+import {
+  getDirectQueryEmbeddingText,
+  getQueryEmbeddingText,
+} from "@/lib/search/query-embedding";
 import {
   buildResponse,
   fetchAggregatedSearchRows,
@@ -38,7 +41,11 @@ export async function searchCorpus(params: {
   const mediaType = params.mediaType ?? null;
   const semanticRows = async (): Promise<AggregatedSearchRow[]> => {
     try {
-      const queryEmbeddingText = await getQueryEmbeddingText(query);
+      // 小助手接口部署在 sin1，可直连 DashScope；直连失败再走 iad1 中转
+      const queryEmbeddingText = await getDirectQueryEmbeddingText(query).catch((error) => {
+        console.error("Assistant direct embedding failed; using relay:", error);
+        return getQueryEmbeddingText(query);
+      });
       return await fetchSemanticSearchRows({
         query,
         queryEmbeddingText,
