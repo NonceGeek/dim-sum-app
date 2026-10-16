@@ -71,14 +71,18 @@ function ToolSteps({ parts, streaming }: { parts: ToolPart[]; streaming: boolean
   const t = useTranslations("Assistant");
   if (!parts.length) return null;
   const done = parts.every(isDone);
+  // 进行中用“正在…”，完成后改为过去式
   const describe = (part: ToolPart) => {
     const name = part.type.slice("tool-".length);
+    const finished = isDone(part);
     if (name === "search_corpus") {
-      return { icon: Search, label: t("toolSearching", { query: part.input?.query ?? "" }) };
+      const query = part.input?.query ?? "";
+      return { icon: Search, label: finished ? t("stepSearched", { query }) : t("toolSearching", { query }) };
     }
-    if (name === "find_cloze_questions") return { icon: Target, label: t("toolQuiz") };
-    if (name === "get_entries") return { icon: BookOpen, label: t("toolEntries") };
-    return { icon: BookOpen, label: t("toolWorking") };
+    if (name === "find_cloze_questions") {
+      return { icon: Target, label: finished ? t("stepQuiz") : t("toolQuiz") };
+    }
+    return { icon: BookOpen, label: finished ? t("stepEntries") : t("toolEntries") };
   };
   return (
     <ChainOfThought defaultOpen={streaming && !done} className="max-w-none">
