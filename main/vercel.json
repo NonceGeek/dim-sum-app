@@ -13,6 +13,6 @@
   },
   "crons": [
     { "path": "/api/cron/tag-embeddings", "schedule": "0 19 * * *" },
-    { "path": "/api/cron/corpus-embeddings", "schedule": "17 * * * *" }
+    { "path": "/api/cron/corpus-embeddings", "schedule": "30 19 * * *" }
   ]
 }

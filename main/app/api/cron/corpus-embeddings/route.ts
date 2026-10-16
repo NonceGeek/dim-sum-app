@@ -10,7 +10,7 @@ export const maxDuration = 60;
 const CANDIDATE_LIMIT = 200;
 const DEADLINE_MS = 45_000;
 
-// Invoked hourly by Vercel Cron (see vercel.json), which sends `Authorization: Bearer $CRON_SECRET`.
+// Invoked daily by Vercel Cron (see vercel.json), which sends `Authorization: Bearer $CRON_SECRET`.
 // `?dryRun=1` reports the content_ref diff without embedding or writing.
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET?.trim();
