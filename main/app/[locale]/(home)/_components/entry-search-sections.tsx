@@ -28,6 +28,14 @@ import { ImageCard } from "@/components/media/image-card";
 import { CardVideoPreview } from "@/components/media/card-video-preview";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
+import {
+  contextText,
+  displayCategory,
+  entryHref,
+  getNoteContext,
+  isRecord,
+  primaryJyutping,
+} from "@/lib/search/entry-display";
 import { toast } from "sonner";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -56,15 +64,6 @@ type EntrySearchSectionsProps = {
 
 type SearchMediaFilter = "text" | "audio" | "video" | "image" | "model3d";
 
-function displayCategory(entry: EntryIdentity): string {
-  return (
-    entry.category.primary?.name ||
-    entry.category.secondary?.name ||
-    entry.source.categoryDisplayName ||
-    entry.source.categoryName
-  );
-}
-
 function displaySource(entry: EntryIdentity): string {
   return entry.source.categoryDisplayName || entry.source.categoryName;
 }
@@ -72,14 +71,6 @@ function displaySource(entry: EntryIdentity): string {
 function compactId(entryId: string): string {
   if (entryId.length <= 12) return entryId;
   return `${entryId.slice(0, 8)}...${entryId.slice(-4)}`;
-}
-
-function entryHref(entry: EntryIdentity, returnQuery?: string): string {
-  const query = returnQuery?.trim();
-  if (!query) return entry.share.seoUrl;
-
-  const params = new URLSearchParams({ fromSearch: query });
-  return `${entry.share.seoUrl}?${params.toString()}`;
 }
 
 function absoluteUrl(pathOrUrl: string): string {
@@ -98,10 +89,6 @@ type SharePronunciation = {
   other: string | null;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function blockText(blocks: Record<string, unknown>[], type: string): string | null {
   const values = blocks
     .filter((block) => block.type === type)
@@ -113,50 +100,6 @@ function blockText(blocks: Record<string, unknown>[], type: string): string | nu
     .map((content) => content.trim());
 
   return values.length ? values.join("\n") : null;
-}
-
-function contextText(context: Record<string, unknown> | null, keys: string[]): string | null {
-  if (!context) return null;
-
-  for (const key of keys) {
-    const value = context[key];
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (Array.isArray(value)) {
-      const text = value
-        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-        .map((item) => item.trim())
-        .join("、");
-      if (text) return text;
-    }
-  }
-
-  return null;
-}
-
-function getNoteContext(note: unknown): Record<string, unknown> | null {
-  if (!isRecord(note) || !isRecord(note.context)) return null;
-  return note.context;
-}
-
-function structuredJyutping(structuredNote: unknown): string | null {
-  if (!isRecord(structuredNote) || !Array.isArray(structuredNote.data)) return null;
-
-  const values = structuredNote.data
-    .filter(isRecord)
-    .map((item) => item.jyutping)
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-    .map((value) => value.trim());
-  const uniqueValues = Array.from(new Set(values));
-
-  return uniqueValues.length ? uniqueValues.join(" / ") : null;
-}
-
-function primaryJyutping(entry: EntryIdentity): string | null {
-  return (
-    structuredJyutping(entry.raw.structuredNote) ||
-    contextText(getNoteContext(entry.raw.note), ["pinyin", "song_name_pin"]) ||
-    entry.jyutping
-  );
 }
 
 function getSharePronunciations(entry: EntryIdentity): SharePronunciation[] {

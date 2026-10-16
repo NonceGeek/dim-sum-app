@@ -24,7 +24,7 @@ const requestSchema = z.object({
   message: z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("text"), text: z.string().trim().min(1).max(500) }),
     // 组件内操作，例如答题结果；label 是给用户和模型看的描述
-    z.object({ kind: z.literal("action"), label: z.string().trim().min(1).max(300) }),
+    z.object({ kind: z.literal("action"), label: z.string().trim().min(1).max(1000) }),
   ]),
 });
 

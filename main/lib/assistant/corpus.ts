@@ -62,10 +62,22 @@ export async function searchCorpus(params: {
     }
   };
 
-  const [primaryRows, rows] = await Promise.all([
+  // 精确命中在冷启动时可能触发语句超时；只要另一路有结果就不让整次检索失败
+  const [primary, semantic] = await Promise.allSettled([
     mediaType ? Promise.resolve([]) : fetchPrimarySearchRows(query, null, null),
     semanticRows(),
   ]);
+  if (primary.status === "rejected" && semantic.status === "rejected") {
+    throw semantic.reason;
+  }
+  if (primary.status === "rejected") {
+    console.error("Assistant primary search failed; using semantic only:", primary.reason);
+  }
+  if (semantic.status === "rejected") {
+    console.error("Assistant semantic search failed:", semantic.reason);
+  }
+  const primaryRows = primary.status === "fulfilled" ? primary.value : [];
+  const rows = semantic.status === "fulfilled" ? semantic.value : [];
   const response = buildResponse({
     query,
     primaryRows,

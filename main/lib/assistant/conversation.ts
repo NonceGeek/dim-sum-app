@@ -1,7 +1,7 @@
 import type { ModelMessage, UIMessage } from "ai";
 import { prisma } from "@/lib/prisma";
 import { corpusIdsOf, questionIdsOf, type Block, type Grounding } from "./blocks";
-import { hydrateBlocks } from "./hydrate";
+import { hydrateBlockGroups } from "./hydrate";
 
 export const HISTORY_LIMIT = 12;
 const TITLE_LENGTH = 30;
@@ -94,30 +94,30 @@ export function groundingFromHistory(rows: StoredMessage[]): Grounding {
 
 /** 历史消息转前端 UIMessage；组件重新查库填充，保证展示的是最新数据。 */
 export async function toUIMessages(rows: StoredMessage[]): Promise<AssistantUIMessage[]> {
-  return Promise.all(
-    rows.map(async (row): Promise<AssistantUIMessage> => {
-      const createdAt = row.created_at.toISOString();
-      if (row.role !== "assistant") {
-        return {
-          id: row.id,
-          role: "user",
-          metadata: { kind: row.role === "action" ? "action" : undefined, createdAt },
-          parts: [{ type: "text", text: row.content }],
-        };
-      }
-      const declared = storedBlocks(row);
-      const parts: AssistantUIMessage["parts"] = [];
-      if (declared.length) {
-        parts.push({
-          type: "tool-show_blocks",
-          toolCallId: `history-${row.id}`,
-          state: "output-available",
-          input: { blocks: declared },
-          output: { blocks: await hydrateBlocks(declared), declared, dropped: 0, strippedJyutping: 0 },
-        } as AssistantUIMessage["parts"][number]);
-      }
-      if (row.content) parts.push({ type: "text", text: row.content });
-      return { id: row.id, role: "assistant", metadata: { createdAt }, parts };
-    }),
-  );
+  const declaredByRow = rows.map((row) => (row.role === "assistant" ? storedBlocks(row) : []));
+  const hydratedByRow = await hydrateBlockGroups(declaredByRow);
+  return rows.map((row, index): AssistantUIMessage => {
+    const createdAt = row.created_at.toISOString();
+    if (row.role !== "assistant") {
+      return {
+        id: row.id,
+        role: "user",
+        metadata: { kind: row.role === "action" ? "action" : undefined, createdAt },
+        parts: [{ type: "text", text: row.content }],
+      };
+    }
+    const declared = declaredByRow[index];
+    const parts: AssistantUIMessage["parts"] = [];
+    if (declared.length) {
+      parts.push({
+        type: "tool-show_blocks",
+        toolCallId: `history-${row.id}`,
+        state: "output-available",
+        input: { blocks: declared },
+        output: { blocks: hydratedByRow[index], declared, dropped: 0, strippedJyutping: 0 },
+      } as AssistantUIMessage["parts"][number]);
+    }
+    if (row.content) parts.push({ type: "text", text: row.content });
+    return { id: row.id, role: "assistant", metadata: { createdAt }, parts };
+  });
 }

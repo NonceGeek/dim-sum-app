@@ -3,6 +3,7 @@ import test from "node:test";
 import { blockSchema, groundBlocks, stripJyutping, type Block } from "./blocks";
 import { groundingFromHistory, toModelMessages, type StoredMessage } from "./conversation";
 import { startOfShanghaiDay } from "./quota";
+import { balanceJson } from "./repair";
 import { splitStreamingText, stripJyutpingTransform } from "./stream";
 
 const grounding = () => ({
@@ -176,4 +177,14 @@ test("groundBlocks strips jyutping from compare_table text cells", () => {
     rows: [{ label: "咩", cells: [{ corpusId: 1 }, "—", "句末语气词"] }],
   });
   assert.equal(result.strippedJyutping, 1);
+});
+
+test("balanceJson closes brackets the model left open", () => {
+  assert.equal(
+    balanceJson('{"blocks": [{"type": "suggestions", "items": ["a]b", "c"]}]'),
+    '{"blocks": [{"type": "suggestions", "items": ["a]b", "c"]}]}',
+  );
+  assert.equal(balanceJson('{"blocks": [1, 2]}'), null, "already valid input is left to the SDK");
+  assert.equal(balanceJson('{"blocks": [1, 2}'), null, "mismatched brackets are not guessed");
+  assert.equal(balanceJson('{"text": "unterminated'), null);
 });

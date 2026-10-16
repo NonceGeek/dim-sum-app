@@ -38,6 +38,7 @@ import MobileSheetContent from "./sidebar/mobile-sheet-content";
 const allNavLinks = [
   { labelKey: "home", href: "/" },
   { labelKey: "library", href: "/library" },
+  { labelKey: "assistant", href: "/assistant" },
   { labelKey: "appStore", href: "/appStore" },
   { labelKey: "docs", href: "/docs" },
 ];

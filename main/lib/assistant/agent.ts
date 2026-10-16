@@ -2,6 +2,7 @@ import { isStepCount, streamText, type ModelMessage, type StreamTextOnEndCallbac
 import type { Grounding } from "./blocks";
 import { getAssistantModel } from "./model";
 import { ASSISTANT_INSTRUCTIONS } from "./prompt";
+import { balanceJson } from "./repair";
 import { stripJyutpingTransform } from "./stream";
 import { createAssistantTools, type AssistantTools, type ToolTraceItem } from "./tools";
 
@@ -23,8 +24,9 @@ export function streamAssistant(params: {
     tools,
     stopWhen: isStepCount(MAX_STEPS),
     prepareStep: ({ steps, stepNumber }) => {
+      // 只有成功执行的 show_blocks 才算已展示；参数无效时允许重试
       const shown = steps.some((step) =>
-        step.toolCalls.some((call) => call.toolName === "show_blocks"),
+        step.toolResults.some((result) => result.toolName === "show_blocks"),
       );
       if (shown) return { toolChoice: "none" };
       const usedTools = steps.some((step) => step.toolCalls.length > 0);
@@ -32,6 +34,10 @@ export function streamAssistant(params: {
         return { toolChoice: { type: "tool", toolName: "show_blocks" } };
       }
       return {};
+    },
+    repairToolCall: async ({ toolCall }) => {
+      const input = balanceJson(toolCall.input);
+      return input ? { ...toolCall, input } : null;
     },
     experimental_transform: stripJyutpingTransform<AssistantTools>(),
     onEnd: params.onEnd,
