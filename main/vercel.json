@@ -7,6 +7,15 @@
     "app/api/auth/sms-relay/route.ts": {
       "regions": ["iad1"]
     },
+    "app/api/assistant/probe-hkg/route.ts": {
+      "regions": ["hkg1"]
+    },
+    "app/api/assistant/probe-sin/route.ts": {
+      "regions": ["sin1"]
+    },
+    "app/api/assistant/probe-iad/route.ts": {
+      "regions": ["iad1"]
+    },
     "app/api/assistant/chat/route.ts": {
       "regions": ["iad1"],
       "maxDuration": 60
