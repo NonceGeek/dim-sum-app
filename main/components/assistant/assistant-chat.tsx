@@ -361,7 +361,7 @@ export function AssistantChat({
     const examples = [t("example1"), t("example2"), t("example3")];
     return (
       // 与首页保持一致：输入框纵向位置对齐首页（logo 在标题同行，padding 补足高度差）、背景光晕、标题与副标题动效、发光输入框
-      <div className="relative flex h-full flex-col items-center overflow-y-auto px-4 pt-[calc(15svh-2.75rem)] md:pt-[calc(18vh-0.45rem)]">
+      <div className="relative flex h-full flex-col items-center overflow-x-hidden overflow-y-auto px-4 pt-[calc(15svh-2.75rem)] md:pt-[calc(18vh-0.45rem)]">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 dark:hidden"
