@@ -15,6 +15,7 @@
     "test:library": "node --import tsx --test lib/library/library.test.ts",
     "test:collection-category": "node --import tsx --test lib/corpus-collection-category.test.ts",
     "test:search-embedding": "node --import tsx --test lib/search/query-embedding.test.ts",
+    "test:assistant": "node --import tsx --test lib/assistant/assistant.test.ts",
     "db:public-search:check": "node --import tsx scripts/public-corpus/publish-rpc.ts",
     "db:public-search:publish": "node --import tsx scripts/public-corpus/publish-rpc.ts --apply",
     "test:public-corpus:live": "node --import tsx scripts/public-corpus/verify-rpc-live.ts",
@@ -41,6 +42,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.70",
     "@alicloud/dysmsapi20170525": "^4.3.1",
     "@alicloud/openapi-client": "^0.4.15",
     "@alicloud/tea-util": "^1.4.11",
@@ -81,6 +83,7 @@
     "@tanstack/react-query-devtools": "^5.72.1",
     "@types/ali-oss": "^6.16.11",
     "@vercel/analytics": "^1.6.1",
+    "ai": "7.0.142",
     "ali-oss": "^6.23.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
