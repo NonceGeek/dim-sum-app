@@ -134,6 +134,8 @@ export function AssistantPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlId = searchParams.get("c");
+  // 首页“问小助手”带过来的问题，新对话里自动发送
+  const initialQuery = searchParams.get("q")?.trim() || undefined;
   const existingId = urlId && UUID_PATTERN.test(urlId) ? urlId : null;
   // 新对话的 id 在前端生成，首条消息时由服务端创建会话
   const [draftId, setDraftId] = useState(() => crypto.randomUUID());
@@ -181,6 +183,7 @@ export function AssistantPage() {
         key={draftId}
         conversationId={draftId}
         initialMessages={[]}
+        initialQuery={existingId ? undefined : initialQuery}
         // 地址栏记录会话 id，刷新后可继续；replace 不触发重新挂载
         onFirstMessage={() => window.history.replaceState(null, "", `${window.location.pathname}?c=${draftId}`)}
       />

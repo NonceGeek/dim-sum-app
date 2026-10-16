@@ -30,6 +30,7 @@ import { Role } from "@prisma/client";
 
 const navLinks = [
   { labelKey: "library", href: "/library" },
+  { labelKey: "assistant", href: "/assistant" },
   { labelKey: "appStore", href: "/appStore" },
   { labelKey: "docs", href: "/docs" },
 ];

@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
   ChevronDown,
   Check,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
@@ -123,6 +124,14 @@ export default function HomePage() {
   useEffect(() => {
     if (!hotTermsFetching) setLuckyHovered(false);
   }, [hotTermsFetching]);
+
+  // 带着输入内容打开小助手新对话；未登录时由路由守卫跳转登录，登录后带着问题回来
+  const askAssistant = () => {
+    const term = query.trim();
+    abortSuggestions();
+    closeDropdown();
+    router.push(term ? `/assistant?q=${encodeURIComponent(term)}` : "/assistant");
+  };
 
   const handleManualSearch = () => {
     if (!query.trim()) return;
@@ -277,6 +286,15 @@ export default function HomePage() {
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
                 {/* 经典搜索切换按钮暂时隐藏，默认使用新版 entry 搜索。 */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={askAssistant}
+                  className="h-9 gap-1.5 rounded-lg px-3 text-sm text-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t("askAssistant")}
+                </Button>
 
                 <div className="flex items-center justify-end gap-2 ml-auto">
                   {/* Dataset selector */}

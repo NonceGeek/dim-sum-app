@@ -334,7 +334,8 @@
     "legacySearch": "Classic Search",
     "searchButton": "Search",
     "viewDataStats": "View Data Stats",
-    "luckyButton": "Feeling Lucky"
+    "luckyButton": "Feeling Lucky",
+    "askAssistant": "Ask assistant"
   },
   "Library": {
     "explorer": {

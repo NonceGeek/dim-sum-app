@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { BookOpen, MousePointerClick, Search, Sparkles, Target } from "lucide-react";
+import {
+  BookOpen,
+  MousePointerClick,
+  Search,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
@@ -18,7 +25,11 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputBody,
@@ -37,7 +48,11 @@ import { BlockList, type BlockActions } from "./block-renderer";
 type ToolPart = {
   type: `tool-${string}`;
   toolCallId: string;
-  state: "input-streaming" | "input-available" | "output-available" | "output-error";
+  state:
+    | "input-streaming"
+    | "input-available"
+    | "output-available"
+    | "output-error";
   input?: { query?: string };
   output?: { blocks?: HydratedBlock[] };
 };
@@ -68,7 +83,13 @@ function AssistantAvatar() {
 }
 
 /** 检索过程折叠为一行；生成中展开显示进度。 */
-function ToolSteps({ parts, streaming }: { parts: ToolPart[]; streaming: boolean }) {
+function ToolSteps({
+  parts,
+  streaming,
+}: {
+  parts: ToolPart[];
+  streaming: boolean;
+}) {
   const t = useTranslations("Assistant");
   if (!parts.length) return null;
   const done = parts.every(isDone);
@@ -78,12 +99,20 @@ function ToolSteps({ parts, streaming }: { parts: ToolPart[]; streaming: boolean
     const finished = isDone(part);
     if (name === "search_corpus") {
       const query = part.input?.query ?? "";
-      return { icon: Search, label: finished ? t("stepSearched", { query }) : t("toolSearching", { query }) };
+      return {
+        icon: Search,
+        label: finished
+          ? t("stepSearched", { query })
+          : t("toolSearching", { query }),
+      };
     }
     if (name === "find_cloze_questions") {
       return { icon: Target, label: finished ? t("stepQuiz") : t("toolQuiz") };
     }
-    return { icon: BookOpen, label: finished ? t("stepEntries") : t("toolEntries") };
+    return {
+      icon: BookOpen,
+      label: finished ? t("stepEntries") : t("toolEntries"),
+    };
   };
   return (
     <ChainOfThought defaultOpen={streaming && !done} className="max-w-none">
@@ -118,7 +147,8 @@ function AssistantMessageView({
 }) {
   const t = useTranslations("Assistant");
   const dataToolParts = message.parts.filter(
-    (part): part is Part & ToolPart => isToolPart(part) && part.type !== "tool-show_blocks",
+    (part): part is Part & ToolPart =>
+      isToolPart(part) && part.type !== "tool-show_blocks",
   );
   return (
     <Message from="assistant" className="max-w-full flex-row items-start gap-3">
@@ -133,14 +163,25 @@ function AssistantMessageView({
               </MessageResponse>
             ) : null;
           }
-          if (part.type !== "tool-show_blocks" || !isToolPart(part)) return null;
+          if (part.type !== "tool-show_blocks" || !isToolPart(part))
+            return null;
           if (part.state === "output-available" && part.output?.blocks) {
-            return <BlockList key={part.toolCallId} blocks={part.output.blocks} actions={actions} />;
+            return (
+              <BlockList
+                key={part.toolCallId}
+                blocks={part.output.blocks}
+                actions={actions}
+              />
+            );
           }
           // 参数无效或生成已结束仍未完成的调用不再显示加载状态
           if (part.state === "output-error" || !streaming) return null;
           return (
-            <div key={part.toolCallId} className="space-y-3" aria-label={t("toolBlocks")}>
+            <div
+              key={part.toolCallId}
+              className="space-y-3"
+              aria-label={t("toolBlocks")}
+            >
               <Skeleton className="h-28 w-full rounded-2xl" />
               <Skeleton className="h-16 w-2/3 rounded-xl" />
             </div>
@@ -163,7 +204,9 @@ function UserMessageView({ message }: { message: AssistantUIMessage }) {
         )}
       >
         <span>
-          {isAction && <MousePointerClick className="mr-1.5 inline size-3.5 align-[-2px]" />}
+          {isAction && (
+            <MousePointerClick className="mr-1.5 inline size-3.5 align-[-2px]" />
+          )}
           {messageText(message)}
         </span>
       </MessageContent>
@@ -171,13 +214,21 @@ function UserMessageView({ message }: { message: AssistantUIMessage }) {
   );
 }
 
+const COMPOSER_TRANSITION = {
+  type: "spring",
+  bounce: 0.12,
+  duration: 0.55,
+} as const;
+
 export function AssistantChat({
   conversationId,
   initialMessages,
+  initialQuery,
   onFirstMessage,
 }: {
   conversationId: string;
   initialMessages: AssistantUIMessage[];
+  initialQuery?: string;
   onFirstMessage?: () => void;
 }) {
   const t = useTranslations("Assistant");
@@ -198,16 +249,24 @@ export function AssistantChat({
           body: {
             id,
             message:
-              last?.metadata?.kind === "action" ? { kind: "action", label: text } : { kind: "text", text },
+              last?.metadata?.kind === "action"
+                ? { kind: "action", label: text }
+                : { kind: "text", text },
           },
         };
       },
     }),
     onError: (error) => {
-      setErrorText(error.message.includes("QUOTA_EXCEEDED") ? t("quotaExceeded") : t("error"));
+      setErrorText(
+        error.message.includes("QUOTA_EXCEEDED")
+          ? t("quotaExceeded")
+          : t("error"),
+      );
     },
     onFinish: () => {
-      void queryClient.invalidateQueries({ queryKey: assistantKeys.conversations });
+      void queryClient.invalidateQueries({
+        queryKey: assistantKeys.conversations,
+      });
       void queryClient.invalidateQueries({ queryKey: assistantKeys.quota });
     },
   });
@@ -220,8 +279,33 @@ export function AssistantChat({
     if (!value || busy || quotaExhausted) return;
     setErrorText(null);
     if (!messages.length) onFirstMessage?.();
-    void sendMessage({ text: value, metadata: kind === "action" ? { kind: "action" } : undefined });
+    void sendMessage({
+      text: value,
+      metadata: kind === "action" ? { kind: "action" } : undefined,
+    });
   };
+
+  // 首页带来的问题只发送一次（开发模式下 effect 会执行两次）
+  const sentInitialQuery = useRef(false);
+  useEffect(() => {
+    if (!initialQuery || sentInitialQuery.current || messages.length) return;
+    sentInitialQuery.current = true;
+    send(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
+
+  // 历史消息直接显示，只有新消息带入场动画
+  const historyIds = useRef(
+    new Set(initialMessages.map((message) => message.id)),
+  );
+  const enter = (id: string) =>
+    historyIds.current.has(id)
+      ? { initial: false as const }
+      : {
+          initial: { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.3 },
+        };
 
   const actions: BlockActions = {
     onSend: (text) => send(text),
@@ -229,37 +313,45 @@ export function AssistantChat({
     disabled: busy || quotaExhausted,
   };
 
+  // 空状态与对话中共用 layoutId：首次提问时输入框从页面中间平滑移到底部
   const composer = (
-    <PromptInput
-      onSubmit={({ text }) => {
-        if (busy) {
-          void stop();
-          return;
-        }
-        send(text);
-      }}
-      className="[&_[data-slot=input-group]]:rounded-3xl [&_[data-slot=input-group]]:bg-background [&_[data-slot=input-group]]:shadow-sm"
-    >
-      <PromptInputBody>
-        <PromptInputTextarea
-          maxLength={500}
-          disabled={quotaExhausted}
-          placeholder={quotaExhausted ? t("quotaExceeded") : t("placeholder")}
-          className="min-h-12 px-5 pt-4 text-[15px]"
-        />
-      </PromptInputBody>
-      <PromptInputFooter className="px-3 pb-3">
-        <span className="pl-2 text-xs text-muted-foreground">
-          {quota ? t("quotaRemaining", { remaining: quota.remaining, limit: quota.limit }) : ""}
-        </span>
-        <PromptInputSubmit
-          status={status}
-          disabled={quotaExhausted}
-          className="rounded-full"
-          aria-label={busy ? t("stop") : t("send")}
-        />
-      </PromptInputFooter>
-    </PromptInput>
+    <motion.div layoutId="assistant-composer" transition={COMPOSER_TRANSITION}>
+      <PromptInput
+        onSubmit={({ text }) => {
+          if (busy) {
+            void stop();
+            return;
+          }
+          send(text);
+        }}
+        className="[&_[data-slot=input-group]]:rounded-3xl [&_[data-slot=input-group]]:bg-background [&_[data-slot=input-group]]:shadow-sm"
+      >
+        <PromptInputBody>
+          <PromptInputTextarea
+            maxLength={500}
+            disabled={quotaExhausted}
+            placeholder={quotaExhausted ? t("quotaExceeded") : t("placeholder")}
+            className="min-h-12 px-5 pt-4 text-[15px]"
+          />
+        </PromptInputBody>
+        <PromptInputFooter className="px-3 pb-3">
+          <span className="pl-2 text-xs text-muted-foreground">
+            {quota
+              ? t("quotaRemaining", {
+                  remaining: quota.remaining,
+                  limit: quota.limit,
+                })
+              : ""}
+          </span>
+          <PromptInputSubmit
+            status={status}
+            disabled={quotaExhausted}
+            className="rounded-full"
+            aria-label={busy ? t("stop") : t("send")}
+          />
+        </PromptInputFooter>
+      </PromptInput>
+    </motion.div>
   );
 
   if (!messages.length) {
@@ -267,13 +359,27 @@ export function AssistantChat({
     return (
       <div className="flex h-full flex-col items-center justify-center px-4 pb-16">
         <div className="w-full max-w-2xl">
-          <div className="mb-8 text-center">
+          <motion.div
+            className="mb-8 text-center"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
             <h1 className="flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight">
-              <Image src="/logo.png" alt="" width={32} height={32} className="size-8" priority />
+              <Image
+                src="/logo.png"
+                alt=""
+                width={32}
+                height={32}
+                className="size-8"
+                priority
+              />
               {t("title")}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">{t("subtitle")}</p>
-          </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t("subtitle")}
+            </p>
+          </motion.div>
           {composer}
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             {examples.map((example) => (
@@ -286,7 +392,11 @@ export function AssistantChat({
               />
             ))}
           </div>
-          {errorText && <p className="mt-4 text-center text-sm text-destructive">{errorText}</p>}
+          {errorText && (
+            <p className="mt-4 text-center text-sm text-destructive">
+              {errorText}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -296,22 +406,28 @@ export function AssistantChat({
     <div className="flex h-full flex-col">
       <Conversation className="min-h-0">
         <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-4 pt-8 pb-10">
-          {messages.map((message, index) =>
-            message.role === "user" ? (
-              <UserMessageView key={message.id} message={message} />
-            ) : (
-              <AssistantMessageView
-                key={message.id}
-                message={message}
-                actions={actions}
-                streaming={busy && index === messages.length - 1}
-              />
-            ),
-          )}
+          {messages.map((message, index) => (
+            <motion.div key={message.id} {...enter(message.id)}>
+              {message.role === "user" ? (
+                <UserMessageView message={message} />
+              ) : (
+                <AssistantMessageView
+                  message={message}
+                  actions={actions}
+                  streaming={busy && index === messages.length - 1}
+                />
+              )}
+            </motion.div>
+          ))}
           {status === "submitted" && (
-            <Message from="assistant" className="max-w-full flex-row items-center gap-3">
+            <Message
+              from="assistant"
+              className="max-w-full flex-row items-center gap-3"
+            >
               <AssistantAvatar />
-              <span className="animate-pulse text-sm text-muted-foreground">{t("thinking")}</span>
+              <span className="animate-pulse text-sm text-muted-foreground">
+                {t("thinking")}
+              </span>
             </Message>
           )}
           {errorText && <p className="text-sm text-destructive">{errorText}</p>}

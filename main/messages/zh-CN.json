@@ -335,7 +335,8 @@
     "legacySearch": "经典搜索",
     "searchButton": "搜索",
     "viewDataStats": "查看数据情况",
-    "luckyButton": "试试手气"
+    "luckyButton": "试试手气",
+    "askAssistant": "问小助手"
   },
   "Library": {
     "explorer": {
