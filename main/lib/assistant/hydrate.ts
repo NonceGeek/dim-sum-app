@@ -16,20 +16,27 @@ async function hydrateEach(blocks: Block[]): Promise<(HydratedBlock | null)[]> {
   const [entries, questions, searches] = await Promise.all([
     fetchEntriesByCorpusIds(blocks.flatMap(corpusIdsOf)),
     fetchClozeQuestionsByIds(blocks.flatMap(questionIdsOf)),
-    Promise.all(
-      blocks.map((block) =>
-        block.type === "corpus_results"
-          ? searchCorpus({
-              query: block.query,
-              mediaType: block.mediaType,
-              limit: CORPUS_RESULTS_LIMIT,
-            }).catch((error) => {
-              console.error("Assistant corpus_results search failed:", error);
-              return [];
-            })
-          : Promise.resolve(null),
-      ),
-    ),
+    // 检索结果组件逐个检索，避免并发事务占满连接池
+    (async () => {
+      const results: (Awaited<ReturnType<typeof searchCorpus>> | null)[] = [];
+      for (const block of blocks) {
+        if (block.type !== "corpus_results") {
+          results.push(null);
+          continue;
+        }
+        results.push(
+          await searchCorpus({
+            query: block.query,
+            mediaType: block.mediaType,
+            limit: CORPUS_RESULTS_LIMIT,
+          }).catch((error) => {
+            console.error("Assistant corpus_results search failed:", error);
+            return [];
+          }),
+        );
+      }
+      return results;
+    })(),
   ]);
 
   const hydrated: (HydratedBlock | null)[] = blocks.map(() => null);

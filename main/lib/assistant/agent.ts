@@ -23,6 +23,8 @@ export function streamAssistant(params: {
     messages: params.messages,
     tools,
     stopWhen: isStepCount(MAX_STEPS),
+    // 工具串行执行：多个检索并发会抢占数据库连接池（每实例 3 个连接），导致 P2028
+    toolCallConcurrency: 1,
     prepareStep: ({ steps, stepNumber }) => {
       // 只有成功执行的 show_blocks 才算已展示；参数无效时允许重试
       const shown = steps.some((step) =>

@@ -4,6 +4,7 @@ import { blockSchema, groundBlocks, stripJyutping, type Block } from "./blocks";
 import { groundingFromHistory, toModelMessages, type StoredMessage } from "./conversation";
 import { startOfShanghaiDay } from "./quota";
 import { balanceJson } from "./repair";
+import { withPoolRetry } from "./corpus";
 import { splitStreamingText, stripJyutpingTransform } from "./stream";
 
 const grounding = () => ({
@@ -187,4 +188,24 @@ test("balanceJson closes brackets the model left open", () => {
   assert.equal(balanceJson('{"blocks": [1, 2]}'), null, "already valid input is left to the SDK");
   assert.equal(balanceJson('{"blocks": [1, 2}'), null, "mismatched brackets are not guessed");
   assert.equal(balanceJson('{"text": "unterminated'), null);
+});
+
+test("withPoolRetry retries once on P2028 and rethrows other errors", async () => {
+  let calls = 0;
+  const value = await withPoolRetry(async () => {
+    calls += 1;
+    if (calls === 1) throw Object.assign(new Error("pool busy"), { code: "P2028" });
+    return "ok";
+  });
+  assert.equal(value, "ok");
+  assert.equal(calls, 2);
+
+  let otherCalls = 0;
+  await assert.rejects(
+    withPoolRetry(async () => {
+      otherCalls += 1;
+      throw Object.assign(new Error("timeout"), { code: "P2010" });
+    }),
+  );
+  assert.equal(otherCalls, 1);
 });

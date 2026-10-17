@@ -31,6 +31,19 @@ export async function fetchEntriesByCorpusIds(
   return new Map(entries.map((entry) => [entry.corpusId, entry]));
 }
 
+const POOL_RETRY_DELAY_MS = 400;
+
+/** 连接池繁忙（P2028：等不到空闲连接开启事务）时稍等重试一次。 */
+export async function withPoolRetry<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if ((error as { code?: string })?.code !== "P2028") throw error;
+    await new Promise((resolve) => setTimeout(resolve, POOL_RETRY_DELAY_MS));
+    return run();
+  }
+}
+
 /** 与公开搜索同源：精确命中 + 语义相似（embedding 失败时退回关键词聚合检索）。 */
 export async function searchCorpus(params: {
   query: string;
@@ -46,7 +59,7 @@ export async function searchCorpus(params: {
         console.error("Assistant direct embedding failed; using relay:", error);
         return getQueryEmbeddingText(query);
       });
-      return await fetchSemanticSearchRows({
+      return await withPoolRetry(() => fetchSemanticSearchRows({
         query,
         queryEmbeddingText,
         primaryCorpusId: undefined,
@@ -55,36 +68,38 @@ export async function searchCorpus(params: {
         semanticPart: "all",
         contentAttribute: null,
         mediaType,
-      });
+      }));
     } catch (error) {
       console.error("Assistant semantic search failed; using fallback:", error);
-      const rows = await fetchAggregatedSearchRows({
+      const rows = await withPoolRetry(() => fetchAggregatedSearchRows({
         query,
         similarOffset: 0,
         recommendedOffset: 0,
         contentAttribute: null,
         mediaType,
-      });
+      }));
       return rows.filter((row) => row.section !== "primary");
     }
   };
 
-  // 精确命中在冷启动时可能触发语句超时；只要另一路有结果就不让整次检索失败
-  const [primary, semantic] = await Promise.allSettled([
-    mediaType ? Promise.resolve([]) : fetchPrimarySearchRows(query, null, null),
-    semanticRows(),
-  ]);
-  if (primary.status === "rejected" && semantic.status === "rejected") {
-    throw semantic.reason;
-  }
-  if (primary.status === "rejected") {
-    console.error("Assistant primary search failed; using semantic only:", primary.reason);
-  }
-  if (semantic.status === "rejected") {
-    console.error("Assistant semantic search failed:", semantic.reason);
-  }
-  const primaryRows = primary.status === "fulfilled" ? primary.value : [];
-  const rows = semantic.status === "fulfilled" ? semantic.value : [];
+  // 精确命中与语义检索先后执行（各占一个事务），避免同一请求同时占用多个数据库连接；
+  // 任一路失败不影响另一路，两路都失败才算检索失败
+  const settle = async <T,>(run: () => Promise<T>) => {
+    try {
+      return { ok: true as const, value: await withPoolRetry(run) };
+    } catch (error) {
+      return { ok: false as const, error };
+    }
+  };
+  const primary = mediaType
+    ? { ok: true as const, value: [] as AggregatedSearchRow[] }
+    : await settle(() => fetchPrimarySearchRows(query, null, null));
+  const semantic = await settle(semanticRows);
+  if ("error" in primary && "error" in semantic) throw semantic.error;
+  if ("error" in primary) console.error("Assistant primary search failed; using semantic only:", primary.error);
+  if ("error" in semantic) console.error("Assistant semantic search failed:", semantic.error);
+  const primaryRows = "value" in primary ? primary.value : [];
+  const rows = "value" in semantic ? semantic.value : [];
   const response = buildResponse({
     query,
     primaryRows,
