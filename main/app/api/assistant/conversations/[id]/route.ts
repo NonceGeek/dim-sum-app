@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
       where: { conversation_id: conversation.id },
       orderBy: { created_at: "asc" },
       take: MESSAGE_LIMIT,
-      select: { id: true, role: true, content: true, blocks: true, created_at: true },
+      select: { id: true, role: true, content: true, blocks: true, tool_trace: true, created_at: true },
     });
     return NextResponse.json(
       {

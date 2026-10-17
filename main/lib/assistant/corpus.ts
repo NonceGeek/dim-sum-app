@@ -44,66 +44,119 @@ export async function withPoolRetry<T>(run: () => Promise<T>): Promise<T> {
   }
 }
 
-/** 与公开搜索同源：精确命中 + 语义相似（embedding 失败时退回关键词聚合检索）。 */
+// 精确命中偶尔很慢（个别词会跑满 5 秒语句超时），超过这个时间就不等它
+const PRIMARY_DEADLINE_MS = 2_500;
+// 语义检索每页 3 条，小助手取两页作为例句候选
+const SIMILAR_PAGES = [0, 3];
+
+export type SearchTiming = {
+  embeddingMs?: number;
+  primaryMs?: number;
+  semanticMs?: number;
+  fallbackMs?: number;
+  primaryTimedOut?: boolean;
+};
+
+function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`deadline ${ms}ms exceeded`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+/**
+ * 与公开搜索同源的检索：精确命中 + 语义相似（只取“相似”部分，不算“推荐”）。
+ * 两路并行（每次最多占 2 个数据库连接，工具调用已串行，不会超过连接池）；
+ * 精确命中超过 2.5 秒就放弃；语义检索失败时退回关键词聚合检索。
+ */
 export async function searchCorpus(params: {
   query: string;
   mediaType?: EntryMediaType;
   limit: number;
+  timing?: SearchTiming;
 }): Promise<EntryIdentity[]> {
   const { query, limit } = params;
   const mediaType = params.mediaType ?? null;
-  const semanticRows = async (): Promise<AggregatedSearchRow[]> => {
+  const timing = params.timing ?? {};
+  const since = (start: number) => Date.now() - start;
+
+  const primaryTask = async (): Promise<AggregatedSearchRow[]> => {
+    if (mediaType) return [];
+    const start = Date.now();
     try {
+      return await withDeadline(
+        withPoolRetry(() => fetchPrimarySearchRows(query, null, null)),
+        PRIMARY_DEADLINE_MS,
+      );
+    } catch (error) {
+      if (String(error).includes("deadline")) timing.primaryTimedOut = true;
+      console.error("Assistant primary search skipped:", error);
+      return [];
+    } finally {
+      timing.primaryMs = since(start);
+    }
+  };
+
+  const semanticTask = async (): Promise<AggregatedSearchRow[]> => {
+    try {
+      let start = Date.now();
       // 小助手接口部署在 sin1，可直连 DashScope；直连失败再走 iad1 中转
       const queryEmbeddingText = await getDirectQueryEmbeddingText(query).catch((error) => {
         console.error("Assistant direct embedding failed; using relay:", error);
         return getQueryEmbeddingText(query);
       });
-      return await withPoolRetry(() => fetchSemanticSearchRows({
-        query,
-        queryEmbeddingText,
-        primaryCorpusId: undefined,
-        similarOffset: 0,
-        recommendedOffset: 0,
-        semanticPart: "all",
-        contentAttribute: null,
-        mediaType,
-      }));
+      timing.embeddingMs = since(start);
+      start = Date.now();
+      const rows: AggregatedSearchRow[] = [];
+      for (const similarOffset of SIMILAR_PAGES) {
+        const page = await withPoolRetry(() =>
+          fetchSemanticSearchRows({
+            query,
+            queryEmbeddingText,
+            primaryCorpusId: undefined,
+            similarOffset,
+            recommendedOffset: 0,
+            semanticPart: "similar",
+            contentAttribute: null,
+            mediaType,
+          }),
+        );
+        rows.push(...page);
+        if (page.length < 3) break;
+      }
+      timing.semanticMs = since(start);
+      return rows;
     } catch (error) {
       console.error("Assistant semantic search failed; using fallback:", error);
-      const rows = await withPoolRetry(() => fetchAggregatedSearchRows({
-        query,
-        similarOffset: 0,
-        recommendedOffset: 0,
-        contentAttribute: null,
-        mediaType,
-      }));
+      const start = Date.now();
+      const rows = await withPoolRetry(() =>
+        fetchAggregatedSearchRows({
+          query,
+          similarOffset: 0,
+          recommendedOffset: 0,
+          contentAttribute: null,
+          mediaType,
+        }),
+      );
+      timing.fallbackMs = since(start);
       return rows.filter((row) => row.section !== "primary");
     }
   };
 
-  // 精确命中与语义检索先后执行（各占一个事务），避免同一请求同时占用多个数据库连接；
-  // 任一路失败不影响另一路，两路都失败才算检索失败
-  const settle = async <T,>(run: () => Promise<T>) => {
-    try {
-      return { ok: true as const, value: await withPoolRetry(run) };
-    } catch (error) {
-      return { ok: false as const, error };
-    }
-  };
-  const primary = mediaType
-    ? { ok: true as const, value: [] as AggregatedSearchRow[] }
-    : await settle(() => fetchPrimarySearchRows(query, null, null));
-  const semantic = await settle(semanticRows);
-  if ("error" in primary && "error" in semantic) throw semantic.error;
-  if ("error" in primary) console.error("Assistant primary search failed; using semantic only:", primary.error);
-  if ("error" in semantic) console.error("Assistant semantic search failed:", semantic.error);
-  const primaryRows = "value" in primary ? primary.value : [];
-  const rows = "value" in semantic ? semantic.value : [];
+  const [primaryRows, semanticRows] = await Promise.all([primaryTask(), semanticTask()]);
   const response = buildResponse({
     query,
     primaryRows,
-    semanticRows: rows,
+    semanticRows,
     similarOffset: 0,
     recommendedOffset: 0,
   });

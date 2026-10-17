@@ -11,6 +11,7 @@ import {
   findClozeQuestions,
   listClozeScenes,
   searchCorpus,
+  type SearchTiming,
 } from "./corpus";
 import { hydrateBlocks } from "./hydrate";
 
@@ -34,6 +35,8 @@ export type ToolTraceItem = {
   tool: string;
   input: unknown;
   resultCount: number;
+  ms?: number;
+  detail?: unknown;
   error?: string;
 };
 
@@ -52,11 +55,12 @@ export function createAssistantTools(grounding: Grounding, trace: ToolTraceItem[
   const guarded = async <T,>(
     toolName: string,
     input: unknown,
-    run: () => Promise<{ value: T; count: number }>,
+    run: () => Promise<{ value: T; count: number; detail?: unknown }>,
   ): Promise<T | { error: string }> => {
     try {
-      const { value, count } = await run();
-      trace.push({ tool: toolName, input, resultCount: count });
+      const start = Date.now();
+      const { value, count, detail } = await run();
+      trace.push({ tool: toolName, input, resultCount: count, ms: Date.now() - start, detail });
       return value;
     } catch (error) {
       console.error(`Assistant tool ${toolName} failed:`, error);
@@ -78,9 +82,10 @@ export function createAssistantTools(grounding: Grounding, trace: ToolTraceItem[
       }),
       execute: ({ query, mediaType }) =>
         guarded("search_corpus", { query, mediaType }, async () => {
-          const entries = await searchCorpus({ query, mediaType, limit: 10 });
+          const timing: SearchTiming = {};
+          const entries = await searchCorpus({ query, mediaType, limit: 10, timing });
           registerEntries(entries);
-          return { value: { results: entries.map(summarizeEntry) }, count: entries.length };
+          return { value: { results: entries.map(summarizeEntry) }, count: entries.length, detail: timing };
         }),
     }),
 

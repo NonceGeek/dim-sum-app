@@ -146,12 +146,21 @@ function SendButton({
 }
 
 /** 检索过程折叠为一行；生成中展开显示进度。 */
+function formatSeconds(ms: number) {
+  return (ms / 1000).toFixed(1);
+}
+
 function ToolSteps({
   parts,
   streaming,
+  durationOf,
+  liveElapsedMs,
 }: {
   parts: ToolPart[];
   streaming: boolean;
+  /** 第 index 个工具调用的耗时（毫秒），未知返回 null */
+  durationOf: (part: ToolPart, index: number) => number | null;
+  liveElapsedMs: number | null;
 }) {
   const t = useTranslations("Assistant");
   if (!parts.length) return null;
@@ -183,17 +192,30 @@ function ToolSteps({
         {done ? (
           t("stepsDone", { count: parts.length })
         ) : (
-          <AiShimmerText>{t("toolWorking")}</AiShimmerText>
+          <AiShimmerText>
+            {t("toolWorking")}
+            {liveElapsedMs !== null && ` ${formatSeconds(liveElapsedMs)}s`}
+          </AiShimmerText>
         )}
       </ChainOfThoughtHeader>
       <ChainOfThoughtContent>
-        {parts.map((part) => {
+        {parts.map((part, index) => {
           const { icon, label } = describe(part);
+          const ms = durationOf(part, index);
           return (
             <ChainOfThoughtStep
               key={part.toolCallId}
               icon={icon}
-              label={label}
+              label={
+                <span>
+                  {label}
+                  {ms !== null && (
+                    <span className="ml-1.5 tabular-nums text-muted-foreground/70">
+                      {t("durationSeconds", { seconds: formatSeconds(ms) })}
+                    </span>
+                  )}
+                </span>
+              }
               status={isDone(part) ? "complete" : "active"}
             />
           );
@@ -207,10 +229,17 @@ function AssistantMessageView({
   message,
   actions,
   streaming,
+  liveElapsedMs,
+  clientElapsedMs,
+  clientToolMs,
 }: {
   message: AssistantUIMessage;
   actions: BlockActions;
   streaming: boolean;
+  liveElapsedMs: number | null;
+  /** 浏览器端测得的总用时（服务端耗时未下发时兜底） */
+  clientElapsedMs: number | null;
+  clientToolMs: (toolCallId: string) => number | null;
 }) {
   const t = useTranslations("Assistant");
   const dataToolParts = message.parts.filter(
@@ -221,7 +250,14 @@ function AssistantMessageView({
     <Message from="assistant" className="max-w-full flex-row items-start gap-3">
       <AssistantAvatar active={streaming} />
       <MessageContent className="w-full flex-1 gap-4 overflow-visible pt-0.5">
-        <ToolSteps parts={dataToolParts} streaming={streaming} />
+        <ToolSteps
+          parts={dataToolParts}
+          streaming={streaming}
+          liveElapsedMs={streaming ? liveElapsedMs : null}
+          durationOf={(part, index) =>
+            message.metadata?.timing?.tools[index]?.ms ?? clientToolMs(part.toolCallId)
+          }
+        />
         {message.parts.map((part, index) => {
           if (part.type === "text") {
             return part.text.trim() ? (
@@ -254,9 +290,28 @@ function AssistantMessageView({
             </div>
           );
         })}
+        {!streaming && (message.metadata?.timing?.elapsedMs ?? clientElapsedMs) !== null && (
+          <div className="text-xs tabular-nums text-muted-foreground/70">
+            {t("elapsedTotal", {
+              seconds: formatSeconds((message.metadata?.timing?.elapsedMs ?? clientElapsedMs)!),
+            })}
+          </div>
+        )}
       </MessageContent>
     </Message>
   );
+}
+
+/** 生成中每 100ms 刷新一次，用于显示实时秒数 */
+function useNow(active: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  return now;
 }
 
 function UserMessageView({ message }: { message: AssistantUIMessage }) {
@@ -303,6 +358,14 @@ export function AssistantChat({
   const { data: quota } = useAssistantQuota();
   const [errorText, setErrorText] = useState<string | null>(null);
   const [hasText, setHasText] = useState(false);
+  // 空状态的示例问题：从题库随机取 3 条，每次打开都不一样（挂载后再随机，避免服务端与客户端渲染不一致）
+  const examplePool = t.raw("examples_pool") as string[];
+  const [exampleChoices, setExampleChoices] = useState(() => examplePool.slice(0, 3));
+  useEffect(() => {
+    const shuffled = [...examplePool].sort(() => Math.random() - 0.5);
+    setExampleChoices(shuffled.slice(0, 3));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const palette = useAiPalette();
   const [focused, setFocused] = useState(false);
 
@@ -344,11 +407,42 @@ export function AssistantChat({
   const busy = status === "submitted" || status === "streaming";
   const quotaExhausted = quota ? quota.remaining <= 0 : false;
 
+  // 浏览器端计时：发送时刻、每个工具调用的起止、每条回答的总用时（服务端耗时下发前的实时显示与兜底）
+  const sentAtRef = useRef<number | null>(null);
+  const toolClockRef = useRef(new Map<string, { start: number; end?: number }>());
+  const elapsedByMessageRef = useRef(new Map<string, number>());
+  const now = useNow(busy);
+  const liveElapsedMs = busy && sentAtRef.current !== null ? now - sentAtRef.current : null;
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return;
+    const clock = toolClockRef.current;
+    const at = Date.now();
+    for (const part of last.parts) {
+      if (!isToolPart(part)) continue;
+      const entry = clock.get(part.toolCallId) ?? { start: at };
+      if (isDone(part) && entry.end === undefined) entry.end = at;
+      clock.set(part.toolCallId, entry);
+    }
+    if (!busy && sentAtRef.current !== null) {
+      elapsedByMessageRef.current.set(last.id, at - sentAtRef.current);
+      sentAtRef.current = null;
+    }
+  }, [messages, busy]);
+
+  const clientToolMs = (toolCallId: string) => {
+    const entry = toolClockRef.current.get(toolCallId);
+    if (!entry) return null;
+    return (entry.end ?? Date.now()) - entry.start;
+  };
+
   const send = (text: string, kind: "text" | "action" = "text") => {
     const value = text.trim();
     if (!value || busy || quotaExhausted) return;
     setErrorText(null);
     setHasText(false);
+    sentAtRef.current = Date.now();
     if (!messages.length) onFirstMessage?.();
     void sendMessage({
       text: value,
@@ -469,7 +563,7 @@ export function AssistantChat({
   };
 
   if (!messages.length) {
-    const examples = [t("example1"), t("example2"), t("example3")];
+    const examples = exampleChoices;
     return (
       // 与首页保持一致：输入框纵向位置对齐首页（logo 在标题同行，padding 补足高度差）、背景光晕、标题与副标题动效、发光输入框
       <div className="relative flex h-full flex-col items-center overflow-x-hidden overflow-y-auto px-4 pt-[calc(15svh-2.75rem)] md:pt-[calc(18vh-0.45rem)]">
@@ -587,6 +681,9 @@ export function AssistantChat({
                   message={message}
                   actions={actions}
                   streaming={busy && index === messages.length - 1}
+                  liveElapsedMs={liveElapsedMs}
+                  clientElapsedMs={elapsedByMessageRef.current.get(message.id) ?? null}
+                  clientToolMs={clientToolMs}
                 />
               )}
             </motion.div>
@@ -597,7 +694,10 @@ export function AssistantChat({
               className="max-w-full flex-row items-center gap-3"
             >
               <AssistantAvatar active />
-              <AiShimmerText className="text-sm">{t("thinking")}</AiShimmerText>
+              <AiShimmerText className="text-sm tabular-nums">
+                {t("thinking")}
+                {liveElapsedMs !== null && ` ${formatSeconds(liveElapsedMs)}s`}
+              </AiShimmerText>
             </Message>
           )}
           {errorText && <p className="text-sm text-destructive">{errorText}</p>}

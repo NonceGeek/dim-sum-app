@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
       ]),
     ];
     const trace: ToolTraceItem[] = [];
+    const startedAt = Date.now();
     const modelId = getAssistantModelId();
 
     const { result, tools } = streamAssistant({
@@ -123,6 +124,18 @@ export async function POST(req: NextRequest) {
       stream: toUIMessageStream({
         stream: result.stream,
         tools,
+        // 结束时把总用时与各次工具耗时随消息下发，前端显示“用时 X 秒”
+        messageMetadata: ({ part }) =>
+          part.type === "finish"
+            ? {
+                timing: {
+                  elapsedMs: Date.now() - startedAt,
+                  tools: trace
+                    .filter((item) => item.tool !== "show_blocks")
+                    .map((item) => ({ tool: item.tool, ms: item.ms ?? null })),
+                },
+              }
+            : undefined,
         onError: (error) => {
           console.error("Assistant stream failed:", error);
           return "小助手暂时无法回答，请稍后再试。";

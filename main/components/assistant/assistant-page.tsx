@@ -173,8 +173,17 @@ export function AssistantPage() {
   const select = (id: string) => {
     if (!id) return startNew();
     setSheetOpen(false);
+    // 点击当前正在看的会话不做任何事，避免打断正在生成的回答
+    if (id === activeId) return;
     router.push(`${pathname}?c=${id}`);
   };
+
+  // 离开本页新建的会话后换一个新的草稿 id：再回到那个会话时按已有会话从服务端加载历史，
+  // 否则会被当成未发送的草稿，显示空白的新对话
+  useEffect(() => {
+    if (existingId && existingId !== draftId) setDraftId(crypto.randomUUID());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingId]);
 
   let chat: React.ReactNode;
   if (isDraft) {

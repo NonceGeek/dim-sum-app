@@ -13,10 +13,38 @@ export type StoredMessage = {
   role: string;
   content: string;
   blocks: unknown;
+  tool_trace?: unknown;
   created_at: Date;
 };
 
-export type AssistantUIMessage = UIMessage<{ kind?: "action"; createdAt?: string }>;
+/** 一次回答的耗时：总用时与每次数据工具调用的耗时（不含展示组件）。 */
+export type AssistantTiming = {
+  elapsedMs: number;
+  tools: { tool: string; ms: number | null }[];
+};
+
+export type AssistantUIMessage = UIMessage<{
+  kind?: "action";
+  createdAt?: string;
+  timing?: AssistantTiming;
+}>;
+
+type StoredTrace = {
+  tools?: { tool: string; ms?: number }[];
+  timing?: { totalMs?: number };
+};
+
+/** 从保存的 tool_trace 还原耗时（早期消息没有计时则返回 undefined）。 */
+export function timingFromTrace(trace: unknown): AssistantTiming | undefined {
+  const stored = trace as StoredTrace | null;
+  if (!stored || Array.isArray(stored) || typeof stored.timing?.totalMs !== "number") return undefined;
+  return {
+    elapsedMs: stored.timing.totalMs,
+    tools: (stored.tools ?? [])
+      .filter((item) => item.tool !== "show_blocks")
+      .map((item) => ({ tool: item.tool, ms: item.ms ?? null })),
+  };
+}
 
 export function storedBlocks(message: Pick<StoredMessage, "blocks">): Block[] {
   return Array.isArray(message.blocks) ? (message.blocks as Block[]) : [];
@@ -119,6 +147,11 @@ export async function toUIMessages(rows: StoredMessage[]): Promise<AssistantUIMe
       } as AssistantUIMessage["parts"][number]);
     }
     if (row.content) parts.push({ type: "text", text: row.content });
-    return { id: row.id, role: "assistant", metadata: { createdAt }, parts };
+    return {
+      id: row.id,
+      role: "assistant",
+      metadata: { createdAt, timing: timingFromTrace(row.tool_trace) },
+      parts,
+    };
   });
 }
