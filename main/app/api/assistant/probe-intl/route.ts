@@ -2,13 +2,15 @@
 // 只返回耗时、是否成功和向量相似度，不返回任何密钥。
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { INTL_HOST } from "@/lib/assistant/model";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const ENDPOINTS = {
   beijing: "https://dashscope.aliyuncs.com",
-  intl: "https://dashscope-intl.aliyuncs.com",
+  intlGeneric: "https://dashscope-intl.aliyuncs.com",
+  intl: INTL_HOST,
 };
 const EMBEDDING_PATH = "/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding";
 const QUERIES = [
@@ -59,17 +61,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ region: process.env.VERCEL_REGION, intlKey: Boolean(intlKey), beijingKey: Boolean(beijingKey) });
     }
 
-    const chat = await timed(async () => {
-      const response = await fetch(`${ENDPOINTS.intl}/compatible-mode/v1/chat/completions`, {
-        method: "POST",
-        signal: AbortSignal.timeout(20_000),
-        headers: { Authorization: `Bearer ${intlKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "qwen-plus", messages: [{ role: "user", content: "回复OK" }], max_tokens: 5 }),
+    const chatOn = (base: string) =>
+      timed(async () => {
+        const response = await fetch(`${base}/compatible-mode/v1/chat/completions`, {
+          method: "POST",
+          signal: AbortSignal.timeout(20_000),
+          headers: { Authorization: `Bearer ${intlKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "qwen-plus", messages: [{ role: "user", content: "回复OK" }], max_tokens: 5 }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(`${response.status} ${payload.error?.code ?? payload.code ?? ""} ${payload.error?.message ?? payload.message ?? ""}`);
+        return payload.model as string;
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(`${response.status} ${payload.error?.code ?? ""} ${payload.error?.message ?? ""}`);
-      return payload.model as string;
-    });
+    const chat = { workspace: await chatOn(ENDPOINTS.intl), generic: await chatOn(ENDPOINTS.intlGeneric) };
+    const genericEmbedding = await timed(() => embed(ENDPOINTS.intlGeneric, intlKey, QUERIES[0]));
 
     const similarities: { query: string; cosine?: number; error?: string }[] = [];
     const latency = { beijing: [] as number[], intl: [] as number[] };
@@ -90,6 +95,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       region: process.env.VERCEL_REGION,
       chat,
+      genericEmbedding: genericEmbedding.ok ? { ok: true, ms: genericEmbedding.done } : genericEmbedding,
       embedding: {
         compared: values.length,
         minCosine: values.length ? Math.min(...values) : null,
