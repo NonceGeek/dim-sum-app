@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
+import { assertCategoryTagCreator } from "@/lib/taxonomy/common";
+import {
+  attachCategoryDatasets, createContentCategory, listContentCategories, parseCategoryInclude, parseCategoryInput, parseParentId,
+} from "@/lib/taxonomy/content-categories";
+import { appErrorResponse } from "@/lib/app-error";
+
+export const runtime = "nodejs";
+
+export async function GET(req: NextRequest) {
+  return requireMiniprogramAuth(req, async () => {
+    try {
+      const parentId = req.nextUrl.searchParams.get("parentId");
+      const include = parseCategoryInclude(req.nextUrl.searchParams.get("include"));
+      const items = await listContentCategories(prisma, parentId === null ? null : parseParentId(parentId));
+      return NextResponse.json({ items: include.datasets ? await attachCategoryDatasets(prisma, items) : items });
+    } catch (error) {
+      return appErrorResponse(error, "Miniprogram category/tag request failed");
+    }
+  });
+}
+
+export async function POST(req: NextRequest) {
+  return requireMiniprogramAuth(req, async (_req, user) => {
+    try {
+      await assertCategoryTagCreator(prisma, user.userId);
+      const input = parseCategoryInput(await req.json().catch(() => null));
+      const result = await createContentCategory(prisma, input, user.userId);
+      return NextResponse.json(result, { status: result.created ? 201 : 200 });
+    } catch (error) {
+      return appErrorResponse(error, "Miniprogram category/tag request failed");
+    }
+  });
+}

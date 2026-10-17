@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { fetchAgentTaskStats } from "@/lib/services/agent";
+import {
+  fetchAgentTaskStats,
+  PROOFREADING_TASK_TYPES,
+} from "@/lib/services/agent";
 import { handleAgentApiError } from "@/lib/services/agent-error";
 
 export async function GET(req: NextRequest) {
@@ -9,6 +12,9 @@ export async function GET(req: NextRequest) {
     const searchParams = new URL(req.url).searchParams;
     const corpusName = searchParams.get("corpusName");
     const assigneeRef = searchParams.get("assigneeRef");
+    const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
+    const contentAttribute = searchParams.get("contentAttribute") || undefined;
+    const categoryId = searchParams.get("categoryId") || undefined;
 
     if (!corpusName) {
       return NextResponse.json(
@@ -21,6 +27,9 @@ export async function GET(req: NextRequest) {
       const data = await fetchAgentTaskStats({
         corpusName,
         assigneeRef: assigneeRef || undefined,
+        taskType,
+        contentAttribute,
+        categoryId,
       });
 
       // Match the mini-program flow: build the public user lookup from

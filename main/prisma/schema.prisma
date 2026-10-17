@@ -74,6 +74,8 @@ model User {
   corpusCollectionReviewedItems                                                             corpus_collection_submissions[]            @relation("CorpusCollectionReviewer")
   corpusCollectionSubmissions                                                               corpus_collection_submissions[]
   corpus_tags                                                                               corpus_tags[]
+  createdContentCategories                                                                  content_categories[]                       @relation("content_categories_created_by")
+  createdTags                                                                               tags[]                                     @relation("tags_created_by")
   gameAnswerRecords                                                                         game_answer_records[]
   gamePlayerProgress                                                                        game_player_progress?
   auditLogsAsOperator                                                                       permission_audit_logs[]                    @relation("AuditOperator")
@@ -1013,12 +1015,15 @@ model content_categories {
   item_count               Int                  @default(0)
   created_at               DateTime             @default(now()) @db.Timestamptz(6)
   updated_at               DateTime             @default(now()) @db.Timestamptz(6)
+  created_by               String?
+  creator                  User?                @relation("content_categories_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   content_categories       content_categories?  @relation("content_categoriesTocontent_categories", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   other_content_categories content_categories[] @relation("content_categoriesTocontent_categories")
   corpus_category          corpus_category[]
 
   @@unique([parent_id, name], map: "cc_sibling_name_uk")
   @@index([parent_id], map: "cc_parent_idx")
+  @@index([created_by])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -1145,12 +1150,15 @@ model tags {
   embedding                                Unsupported("vector")?
   corpus_count                             Int                    @default(0)
   created_at                               DateTime               @default(now()) @db.Timestamptz(6)
+  created_by                               String?
+  creator                                  User?                  @relation("tags_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   corpus_tags                              corpus_tags[]
   tag_related_tag_related_related_idTotags tag_related[]          @relation("tag_related_related_idTotags")
   tag_related_tag_related_tag_idTotags     tag_related[]          @relation("tag_related_tag_idTotags")
 
   @@index([embedding])
   @@index([facet])
+  @@index([created_by])
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
