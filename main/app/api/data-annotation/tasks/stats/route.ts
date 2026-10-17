@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
     const corpusName = searchParams.get("corpusName");
     const assigneeRef = searchParams.get("assigneeRef");
     const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
+    const contentAttribute = searchParams.get("contentAttribute") || undefined;
+    const categoryId = searchParams.get("categoryId") || undefined;
 
     if (!corpusName) {
       return NextResponse.json(
@@ -26,6 +28,8 @@ export async function GET(req: NextRequest) {
         corpusName,
         assigneeRef: assigneeRef || undefined,
         taskType,
+        contentAttribute,
+        categoryId,
       });
 
       // Match the mini-program flow: build the public user lookup from

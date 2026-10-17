@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
   const violationType = searchParams.get("violationType") || undefined;
   const q = searchParams.get("q") || undefined;
   const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
+  const contentAttribute = searchParams.get("contentAttribute") || undefined;
+  const categoryId = searchParams.get("categoryId") || undefined;
 
   return requireMiniprogramMarker(req, async (_req, user) => {
     if (!user.userId) {
@@ -39,6 +41,8 @@ export async function GET(req: NextRequest) {
         violationType,
         q,
         taskType,
+        contentAttribute,
+        categoryId,
       });
 
       return NextResponse.json(data);
