@@ -8,14 +8,14 @@ import {
   type Grounding,
 } from "./blocks";
 import {
-  fetchEntriesByCorpusIds,
   findClozeQuestions,
   listClozeScenes,
   searchCorpus,
 } from "./corpus";
 import { hydrateBlocks } from "./hydrate";
 
-const MEANING_PREVIEW_LENGTH = 120;
+// 检索结果直接带较完整的释义，不再单独提供查详情工具，省去一次模型往返
+const MEANING_PREVIEW_LENGTH = 300;
 
 // 给模型看的精简语料信息；完整数据只在组件里展示
 function summarizeEntry(entry: EntryIdentity) {
@@ -24,6 +24,7 @@ function summarizeEntry(entry: EntryIdentity) {
     text: entry.entryName,
     jyutping: entry.jyutping,
     meaning: entry.meaning?.slice(0, MEANING_PREVIEW_LENGTH) ?? null,
+    tags: entry.tags.precise.map((tag) => tag.name).slice(0, 5),
     mediaTypes: entry.mediaTypes,
     dataset: entry.source.categoryDisplayName ?? entry.source.categoryName,
   };
@@ -83,27 +84,6 @@ export function createAssistantTools(grounding: Grounding, trace: ToolTraceItem[
         }),
     }),
 
-    get_entries: tool({
-      description: "按 corpusId 获取语料详情（完整释义），用于深入讲解已检索到的语料。",
-      inputSchema: z.object({
-        corpusIds: z.array(z.number().int().positive()).min(1).max(8),
-      }),
-      execute: ({ corpusIds }) =>
-        guarded("get_entries", { corpusIds }, async () => {
-          const entries = Array.from((await fetchEntriesByCorpusIds(corpusIds)).values());
-          registerEntries(entries);
-          return {
-            value: {
-              results: entries.map((entry) => ({
-                ...summarizeEntry(entry),
-                meaning: entry.meaning,
-                tags: entry.tags.precise.map((tag) => tag.name),
-              })),
-            },
-            count: entries.length,
-          };
-        }),
-    }),
 
     find_cloze_questions: tool({
       description:

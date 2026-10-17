@@ -60,6 +60,7 @@ function describeBlocks(blocks: Block[]): string {
   const parts = blocks.map((block) => {
     const ids = [...corpusIdsOf(block), ...questionIdsOf(block)];
     if (block.type === "corpus_results") return `corpus_results(${block.query})`;
+    if (block.type === "text") return `text(${block.markdown.slice(0, 120)})`;
     return ids.length ? `${block.type}(${ids.join(",")})` : block.type;
   });
   return `\n[已展示组件: ${parts.join("; ")}]`;

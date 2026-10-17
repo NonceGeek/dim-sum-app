@@ -46,3 +46,25 @@ export function streamAssistant(params: {
   });
   return { result, tools };
 }
+
+type TimedStep = {
+  toolCalls: { toolName: string }[];
+  usage: { outputTokens?: number; inputTokens?: number };
+  performance: { stepTimeMs: number; responseTimeMs: number; toolExecutionMs: Readonly<Record<string, number>> };
+};
+
+/** 每一步的耗时摘要：模型响应、工具执行、输出 token，用于定位慢在哪一步。 */
+export function summarizeSteps(steps: readonly TimedStep[]) {
+  const perStep = steps.map((step, index) => ({
+    step: index + 1,
+    tools: step.toolCalls.map((call) => call.toolName),
+    stepMs: Math.round(step.performance.stepTimeMs),
+    modelMs: Math.round(step.performance.responseTimeMs),
+    toolMs: Math.round(Object.values(step.performance.toolExecutionMs).reduce((a, b) => a + b, 0)),
+    outTokens: step.usage.outputTokens ?? null,
+  }));
+  return {
+    totalMs: perStep.reduce((sum, step) => sum + step.stepMs, 0),
+    steps: perStep,
+  };
+}

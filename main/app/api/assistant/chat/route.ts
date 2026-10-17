@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { streamAssistant } from "@/lib/assistant/agent";
+import { streamAssistant, summarizeSteps } from "@/lib/assistant/agent";
 import { stripJyutping, type Block } from "@/lib/assistant/blocks";
 import {
   ensureConversation,
@@ -81,6 +81,8 @@ export async function POST(req: NextRequest) {
       grounding: groundingFromHistory(history),
       trace,
       onEnd: async ({ steps, totalUsage }) => {
+        const timing = summarizeSteps(steps);
+        console.info("Assistant timing", JSON.stringify({ conversationId: conversation.id, ...timing }));
         const text = stripJyutping(steps.map((step) => step.text).join("\n")).text;
         const declared: Block[] = steps.flatMap((step) =>
           step.toolResults.flatMap((toolResult) =>
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
                 role: "assistant",
                 content: text,
                 blocks: declared,
-                tool_trace: trace as unknown as Prisma.InputJsonValue,
+                tool_trace: { tools: trace, timing } as unknown as Prisma.InputJsonValue,
                 model: modelId,
                 input_tokens: totalUsage.inputTokens ?? null,
                 output_tokens: totalUsage.outputTokens ?? null,
