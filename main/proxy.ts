@@ -3,7 +3,7 @@ import { routing } from './i18n/routing';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { Role } from '@prisma/client';
-import { isDelegatedCollectionPage, isReviewWebhook } from '@/lib/admin-route-access';
+import { isCronJob, isDelegatedCollectionPage, isReviewWebhook } from '@/lib/admin-route-access';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -38,7 +38,7 @@ export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Service callbacks must reach their own mandatory Bearer-token validation.
-  if (isReviewWebhook(pathname, request.method)) return NextResponse.next();
+  if (isReviewWebhook(pathname, request.method) || isCronJob(pathname, request.method)) return NextResponse.next();
 
   // Skip i18n for API routes and static files
   if (
