@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
           privacyAssessmentRequired: r.privacy_assessment_required,
           rightsPrivacySummary: r.rights_privacy_summary,
           closingNote: r.closing_note,
-          ingestionTaskId: r.ingestion_task_id,
+          ingestionTaskId: r.ingestion_task_id === null ? null : String(r.ingestion_task_id),
           assigneeId: r.assignee_id,
           assigneeName: names[r.assignee_id] ?? r.assignee_id,
           createdByName: names[r.created_by] ?? r.created_by,

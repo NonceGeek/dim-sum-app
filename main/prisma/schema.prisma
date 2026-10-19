@@ -83,6 +83,11 @@ model User {
   auditLogsAsTarget                                                                         permission_audit_logs[]                    @relation("AuditTarget")
   corpusInteractions                                                                        user_corpus_interactions[]
   corpusPermissions                                                                         user_corpus_permissions[]
+  assignedIngestionTasks                                                                    ingestion_tasks[]                          @relation("IngestionTaskAssignee")
+  createdIngestionTasks                                                                     ingestion_tasks[]                          @relation("IngestionTaskCreator")
+  uploadedIngestionTaskFiles                                                                ingestion_task_files[]
+  approvedIngestionOperations                                                               ingestion_operations[]
+  decidedCorpusAgentApprovals                                                               corpus_agent_approvals[]
 }
 
 model Session {
@@ -169,6 +174,7 @@ model cantonese_corpus_all {
   corpus_tags                   corpus_tags[]
   corpus_zyzdv2                 corpus_zyzdv2[]
   userInteractions              user_corpus_interactions[]
+  ingestionRecord               ingestion_records?
 
   @@id([id, data])
   @@index([data], map: "cantonese_corpus_all_data_pgroonga_idx")
@@ -1392,7 +1398,7 @@ model contribution_application_events {
   @@index([application_id, created_at])
 }
 
-/// Library - 审核接受后创建的系统内入库待办；ingestion_task_id 预留给 #431 入库任务
+/// Library - 审核接受后创建的系统内入库待办；ingestion_task_id 关联其入库任务
 model ingestion_leads {
   id                          BigInt                    @id @default(autoincrement())
   lead_no                     String                    @unique
@@ -1407,13 +1413,14 @@ model ingestion_leads {
   rights_privacy_summary      Json                      @default("{}")
   status                      String                    @default("PENDING_OWNER_ACCEPTANCE")
   closing_note                String?
-  ingestion_task_id           String?
+  ingestion_task_id           BigInt?                   @unique
   created_by                  String
   accepted_at                 DateTime?                 @db.Timestamptz(6)
   closed_at                   DateTime?                 @db.Timestamptz(6)
   created_at                  DateTime                  @default(now()) @db.Timestamptz(6)
   updated_at                  DateTime                  @default(now()) @updatedAt @db.Timestamptz(6)
   application                 contribution_applications @relation(fields: [contribution_application_id], references: [id], onDelete: Restrict)
+  ingestionTask               ingestion_tasks?          @relation(fields: [ingestion_task_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([assignee_id, status])
 }
@@ -1471,4 +1478,289 @@ model assistant_messages {
 
   @@index([conversation_id, created_at])
   @@index([user_id, role, created_at])
+}
+
+/// 入库 - 入库任务（#431）；status 只记录人为决定的业务状态，处理中的细分状态由 corpus_agent_runs.status 推出
+/// 入库 Agent（yue-lint-agent）直接读写本组表；check 约束、触发器见 migration 20261019090000_add_ingestion_tasks
+model ingestion_tasks {
+  id                  BigInt                  @id @default(autoincrement())
+  task_no             String                  @unique
+  title               String
+  description         String                  @default("")
+  target_dataset_name String
+  status              String                  @default("PENDING")
+  assignee_id         String
+  created_by          String
+  batch_id            String                  @unique
+  workspace_prefix    String
+  completed_at        DateTime?               @db.Timestamptz(6)
+  cancelled_at        DateTime?               @db.Timestamptz(6)
+  created_at          DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                @default(now()) @db.Timestamptz(6)
+  assignee            User                    @relation("IngestionTaskAssignee", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator             User                    @relation("IngestionTaskCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  files               ingestion_task_files[]
+  events              ingestion_task_events[]
+  run                 corpus_agent_runs?
+  operations          ingestion_operations[]
+  lead                ingestion_leads?
+
+  @@index([assignee_id, status], map: "ingestion_tasks_assignee_status_idx")
+  @@index([status, created_at(sort: Desc)], map: "ingestion_tasks_status_created_idx")
+}
+
+/// 入库 - 任务原始文件；path 相对任务工作区，形如 input/xxx.csv
+model ingestion_task_files {
+  id          BigInt          @id @default(autoincrement())
+  task_id     BigInt
+  path        String
+  name        String
+  size        BigInt
+  etag        String?
+  status      String          @default("UPLOADING")
+  uploaded_by String
+  created_at  DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime        @default(now()) @db.Timestamptz(6)
+  task        ingestion_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  uploader    User            @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([task_id, path])
+}
+
+/// 入库 - 任务审计
+model ingestion_task_events {
+  id             BigInt          @id @default(autoincrement())
+  task_id        BigInt
+  operator_id    String?
+  operator_role  String?
+  operation_type String
+  from_status    String?
+  to_status      String?
+  note           String?
+  payload        Json            @default("{}")
+  created_at     DateTime        @default(now()) @db.Timestamptz(6)
+  task           ingestion_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([task_id, created_at], map: "ingestion_task_events_task_created_idx")
+}
+
+/// 入库 - 一次已审批提案对语料库的实际写入
+model ingestion_operations {
+  id           String              @id
+  task_id      BigInt
+  thread_id    String?
+  turn_id      String?
+  tool_call_id String?
+  approval_id  String
+  batch_id     String
+  proposal_id  String
+  approved_by  String
+  approved_at  DateTime            @db.Timestamptz(6)
+  records_path String
+  records_hash String
+  committed_at DateTime            @default(now()) @db.Timestamptz(6)
+  result       Json
+  task         ingestion_tasks     @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approver     User                @relation(fields: [approved_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  records      ingestion_records[]
+
+  @@unique([batch_id, proposal_id])
+  @@index([task_id], map: "ingestion_operations_task_idx")
+}
+
+/// 入库 - 语料的首次创建归属；去重跳过的语料不产生关联
+model ingestion_records {
+  corpus_id    BigInt               @id
+  operation_id String
+  record_row   Int
+  corpus       cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  operation    ingestion_operations @relation(fields: [operation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([operation_id, corpus_id], map: "ingestion_records_operation_idx")
+}
+
+/// 入库 Agent - 任务的对话会话；以下 corpus_agent_* 表只由入库 Agent 读写
+model corpus_agent_runs {
+  id                 String                    @id
+  task_id            BigInt                    @unique
+  status             String
+  sandbox_id         String?
+  execution_version  Int                       @default(0)
+  lease_until        DateTime?                 @db.Timestamptz(6)
+  revision           BigInt                    @default(0)
+  sandbox_idle_until DateTime?                 @db.Timestamptz(6)
+  last_error         String?
+  created_at         DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                  @default(now()) @db.Timestamptz(6)
+  task               ingestion_tasks           @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  events             corpus_agent_events[]
+  threads            corpus_agent_threads[]
+  turns              corpus_agent_turns[]
+  approvals          corpus_agent_approvals[]
+  questions          corpus_agent_questions[]
+  changes            corpus_agent_run_changes?
+
+  @@index([sandbox_idle_until], map: "corpus_agent_runs_sandbox_idle_idx")
+}
+
+model corpus_agent_events {
+  seq        BigInt            @id @default(autoincrement())
+  run_id     String
+  type       String
+  payload    Json              @default("{}")
+  created_at DateTime          @default(now()) @db.Timestamptz(6)
+  run        corpus_agent_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([run_id, seq(sort: Desc)], map: "corpus_agent_events_run_seq_idx")
+}
+
+model corpus_agent_threads {
+  id                  String                           @id
+  run_id              String
+  task_id             String?
+  parent_tool_call_id String?
+  next_seq            Int                              @default(1)
+  revision            Int                              @default(0)
+  run                 corpus_agent_runs                @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turns               corpus_agent_turns[]
+  messages            corpus_agent_messages[]
+  tool_calls          corpus_agent_tool_calls[]
+  context_summaries   corpus_agent_context_summaries[]
+
+  @@unique([run_id, task_id])
+}
+
+model corpus_agent_turns {
+  id                    String                           @id
+  run_id                String
+  thread_id             String
+  request_id            String
+  input_hash            String
+  kind                  String
+  parent_turn_id        String?
+  execution_version     Int
+  status                String                           @default("running")
+  config                Json                             @default("{}")
+  result                Json?
+  error                 String?
+  created_at            DateTime                         @default(now()) @db.Timestamptz(6)
+  finished_at           DateTime?                        @db.Timestamptz(6)
+  run                   corpus_agent_runs                @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  thread                corpus_agent_threads             @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  parent                corpus_agent_turns?              @relation("corpus_agent_turn_parent", fields: [parent_turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children              corpus_agent_turns[]             @relation("corpus_agent_turn_parent")
+  messages              corpus_agent_messages[]
+  tool_calls            corpus_agent_tool_calls[]        @relation("corpus_agent_tool_call_turn")
+  reconciled_tool_calls corpus_agent_tool_calls[]        @relation("corpus_agent_tool_call_reconciled_turn")
+  context_summaries     corpus_agent_context_summaries[]
+  approvals             corpus_agent_approvals[]
+  questions             corpus_agent_questions[]
+
+  @@unique([run_id, request_id])
+}
+
+model corpus_agent_messages {
+  id             String                    @id
+  thread_id      String
+  turn_id        String
+  seq            Int
+  group_id       String
+  schema_version Int                       @default(1)
+  role           String
+  message        Json
+  status         String
+  source         Json                      @default("{}")
+  created_at     DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime                  @default(now()) @db.Timestamptz(6)
+  thread         corpus_agent_threads      @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turn           corpus_agent_turns        @relation(fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tool_calls     corpus_agent_tool_calls[]
+  questions      corpus_agent_questions[]
+
+  @@unique([thread_id, seq])
+  @@index([thread_id, group_id, seq], map: "corpus_agent_messages_group")
+}
+
+model corpus_agent_tool_calls {
+  id                 String                @id
+  thread_id          String
+  turn_id            String
+  message_id         String
+  tool_call_id       String
+  tool_name          String
+  input              Json
+  status             String
+  output             Json?
+  reconciled_turn_id String?
+  thread             corpus_agent_threads  @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turn               corpus_agent_turns    @relation("corpus_agent_tool_call_turn", fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  message            corpus_agent_messages @relation(fields: [message_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reconciled_turn    corpus_agent_turns?   @relation("corpus_agent_tool_call_reconciled_turn", fields: [reconciled_turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([thread_id, tool_call_id])
+}
+
+model corpus_agent_context_summaries {
+  id              String               @id
+  thread_id       String
+  turn_id         String
+  source_revision Int
+  through_seq     Int
+  status          String
+  text            String?
+  details         Json                 @default("{}")
+  created_at      DateTime             @default(now()) @db.Timestamptz(6)
+  thread          corpus_agent_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turn            corpus_agent_turns   @relation(fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model corpus_agent_approvals {
+  id            String              @id
+  run_id        String
+  batch_id      String
+  proposal_id   String
+  turn_id       String?
+  tool_call_id  String?
+  proposal      Json
+  content_hash  String
+  expected      Json
+  status        String
+  expires_at    DateTime            @db.Timestamptz(6)
+  decided_at    DateTime?           @db.Timestamptz(6)
+  decided_by    String?
+  decision_note String?
+  result        Json?
+  created_at    DateTime            @default(now()) @db.Timestamptz(6)
+  run           corpus_agent_runs   @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turn          corpus_agent_turns? @relation(fields: [turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  decider       User?               @relation(fields: [decided_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([run_id, proposal_id])
+  @@index([run_id, created_at(sort: Desc)], map: "corpus_agent_approvals_run_created_idx")
+}
+
+model corpus_agent_questions {
+  id           String                 @id
+  run_id       String
+  tool_call_id String
+  turn_id      String?
+  message_id   String?
+  questions    Json
+  answers      Json?
+  status       String
+  created_at   DateTime               @default(now()) @db.Timestamptz(6)
+  resolved_at  DateTime?              @db.Timestamptz(6)
+  run          corpus_agent_runs      @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turn         corpus_agent_turns?    @relation(fields: [turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  message      corpus_agent_messages? @relation(fields: [message_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([run_id, tool_call_id])
+  @@index([run_id, created_at(sort: Desc)], map: "corpus_agent_questions_run_created_idx")
+}
+
+/// RunView 变更序号，由触发器维护
+model corpus_agent_run_changes {
+  run_id String            @id
+  seq    BigInt            @default(0)
+  run    corpus_agent_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
