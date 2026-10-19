@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireMiniprogramMarker } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
-import { fetchAgentTaskStats } from "@/lib/services/agent";
+import {
+  fetchAgentTaskStats,
+  PROOFREADING_TASK_TYPES,
+} from "@/lib/services/agent";
 import { handleAgentApiError } from "@/lib/services/agent-error";
 
 export async function GET(req: NextRequest) {
@@ -10,6 +13,9 @@ export async function GET(req: NextRequest) {
   const corpusName = searchParams.get("corpusName");
   // assigneeRef: 标注员 ID，多个 ID 用英文逗号分隔；不传则统计所有标注员
   const assigneeRef = searchParams.get("assigneeRef");
+  const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
+  const contentAttribute = searchParams.get("contentAttribute") || undefined;
+  const categoryId = searchParams.get("categoryId") || undefined;
 
   if (!corpusName) {
     return NextResponse.json(
@@ -23,6 +29,9 @@ export async function GET(req: NextRequest) {
       const data = await fetchAgentTaskStats({
         corpusName,
         assigneeRef: assigneeRef || undefined,
+        taskType,
+        contentAttribute,
+        categoryId,
       });
 
       // 根据 assigneeRefs 查询用户名和头像

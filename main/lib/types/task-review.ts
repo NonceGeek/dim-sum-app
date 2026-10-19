@@ -1,22 +1,28 @@
 import type {
   AgentTask,
+  AgentTaskType,
   AgentTaskStatus,
   AgentTaskContext,
   AgentSuggestion,
   AgentTaskListResponse,
   AgentPagination,
   AgentTaskStatsResponse,
+  AgentTaxonomyCategory,
+  AgentTaxonomyTag,
 } from "@/lib/services/agent";
 
 // Re-export for convenience
 export type {
   AgentTask,
+  AgentTaskType,
   AgentTaskStatus,
   AgentTaskContext,
   AgentSuggestion,
   AgentTaskListResponse,
   AgentPagination,
   AgentTaskStatsResponse,
+  AgentTaxonomyCategory,
+  AgentTaxonomyTag,
 };
 
 // ---- Content Block Types ----
@@ -49,6 +55,11 @@ export interface CantonesePronunciationItem {
 export interface CantonesePronunciationRecord {
   text?: string;
   data: CantonesePronunciationItem[];
+  category?: AgentTaxonomyCategory | null;
+  tags?: AgentTaxonomyTag[];
+  // 提交时写入分类/标签：不传 = 不改，tagIds 传 [] = 清空
+  categoryId?: string;
+  tagIds?: string[];
 }
 
 // ---- Task Detail (extended from AgentTask) ----
@@ -62,6 +73,7 @@ export interface TaskSuggestion {
 
 export interface TaskDetail {
   id: string;
+  taskType?: AgentTaskType;
   status: AgentTaskStatus;
   violationType: string;
   context: AgentTaskContext;
@@ -108,11 +120,14 @@ export interface TaskListParams {
   violationType?: string;
   assigneeRef?: string;
   q?: string;
+  // 多个用英文逗号分隔；不传默认内容校对（error_fix,data_review）
+  taskType?: string;
 }
 
 export interface TaskStatsParams {
   corpusName: string;
   assigneeRef?: string;
+  taskType?: string;
 }
 
 // ---- Emotion Constants ----

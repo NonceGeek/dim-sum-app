@@ -55,6 +55,8 @@ export async function mergeUserRelations(
     srcReviewBatchesCreated,
     srcCategoriesAssigned,
     srcTagsCreated,
+    srcContentCategoriesCreated,
+    srcTaxonomyTagsCreated,
     srcAuditOperator,
     srcAuditTarget,
   ] = [
@@ -99,6 +101,14 @@ export async function mergeUserRelations(
     }),
     await tx.corpus_category.findMany({ where: { assigned_by: sourceUserId } }),
     await tx.corpus_tags.findMany({ where: { created_by: sourceUserId } }),
+    await tx.content_categories.findMany({
+      where: { created_by: sourceUserId },
+      select: { id: true, created_by: true },
+    }),
+    await tx.tags.findMany({
+      where: { created_by: sourceUserId },
+      select: { id: true, created_by: true },
+    }),
     await tx.permission_audit_logs.findMany({
       where: { operator_id: sourceUserId },
     }),
@@ -141,6 +151,8 @@ export async function mergeUserRelations(
       corpus_collection_review_batches_created: srcReviewBatchesCreated,
       corpus_category_assigned: srcCategoriesAssigned,
       corpus_tags_created: srcTagsCreated,
+      content_categories_created: srcContentCategoriesCreated,
+      tags_created: srcTaxonomyTagsCreated,
       permission_audit_logs_operator: srcAuditOperator,
       permission_audit_logs_target: srcAuditTarget,
     },
@@ -350,6 +362,14 @@ export async function mergeUserRelations(
     data: { assigned_by: targetUserId },
   });
   await tx.corpus_tags.updateMany({
+    where: { created_by: sourceUserId },
+    data: { created_by: targetUserId },
+  });
+  await tx.content_categories.updateMany({
+    where: { created_by: sourceUserId },
+    data: { created_by: targetUserId },
+  });
+  await tx.tags.updateMany({
     where: { created_by: sourceUserId },
     data: { created_by: targetUserId },
   });
