@@ -2,14 +2,6 @@
 -- 入库 Agent（yue-lint-agent: apps/corpus-ingest-agent）直接读写这些表；
 -- 那边的 packages/corpus-control/sql/ingestion.sql 是本文件的镜像，修改时两边同步。
 
--- 清理入库 Agent 上线前在测试库里自建的旧表
-drop table if exists corpus_ingest_records, corpus_ingest_operations,
-  corpus_agent_run_changes, corpus_agent_questions, corpus_agent_approvals,
-  corpus_agent_context_summaries, corpus_agent_tool_calls, corpus_agent_messages,
-  corpus_agent_turns, corpus_agent_threads, corpus_agent_events, corpus_agent_runs cascade;
-drop function if exists corpus_agent_bump_run(text), corpus_agent_run_changed(),
-  corpus_agent_run_row_changed(), corpus_agent_tool_call_changed();
-
 -- 入库任务：status 只记录人为决定的业务状态，处理中的细分状态由会话状态推出
 create table ingestion_tasks (
   id bigserial primary key,
