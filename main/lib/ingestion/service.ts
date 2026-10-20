@@ -273,6 +273,90 @@ export async function completeTask(access: LibraryOpsAccess, id: bigint) {
   return getTaskDetail(access, id);
 }
 
+/* ---------- Approvals ---------- */
+
+export const decideApprovalSchema = z.object({
+  decision: z.enum(["approve", "deny"]),
+  note: z.string().trim().max(2000).optional(),
+});
+
+function serializeApproval(
+  approval: Prisma.corpus_agent_approvalsGetPayload<object>,
+  names: Record<string, string> = {},
+) {
+  const proposal = approval.proposal as { kind?: string; summary?: string } | null;
+  return {
+    id: approval.id,
+    proposalId: approval.proposal_id,
+    kind: proposal?.kind ?? null,
+    summary: proposal?.summary ?? null,
+    expected: approval.expected,
+    status: approval.status,
+    decidedBy: approval.decided_by,
+    decidedByName: approval.decided_by
+      ? (names[approval.decided_by] ?? approval.decided_by)
+      : null,
+    decidedAt: approval.decided_at?.toISOString() ?? null,
+    decisionNote: approval.decision_note,
+    settledAt: approval.settled_at?.toISOString() ?? null,
+    expiresAt: approval.expires_at.toISOString(),
+    createdAt: approval.created_at.toISOString(),
+  };
+}
+
+/**
+ * 审批入库提案：只在这里写决定（批准为 authorized，拒绝为 denied）。入库 Agent 的数据库角色
+ * 不能写这些字段，它只能执行已批准的提案、按拒绝续跑——浏览器随后调 Agent 的
+ * POST /v1/tasks/:id/approvals/:approvalId/execute。
+ * 加锁顺序与 Agent 一致：任务 → 会话 → 审批。
+ */
+export async function decideApproval(
+  access: LibraryOpsAccess,
+  id: bigint,
+  approvalId: string,
+  body: unknown,
+) {
+  const input = parseBody(decideApprovalSchema, body);
+  return prisma.$transaction(async (tx) => {
+    const task = await lockTask(tx, access, id);
+    if (isTaskClosed(task.status)) throw new AccessError(409, "任务已结束，不能审批");
+    const run = await tx.corpus_agent_runs.findUnique({
+      where: { task_id: id },
+      select: { id: true },
+    });
+    if (!run) throw new AccessError(404, "审批不存在");
+    await tx.$queryRaw`SELECT id FROM corpus_agent_runs WHERE id = ${run.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM corpus_agent_approvals WHERE id = ${approvalId} FOR UPDATE`;
+    const approval = await tx.corpus_agent_approvals.findUnique({ where: { id: approvalId } });
+    if (!approval || approval.run_id !== run.id) throw new AccessError(404, "审批不存在");
+    if (approval.status !== "pending") throw new AccessError(409, "审批已处理");
+    if (approval.expires_at <= new Date())
+      throw new AccessError(409, "审批已过期，请让 Agent 重新提案");
+    const status = input.decision === "approve" ? "authorized" : "denied";
+    const updated = await tx.corpus_agent_approvals.update({
+      where: { id: approvalId },
+      data: {
+        status,
+        decided_by: access.userId,
+        decided_at: new Date(),
+        decision_note: input.note ?? null,
+      },
+    });
+    const proposal = approval.proposal as { kind?: string; summary?: string } | null;
+    await taskEvent(tx, access, task, `approval_${status}`, {
+      note: input.note,
+      payload: {
+        approvalId,
+        proposalId: approval.proposal_id,
+        kind: proposal?.kind ?? null,
+        summary: proposal?.summary ?? null,
+        expected: approval.expected as Prisma.InputJsonValue,
+      },
+    });
+    return serializeApproval(updated);
+  });
+}
+
 /** 签发浏览器直连 Agent 用的短期会话 token；已结束的任务仍可查看历史 */
 export async function issueSession(access: LibraryOpsAccess, id: bigint) {
   await loadTask(access, id);
@@ -293,7 +377,7 @@ const runSummarySelect = {
   updated_at: true,
   _count: {
     select: {
-      approvals: { where: { status: { in: ["pending", "applying"] } } },
+      approvals: { where: { status: { in: ["pending", "authorized", "applying"] } } },
       questions: { where: { status: "pending" } },
     },
   },
@@ -395,17 +479,26 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
     },
   });
   const { run, files, events, lead, ...row } = task;
+  const approvals = run
+    ? await prisma.corpus_agent_approvals.findMany({
+        where: { run_id: run.id },
+        orderBy: [{ created_at: "desc" }],
+        take: 20,
+      })
+    : [];
   const names = await userNames([
     row.assignee_id,
     row.created_by,
     ...files.map((f) => f.uploaded_by),
     ...events.flatMap((e) => (e.operator_id ? [e.operator_id] : [])),
+    ...approvals.flatMap((a) => (a.decided_by ? [a.decided_by] : [])),
   ]);
   return {
     ...serializeTask(row, run, names),
     lead: lead && { id: String(lead.id), leadNo: lead.lead_no },
     canUploadFiles: canUploadFiles(row.status, run?.status ?? null),
     closed: isTaskClosed(row.status),
+    approvals: approvals.map((a) => serializeApproval(a, names)),
     files: files.map((f) => ({
       id: String(f.id),
       path: f.path,

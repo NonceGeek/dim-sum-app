@@ -1714,6 +1714,8 @@ model corpus_agent_context_summaries {
   turn            corpus_agent_turns   @relation(fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// 入库审批：pending → authorized（dim-sum-app 批准）→ applying → approved / failed，或 pending → denied（dim-sum-app 拒绝）
+/// 入库 Agent 的数据库角色不能写决定字段，见 migration 20261020090000_isolate_ingestion_agent
 model corpus_agent_approvals {
   id            String              @id
   run_id        String
@@ -1731,6 +1733,10 @@ model corpus_agent_approvals {
   decision_note String?
   result        Json?
   created_at    DateTime            @default(now()) @db.Timestamptz(6)
+  /// Agent 已按决定续跑的时间
+  settled_at    DateTime?           @db.Timestamptz(6)
+  /// 执行写入的事务号；每个已批准提案只放行一次
+  applied_txid  BigInt?             @unique
   run           corpus_agent_runs   @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   turn          corpus_agent_turns? @relation(fields: [turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   decider       User?               @relation(fields: [decided_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
