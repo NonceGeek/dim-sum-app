@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { recordServerEvent } from "@/lib/analytics/server";
 import { publicApi } from "@/lib/auth";
 import { databaseErrorResponse, isPrismaStatementTimeout, isPrismaTransientDatabaseError } from "@/lib/prisma-errors";
 import { getQueryEmbeddingText } from "@/lib/search/query-embedding";
@@ -10,7 +11,15 @@ import {
   buildResponse, fetchPrimarySearchRows, fetchAggregatedSearchRows, fetchSemanticSearchRows,
 } from "@/lib/search/entry-search";
 
+type SemanticReason =
+  | "embedding_failed"
+  | "semantic_failed"
+  | "statement_timeout_similar_only"
+  | "transient_db_error"
+  | "fallback_failed";
+
 export async function GET(req: NextRequest) {
+  const startedAt = performance.now();
   return publicApi(req, async () => {
     const { searchParams } = new URL(req.url);
     const query = (searchParams.get("q") ?? "").trim();
@@ -67,9 +76,36 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    /** Logs one search_request after the response is sent; never delays users. */
+    const logSearch = (
+      response: EntrySearchResponse | null,
+      extra: { semanticReason?: SemanticReason; error?: string } = {},
+    ) => {
+      const latencyMs = Math.round(performance.now() - startedAt);
+      after(() =>
+        recordServerEvent("search_request", {
+          query,
+          // primary | semantic | all — the API request section, not a result section.
+          section,
+          mediaType: mediaType ?? undefined,
+          contentAttribute: contentAttribute ?? undefined,
+          semanticPart,
+          latencyMs,
+          // Semantic-only requests carry no primary section.
+          primaryCount: response && section !== "semantic" ? (response.primary ? 1 : 0) : null,
+          similarCount: response?.similar.length ?? null,
+          recommendedCount: response?.recommended.length ?? null,
+          semanticStatus: response?.sectionStatus.semantic ?? null,
+          paged: Boolean(similarOffset || recommendedOffset),
+          ...extra,
+        }),
+      );
+    };
+
     const fetchSemantic = async (): Promise<{
       rows: AggregatedSearchRow[];
       status: EntrySearchResponse["sectionStatus"]["semantic"];
+      reason?: SemanticReason;
     }> => {
       const filterRows = (rows: AggregatedSearchRow[]) =>
         rows.filter(
@@ -88,6 +124,7 @@ export async function GET(req: NextRequest) {
             fallbackRows.filter((row) => row.section !== "primary"),
           ),
           status: "fallback" as const,
+          reason: (queryEmbeddingText ? "semantic_failed" : "embedding_failed") as SemanticReason,
         };
       };
 
@@ -129,13 +166,17 @@ export async function GET(req: NextRequest) {
                 contentAttribute,
                 mediaType,
               });
-              return { rows: similarRows, status: "fallback" };
+              return {
+                rows: similarRows,
+                status: "fallback",
+                reason: "statement_timeout_similar_only",
+              };
             } catch (similarError) {
               console.error("Similar-only semantic fallback failed:", similarError);
             }
           }
           if (isPrismaTransientDatabaseError(error)) {
-            return { rows: [], status: "error" };
+            return { rows: [], status: "error", reason: "transient_db_error" };
           }
         }
       }
@@ -145,7 +186,7 @@ export async function GET(req: NextRequest) {
       } catch (error) {
         console.error("Entry search fallback failed:", error);
         if (isPrismaTransientDatabaseError(error)) {
-          return { rows: [], status: "error" };
+          return { rows: [], status: "error", reason: "fallback_failed" };
         }
         throw error;
       }
@@ -158,17 +199,17 @@ export async function GET(req: NextRequest) {
           datasets,
           contentAttribute,
         );
-        return NextResponse.json(
-          buildResponse({
-            query,
-            primaryRows,
-            similarOffset,
-            recommendedOffset,
-            semanticStatus: "idle",
-          }),
-          { headers: SEARCH_CACHE_HEADERS },
-        );
+        const response = buildResponse({
+          query,
+          primaryRows,
+          similarOffset,
+          recommendedOffset,
+          semanticStatus: "idle",
+        });
+        logSearch(response);
+        return NextResponse.json(response, { headers: SEARCH_CACHE_HEADERS });
       } catch (error) {
+        logSearch(null, { error: "primary_failed" });
         console.error("Primary entry search failed:", error);
         return databaseErrorResponse(error, "Entry primary search failed");
       }
@@ -176,14 +217,16 @@ export async function GET(req: NextRequest) {
 
     if (section === "semantic") {
       const semantic = await fetchSemantic();
+      const response = buildResponse({
+        query,
+        semanticRows: semantic.rows,
+        similarOffset,
+        recommendedOffset,
+        semanticStatus: semantic.status,
+      });
+      logSearch(response, { semanticReason: semantic.reason });
       return NextResponse.json(
-        buildResponse({
-          query,
-          semanticRows: semantic.rows,
-          similarOffset,
-          recommendedOffset,
-          semanticStatus: semantic.status,
-        }),
+        response,
         {
           headers:
             semantic.status === "error"
@@ -198,15 +241,17 @@ export async function GET(req: NextRequest) {
       fetchSemantic(),
     ]);
 
+    const response = buildResponse({
+      query,
+      primaryRows,
+      semanticRows: semantic.rows,
+      similarOffset,
+      recommendedOffset,
+      semanticStatus: semantic.status,
+    });
+    logSearch(response, { semanticReason: semantic.reason });
     return NextResponse.json(
-      buildResponse({
-        query,
-        primaryRows,
-        semanticRows: semantic.rows,
-        similarOffset,
-        recommendedOffset,
-        semanticStatus: semantic.status,
-      }),
+      response,
       {
         headers:
           semantic.status === "error"

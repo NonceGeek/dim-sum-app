@@ -14,13 +14,14 @@ type CardVideoPreviewProps = {
   url: string;
   poster?: string | null;
   title: string;
+  entryId?: string;
 };
 
 export function CardVideoPreview(props: CardVideoPreviewProps) {
   return <Preview key={props.url} {...props} />;
 }
 
-function Preview({ url, poster, title }: CardVideoPreviewProps) {
+function Preview({ url, poster, title, entryId }: CardVideoPreviewProps) {
   const t = useTranslations("VideoPlayer");
   const [open, setOpen] = useState(false);
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
@@ -31,7 +32,7 @@ function Preview({ url, poster, title }: CardVideoPreviewProps) {
     <MotionConfig reducedMotion="user">
       <Dialog open={open} onOpenChange={setOpen}>
         <div ref={previewRef}>
-          <VideoPlayer url={url} poster={poster} compact onPreview={() => setOpen(true)} onAspectRatio={setAspectRatio} />
+          <VideoPlayer url={url} poster={poster} compact onPreview={() => setOpen(true)} onAspectRatio={setAspectRatio} analytics={{ entryId, surface: "search_tile" }} />
         </div>
         <DialogContent
           className="max-h-[calc(100dvh-2rem)] max-w-none gap-0 overflow-y-auto border-border bg-background p-0 text-foreground sm:max-w-none"
@@ -62,7 +63,7 @@ function Preview({ url, poster, title }: CardVideoPreviewProps) {
           </div>
           <div className="px-4 pb-4">
             {/* Unmount immediately on close, including during the exit animation. */}
-            {open && <VideoPlayer url={url} poster={poster} autoPlay enlarged onAspectRatio={setAspectRatio} />}
+            {open && <VideoPlayer url={url} poster={poster} autoPlay enlarged onAspectRatio={setAspectRatio} analytics={{ entryId, surface: "preview_dialog" }} />}
           </div>
         </DialogContent>
       </Dialog>

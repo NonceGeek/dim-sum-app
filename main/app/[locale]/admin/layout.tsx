@@ -21,6 +21,7 @@ import {
   FileText,
   ClipboardList,
   ChevronDown,
+  BarChart3,
   Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,11 @@ const adminNavItems = [
     titleKey: "nav.dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    titleKey: "nav.analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
   },
   {
     titleKey: "nav.users",
