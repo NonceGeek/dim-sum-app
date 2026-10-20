@@ -2,7 +2,8 @@ import OSS from "ali-oss";
 
 /**
  * 入库工作区 bucket（与入库 Agent 挂载的同一个），只用于签发原始文件直传 URL 与确认上传。
- * RAM 权限只需 batches/*\/input/* 的 PutObject / HeadObject。
+ * RAM 权限只需 batches/*\/input/* 的 oss:PutObject 与 oss:GetObject（HeadObject 按 GetObject 鉴权），
+ * 见 yue-lint-agent apps/corpus-ingest-agent/DEPLOY.md「dim-sum-app 上传用的 RAM 用户」。
  */
 let client: OSS | undefined;
 

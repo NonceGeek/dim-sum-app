@@ -11,7 +11,7 @@ export function isDelegatedCollectionPage(pathname: string) {
 }
 /** Library ops pages are opened to operators holding a global capability. */
 export function isLibraryOpsPage(pathname: string) {
-  return /^\/admin\/(contribution-applications|ingestion-leads|dataset-contact-requests)(\/|$)/.test(
+  return /^\/admin\/(contribution-applications|ingestion-leads|ingestion-tasks|dataset-contact-requests)(\/|$)/.test(
     pathname,
   );
 }

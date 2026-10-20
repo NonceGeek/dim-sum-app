@@ -1,0 +1,186 @@
+"use client";
+
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
+import { PlusIcon, SearchIcon } from "lucide-react";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useLibraryOps } from "@/lib/hooks/use-library-ops";
+import { json } from "@/components/library-ops/ops-shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  CreateTaskDialog,
+  FormattedTime,
+  ProvenanceDialog,
+  TaskStatusBadge,
+} from "@/components/ingestion/task-shared";
+import type { TaskSummary } from "@/components/ingestion/types";
+
+// 与 lib/ingestion/tasks.ts 一致；那个模块依赖 node:crypto，不能进客户端包
+const TASK_STATUSES = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
+
+export default function IngestionTasksPage() {
+  const t = useTranslations("IngestionTasks");
+  const router = useRouter();
+  const { data: ops } = useLibraryOps();
+  const [scope, setScope] = useState<"me" | "all">("me");
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [dialog, setDialog] = useState<"create" | "provenance" | null>(null);
+  const list = useQuery({
+    queryKey: ["ingestion-tasks", scope, status, q, page],
+    placeholderData: keepPreviousData,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const params = new URLSearchParams({ assignee: scope, page: String(page) });
+      if (status) params.set("status", status);
+      if (q) params.set("q", q);
+      return json<{ items: TaskSummary[]; total: number; pageSize: number }>(
+        await fetch(`/api/admin/ingestion-tasks?${params}`),
+      );
+    },
+  });
+  const pages = list.data ? Math.max(1, Math.ceil(list.data.total / list.data.pageSize)) : 1;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">{t("title")}</h2>
+          <p className="text-muted-foreground">{t("description")}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setDialog("provenance")}>
+            {t("provenance.title")}
+          </Button>
+          <Button onClick={() => setDialog("create")}>
+            <PlusIcon className="size-4" />
+            {t("create.title")}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        {ops?.isAdmin && (
+          <div className="flex rounded-md border p-0.5">
+            {(["me", "all"] as const).map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={scope === s ? "secondary" : "ghost"}
+                onClick={() => {
+                  setPage(1);
+                  setScope(s);
+                }}
+              >
+                {t(`scope.${s}`)}
+              </Button>
+            ))}
+          </div>
+        )}
+        <select
+          aria-label={t("statusFilter")}
+          value={status}
+          onChange={(e) => {
+            setPage(1);
+            setStatus(e.target.value);
+          }}
+          className="h-9 rounded-md border bg-background px-3 text-sm"
+        >
+          <option value="">{t("allStatuses")}</option>
+          {TASK_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {t(`status.${s}`)}
+            </option>
+          ))}
+        </select>
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPage(1);
+            setQ(search.trim());
+          }}
+        >
+          <Input
+            className="h-9 w-64"
+            placeholder={t("searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Button type="submit" size="icon" variant="outline" aria-label={t("search")}>
+            <SearchIcon className="size-4" />
+          </Button>
+        </form>
+      </div>
+
+      {list.isLoading && <p className="text-muted-foreground">{t("loading")}</p>}
+      {list.isError && <p className="text-destructive">{(list.error as Error).message}</p>}
+      {list.data?.items.length === 0 && (
+        <p className="rounded-lg border p-8 text-center text-muted-foreground">{t("empty")}</p>
+      )}
+      {!!list.data?.items.length && (
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("columns.task")}</TableHead>
+                <TableHead>{t("fields.targetDatasetName")}</TableHead>
+                <TableHead>{t("columns.status")}</TableHead>
+                <TableHead>{t("fields.assignee")}</TableHead>
+                <TableHead className="text-right">{t("columns.updatedAt")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {list.data.items.map((task) => (
+                <TableRow
+                  key={task.id}
+                  className="cursor-pointer"
+                  onClick={() => router.push(`/admin/ingestion-tasks/${task.id}`)}
+                >
+                  <TableCell className="max-w-md">
+                    <Link
+                      href={`/admin/ingestion-tasks/${task.id}`}
+                      className="block truncate font-medium hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {task.title}
+                    </Link>
+                    <span className="font-mono text-xs text-muted-foreground">{task.taskNo}</span>
+                  </TableCell>
+                  <TableCell>{task.targetDatasetName}</TableCell>
+                  <TableCell>
+                    <TaskStatusBadge status={task.displayStatus} />
+                  </TableCell>
+                  <TableCell>{task.assigneeName}</TableCell>
+                  <TableCell className="text-right text-sm text-muted-foreground">
+                    <FormattedTime value={task.run?.updatedAt ?? task.updatedAt} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      {pages > 1 && (
+        <div className="flex items-center justify-end gap-2 text-sm">
+          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            {t("prev")}
+          </Button>
+          <span>
+            {page} / {pages}
+          </span>
+          <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+            {t("next")}
+          </Button>
+        </div>
+      )}
+      {dialog === "create" && <CreateTaskDialog onClose={() => setDialog(null)} />}
+      {dialog === "provenance" && <ProvenanceDialog onClose={() => setDialog(null)} />}
+    </div>
+  );
+}

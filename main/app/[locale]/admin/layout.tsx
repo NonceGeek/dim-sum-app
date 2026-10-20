@@ -82,6 +82,7 @@ const adminNavItems = [
         href: "/admin/contribution-applications",
       },
       { titleKey: "libraryNav.ingestionLeads", href: "/admin/ingestion-leads" },
+      { titleKey: "libraryNav.ingestionTasks", href: "/admin/ingestion-tasks" },
       {
         titleKey: "libraryNav.contactRequests",
         href: "/admin/dataset-contact-requests",
@@ -172,6 +173,7 @@ export default function AdminLayout({
     "/admin/contribution-applications":
       libraryOps?.counts.pendingInitialReview ?? 0,
     "/admin/ingestion-leads": libraryOps?.counts.myOpenLeads ?? 0,
+    "/admin/ingestion-tasks": libraryOps?.counts.myWaitingTasks ?? 0,
     "/admin/dataset-contact-requests":
       libraryOps?.counts.openContactRequests ?? 0,
   };
@@ -179,7 +181,7 @@ export default function AdminLayout({
     !!libraryOps &&
     (libraryOps.isAdmin ||
       libraryOps.actions.includes(
-        href === "/admin/ingestion-leads"
+        href === "/admin/ingestion-leads" || href === "/admin/ingestion-tasks"
           ? "ingestion_assignee"
           : "contribution_review",
       ));

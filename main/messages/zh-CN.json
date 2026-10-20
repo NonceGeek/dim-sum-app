@@ -193,7 +193,9 @@
       "actions": {
         "take": "接手",
         "close": "关闭待办",
-        "reassign": "改派"
+        "reassign": "改派",
+        "openTask": "查看入库任务",
+        "createTask": "创建入库任务"
       }
     },
     "contactRequests": {
@@ -1122,6 +1124,7 @@
     "libraryNav": {
       "contributionApplications": "贡献语料申请审核",
       "ingestionLeads": "入库待办",
+      "ingestionTasks": "入库任务",
       "contactRequests": "访问合作意向"
     },
     "panelTitle": "管理后台",
@@ -1524,5 +1527,223 @@
     "loading": "视频加载中…",
     "failed": "视频暂时无法播放",
     "retry": "重试"
+  },
+  "IngestionTasks": {
+    "title": "入库任务",
+    "description": "上传原始文件，与入库 Agent 对话完成清洗、转写与校验；写入语料前需要你审批。",
+    "loading": "加载中…",
+    "cancel": "取消",
+    "saving": "保存中…",
+    "confirm": "确认",
+    "saved": "已保存",
+    "back": "返回列表",
+    "statusFilter": "状态筛选",
+    "allStatuses": "全部状态",
+    "searchPlaceholder": "搜索标题或编号",
+    "search": "搜索",
+    "empty": "暂无入库任务",
+    "prev": "上一页",
+    "next": "下一页",
+    "completeNeedsRun": "任务尚未开始对话，不能完成",
+    "scope": {
+      "me": "我负责的",
+      "all": "全部"
+    },
+    "status": {
+      "PENDING": "待开始",
+      "IN_PROGRESS": "进行中",
+      "COMPLETED": "已完成",
+      "CANCELLED": "已取消"
+    },
+    "displayStatus": {
+      "PENDING": "待开始",
+      "PROCESSING": "处理中",
+      "WAITING_APPROVAL": "待审批",
+      "WAITING_INPUT": "待回复",
+      "ERROR": "异常",
+      "COMPLETED": "已完成",
+      "CANCELLED": "已取消"
+    },
+    "columns": {
+      "task": "任务",
+      "status": "状态",
+      "updatedAt": "最近更新"
+    },
+    "fields": {
+      "title": "标题",
+      "targetDatasetName": "预计语料名",
+      "description": "说明",
+      "assignee": "负责人",
+      "createdAt": "创建",
+      "lead": "入库待办",
+      "batchId": "批次"
+    },
+    "create": {
+      "title": "新建入库任务",
+      "description": "建好任务后上传原始文件，再在任务详情里与入库 Agent 对话。",
+      "fromLead": "从入库待办 {no} 创建",
+      "datasetHint": "一个任务对应一个语料集，写入时以这个名称为准。",
+      "descriptionPlaceholder": "数据来源、文件结构、需要注意的地方……",
+      "assigneeHint": "留空则由你负责。",
+      "submit": "创建"
+    },
+    "provenance": {
+      "title": "语料溯源",
+      "description": "输入语料 ID，查看它由哪个入库任务、哪次审批写入。",
+      "corpusId": "语料 ID",
+      "search": "查询",
+      "none": "这条语料不是经入库任务写入的。",
+      "task": "入库任务",
+      "proposal": "入库提案",
+      "approvedBy": "批准人",
+      "committedAt": "写入时间",
+      "recordRow": "批次 · 行号",
+      "openConversation": "查看对话中的写入位置"
+    },
+    "actions": {
+      "cancel": "取消任务",
+      "complete": "完成任务",
+      "cancelConfirm": "取消后 Agent 会停止执行，任务不能再继续；已入库的语料和历史对话都会保留。",
+      "completeConfirm": "确认这个任务的入库工作已全部完成？完成后不能再发送消息或上传文件。"
+    },
+    "panels": {
+      "files": "文件",
+      "approvals": "审批",
+      "records": "已入库",
+      "events": "动态"
+    },
+    "files": {
+      "pickFiles": "上传文件",
+      "pickFolder": "上传文件夹",
+      "closed": "任务已结束，不能再上传文件。",
+      "locked": "Agent 正在执行或等待处理，暂时不能上传；等它停下后再补传。",
+      "hint": "文件放在任务工作区的 input/ 下，同名文件不能覆盖。",
+      "empty": "还没有上传文件",
+      "status": {
+        "UPLOADING": "上传中",
+        "UPLOADED": "已上传",
+        "FAILED": "失败"
+      }
+    },
+    "approvals": {
+      "empty": "还没有入库提案",
+      "decided": "{name} 决定",
+      "status": {
+        "pending": "待审批",
+        "authorized": "已批准，待执行",
+        "applying": "写入中",
+        "approved": "已写入",
+        "denied": "已拒绝",
+        "failed": "写入失败",
+        "expired": "已过期",
+        "cancelled": "已撤销"
+      }
+    },
+    "records": {
+      "loading": "加载中…",
+      "empty": "还没有入库语料",
+      "more": "加载更多"
+    },
+    "events": {
+      "empty": "暂无动态",
+      "types": {
+        "created": "创建任务",
+        "session_started": "开始对话",
+        "completed": "完成任务",
+        "cancelled": "取消任务",
+        "file_uploaded": "上传文件",
+        "file_upload_failed": "文件上传失败",
+        "approval_authorized": "批准入库提案",
+        "approval_denied": "拒绝入库提案"
+      }
+    },
+    "chat": {
+      "loading": "加载会话",
+      "runningTool": "正在执行 {name}",
+      "thinking": "思考中",
+      "thought": "思考",
+      "toolCalls": "已执行 {count} 次工具调用",
+      "toolFailures": "{count} 次失败",
+      "toolInput": "输入",
+      "toolOutput": "输出",
+      "toolError": "错误",
+      "eventsDisconnected": "状态推送连接已断开，正在重连",
+      "loadOlder": "加载更早消息",
+      "empty": "告诉 Agent 怎么处理 input/ 里的文件，或者从标准流程开始。",
+      "emptyClosed": "这个任务没有对话记录。",
+      "standardFlow": "标准入库流程",
+      "interrupted": "此回复已中断",
+      "working": "执行中",
+      "compaction": {
+        "started": "正在整理上下文，完成后自动继续",
+        "retrying": "正在调整压缩策略，完成后自动继续",
+        "deferred": "本次上下文整理未完成，当前容量仍可继续执行",
+        "completed": "上下文已整理"
+      },
+      "cancelledNotice": "任务已取消，不能继续；已入库语料与历史对话均已保留。",
+      "completedNotice": "任务已完成，不能继续发送消息。",
+      "applying": "入库审批正在执行或结果未知",
+      "reconcile": "核对入库结果",
+      "reconciling": "核对中…",
+      "unknownCall": "执行结果未知：{name}",
+      "resumeNote": "核对结论（必填）",
+      "resume": "继续任务",
+      "retry": "重新获取本次请求",
+      "inputLabel": "发给 Agent 的消息",
+      "placeholder": "输入指令，Enter 发送，Shift+Enter 换行",
+      "placeholderBlocked": "Agent 正在执行或等待处理",
+      "send": "发送"
+    },
+    "approval": {
+      "untitled": "{kind} 提案",
+      "expiresAt": "待你审批，{time} 前有效",
+      "approved": "已批准",
+      "denied": "已拒绝",
+      "notePlaceholder": "备注（可选，拒绝时建议写明原因，Agent 会据此调整）",
+      "deny": "拒绝",
+      "approve": "批准并写入",
+      "submitting": "提交中…",
+      "notExecuted": "决定已记录，Agent 尚未执行。",
+      "execute": "执行写入",
+      "continueDenied": "按拒绝继续"
+    },
+    "question": {
+      "title": "需要你的决定",
+      "defaultHeader": "问题 {n}",
+      "status": {
+        "answered": "已回答",
+        "cancelled": "已取消",
+        "rejected": "已忽略",
+        "pending": "待回答",
+        "asking": "提问中"
+      },
+      "answeredCount": "已答 {done}/{total}",
+      "multiSelect": "可多选",
+      "other": "其他",
+      "otherPlaceholder": "请填写",
+      "allAnswered": "全部已回答",
+      "answerAll": "回答全部问题后才能提交",
+      "cancel": "取消",
+      "cancelling": "取消中…",
+      "next": "下一题",
+      "submit": "提交并继续",
+      "submitting": "提交中…",
+      "unansweredCancelled": "未回答（已取消）",
+      "waiting": "等待回答"
+    },
+    "subtask": {
+      "count": "子任务 {count} 项",
+      "duration": "耗时 {seconds}s",
+      "step": "步骤 {n}",
+      "unresolved": "待决问题（由主 Agent 汇总提问）",
+      "status": {
+        "queued": "排队中",
+        "running": "执行中",
+        "completed": "已完成",
+        "failed": "失败",
+        "incomplete": "未完成",
+        "needs_input": "待用户决策"
+      }
+    }
   }
 }

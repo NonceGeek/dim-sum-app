@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { LEAD_STATUSES, LeadAction } from "@/lib/library/application-workflow";
 import { UserSelect, json, useOptionLabel } from "@/components/library-ops/ops-shared";
+import { CreateTaskDialog } from "@/components/ingestion/task-shared";
+import { Link } from "@/i18n/navigation";
 
 type Lead = {
   id: string;
@@ -142,6 +144,7 @@ export default function IngestionLeadsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [pending, setPending] = useState<{ lead: Lead; action: LeadAction } | null>(null);
+  const [taskLead, setTaskLead] = useState<Lead | null>(null);
   const list = useQuery({
     queryKey: ["ingestion-leads", scope, status, page],
     queryFn: async () => {
@@ -281,6 +284,18 @@ export default function IngestionLeadsPage() {
                   {lead.acceptedAt && ` · ${t("leads.takenAt", { time: fmt(lead.acceptedAt) })}`}
                 </p>
                 <div className="flex flex-wrap gap-2">
+                  {lead.ingestionTaskId ? (
+                    <Button asChild size="sm" variant="secondary">
+                      <Link href={`/admin/ingestion-tasks/${lead.ingestionTaskId}`}>{t("leads.actions.openTask")}</Link>
+                    </Button>
+                  ) : (
+                    (isMine || list.data?.canViewAll) &&
+                    lead.status === "IN_PROGRESS" && (
+                      <Button size="sm" onClick={() => setTaskLead(lead)}>
+                        {t("leads.actions.createTask")}
+                      </Button>
+                    )
+                  )}
                   {isMine && lead.status === "PENDING_OWNER_ACCEPTANCE" && (
                     <Button size="sm" onClick={() => setPending({ lead, action: "take" })}>
                       {t("leads.actions.take")}
@@ -318,6 +333,7 @@ export default function IngestionLeadsPage() {
       {pending && (
         <LeadActionDialog lead={pending.lead} action={pending.action} onClose={() => setPending(null)} />
       )}
+      {taskLead && <CreateTaskDialog lead={taskLead} onClose={() => setTaskLead(null)} />}
     </div>
   );
 }
