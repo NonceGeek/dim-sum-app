@@ -122,3 +122,17 @@ begin
       'create policy corpus_ingest_agent_access on %I to corpus_ingest_agent using (true) with check (true)', t);
   end loop;
 end $$;
+
+-- 语料业务表与平台表在库里也开着 RLS；Agent 角色读权限判断列、读写语料（写入仍受上面的触发器约束）
+create policy corpus_ingest_agent_read on "User" for select to corpus_ingest_agent using (true);
+create policy corpus_ingest_agent_read on corpus_collection_operator_roles for select to corpus_ingest_agent using (true);
+do $$
+declare t text;
+begin
+  foreach t in array array['cantonese_categories', 'cantonese_corpus_all', 'corpus_category',
+    'corpus_tags', 'content_categories', 'tags', 'corpus_field_embeddings']
+  loop
+    execute format(
+      'create policy corpus_ingest_agent_access on %I to corpus_ingest_agent using (true) with check (true)', t);
+  end loop;
+end $$;
