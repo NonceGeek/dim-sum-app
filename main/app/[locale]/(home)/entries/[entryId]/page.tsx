@@ -17,6 +17,8 @@ import { getTranslations } from "next-intl/server";
 import { CopyEntryIdButton } from "./copy-entry-id-button";
 import { Model3dCard } from "@/components/media/model3d-card";
 import { VideoCard } from "@/components/media/video-card";
+import { SHARE_ATTRIBUTION_PARAM, SHARE_ATTRIBUTION_VALUE } from "@/lib/analytics/events";
+import { ShareCardLink, ShareLinkOpenTracker } from "./entry-analytics";
 import { AudioCard } from "@/components/media/audio-card";
 import { ImageCard } from "@/components/media/image-card";
 
@@ -27,6 +29,7 @@ type EntryPageProps = {
   }>;
   searchParams?: Promise<{
     fromSearch?: string;
+    [SHARE_ATTRIBUTION_PARAM]?: string;
   }>;
 };
 
@@ -110,6 +113,9 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      {resolvedSearchParams?.[SHARE_ATTRIBUTION_PARAM] === SHARE_ATTRIBUTION_VALUE && (
+        <ShareLinkOpenTracker entryId={entry.entryId} />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -141,10 +147,10 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
               asChild
               className="mt-1 h-8 rounded-md px-2 text-muted-foreground hover:bg-primary/10 hover:text-primary"
             >
-              <a href={entry.share.cardUrl} target="_blank" rel="noopener noreferrer">
+              <ShareCardLink entryId={entry.entryId} href={entry.share.cardUrl}>
                 <Share2 className="mr-1.5 h-4 w-4" />
                 {t("shareCard")}
-              </a>
+              </ShareCardLink>
             </Button>
           </div>
 
@@ -178,6 +184,7 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                   poster={entry.assets.coverImage}
                   transcript={entry.assets.videoTranscript}
                   transcriptLabel={t("videoTranscript")}
+                  analytics={{ entryId: entry.entryId, surface: "entry_detail" }}
                 />
               )}
               {entry.assets.audioUrl && (

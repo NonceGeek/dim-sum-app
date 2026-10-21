@@ -1,4 +1,120 @@
 {
+  "AdminAnalytics": {
+    "title": "Analytics",
+    "description": "First-party tracking: page views, Search 3.0 behavior, video and sharing. Days in Beijing time; admin pages and bots excluded.",
+    "range": "Date range",
+    "preset": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "custom": "Custom"
+    },
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "refresh": "Refresh",
+    "rangeLabel": "Range: {from} to {to}",
+    "tab": {
+      "overview": "Overview",
+      "search": "Search",
+      "content": "Engagement",
+      "traffic": "Traffic"
+    },
+    "loading": "Loading…",
+    "noData": "No data in this range",
+    "trendTitle": "Daily trend · {metric}",
+    "kpi": {
+      "pv": "Page views",
+      "uv": "Visitors",
+      "searches": "Searches",
+      "shares": "Shares (copy + open)",
+      "sessions": "Sessions",
+      "noPrimaryRate": "No exact match rate",
+      "shareOpens": "Share link opens",
+      "videoPlays": "Video plays"
+    },
+    "search": {
+      "p95": "Search latency p95",
+      "topQueries": "Top queries",
+      "noPrimaryQueries": "Queries without an exact match",
+      "noPrimaryHint": "Searches whose exact-match section was empty (excluding pagination) — candidates for new entries or synonyms.",
+      "sections": "Section impressions and clicks",
+      "sectionsHint": "CTR = clicks ÷ impressions with results.",
+      "latency": "API latency by request section",
+      "latencyHint": "Server time from request to response.",
+      "fallbacks": "Fallbacks and errors",
+      "mediaFilters": "Media filter usage"
+    },
+    "section": {
+      "primary": "Exact match",
+      "similar": "Related",
+      "recommended": "Recommended"
+    },
+    "content": {
+      "video": "Video plays and failures",
+      "shareFunnel": "Share funnel",
+      "shareFunnelHint": "Image downloads count successes only; link opens come from copied share links.",
+      "topEntries": "Most engaged entries"
+    },
+    "share": {
+      "cardOpens": "Share dialog opened",
+      "linkCopies": "Share link copied",
+      "imageDownloads": "Share image downloaded",
+      "cardLinkClicks": "Card page opened",
+      "linkOpens": "Share link opened"
+    },
+    "surface": {
+      "search_primary": "Search · exact match",
+      "search_tile": "Search · result card",
+      "preview_dialog": "Search · enlarged preview",
+      "entry_detail": "Entry page"
+    },
+    "traffic": {
+      "pages": "Top pages",
+      "referrers": "Referrers",
+      "referrersHint": "Landing page of each visit only.",
+      "direct": "Direct",
+      "devices": "Devices",
+      "locales": "UI language"
+    },
+    "device": {
+      "desktop": "Desktop",
+      "mobile": "Mobile",
+      "tablet": "Tablet",
+      "unknown": "Unknown"
+    },
+    "col": {
+      "query": "Query",
+      "searches": "Searches",
+      "users": "Users",
+      "section": "Section",
+      "impressions": "Impressions",
+      "emptyRate": "Empty rate",
+      "clicks": "Clicks",
+      "ctr": "CTR",
+      "requestSection": "Request section",
+      "requests": "Requests",
+      "status": "Status",
+      "reason": "Reason",
+      "mediaType": "Media type",
+      "changes": "Changes",
+      "surface": "Surface",
+      "plays": "Plays",
+      "failures": "Failures",
+      "failureRate": "Failure rate",
+      "step": "Step",
+      "events": "Events",
+      "entry": "Entry",
+      "shares": "Shares",
+      "shareOpens": "Link opens",
+      "page": "Page",
+      "referrer": "Referrer",
+      "visits": "Visits",
+      "device": "Device",
+      "share": "Share",
+      "locale": "Language"
+    }
+  },
   "LibraryOps": {
     "title": "Contribution review",
     "description": "Review dataset contribution applications from individuals and organizations: contacts, dataset overview, rights, privacy risks and next steps.",
@@ -1134,6 +1250,7 @@
     "unnamedUser": "Administrator",
     "backToMainApp": "Back to Main App",
     "nav": {
+      "analytics": "Analytics",
       "libraryOps": "Corpus operations",
       "dashboard": "Dashboard",
       "users": "Users",

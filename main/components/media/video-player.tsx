@@ -3,6 +3,13 @@
 import { Loader2, Maximize2, Play, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics/client";
+import type { VIDEO_SURFACES } from "@/lib/analytics/events";
+
+export type VideoAnalytics = {
+  entryId?: string;
+  surface: (typeof VIDEO_SURFACES)[number];
+};
 
 type VideoPlayerProps = {
   url: string;
@@ -12,6 +19,7 @@ type VideoPlayerProps = {
   enlarged?: boolean;
   onPreview?: () => void;
   onAspectRatio?: (ratio: number) => void;
+  analytics?: VideoAnalytics;
 };
 
 export function VideoPlayer(props: VideoPlayerProps) {
@@ -19,13 +27,20 @@ export function VideoPlayer(props: VideoPlayerProps) {
   return <Player key={props.url} {...props} />;
 }
 
-function Player({ url, poster, compact = false, autoPlay = false, enlarged = false, onPreview, onAspectRatio }: VideoPlayerProps) {
+function Player({ url, poster, compact = false, autoPlay = false, enlarged = false, onPreview, onAspectRatio, analytics }: VideoPlayerProps) {
   const t = useTranslations("VideoPlayer");
   const videoRef = useRef<HTMLVideoElement>(null);
   const [activated, setActivated] = useState(!compact);
   const [loading, setLoading] = useState(autoPlay);
   const [error, setError] = useState(false);
   const previewPending = useRef(!poster && !autoPlay);
+  // One play and one failure event per mounted player, not per buffering cycle.
+  const reported = useRef({ play: false, failed: false });
+  const reportFailure = (reason: "load_error" | "play_rejected") => {
+    if (!analytics || reported.current.failed) return;
+    reported.current.failed = true;
+    track("video_load_failed", { ...analytics, reason });
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -75,6 +90,7 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
     } catch {
       setLoading(false);
       setError(true);
+      reportFailure("play_rejected");
     }
   };
 
@@ -100,6 +116,10 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
           }
         }}
         onPlay={(event) => {
+          if (analytics && !reported.current.play) {
+            reported.current.play = true;
+            track("video_play", analytics);
+          }
           previewPending.current = false;
           setError(false);
           setActivated(true);
@@ -112,7 +132,7 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
         onWaiting={() => setLoading(true)}
         onCanPlay={() => setLoading(false)}
         onPause={() => setLoading(false)}
-        onError={() => { setError(true); setLoading(false); }}
+        onError={() => { setError(true); setLoading(false); reportFailure("load_error"); }}
       />
       {!activated && !error && (
         <button type="button" onClick={onPreview ?? play} aria-label={t(onPreview ? "enlarge" : "play")} aria-haspopup={onPreview ? "dialog" : undefined}
