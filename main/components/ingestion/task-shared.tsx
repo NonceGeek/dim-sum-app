@@ -1,14 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
-import { Link, useRouter } from "@/i18n/navigation";
-import { useLibraryOps } from "@/lib/hooks/use-library-ops";
+import { Link } from "@/i18n/navigation";
 import type { DisplayStatus } from "@/lib/ingestion/display-status";
 import { cn } from "@/lib/utils";
-import { UserSelect, json } from "@/components/library-ops/ops-shared";
+import { json } from "@/components/library-ops/ops-shared";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,9 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import type { Provenance, TaskDetail } from "./types";
+import type { Provenance } from "./types";
 
 const DISPLAY_TONE: Record<DisplayStatus, string> = {
   PENDING: "bg-muted text-muted-foreground",
@@ -39,108 +35,6 @@ export function TaskStatusBadge({ status }: { status: DisplayStatus }) {
     <span className={cn("inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium", DISPLAY_TONE[status])}>
       {t(status)}
     </span>
-  );
-}
-
-/** 新建入库任务；带 lead 时从入库待办发起，预计语料名缺省取待办的拟定名称 */
-export function CreateTaskDialog({
-  lead,
-  onClose,
-}: {
-  lead?: { id: string; leadNo: string; proposedDatasetName: string; assigneeId: string };
-  onClose: () => void;
-}) {
-  const t = useTranslations("IngestionTasks");
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: ops } = useLibraryOps();
-  const [title, setTitle] = useState(lead?.proposedDatasetName ?? "");
-  const [description, setDescription] = useState("");
-  const [dataset, setDataset] = useState(lead?.proposedDatasetName ?? "");
-  // 管理员替他人的待办建任务时，负责人默认为待办被指派人
-  const [assigneeId, setAssigneeId] = useState(lead?.assigneeId ?? "");
-  const mutation = useMutation({
-    mutationFn: async () =>
-      json<TaskDetail>(
-        await fetch("/api/admin/ingestion-tasks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title,
-            description,
-            targetDatasetName: dataset.trim() || undefined,
-            assigneeId: assigneeId || undefined,
-            leadId: lead?.id,
-          }),
-        }),
-      ),
-    onSuccess: (task) => {
-      void queryClient.invalidateQueries({ queryKey: ["ingestion-tasks"] });
-      void queryClient.invalidateQueries({ queryKey: ["ingestion-leads"] });
-      router.push(`/admin/ingestion-tasks/${task.id}`);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  return (
-    <Dialog open onOpenChange={(open) => !open && !mutation.isPending && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            mutation.mutate();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>{t("create.title")}</DialogTitle>
-            <DialogDescription>
-              {lead ? t("create.fromLead", { no: lead.leadNo }) : t("create.description")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="task-title">{t("fields.title")} *</Label>
-            <Input id="task-title" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="task-dataset">{t("fields.targetDatasetName")} *</Label>
-            <Input
-              id="task-dataset"
-              required
-              maxLength={200}
-              value={dataset}
-              onChange={(e) => setDataset(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">{t("create.datasetHint")}</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="task-description">{t("fields.description")}</Label>
-            <Textarea
-              id="task-description"
-              rows={4}
-              maxLength={2000}
-              placeholder={t("create.descriptionPlaceholder")}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          {ops?.isAdmin && (
-            <div className="space-y-1.5">
-              <Label htmlFor="task-assignee">{t("fields.assignee")}</Label>
-              <UserSelect id="task-assignee" capability="ingestion_assignee" value={assigneeId} onChange={setAssigneeId} />
-              <p className="text-xs text-muted-foreground">{t("create.assigneeHint")}</p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={mutation.isPending}>
-              {t("cancel")}
-            </Button>
-            <Button type="submit" disabled={mutation.isPending || !title.trim() || !dataset.trim()}>
-              {mutation.isPending ? t("saving") : t("create.submit")}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 

@@ -10,12 +10,7 @@ import { json } from "@/components/library-ops/ops-shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  CreateTaskDialog,
-  FormattedTime,
-  ProvenanceDialog,
-  TaskStatusBadge,
-} from "@/components/ingestion/task-shared";
+import { FormattedTime, ProvenanceDialog, TaskStatusBadge } from "@/components/ingestion/task-shared";
 import type { TaskSummary } from "@/components/ingestion/types";
 
 // 与 lib/ingestion/tasks.ts 一致；那个模块依赖 node:crypto，不能进客户端包
@@ -30,7 +25,7 @@ export default function IngestionTasksPage() {
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
-  const [dialog, setDialog] = useState<"create" | "provenance" | null>(null);
+  const [provenance, setProvenance] = useState(false);
   const list = useQuery({
     queryKey: ["ingestion-tasks", scope, status, q, page],
     placeholderData: keepPreviousData,
@@ -54,12 +49,14 @@ export default function IngestionTasksPage() {
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setDialog("provenance")}>
+          <Button variant="outline" onClick={() => setProvenance(true)}>
             {t("provenance.title")}
           </Button>
-          <Button onClick={() => setDialog("create")}>
-            <PlusIcon className="size-4" />
-            {t("create.title")}
+          <Button asChild>
+            <Link href="/admin/ingestion-tasks/new">
+              <PlusIcon className="size-4" />
+              {t("create.title")}
+            </Link>
           </Button>
         </div>
       </div>
@@ -179,8 +176,7 @@ export default function IngestionTasksPage() {
           </Button>
         </div>
       )}
-      {dialog === "create" && <CreateTaskDialog onClose={() => setDialog(null)} />}
-      {dialog === "provenance" && <ProvenanceDialog onClose={() => setDialog(null)} />}
+      {provenance && <ProvenanceDialog onClose={() => setProvenance(false)} />}
     </div>
   );
 }

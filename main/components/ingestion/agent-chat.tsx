@@ -39,6 +39,9 @@ type Props = {
   closed: boolean;
   target: RunTarget;
   onRun: (run: RunView | null) => void;
+  /** 尚未开始对话时自动发出标准指令（从新建表单点「开始智能清洗」进入） */
+  autoStart?: boolean;
+  onAutoStarted?: () => void;
 };
 
 export function AgentChat(props: Props) {
@@ -81,6 +84,8 @@ function ChatInner({
   closed: taskClosed,
   target,
   onRun,
+  autoStart,
+  onAutoStarted,
   history,
   initialCursor,
 }: Props & { history: UIMessage[]; initialCursor: string | null }) {
@@ -155,6 +160,14 @@ function ChatInner({
   );
   const chat = useChat({ id: client.taskId, transport, messages: history });
   const { sendMessage, setMessages } = chat;
+
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStarted.current || started || chat.messages.length) return;
+    autoStarted.current = true;
+    void sendMessage({ text: DEFAULT_INSTRUCTION });
+    onAutoStarted?.();
+  }, [autoStart, started, chat.messages.length, sendMessage, onAutoStarted]);
 
   // 第一次对话创建了 run，刷新后开始订阅事件流
   useEffect(() => {

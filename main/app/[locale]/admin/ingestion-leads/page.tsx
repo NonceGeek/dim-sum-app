@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dialog";
 import { LEAD_STATUSES, LeadAction } from "@/lib/library/application-workflow";
 import { UserSelect, json, useOptionLabel } from "@/components/library-ops/ops-shared";
-import { CreateTaskDialog } from "@/components/ingestion/task-shared";
 import { Link } from "@/i18n/navigation";
 
 type Lead = {
@@ -144,7 +143,6 @@ export default function IngestionLeadsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [pending, setPending] = useState<{ lead: Lead; action: LeadAction } | null>(null);
-  const [taskLead, setTaskLead] = useState<Lead | null>(null);
   const list = useQuery({
     queryKey: ["ingestion-leads", scope, status, page],
     queryFn: async () => {
@@ -291,8 +289,17 @@ export default function IngestionLeadsPage() {
                   ) : (
                     (isMine || list.data?.canViewAll) &&
                     lead.status === "IN_PROGRESS" && (
-                      <Button size="sm" onClick={() => setTaskLead(lead)}>
-                        {t("leads.actions.createTask")}
+                      <Button asChild size="sm">
+                        <Link
+                          href={`/admin/ingestion-tasks/new?${new URLSearchParams({
+                            lead: lead.id,
+                            leadNo: lead.leadNo,
+                            dataset: lead.proposedDatasetName,
+                            type: lead.targetIngestionType,
+                          })}`}
+                        >
+                          {t("leads.actions.createTask")}
+                        </Link>
                       </Button>
                     )
                   )}
@@ -333,7 +340,6 @@ export default function IngestionLeadsPage() {
       {pending && (
         <LeadActionDialog lead={pending.lead} action={pending.action} onClose={() => setPending(null)} />
       )}
-      {taskLead && <CreateTaskDialog lead={taskLead} onClose={() => setTaskLead(null)} />}
     </div>
   );
 }

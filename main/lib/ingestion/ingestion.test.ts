@@ -5,6 +5,7 @@ import { formatSerial } from "@/lib/library/application-workflow";
 import { signSessionToken } from "./agent";
 import { displayStatus } from "./display-status";
 import { BATCH_ID_RE, canUploadFiles, inputPath, newBatchId, workspacePrefix } from "./tasks";
+import { defaultTaskTitle, isDraft, isMediaPath, MEDIA_DIR, normalizeModalities } from "./task-options";
 
 test("display status combines the task status with the agent session status", () => {
   assert.equal(displayStatus("PENDING", null), "PENDING");
@@ -35,6 +36,23 @@ test("input paths stay inside input/", () => {
   assert.equal(inputPath("./a"), "input/a");
   for (const bad of ["", "/etc/passwd", "../x", "a/../../x", "..", "a\0b"])
     assert.throws(() => inputPath(bad), bad);
+});
+
+test("task modalities keep a fixed order and always include text", () => {
+  assert.deepEqual(normalizeModalities([]), ["text"]);
+  assert.deepEqual(normalizeModalities(["image", "audio", "audio", "multimodal"]), ["text", "audio", "image"]);
+});
+
+test("drafts are pending tasks without a session; media live under input/media/", () => {
+  assert.equal(isDraft("PENDING", false), true);
+  assert.equal(isDraft("PENDING", true), false);
+  assert.equal(isDraft("IN_PROGRESS", false), false);
+  assert.equal(isMediaPath(inputPath(`${MEDIA_DIR}/a/b.wav`)), true);
+  assert.equal(isMediaPath(inputPath("media.xlsx")), false);
+});
+
+test("default task titles use the dataset name and the Shanghai day", () => {
+  assert.equal(defaultTaskTitle(" 日常口语词条集 ", new Date("2026-10-20T17:00:00Z")), "日常口语词条集 · 2026-10-21");
 });
 
 test("batch ids match the agent's format and own a workspace prefix", () => {

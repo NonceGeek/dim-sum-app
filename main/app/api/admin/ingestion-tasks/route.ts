@@ -11,7 +11,10 @@ export async function GET(req: NextRequest) {
   );
 }
 
-/** POST /api/admin/ingestion-tasks {title, description, targetDatasetName?, assigneeId?, leadId?} */
+/**
+ * POST /api/admin/ingestion-tasks {targetIngestionType, targetDatasetName, modalities, sourceCollectionMethod,
+ * title?, description?, leadId?}：建草稿，创建人即负责人
+ */
 export async function POST(req: NextRequest) {
   return withLibraryOps(req, async (access) => {
     const task = await createTask(access, await req.json().catch(() => ({})));

@@ -1,4 +1,5 @@
 import type { DisplayStatus } from "@/lib/ingestion/display-status";
+import type { IngestionType, TaskModality } from "@/lib/ingestion/task-options";
 
 /* ---------- dim-sum-app /api/admin/ingestion-tasks ---------- */
 
@@ -17,6 +18,9 @@ export type TaskSummary = {
   title: string;
   description: string;
   targetDatasetName: string;
+  targetIngestionType: IngestionType;
+  modalities: TaskModality[];
+  sourceCollectionMethod: string;
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   displayStatus: DisplayStatus;
   assigneeId: string;
@@ -66,6 +70,8 @@ export type TaskEvent = {
 export type TaskDetail = TaskSummary & {
   lead: { id: string; leadNo: string } | null;
   canUploadFiles: boolean;
+  /** 还没开始对话，可以继续修改配置 */
+  draft: boolean;
   closed: boolean;
   approvals: TaskApproval[];
   files: TaskFile[];

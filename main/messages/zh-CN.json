@@ -1536,7 +1536,7 @@
     "saving": "保存中…",
     "confirm": "确认",
     "saved": "已保存",
-    "back": "返回列表",
+    "back": "返回任务列表",
     "statusFilter": "状态筛选",
     "allStatuses": "全部状态",
     "searchPlaceholder": "搜索标题或编号",
@@ -1550,13 +1550,13 @@
       "all": "全部"
     },
     "status": {
-      "PENDING": "待开始",
+      "PENDING": "草稿",
       "IN_PROGRESS": "进行中",
       "COMPLETED": "已完成",
       "CANCELLED": "已取消"
     },
     "displayStatus": {
-      "PENDING": "待开始",
+      "PENDING": "草稿",
       "PROCESSING": "处理中",
       "WAITING_APPROVAL": "待审批",
       "WAITING_INPUT": "待回复",
@@ -1570,22 +1570,77 @@
       "updatedAt": "最近更新"
     },
     "fields": {
-      "title": "标题",
-      "targetDatasetName": "预计语料名",
-      "description": "说明",
+      "title": "任务标题",
+      "targetDatasetName": "语料集",
+      "targetIngestionType": "入库方式",
+      "modalities": "媒体组成",
+      "sourceCollectionMethod": "来源说明",
+      "description": "备注",
       "assignee": "负责人",
       "createdAt": "创建",
       "lead": "入库待办",
       "batchId": "批次"
     },
+    "modality": {
+      "text": "文字",
+      "audio": "音频",
+      "video": "视频",
+      "image": "图片"
+    },
+    "contentAttribute": {
+      "oral": "口语语料",
+      "cultural_knowledge": "文化知识"
+    },
     "create": {
       "title": "新建入库任务",
-      "description": "建好任务后上传原始文件，再在任务详情里与入库 Agent 对话。",
+      "editTitle": "编辑入库任务草稿",
+      "description": "先确定语料集及其媒体组成；文字为必选，系统将对媒体生成 OSS 链接并关联至对应内容。",
       "fromLead": "从入库待办 {no} 创建",
-      "datasetHint": "一个任务对应一个语料集，写入时以这个名称为准。",
-      "descriptionPlaceholder": "数据来源、文件结构、需要注意的地方……",
-      "assigneeHint": "留空则由你负责。",
-      "submit": "创建"
+      "cardTitle": "语料集与入库配置",
+      "requiredHint": "标记 <mark>*</mark> 的项目为必填项",
+      "steps": {
+        "dataset": "1. 选择或新建语料集",
+        "modalities": "2. 确认语料集媒体类型",
+        "files": "3. 上传文本与关联媒体",
+        "info": "4. 来源说明与备注"
+      },
+      "datasetMode": "语料集操作方式",
+      "ingestionType": {
+        "supplement_existing": "选择已有语料集",
+        "new_dataset": "新建语料集"
+      },
+      "existingDataset": "已有语料集",
+      "chooseDataset": "请选择语料集",
+      "existingBadge": "已存在语料集",
+      "recordCount": "已有 {count, number} 条内容",
+      "newDataset": "新语料集名称",
+      "datasetHint": "一个任务对应一个语料集，写入时以这个名称为准；不能与已有语料集重名。",
+      "modalities": "该语料集包含的内容类型",
+      "textRequiredOption": "文字（必选）",
+      "mediaHint": "当前语料集媒体组合：{combo}。媒体上传后，后端生成 OSS 链接；系统以内容 ID、文件名、目录、AI 匹配和顺序匹配完成关联。",
+      "textOnlyHint": "当前语料集媒体组合：文字。无需上传媒体文件。",
+      "textFiles": "文本主文件",
+      "textDropTitle": "上传文本主文件",
+      "textDropHint": "支持 XLS / XLSX / CSV / DOC / DOCX / PDF；文字内容为必填",
+      "mediaFiles": "关联媒体文件",
+      "mediaDropTitle": "上传音频 / 视频 / 图片文件",
+      "mediaDropHint": "当前需上传：{types}；可选择多个媒体文件或整个文件夹",
+      "mediaDropDisabled": "先在上方勾选音频、视频或图片",
+      "filesHint": "选中后立即上传到任务工作区，Agent 开始清洗时读取的就是这些文件；新建时第一次上传会自动保存草稿，之后可随时回来补传。",
+      "retry": "重试",
+      "removeFile": "移除",
+      "sourcePlaceholder": "数据从哪里来、如何采集或整理，授权情况等",
+      "notePlaceholder": "文件结构、需要注意的地方……",
+      "titleHint": "默认按语料集名和日期生成，可修改。",
+      "startHint": "开始智能清洗后进入任务对话，配置不能再修改。",
+      "saveDraft": "保存草稿",
+      "start": "开始智能清洗",
+      "draftSaved": "草稿已保存",
+      "datasetFirst": "请先选择或填写语料集，再上传文件",
+      "datasetRequired": "请先选择或填写语料集",
+      "sourceRequired": "开始智能清洗前请填写来源说明",
+      "textRequired": "开始智能清洗前请上传文本主文件",
+      "uploadsInProgress": "文件上传中，完成后才能保存"
     },
     "provenance": {
       "title": "语料溯源",
@@ -1648,6 +1703,7 @@
       "empty": "暂无动态",
       "types": {
         "created": "创建任务",
+        "updated": "修改草稿",
         "session_started": "开始对话",
         "completed": "完成任务",
         "cancelled": "取消任务",

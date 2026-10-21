@@ -29,20 +29,11 @@ export function FilesPanel({ task }: { task: TaskDetail }) {
       ...current.filter((u) => !items.some((i) => i.path === u.path)),
       ...items.map(({ file, path }) => ({ path, size: file.size, state: "uploading" as const })),
     ]);
-    const update = (path: string, patch: Partial<Upload>) =>
-      setUploads((current) => current.map((u) => (u.path === path ? { ...u, ...patch } : u)));
-    const queue = [...items];
-    const worker = async () => {
-      for (let item = queue.shift(); item; item = queue.shift()) {
-        try {
-          await uploadOne(task.id, item.file, item.path);
-          update(item.path, { state: "done" });
-        } catch (error) {
-          update(item.path, { state: "error", error: (error as Error).message });
-        }
-      }
-    };
-    await Promise.all(Array.from({ length: UPLOAD_CONCURRENCY }, worker));
+    await uploadFiles(task.id, items, (path, error) =>
+      setUploads((current) =>
+        current.map((u) => (u.path === path ? { ...u, state: error ? "error" : "done", error } : u)),
+      ),
+    );
     void queryClient.invalidateQueries({ queryKey: ["ingestion-task", task.id] });
   };
 
@@ -126,6 +117,26 @@ export function FilesPanel({ task }: { task: TaskDetail }) {
       )}
     </div>
   );
+}
+
+/** 并发上传；每个文件结束时回调，失败时带错误信息 */
+export async function uploadFiles(
+  taskId: string,
+  items: { file: File; path: string }[],
+  onSettled: (path: string, error?: string) => void,
+) {
+  const queue = [...items];
+  const worker = async () => {
+    for (let item = queue.shift(); item; item = queue.shift()) {
+      try {
+        await uploadOne(taskId, item.file, item.path);
+        onSettled(item.path);
+      } catch (error) {
+        onSettled(item.path, (error as Error).message);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: UPLOAD_CONCURRENCY }, worker));
 }
 
 async function uploadOne(taskId: string, file: File, path: string) {

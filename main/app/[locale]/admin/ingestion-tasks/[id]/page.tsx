@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { json } from "@/components/library-ops/ops-shared";
 import {
@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { AgentChat } from "@/components/ingestion/agent-chat";
 import { AgentClient } from "@/components/ingestion/agent-client";
 import { ApprovalsPanel, EventsPanel, FilesPanel, RecordsPanel } from "@/components/ingestion/task-panels";
+import { TaskForm } from "@/components/ingestion/task-form";
 import { FormattedTime, TaskStatusBadge } from "@/components/ingestion/task-shared";
 import type { RunView, TaskDetail } from "@/components/ingestion/types";
 
@@ -33,7 +34,11 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const t = useTranslations("IngestionTasks");
   const queryClient = useQueryClient();
+  const router = useRouter();
   const searchParams = useSearchParams();
+  // 从表单点「开始智能清洗」进来时自动发出第一条指令；去掉参数后仍保持对话视图
+  const [autoStart, setAutoStart] = useState(false);
+  if (searchParams.get("start") === "1" && !autoStart) setAutoStart(true);
   const turnId = searchParams.get("turn") ?? undefined;
   const toolCallId = searchParams.get("toolCall") ?? undefined;
   const target = useMemo(() => ({ turnId, toolCallId }), [turnId, toolCallId]);
@@ -77,6 +82,7 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
       </div>
     );
   const task = detail.data;
+  if (task.draft && !autoStart) return <TaskForm task={task} />;
   // 已有会话时以 Agent 的判断为准（执行中、写入结果未知时不能取消）
   const cancelBlocker = run ? (run.can_cancel ? null : run.cancel_blocker) : null;
   const completeBlocker = run ? (run.can_complete ? null : run.complete_blocker) : t("completeNeedsRun");
@@ -113,13 +119,25 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
 
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[minmax(0,1fr)]">
         <section className="flex h-[70dvh] min-h-0 flex-col overflow-hidden rounded-lg border bg-card lg:h-auto">
-          <AgentChat client={client} taskStatus={task.status} closed={task.closed} target={target} onRun={setRun} />
+          <AgentChat
+            client={client}
+            taskStatus={task.status}
+            closed={task.closed}
+            target={target}
+            onRun={setRun}
+            autoStart={autoStart}
+            onAutoStarted={() => router.replace(`/admin/ingestion-tasks/${id}`)}
+          />
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto">
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-lg border p-4 text-sm">
             <dt className="text-muted-foreground">{t("fields.targetDatasetName")}</dt>
             <dd className="break-all">{task.targetDatasetName}</dd>
+            <dt className="text-muted-foreground">{t("fields.targetIngestionType")}</dt>
+            <dd>{t(`create.ingestionType.${task.targetIngestionType}`)}</dd>
+            <dt className="text-muted-foreground">{t("fields.modalities")}</dt>
+            <dd>{task.modalities.map((m) => t(`modality.${m}`)).join(" + ")}</dd>
             <dt className="text-muted-foreground">{t("fields.assignee")}</dt>
             <dd>{task.assigneeName}</dd>
             <dt className="text-muted-foreground">{t("fields.createdAt")}</dt>
@@ -138,10 +156,19 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
             )}
             <dt className="text-muted-foreground">{t("fields.batchId")}</dt>
             <dd className="break-all font-mono text-xs leading-5">{task.batchId}</dd>
+            {task.sourceCollectionMethod && (
+              <>
+                <dt className="col-span-2 mt-1 border-t pt-2 text-muted-foreground">
+                  {t("fields.sourceCollectionMethod")}
+                </dt>
+                <dd className="col-span-2 whitespace-pre-line">{task.sourceCollectionMethod}</dd>
+              </>
+            )}
             {task.description && (
-              <dd className="col-span-2 mt-1 whitespace-pre-line border-t pt-2 text-muted-foreground">
-                {task.description}
-              </dd>
+              <>
+                <dt className="col-span-2 mt-1 border-t pt-2 text-muted-foreground">{t("fields.description")}</dt>
+                <dd className="col-span-2 whitespace-pre-line">{task.description}</dd>
+              </>
             )}
           </dl>
 

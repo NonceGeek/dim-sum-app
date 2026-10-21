@@ -4,7 +4,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { formatSerial } from "@/lib/library/application-workflow";
 import {
-  assertUserHasCapability,
   LibraryOpsAccess,
   requireCapability,
 } from "@/lib/library/ops-access";
@@ -20,6 +19,14 @@ import {
   workspacePrefix,
 } from "./tasks";
 import { headObject, signNewUpload, uploadMaxBytes } from "./oss";
+import {
+  defaultTaskTitle,
+  INGESTION_TYPES,
+  type IngestionType,
+  isDraft,
+  normalizeModalities,
+  TASK_MODALITIES,
+} from "./task-options";
 
 type Tx = Prisma.TransactionClient;
 type Task = Prisma.ingestion_tasksGetPayload<object>;
@@ -74,13 +81,38 @@ function taskEvent(
 
 /* ---------- Create ---------- */
 
-export const createTaskSchema = z.object({
-  title: z.string().trim().min(1).max(200),
+const taskConfigSchema = z.object({
+  title: z.string().trim().max(200).default(""),
   description: z.string().trim().max(2000).default(""),
-  targetDatasetName: z.string().trim().min(1).max(200).optional(),
-  assigneeId: z.string().trim().min(1).optional(),
+  targetIngestionType: z.enum(INGESTION_TYPES),
+  targetDatasetName: z.string().trim().min(1).max(200),
+  modalities: z.array(z.enum(TASK_MODALITIES)).max(TASK_MODALITIES.length).default([]),
+  // 草稿可以先空着；开始智能清洗前由表单要求填写
+  sourceCollectionMethod: z.string().trim().max(2000).default(""),
+});
+
+export const createTaskSchema = taskConfigSchema.extend({
   leadId: z.string().regex(/^\d+$/).optional(),
 });
+
+/** 选已有语料集时它必须存在；新建时不能与已有语料集重名 */
+async function assertDatasetTarget(tx: Tx, type: IngestionType, name: string) {
+  const existing = await tx.cantonese_categories.findUnique({ where: { name }, select: { name: true } });
+  if (type === "supplement_existing" && !existing) throw new AccessError(400, "所选语料集不存在");
+  if (type === "new_dataset" && existing)
+    throw new AccessError(409, "已有同名语料集，请改为选择已有语料集");
+}
+
+function taskConfigData(input: z.infer<typeof taskConfigSchema>) {
+  return {
+    title: input.title || defaultTaskTitle(input.targetDatasetName),
+    description: input.description,
+    target_ingestion_type: input.targetIngestionType,
+    target_dataset_name: input.targetDatasetName,
+    modalities: normalizeModalities(input.modalities),
+    source_collection_method: input.sourceCollectionMethod,
+  };
+}
 
 async function nextTaskNo(tx: Tx, now: Date) {
   const head = formatSerial("IT", now, 0).slice(0, -3);
@@ -89,20 +121,15 @@ async function nextTaskNo(tx: Tx, now: Date) {
 }
 
 /**
- * 建任务；带 leadId 时从入库待办创建并回写 ingestion_task_id。
- * 非管理员只能给自己建任务；预计语料名缺省取待办的 proposed_dataset_name。
+ * 建任务（草稿），创建人即负责人；带 leadId 时从入库待办创建并回写 ingestion_task_id。
  */
 export async function createTask(access: LibraryOpsAccess, body: unknown) {
   requireCapability(access, "ingestion_assignee");
   const input = parseBody(createTaskSchema, body);
-  const assigneeId = input.assigneeId ?? access.userId;
-  if (assigneeId !== access.userId && !access.isAdmin)
-    throw new AccessError(403, "仅系统管理员可指派他人");
   for (let attempt = 0; ; attempt++) {
     try {
       return await prisma.$transaction(async (tx) => {
-        await assertUserHasCapability(tx, assigneeId, "ingestion_assignee");
-        let lead: { id: bigint; proposed_dataset_name: string } | null = null;
+        let lead: { id: bigint } | null = null;
         if (input.leadId) {
           const leadId = BigInt(input.leadId);
           await tx.$queryRaw`SELECT id FROM ingestion_leads WHERE id = ${leadId} FOR UPDATE`;
@@ -116,16 +143,13 @@ export async function createTask(access: LibraryOpsAccess, body: unknown) {
             throw new AccessError(409, "该待办已有入库任务");
           lead = found;
         }
-        const targetDatasetName = input.targetDatasetName ?? lead?.proposed_dataset_name;
-        if (!targetDatasetName) throw new AccessError(400, "请填写预计语料名");
+        await assertDatasetTarget(tx, input.targetIngestionType, input.targetDatasetName);
         const batchId = newBatchId();
         const task = await tx.ingestion_tasks.create({
           data: {
             task_no: await nextTaskNo(tx, new Date()),
-            title: input.title,
-            description: input.description,
-            target_dataset_name: targetDatasetName,
-            assignee_id: assigneeId,
+            ...taskConfigData(input),
+            assignee_id: access.userId,
             created_by: access.userId,
             batch_id: batchId,
             workspace_prefix: workspacePrefix(batchId),
@@ -138,7 +162,7 @@ export async function createTask(access: LibraryOpsAccess, body: unknown) {
           });
         await taskEvent(tx, access, task, "created", {
           toStatus: task.status,
-          payload: { assigneeId, leadId: lead ? String(lead.id) : null },
+          payload: { leadId: lead ? String(lead.id) : null },
         });
         return task;
       });
@@ -147,6 +171,26 @@ export async function createTask(access: LibraryOpsAccess, body: unknown) {
       if (!isUniqueViolation(error) || attempt >= 4) throw error;
     }
   }
+}
+
+/** 修改草稿；开始对话后配置已写进批次说明，不能再改 */
+export async function updateTask(access: LibraryOpsAccess, id: bigint, body: unknown) {
+  const input = parseBody(taskConfigSchema, body);
+  await prisma.$transaction(async (tx) => {
+    const task = await lockTask(tx, access, id);
+    const run = await tx.corpus_agent_runs.findUnique({
+      where: { task_id: id },
+      select: { id: true },
+    });
+    if (!isDraft(task.status, !!run)) throw new AccessError(409, "任务已开始，不能再修改配置");
+    await assertDatasetTarget(tx, input.targetIngestionType, input.targetDatasetName);
+    await tx.ingestion_tasks.update({
+      where: { id },
+      data: { ...taskConfigData(input), updated_at: new Date() },
+    });
+    await taskEvent(tx, access, task, "updated");
+  });
+  return getTaskDetail(access, id);
 }
 
 /* ---------- Files ---------- */
@@ -393,6 +437,9 @@ function serializeTask(task: Task, run: RunSummary | null, names: Record<string,
     title: task.title,
     description: task.description,
     targetDatasetName: task.target_dataset_name,
+    targetIngestionType: task.target_ingestion_type,
+    modalities: task.modalities,
+    sourceCollectionMethod: task.source_collection_method,
     status: task.status,
     displayStatus: status,
     displayStatusLabel: DISPLAY_STATUSES[status],
@@ -497,6 +544,7 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
     ...serializeTask(row, run, names),
     lead: lead && { id: String(lead.id), leadNo: lead.lead_no },
     canUploadFiles: canUploadFiles(row.status, run?.status ?? null),
+    draft: isDraft(row.status, !!run),
     closed: isTaskClosed(row.status),
     approvals: approvals.map((a) => serializeApproval(a, names)),
     files: files.map((f) => ({
@@ -520,6 +568,38 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
       createdAt: e.created_at.toISOString(),
     })),
   };
+}
+
+/** 可补充的已有语料集，供新建任务时选择 */
+export async function listDatasets(access: LibraryOpsAccess) {
+  requireCapability(access, "ingestion_assignee");
+  const rows = await prisma.cantonese_categories.findMany({
+    select: {
+      name: true,
+      nickname: true,
+      content_attribute: true,
+      libraryProfile: { select: { modalities: true } },
+    },
+    orderBy: [{ pinned: "desc" }, { sorting: "desc" }, { name: "asc" }],
+  });
+  return {
+    items: rows.map((r) => ({
+      name: r.name,
+      nickname: r.nickname,
+      contentAttribute: r.content_attribute,
+      profileModalities: r.libraryProfile?.modalities ?? [],
+    })),
+  };
+}
+
+/** 选中语料集的已有内容条数与媒体组成；只在选中时查，避免列表逐个计数 */
+export async function datasetOverview(access: LibraryOpsAccess, name: string) {
+  requireCapability(access, "ingestion_assignee");
+  const [row] = await prisma.$queryRaw<{ count: number; media_types: string[] }[]>`
+    select count(*)::int as count,
+      array(select distinct unnest(media_types) from cantonese_corpus_all where category = ${name}) as media_types
+    from cantonese_corpus_all where category = ${name}`;
+  return { name, count: row.count, mediaTypes: row.media_types };
 }
 
 /** 本任务首次创建的语料，按 corpus_id 游标分页 */

@@ -1535,7 +1535,7 @@
     "saving": "Saving…",
     "confirm": "Confirm",
     "saved": "Saved",
-    "back": "Back to list",
+    "back": "Back to jobs",
     "statusFilter": "Status filter",
     "allStatuses": "All statuses",
     "searchPlaceholder": "Search title or number",
@@ -1549,13 +1549,13 @@
       "all": "All"
     },
     "status": {
-      "PENDING": "Not started",
+      "PENDING": "Draft",
       "IN_PROGRESS": "In progress",
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled"
     },
     "displayStatus": {
-      "PENDING": "Not started",
+      "PENDING": "Draft",
       "PROCESSING": "Processing",
       "WAITING_APPROVAL": "Needs approval",
       "WAITING_INPUT": "Needs reply",
@@ -1569,22 +1569,77 @@
       "updatedAt": "Last update"
     },
     "fields": {
-      "title": "Title",
-      "targetDatasetName": "Target dataset",
+      "title": "Job title",
+      "targetDatasetName": "Dataset",
+      "targetIngestionType": "Ingestion mode",
+      "modalities": "Media",
+      "sourceCollectionMethod": "Source",
       "description": "Notes",
       "assignee": "Owner",
       "createdAt": "Created",
       "lead": "Ingestion lead",
       "batchId": "Batch"
     },
+    "modality": {
+      "text": "Text",
+      "audio": "Audio",
+      "video": "Video",
+      "image": "Image"
+    },
+    "contentAttribute": {
+      "oral": "Spoken",
+      "cultural_knowledge": "Cultural knowledge"
+    },
     "create": {
       "title": "New ingestion job",
-      "description": "After creating the job, upload the raw files and talk to the ingestion agent from the job page.",
+      "editTitle": "Edit ingestion job draft",
+      "description": "Choose the dataset and its media first. Text is required; media files get OSS links and are linked to the matching records.",
       "fromLead": "Created from ingestion lead {no}",
-      "datasetHint": "One job maps to one dataset; records are written under this name.",
-      "descriptionPlaceholder": "Data source, file layout, anything to watch out for…",
-      "assigneeHint": "Leave empty to own it yourself.",
-      "submit": "Create"
+      "cardTitle": "Dataset and ingestion settings",
+      "requiredHint": "Fields marked <mark>*</mark> are required",
+      "steps": {
+        "dataset": "1. Choose or create a dataset",
+        "modalities": "2. Confirm the dataset's media",
+        "files": "3. Upload text and related media",
+        "info": "4. Source and notes"
+      },
+      "datasetMode": "Dataset",
+      "ingestionType": {
+        "supplement_existing": "Existing dataset",
+        "new_dataset": "New dataset"
+      },
+      "existingDataset": "Existing dataset",
+      "chooseDataset": "Choose a dataset",
+      "existingBadge": "Existing dataset",
+      "recordCount": "{count, number} records",
+      "newDataset": "New dataset name",
+      "datasetHint": "One job maps to one dataset; records are written under this name. It must not match an existing dataset.",
+      "modalities": "Content types in this dataset",
+      "textRequiredOption": "Text (required)",
+      "mediaHint": "Media in this dataset: {combo}. Uploaded media get OSS links and are linked to records by content ID, file name, folder, AI matching and order.",
+      "textOnlyHint": "Media in this dataset: text only. No media files needed.",
+      "textFiles": "Main text file",
+      "textDropTitle": "Upload the main text file",
+      "textDropHint": "XLS / XLSX / CSV / DOC / DOCX / PDF; text content is required",
+      "mediaFiles": "Related media files",
+      "mediaDropTitle": "Upload audio / video / image files",
+      "mediaDropHint": "Expected: {types}; pick several files or a whole folder",
+      "mediaDropDisabled": "Tick audio, video or image above first",
+      "filesHint": "Files upload as soon as you pick them, into the job workspace the agent reads when cleaning starts. On a new job the first upload saves a draft, so you can come back and add more later.",
+      "retry": "Retry",
+      "removeFile": "Remove",
+      "sourcePlaceholder": "Where the data comes from, how it was collected or compiled, licensing…",
+      "notePlaceholder": "File layout, anything to watch out for…",
+      "titleHint": "Generated from the dataset name and date; you can change it.",
+      "startHint": "Starting opens the job conversation; settings can no longer be changed.",
+      "saveDraft": "Save draft",
+      "start": "Start AI cleaning",
+      "draftSaved": "Draft saved",
+      "datasetFirst": "Choose or name the dataset before uploading files",
+      "datasetRequired": "Choose or name the dataset first",
+      "sourceRequired": "Fill in the source before starting",
+      "textRequired": "Upload the main text file before starting",
+      "uploadsInProgress": "Uploads in progress; you can save once they finish"
     },
     "provenance": {
       "title": "Corpus provenance",
@@ -1647,6 +1702,7 @@
       "empty": "No activity",
       "types": {
         "created": "Created job",
+        "updated": "Edited draft",
         "session_started": "Started conversation",
         "completed": "Completed job",
         "cancelled": "Cancelled job",

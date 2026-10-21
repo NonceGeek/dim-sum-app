@@ -1,6 +1,6 @@
 /** 列表与详情展示的状态：任务表只存人为决定的状态，处理中的细分由 Agent 会话状态推出 */
 export const DISPLAY_STATUSES = {
-  PENDING: "待开始",
+  PENDING: "草稿",
   PROCESSING: "处理中",
   WAITING_APPROVAL: "待审批",
   WAITING_INPUT: "待回复",
