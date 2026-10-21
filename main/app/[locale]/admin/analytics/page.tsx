@@ -427,6 +427,8 @@ function ContentTab({ from, to }: { from: string; to: string }) {
 }
 
 type TrafficData = {
+  sources: Array<{ source: string; pv: number; uv: number }>;
+  scenes: Array<{ scene: number; visits: number; uv: number }>;
   pages: Array<{ route: string; pv: number; uv: number }>;
   referrers: Array<{ referrer: string; visits: number; uv: number }>;
   devices: Array<{ device: string; uv: number; pv: number }>;
@@ -481,6 +483,25 @@ function TrafficTab({ from, to }: { from: string; to: string }) {
               { key: "l", label: t("col.locale"), render: (r) => r.locale },
               { key: "uv", label: "UV", numeric: true, render: (r) => fmt.format(r.uv) },
               { key: "s", label: t("col.share"), numeric: true, render: (r) => share(r.uv, d.locales) },
+            ]}
+          />
+          <RankTable
+            title={t("traffic.sources")}
+            rows={d.sources}
+            columns={[
+              { key: "s", label: t("col.source"), render: (r) => (t.has(`source.${r.source}`) ? t(`source.${r.source}`) : r.source) },
+              { key: "pv", label: "PV", numeric: true, render: (r) => fmt.format(r.pv) },
+              { key: "uv", label: "UV", numeric: true, render: (r) => fmt.format(r.uv) },
+            ]}
+          />
+          <RankTable
+            title={t("traffic.scenes")}
+            hint={t("traffic.scenesHint")}
+            rows={d.scenes}
+            columns={[
+              { key: "s", label: t("col.scene"), render: (r) => (t.has(`scene.${r.scene}`) ? `${r.scene} · ${t(`scene.${r.scene}`)}` : String(r.scene)) },
+              { key: "v", label: t("col.visits"), numeric: true, render: (r) => fmt.format(r.visits) },
+              { key: "uv", label: "UV", numeric: true, render: (r) => fmt.format(r.uv) },
             ]}
           />
         </div>

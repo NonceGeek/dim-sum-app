@@ -266,7 +266,17 @@ async function traffic(r: DateRange) {
   const pageViews = Prisma.sql`${inRange(r)} AND event_name = 'page_view'`;
   // Collapse /en/... and dynamic ids so pages aggregate by route.
   const route = Prisma.sql`regexp_replace(regexp_replace(coalesce(path, '/'), '^/en(?=/|$)', ''), '/[0-9a-f]{8}-[0-9a-f-]{27,}', '/:id', 'g')`;
-  const [pages, referrers, devices, locales] = await prisma.$transaction([
+  const [sources, scenes, pages, referrers, devices, locales] = await prisma.$transaction([
+    prisma.$queryRaw<Rows>`
+      SELECT source, count(*)::int AS pv, count(DISTINCT anonymous_id)::int AS uv
+      FROM analytics_events WHERE ${pageViews}
+      GROUP BY 1 ORDER BY uv DESC`,
+    // WeChat launch scene of each miniprogram visit (landing page view only).
+    prisma.$queryRaw<Rows>`
+      SELECT (properties->>'scene')::int AS scene, count(*)::int AS visits, count(DISTINCT anonymous_id)::int AS uv
+      FROM analytics_events WHERE ${pageViews} AND source = 'miniprogram'
+        AND properties->>'landing' = 'true' AND properties ? 'scene'
+      GROUP BY 1 ORDER BY visits DESC LIMIT 20`,
     prisma.$queryRaw<Rows>`
       SELECT CASE WHEN ${route} = '' THEN '/' ELSE ${route} END AS route,
         count(*)::int AS pv, count(DISTINCT anonymous_id)::int AS uv
@@ -288,6 +298,8 @@ async function traffic(r: DateRange) {
       GROUP BY 1 ORDER BY uv DESC`,
   ]);
   return {
+    sources: sources.map((s) => ({ source: String(s.source), pv: n(s.pv), uv: n(s.uv) })),
+    scenes: scenes.map((s) => ({ scene: n(s.scene), visits: n(s.visits), uv: n(s.uv) })),
     pages: pages.map((p) => ({ route: String(p.route), pv: n(p.pv), uv: n(p.uv) })),
     referrers: referrers.map((x) => ({ referrer: String(x.referrer), visits: n(x.visits), uv: n(x.uv) })),
     devices: devices.map((d) => ({ device: String(d.device), uv: n(d.uv), pv: n(d.pv) })),
