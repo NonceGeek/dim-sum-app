@@ -358,7 +358,8 @@ function SearchTab({ from, to }: { from: string; to: string }) {
 
 type ContentData = {
   video: Array<{ surface: string; plays: number; failures: number; failureRate: number | null }>;
-  shareFunnel: { cardOpens: number; linkCopies: number; imageDownloads: number; cardLinkClicks: number; linkOpens: number };
+  shareFunnel: { cardOpens: number; linkCopies: number; imageDownloads: number; cardLinkClicks: number; linkOpens: number; attributedLinkOpens: number };
+  videoErrors: Array<{ errorType: string; failures: number; avgElapsedMs: number | null; textAudio: number; textOnly: number; noFallback: number }>;
   topEntries: Array<{ entryId: string; name: string | null; clicks: number; shares: number; shareOpens: number; videoPlays: number }>;
 };
 
@@ -374,6 +375,7 @@ function ContentTab({ from, to }: { from: string; to: string }) {
         { step: t("share.imageDownloads"), value: d.shareFunnel.imageDownloads },
         { step: t("share.cardLinkClicks"), value: d.shareFunnel.cardLinkClicks },
         { step: t("share.linkOpens"), value: d.shareFunnel.linkOpens },
+        { step: t("share.attributedLinkOpens"), value: d.shareFunnel.attributedLinkOpens },
       ]
     : [];
   return (
@@ -388,6 +390,17 @@ function ContentTab({ from, to }: { from: string; to: string }) {
               { key: "p", label: t("col.plays"), numeric: true, render: (r) => fmt.format(r.plays) },
               { key: "f", label: t("col.failures"), numeric: true, render: (r) => fmt.format(r.failures) },
               { key: "r", label: t("col.failureRate"), numeric: true, render: (r) => pct(r.failureRate) },
+            ]}
+          />
+          <RankTable
+            title={t("content.videoErrors")}
+            hint={t("content.videoErrorsHint")}
+            rows={d.videoErrors}
+            columns={[
+              { key: "e", label: t("col.errorType"), render: (r) => (t.has(`errorType.${r.errorType}`) ? t(`errorType.${r.errorType}`) : r.errorType) },
+              { key: "f", label: t("col.failures"), numeric: true, render: (r) => fmt.format(r.failures) },
+              { key: "ms", label: t("col.avgElapsed"), numeric: true, render: (r) => (r.avgElapsedMs === null ? "—" : `${fmt.format(r.avgElapsedMs)} ms`) },
+              { key: "fb", label: t("col.fallback"), render: (r) => `${t("fallback.text_audio")} ${r.textAudio} · ${t("fallback.text")} ${r.textOnly} · ${t("fallback.none")} ${r.noFallback}` },
             ]}
           />
           <RankTable

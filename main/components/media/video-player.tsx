@@ -3,13 +3,18 @@
 import { Loader2, Maximize2, Play, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { track } from "@/lib/analytics/client";
-import type { VIDEO_SURFACES } from "@/lib/analytics/events";
+import { newAnalyticsId, track } from "@/lib/analytics/client";
+import {
+  mediaErrorType,
+  playRejectionType,
+  VideoLoadTracker,
+  videoIdFromUrl,
+  type VideoTrackingContext,
+} from "@/lib/analytics/video-tracker";
 
-export type VideoAnalytics = {
-  entryId?: string;
-  surface: (typeof VIDEO_SURFACES)[number];
-};
+/** Tracking context supplied by the caller; videoId is derived from the URL. */
+export type VideoAnalytics = Omit<VideoTrackingContext, "videoId">;
+
 
 type VideoPlayerProps = {
   url: string;
@@ -34,13 +39,15 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
   const [loading, setLoading] = useState(autoPlay);
   const [error, setError] = useState(false);
   const previewPending = useRef(!poster && !autoPlay);
-  // One play and one failure event per mounted player, not per buffering cycle.
-  const reported = useRef({ play: false, failed: false });
-  const reportFailure = (reason: "load_error" | "play_rejected") => {
-    if (!analytics || reported.current.failed) return;
-    reported.current.failed = true;
-    track("video_load_failed", { ...analytics, reason });
-  };
+  // One tracker per mounted player = one play session (#508).
+  const tracker = useRef<VideoLoadTracker | null>(null);
+  if (analytics && !tracker.current) {
+    tracker.current = new VideoLoadTracker(
+      { ...analytics, videoId: videoIdFromUrl(url) },
+      (name, props) => track(name, props as never),
+      { now: () => performance.now(), setTimeout, clearTimeout: (h) => clearTimeout(h as number), uuid: newAnalyticsId },
+    );
+  }
 
   useEffect(() => {
     const video = videoRef.current;
@@ -52,8 +59,12 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
         if (!video.getAttribute("src")) video.src = url;
         observer.disconnect();
         if (autoPlay) {
-          void video.play().catch(() => {
+          tracker.current?.startAttempt();
+          void video.play().catch((error) => {
             if (disposed) return;
+            const type = playRejectionType(error);
+            if (type) tracker.current?.fail(type);
+            else tracker.current?.cancel();
             // Some browsers require another gesture after mounting a dialog.
             setLoading(false);
             setActivated(false);
@@ -63,11 +74,15 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
     }, { rootMargin: "200px" });
     observer.observe(video);
     const pauseWhenHidden = () => {
-      if (document.hidden) video.pause();
+      if (!document.hidden) return;
+      video.pause();
+      // Leaving the page is not a load failure.
+      tracker.current?.cancel();
     };
     document.addEventListener("visibilitychange", pauseWhenHidden);
     return () => {
       disposed = true;
+      tracker.current?.cancel();
       observer.disconnect();
       document.removeEventListener("visibilitychange", pauseWhenHidden);
       video.pause();
@@ -85,12 +100,18 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
     setError(false);
     if (!video.getAttribute("src")) video.src = url;
     if (video.error) video.load();
+    tracker.current?.startAttempt();
     try {
       await video.play();
-    } catch {
+    } catch (error) {
       setLoading(false);
+      const type = playRejectionType(error);
+      if (!type) {
+        tracker.current?.cancel();
+        return;
+      }
       setError(true);
-      reportFailure("play_rejected");
+      tracker.current?.fail(type);
     }
   };
 
@@ -116,10 +137,8 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
           }
         }}
         onPlay={(event) => {
-          if (analytics && !reported.current.play) {
-            reported.current.play = true;
-            track("video_play", analytics);
-          }
+          // Native controls start playback without calling play(); begin the load attempt here too.
+          tracker.current?.startAttempt();
           previewPending.current = false;
           setError(false);
           setActivated(true);
@@ -128,11 +147,24 @@ function Player({ url, poster, compact = false, autoPlay = false, enlarged = fal
             if (media !== event.currentTarget) media.pause();
           });
         }}
-        onPlaying={() => setLoading(false)}
+        onPlaying={() => {
+          setLoading(false);
+          // Actual playback start, not the play request (#508).
+          tracker.current?.playing();
+        }}
         onWaiting={() => setLoading(true)}
         onCanPlay={() => setLoading(false)}
-        onPause={() => setLoading(false)}
-        onError={() => { setError(true); setLoading(false); reportFailure("load_error"); }}
+        onPause={() => {
+          setLoading(false);
+          // A pause before first playback (user stopped waiting) is not a failure.
+          tracker.current?.cancel();
+        }}
+        onError={(event) => {
+          setError(true);
+          setLoading(false);
+          const type = mediaErrorType(event.currentTarget.error?.code);
+          if (type) tracker.current?.fail(type);
+        }}
       />
       {!activated && !error && (
         <button type="button" onClick={onPreview ?? play} aria-label={t(onPreview ? "enlarge" : "play")} aria-haspopup={onPreview ? "dialog" : undefined}

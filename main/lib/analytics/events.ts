@@ -6,7 +6,27 @@ import { z } from "zod";
  * listed here is dropped server-side.
  * Columns hold the fields the dashboard groups by; everything else goes to `properties`.
  */
+/**
+ * Result sections. Stored values follow the search API; the PM spec (#508) names
+ * them result_level exact / related / recommended — see RESULT_LEVEL_LABELS.
+ */
 export const SEARCH_SECTIONS = ["primary", "similar", "recommended"] as const;
+export const RESULT_LEVEL_LABELS = {
+  primary: "exact",
+  similar: "related",
+  recommended: "recommended",
+} as const;
+/** Video load timeout before first playback (#508): counts as error_type "timeout". */
+export const VIDEO_LOAD_TIMEOUT_MS = 15_000;
+export const VIDEO_ERROR_TYPES = [
+  "timeout",
+  "network",
+  "resource_unavailable",
+  "unsupported",
+  "unknown",
+] as const;
+export const VIDEO_FALLBACK_TYPES = ["text", "text_audio", "none"] as const;
+export const SHARE_COPY_ENTRIES = ["share_panel", "share_card"] as const;
 export const SHARE_SURFACES = ["search_primary", "entry_detail", "miniprogram"] as const;
 export const VIDEO_SURFACES = [
   "search_primary",
@@ -18,6 +38,7 @@ export const VIDEO_SURFACES = [
 export const MP_SHARE_CHANNELS = ["chat", "timeline"] as const;
 
 const id = z.string().trim().min(1).max(100);
+const uuid = z.string().uuid();
 const query = z.string().trim().max(100);
 const section = z.enum(SEARCH_SECTIONS);
 const mediaType = z.string().trim().max(20);
@@ -54,20 +75,46 @@ export const CLIENT_EVENT_SCHEMAS = {
     mediaType: mediaType.optional(),
     previous: mediaType.optional(),
   }),
-  video_play: z.object({ entryId: id.optional(), surface: z.enum(VIDEO_SURFACES) }),
+  // Fired on actual playback start (`playing`), once per player session (#508).
+  // query/section are only present when the player was opened from search results.
+  video_play: z.object({
+    entryId: id.optional(),
+    videoId: z.string().trim().min(1).max(300),
+    playSessionId: uuid,
+    surface: z.enum(VIDEO_SURFACES),
+    query: query.optional(),
+    section: section.optional(),
+  }),
+  // Load error or timeout before first playback, once per load attempt (#508).
   video_load_failed: z.object({
     entryId: id.optional(),
+    videoId: z.string().trim().min(1).max(300),
+    playSessionId: uuid,
+    loadAttemptId: uuid,
+    errorType: z.enum(VIDEO_ERROR_TYPES),
+    loadElapsedMs: z.number().int().min(0).max(600_000),
+    fallbackType: z.enum(VIDEO_FALLBACK_TYPES),
     surface: z.enum(VIDEO_SURFACES),
-    reason: z.enum(["load_error", "play_rejected"]).optional(),
+    query: query.optional(),
+    section: section.optional(),
   }),
-  share_card_open: z.object({ entryId: id, surface: z.enum(SHARE_SURFACES) }),
-  share_image_download: z.object({ entryId: id, success: z.boolean() }),
-  share_link_copy: z.object({ entryId: id }),
-  share_card_link_click: z.object({ entryId: id, surface: z.enum(SHARE_SURFACES) }),
-  share_link_open: z.object({ entryId: id }),
+  // After the share preview has rendered, once per opening (#508).
+  share_card_open: z.object({ entryId: id, shareId: uuid, surface: z.enum(SHARE_SURFACES) }),
+  share_image_download: z.object({ entryId: id, shareId: uuid.optional(), success: z.boolean() }),
+  // Only after the clipboard write succeeded (#508).
+  share_link_copy: z.object({ entryId: id, shareId: uuid, copyEntry: z.enum(SHARE_COPY_ENTRIES) }),
+  share_card_link_click: z.object({ entryId: id, shareId: uuid.optional(), surface: z.enum(SHARE_SURFACES) }),
+  // A visitor landed through a share link and the target content loaded (#508).
+  share_link_open: z.object({
+    entryId: id,
+    shareId: uuid.optional(),
+    landingVisitId: uuid,
+    sourceChannel: z.string().trim().min(1).max(40),
+  }),
   // Miniprogram forward to a chat (onShareAppMessage) or Moments (onShareTimeline).
   mp_share: z.object({
     entryId: id.optional(),
+    shareId: uuid.optional(),
     channel: z.enum(MP_SHARE_CHANNELS),
   }),
 } as const;
@@ -80,13 +127,16 @@ export type ClientEventProps<N extends ClientEventName> = z.infer<
 export const SERVER_EVENT_NAMES = ["search_request"] as const;
 export type AnalyticsEventName = ClientEventName | (typeof SERVER_EVENT_NAMES)[number];
 
-/** Query param appended to copied share links so landings can be attributed. */
+/** Query params appended to copied share links so landings can be attributed (#508). */
 export const SHARE_ATTRIBUTION_PARAM = "from";
 export const SHARE_ATTRIBUTION_VALUE = "share";
+export const SHARE_ID_PARAM = "sid";
+/** Used when the share channel cannot be identified; never guessed (#508). */
+export const DEFAULT_SHARE_CHANNEL = "shared_link";
 
-/** Lowercase, collapse spaces, cap length: one keyword, one dashboard row. */
+/** The keyword that produced the results, trimmed only (#508 search_keyword), capped at 100. */
 export function normalizeQuery(value: string | null | undefined) {
-  const q = (value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+  const q = (value ?? "").trim();
   return q ? q.slice(0, 100) : null;
 }
 

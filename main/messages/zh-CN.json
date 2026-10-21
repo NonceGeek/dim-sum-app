@@ -1,5 +1,17 @@
 {
   "AdminAnalytics": {
+    "errorType": {
+      "timeout": "超时",
+      "network": "网络错误",
+      "resource_unavailable": "资源不可用",
+      "unsupported": "格式不支持",
+      "unknown": "未知"
+    },
+    "fallback": {
+      "text": "文本",
+      "text_audio": "文本+音频",
+      "none": "无"
+    },
     "source": {
       "web": "网页",
       "miniprogram": "小程序"
@@ -67,17 +79,20 @@
       "mediaFilters": "媒体筛选使用"
     },
     "section": {
-      "primary": "精准结果",
-      "similar": "相关结果",
-      "recommended": "推荐阅读"
+      "primary": "exact · 精准结果",
+      "similar": "related · 相关结果",
+      "recommended": "recommended · 推荐联想"
     },
     "content": {
+      "videoErrors": "视频加载失败原因",
+      "videoErrorsHint": "首次播放前的加载报错或超时（15 秒），每次加载尝试最多计一次；用户关闭或离开不计。",
       "video": "视频播放与失败",
       "shareFunnel": "分享漏斗",
       "shareFunnelHint": "图片下载只计成功次数；链接打开来自复制出去的分享链接。",
       "topEntries": "互动最多的词条"
     },
     "share": {
+      "attributedLinkOpens": "可按 share_id 关联的打开",
       "cardOpens": "打开分享弹窗",
       "linkCopies": "复制分享链接",
       "imageDownloads": "下载分享图片",
@@ -108,6 +123,9 @@
       "unknown": "未知"
     },
     "col": {
+      "errorType": "错误类型",
+      "avgElapsed": "平均失败耗时",
+      "fallback": "降级",
       "source": "访问端",
       "scene": "场景值",
       "query": "搜索词",
