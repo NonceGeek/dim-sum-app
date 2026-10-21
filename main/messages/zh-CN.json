@@ -1,4 +1,120 @@
 {
+  "AdminAnalytics": {
+    "title": "数据看板",
+    "description": "站内自建埋点：页面访问、Search 3.0 搜索行为、视频与分享。按北京时间统计，不含后台页面和爬虫。",
+    "range": "时间范围",
+    "preset": {
+      "today": "今天",
+      "7d": "近 7 天",
+      "30d": "近 30 天",
+      "custom": "自定义"
+    },
+    "from": "开始日期",
+    "to": "结束日期",
+    "apply": "应用",
+    "refresh": "刷新",
+    "rangeLabel": "统计区间：{from} 至 {to}",
+    "tab": {
+      "overview": "概览",
+      "search": "搜索",
+      "content": "内容互动",
+      "traffic": "流量"
+    },
+    "loading": "加载中…",
+    "noData": "该时间范围内暂无数据",
+    "trendTitle": "每日趋势 · {metric}",
+    "kpi": {
+      "pv": "页面访问 PV",
+      "uv": "访客 UV",
+      "searches": "搜索次数",
+      "shares": "分享（复制 + 打开）",
+      "sessions": "会话数",
+      "noPrimaryRate": "精准无结果率",
+      "shareOpens": "分享链接打开",
+      "videoPlays": "视频播放"
+    },
+    "search": {
+      "p95": "搜索耗时 p95",
+      "topQueries": "热门搜索词",
+      "noPrimaryQueries": "无精准结果的搜索词",
+      "noPrimaryHint": "精准结果为空的搜索（不含翻页），可用于补充语料或同义词。",
+      "sections": "分段展示与点击",
+      "sectionsHint": "点击率 = 点击数 ÷ 有结果的展示次数。",
+      "latency": "接口耗时（按请求分段）",
+      "latencyHint": "服务端从收到请求到生成响应的时间。",
+      "fallbacks": "降级与错误原因",
+      "mediaFilters": "媒体筛选使用"
+    },
+    "section": {
+      "primary": "精准结果",
+      "similar": "相关结果",
+      "recommended": "推荐阅读"
+    },
+    "content": {
+      "video": "视频播放与失败",
+      "shareFunnel": "分享漏斗",
+      "shareFunnelHint": "图片下载只计成功次数；链接打开来自复制出去的分享链接。",
+      "topEntries": "互动最多的词条"
+    },
+    "share": {
+      "cardOpens": "打开分享弹窗",
+      "linkCopies": "复制分享链接",
+      "imageDownloads": "下载分享图片",
+      "cardLinkClicks": "打开卡片页",
+      "linkOpens": "分享链接被打开"
+    },
+    "surface": {
+      "search_primary": "搜索·精准结果",
+      "search_tile": "搜索·结果卡片",
+      "preview_dialog": "搜索·放大预览",
+      "entry_detail": "词条详情页"
+    },
+    "traffic": {
+      "pages": "热门页面",
+      "referrers": "来源",
+      "referrersHint": "仅统计每次访问的落地页。",
+      "direct": "直接访问",
+      "devices": "设备",
+      "locales": "界面语言"
+    },
+    "device": {
+      "desktop": "桌面",
+      "mobile": "手机",
+      "tablet": "平板",
+      "unknown": "未知"
+    },
+    "col": {
+      "query": "搜索词",
+      "searches": "次数",
+      "users": "人数",
+      "section": "分段",
+      "impressions": "展示",
+      "emptyRate": "无结果率",
+      "clicks": "点击",
+      "ctr": "点击率",
+      "requestSection": "请求分段",
+      "requests": "请求数",
+      "status": "状态",
+      "reason": "原因",
+      "mediaType": "媒体类型",
+      "changes": "切换次数",
+      "surface": "位置",
+      "plays": "播放",
+      "failures": "失败",
+      "failureRate": "失败率",
+      "step": "环节",
+      "events": "次数",
+      "entry": "词条",
+      "shares": "分享",
+      "shareOpens": "链接打开",
+      "page": "页面",
+      "referrer": "来源",
+      "visits": "访问",
+      "device": "设备",
+      "share": "占比",
+      "locale": "语言"
+    }
+  },
   "LibraryOps": {
     "title": "贡献语料申请审核",
     "description": "审核外部个人及机构提交的语料贡献申请，核实联系人、数据概况、版权/授权、隐私风险及后续入库方式。",
@@ -1130,6 +1246,7 @@
     "unnamedUser": "管理员",
     "backToMainApp": "返回主应用",
     "nav": {
+      "analytics": "数据看板",
       "libraryOps": "语料运营",
       "dashboard": "概览",
       "users": "用户管理",

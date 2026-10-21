@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { track } from "@/lib/analytics/client";
+import { SHARE_ATTRIBUTION_PARAM, SHARE_ATTRIBUTION_VALUE } from "@/lib/analytics/events";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +82,35 @@ function entryHref(entry: EntryIdentity, returnQuery?: string): string {
 
   const params = new URLSearchParams({ fromSearch: query });
   return `${entry.share.seoUrl}?${params.toString()}`;
+}
+
+type SearchSection = "primary" | "similar" | "recommended";
+
+/** Fires search_result_click when a click inside a result lands on an entry link. */
+function trackResultClick(
+  event: React.MouseEvent,
+  entry: EntryIdentity,
+  section: SearchSection,
+  position: number,
+  query?: string,
+) {
+  if (!(event.target as Element).closest("a[href*='/entries/']")) return;
+  track("search_result_click", {
+    query: query ?? "",
+    section,
+    entryId: entry.entryId,
+    position,
+    contentAttribute: entry.contentAttribute,
+  });
+}
+
+/** Copied share links carry ?from=share so landings can be attributed. */
+function shareLink(entry: EntryIdentity): string {
+  const url = new URL(absoluteUrl(entry.share.seoUrl), "https://placeholder.invalid");
+  url.searchParams.set(SHARE_ATTRIBUTION_PARAM, SHARE_ATTRIBUTION_VALUE);
+  return url.origin === "https://placeholder.invalid"
+    ? `${url.pathname}${url.search}`
+    : url.toString();
 }
 
 function absoluteUrl(pathOrUrl: string): string {
@@ -293,6 +324,7 @@ function CardMediaPreview({
           title={entry.entryName}
           url={videoUrl}
           poster={coverImage}
+          entryId={entry.entryId}
         />
       ) : coverImage ? (
         <ImageCard
@@ -375,6 +407,7 @@ function PrimaryMediaPreview({
               poster={coverImage}
               transcript={videoTranscript}
               transcriptLabel={labels.videoTranscript}
+              analytics={{ entryId: entry.entryId, surface: "search_primary" }}
             />
           )}
         </div>
@@ -555,7 +588,7 @@ function SharePreview({
   const sourceName =
     entry.source.categoryDisplayName || entry.source.categoryName;
   const categoryName = [entry.category.primary?.name, entry.category.secondary?.name].filter(Boolean).join(" / ");
-  const shareUrl = absoluteUrl(entry.share.seoUrl);
+  const shareUrl = shareLink(entry);
   const hasTags =
     entry.tags.related.length > 0 || entry.tags.recommended.length > 0;
   const contributorId = entry.source.contributorIds.filter(Boolean).join(", ");
@@ -579,7 +612,9 @@ function SharePreview({
       link.download = `dimsum-${entry.entryName}.png`;
       link.href = dataUrl;
       link.click();
+      track("share_image_download", { entryId: entry.entryId, success: true });
     } catch (error) {
+      track("share_image_download", { entryId: entry.entryId, success: false });
       console.error("Failed to generate share preview image:", error);
       toast.error(labels.downloadImageFailed);
     }
@@ -740,7 +775,10 @@ function SharePreview({
             type="button"
             variant="outline"
             className="flex-1 sm:flex-none"
-            onClick={() => copyText(shareUrl, labels.copied)}
+            onClick={() => {
+              track("share_link_copy", { entryId: entry.entryId });
+              void copyText(shareUrl, labels.copied);
+            }}
           >
             {labels.copyLink}
           </Button>
@@ -754,6 +792,12 @@ function SharePreview({
                 href={entry.share.cardUrl + `&mode=${theme === "dark" ? "dark" : "light"}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  track("share_card_link_click", {
+                    entryId: entry.entryId,
+                    surface: "search_primary",
+                  })
+                }
               >
                 {labels.openCard}
               </a>
@@ -813,6 +857,7 @@ function PrimaryEntry({
         <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
           <Link
             href={entryHref(entry, returnQuery)}
+            onClick={(event) => trackResultClick(event, entry, "primary", 0, returnQuery)}
             className="min-w-0 max-w-5xl break-words text-3xl font-semibold leading-tight text-foreground transition-colors hover:text-primary sm:text-4xl"
           >
             {entry.entryName}
@@ -949,7 +994,11 @@ function EntryTile({
   returnQuery,
   audioPlayback,
   onToggleAudio,
+  section,
+  position,
 }: {
+  section: SearchSection;
+  position: number;
   entry: EntryIdentity;
   labels: {
     media: MediaLabels;
@@ -962,7 +1011,9 @@ function EntryTile({
   const displayJyutping = primaryJyutping(entry);
 
   return (
-    <article className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
+    <article
+      onClickCapture={(event) => trackResultClick(event, entry, section, position, returnQuery)}
+      className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
       <Link href={entryHref(entry, returnQuery)} className="mb-4 block min-w-0">
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           {displayCategory(entry)}
@@ -1026,6 +1077,7 @@ function EntryTileSkeleton({ dense = false }: { dense?: boolean }) {
 }
 
 function ResultSection({
+  section,
   title,
   entries,
   refreshLabel,
@@ -1040,6 +1092,7 @@ function ResultSection({
   audioPlayback,
   onToggleAudio,
 }: {
+  section: SearchSection;
   title: string;
   entries: EntryIdentity[];
   refreshLabel: string;
@@ -1107,9 +1160,11 @@ function ResultSection({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            {entries.map((entry) => (
+            {entries.map((entry, index) => (
               <EntryTile
                 key={entry.entryId}
+                section={section}
+                position={index}
                 entry={entry}
                 labels={labels}
                 dense={dense}
@@ -1345,7 +1400,10 @@ export function EntrySearchSections({
           canEdit={canEditEntry(result.primary, user)}
           isEditLoading={editingEntryId === result.primary.entryId}
           onEdit={handleEditEntry}
-          onShare={setShareEntry}
+          onShare={(entry) => {
+            track("share_card_open", { entryId: entry.entryId, surface: "search_primary" });
+            setShareEntry(entry);
+          }}
           returnQuery={result.query}
         />
       ) : (
@@ -1358,6 +1416,7 @@ export function EntrySearchSections({
         />
       )}
       <ResultSection
+        section="similar"
         title={t("similarTitle")}
         entries={result.similar}
         refreshLabel={t("refresh")}
@@ -1387,6 +1446,7 @@ export function EntrySearchSections({
         }
       />
       <ResultSection
+        section="recommended"
         title={t("recommendedTitle")}
         entries={result.recommended}
         refreshLabel={t("refresh")}

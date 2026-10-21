@@ -59,6 +59,7 @@ model User {
   assistantConversations                                                                    assistant_conversations[]
   cantonese_corpus_update_history_cantonese_corpus_update_history_contributor_user_idToUser cantonese_corpus_update_history[]          @relation("cantonese_corpus_update_history_contributor_user_idToUser")
   cantonese_corpus_update_history                                                           cantonese_corpus_update_history[]
+  createdContentCategories                                                                  content_categories[]                       @relation("content_categories_created_by")
   corpus_category                                                                           corpus_category[]
   corpusCollectionActivities                                                                corpus_collection_activities[]
   assignedQuestionnairePermissions                                                          corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionAssigner")
@@ -75,12 +76,12 @@ model User {
   corpusCollectionReviewedItems                                                             corpus_collection_submissions[]            @relation("CorpusCollectionReviewer")
   corpusCollectionSubmissions                                                               corpus_collection_submissions[]
   corpus_tags                                                                               corpus_tags[]
-  createdContentCategories                                                                  content_categories[]                       @relation("content_categories_created_by")
-  createdTags                                                                               tags[]                                     @relation("tags_created_by")
+  corpus_taxonomy_changes                                                                   corpus_taxonomy_changes[]
   gameAnswerRecords                                                                         game_answer_records[]
   gamePlayerProgress                                                                        game_player_progress?
   auditLogsAsOperator                                                                       permission_audit_logs[]                    @relation("AuditOperator")
   auditLogsAsTarget                                                                         permission_audit_logs[]                    @relation("AuditTarget")
+  createdTags                                                                               tags[]                                     @relation("tags_created_by")
   corpusInteractions                                                                        user_corpus_interactions[]
   corpusPermissions                                                                         user_corpus_permissions[]
 }
@@ -139,8 +140,8 @@ model cantonese_categories {
   content_attribute    String                        @default("unclassified")
   cantonese_corpus_all cantonese_corpus_all[]
   activity             corpus_collection_activities?
-  userPermissions      user_corpus_permissions[]
   libraryProfile       library_dataset_profiles?
+  userPermissions      user_corpus_permissions[]
 
   @@id([id, name])
   @@index([content_attribute])
@@ -167,6 +168,7 @@ model cantonese_corpus_all {
   embedding_neighbors_as_source corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_source")
   embedding_neighbors_as_target corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_target")
   corpus_tags                   corpus_tags[]
+  corpus_taxonomy_changes       corpus_taxonomy_changes[]
   corpus_zyzdv2                 corpus_zyzdv2[]
   userInteractions              user_corpus_interactions[]
 
@@ -231,6 +233,7 @@ model cantonese_corpus_update_history {
   structured_note                                                Json?
   last_data                                                      String?
   contributor_user_id                                            String?
+  submission_id                                                  String?       @unique
   User_cantonese_corpus_update_history_contributor_user_idToUser User?         @relation("cantonese_corpus_update_history_contributor_user_idToUser", fields: [contributor_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cantonese_corpus_update_history_contributor_fkey")
   User                                                           User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -1153,10 +1156,10 @@ model tags {
   corpus_count                             Int                    @default(0)
   created_at                               DateTime               @default(now()) @db.Timestamptz(6)
   created_by                               String?
-  creator                                  User?                  @relation("tags_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   corpus_tags                              corpus_tags[]
   tag_related_tag_related_related_idTotags tag_related[]          @relation("tag_related_related_idTotags")
   tag_related_tag_related_tag_idTotags     tag_related[]          @relation("tag_related_tag_idTotags")
+  creator                                  User?                  @relation("tags_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([embedding])
   @@index([facet])
@@ -1238,76 +1241,13 @@ model corpus_collection_operator_roles {
   user_id        String   @id
   role_code      String
   active         Boolean  @default(true)
-  /// Activity-independent capabilities, e.g. contribution_review / ingestion_assignee.
-  global_actions String[] @default([])
   assigned_by    String
   note           String?
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  /// Activity-independent capabilities, e.g. contribution_review / ingestion_assignee.
+  global_actions String[] @default([])
   user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-}
-
-enum Role {
-  LEARNER
-  TAGGER_PARTNER
-  TAGGER_OUTSOURCING
-  RESEARCHER
-}
-
-enum UserStatus {
-  ACTIVE
-  PENDING_DELETE
-  DELETED
-  MERGED
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum APIStatus {
-  PENDING
-  APPROVED
-  BANNED
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum Status {
-  PENDING
-  APPROVED
-  BANNED
-}
-
-/// 操作类型枚举
-enum OperationType {
-  CREATE
-  UPDATE
-  DELETE
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum APILevel {
-  ADMIN
-  NORMAL
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum CategoryStatus {
-  RAW
-  INPROGRASS
-}
-
-/// 语料库访问权限级别
-enum CorpusPermission {
-  READ
-  WRITE
-  CREATE
-  FULL
-}
-
-/// 权限变更操作类型
-enum PermissionAction {
-  GRANT
-  REVOKE
-  MODIFY
-  ROLE_CHANGE
 }
 
 /// Library - 公开语料集展示资料，与 cantonese_categories.name 一对一；只有 listed=true 才出现在前台
@@ -1326,7 +1266,7 @@ model library_dataset_profiles {
   updated_by        String?
   created_at        DateTime             @default(now()) @db.Timestamptz(6)
   updated_at        DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
-  dataset           cantonese_categories @relation(fields: [dataset_name], references: [name], onDelete: Cascade, onUpdate: Cascade)
+  dataset           cantonese_categories @relation(fields: [dataset_name], references: [name], onDelete: Cascade)
 
   @@index([listed])
 }
@@ -1413,7 +1353,7 @@ model ingestion_leads {
   closed_at                   DateTime?                 @db.Timestamptz(6)
   created_at                  DateTime                  @default(now()) @db.Timestamptz(6)
   updated_at                  DateTime                  @default(now()) @updatedAt @db.Timestamptz(6)
-  application                 contribution_applications @relation(fields: [contribution_application_id], references: [id], onDelete: Restrict)
+  application                 contribution_applications @relation(fields: [contribution_application_id], references: [id])
 
   @@index([assignee_id, status])
 }
@@ -1471,4 +1411,111 @@ model assistant_messages {
 
   @@index([conversation_id, created_at])
   @@index([user_id, role, created_at])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_taxonomy_changes {
+  id                   BigInt               @id @default(autoincrement())
+  corpus_id            BigInt
+  submission_id        String?              @unique
+  task_id              String?
+  actor_ref            String
+  category_before      Json?
+  category_after       Json?
+  tags_added           Json?
+  tags_removed         Json?
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  User                 User                 @relation(fields: [actor_ref], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cantonese_corpus_all cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([corpus_id, created_at(sort: Desc)], map: "corpus_taxonomy_changes_corpus_idx")
+}
+
+enum Role {
+  LEARNER
+  TAGGER_PARTNER
+  TAGGER_OUTSOURCING
+  RESEARCHER
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_DELETE
+  DELETED
+  MERGED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APIStatus {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum Status {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// 操作类型枚举
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APILevel {
+  ADMIN
+  NORMAL
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum CategoryStatus {
+  RAW
+  INPROGRASS
+}
+
+/// 语料库访问权限级别
+enum CorpusPermission {
+  READ
+  WRITE
+  CREATE
+  FULL
+}
+
+/// 权限变更操作类型
+enum PermissionAction {
+  GRANT
+  REVOKE
+  MODIFY
+  ROLE_CHANGE
+}
+
+/// 自建埋点：前台行为事件与服务端搜索请求（#396）。不存 IP；query 为规范化后的搜索词原文
+model analytics_events {
+  id                BigInt    @id @default(autoincrement())
+  event_name        String
+  source            String    @default("web")
+  occurred_at       DateTime  @default(now()) @db.Timestamptz(6)
+  client_time       DateTime? @db.Timestamptz(6)
+  anonymous_id      String?
+  session_id        String?
+  user_id           String?
+  path              String?
+  locale            String?
+  device            String?
+  referrer_host     String?
+  entry_id          String?
+  section           String?
+  query             String?
+  media_type        String?
+  content_attribute String?
+  properties        Json      @default("{}")
+
+  @@index([event_name, occurred_at])
+  @@index([occurred_at])
+  @@index([entry_id, occurred_at])
 }
