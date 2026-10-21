@@ -17,7 +17,11 @@ import { getTranslations } from "next-intl/server";
 import { CopyEntryIdButton } from "./copy-entry-id-button";
 import { Model3dCard } from "@/components/media/model3d-card";
 import { VideoCard } from "@/components/media/video-card";
-import { SHARE_ATTRIBUTION_PARAM, SHARE_ATTRIBUTION_VALUE } from "@/lib/analytics/events";
+import {
+  SHARE_ATTRIBUTION_PARAM,
+  SHARE_ATTRIBUTION_VALUE,
+  SHARE_ID_PARAM,
+} from "@/lib/analytics/events";
 import { ShareCardLink, ShareLinkOpenTracker } from "./entry-analytics";
 import { AudioCard } from "@/components/media/audio-card";
 import { ImageCard } from "@/components/media/image-card";
@@ -30,6 +34,7 @@ type EntryPageProps = {
   searchParams?: Promise<{
     fromSearch?: string;
     [SHARE_ATTRIBUTION_PARAM]?: string;
+    [SHARE_ID_PARAM]?: string;
   }>;
 };
 
@@ -114,7 +119,10 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       {resolvedSearchParams?.[SHARE_ATTRIBUTION_PARAM] === SHARE_ATTRIBUTION_VALUE && (
-        <ShareLinkOpenTracker entryId={entry.entryId} />
+        <ShareLinkOpenTracker
+          entryId={entry.entryId}
+          shareId={resolvedSearchParams?.[SHARE_ID_PARAM]}
+        />
       )}
       <script
         type="application/ld+json"
@@ -184,7 +192,12 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
                   poster={entry.assets.coverImage}
                   transcript={entry.assets.videoTranscript}
                   transcriptLabel={t("videoTranscript")}
-                  analytics={{ entryId: entry.entryId, surface: "entry_detail" }}
+                  analytics={{
+                    entryId: entry.entryId,
+                    surface: "entry_detail",
+                    // Shown on failure: the entry text, plus audio when available (#508).
+                    fallbackType: entry.assets.audioUrl ? "text_audio" : "text",
+                  }}
                 />
               )}
               {entry.assets.audioUrl && (

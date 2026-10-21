@@ -8,20 +8,21 @@ import { useTranslations } from "next-intl";
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { VideoPlayer } from "./video-player";
+import { VideoPlayer, type VideoAnalytics } from "./video-player";
 
 type CardVideoPreviewProps = {
   url: string;
   poster?: string | null;
   title: string;
-  entryId?: string;
+  /** Surface is set here: compact card vs enlarged dialog. */
+  analytics?: Omit<VideoAnalytics, "surface">;
 };
 
 export function CardVideoPreview(props: CardVideoPreviewProps) {
   return <Preview key={props.url} {...props} />;
 }
 
-function Preview({ url, poster, title, entryId }: CardVideoPreviewProps) {
+function Preview({ url, poster, title, analytics }: CardVideoPreviewProps) {
   const t = useTranslations("VideoPlayer");
   const [open, setOpen] = useState(false);
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
@@ -32,7 +33,7 @@ function Preview({ url, poster, title, entryId }: CardVideoPreviewProps) {
     <MotionConfig reducedMotion="user">
       <Dialog open={open} onOpenChange={setOpen}>
         <div ref={previewRef}>
-          <VideoPlayer url={url} poster={poster} compact onPreview={() => setOpen(true)} onAspectRatio={setAspectRatio} analytics={{ entryId, surface: "search_tile" }} />
+          <VideoPlayer url={url} poster={poster} compact onPreview={() => setOpen(true)} onAspectRatio={setAspectRatio} analytics={analytics && { ...analytics, surface: "search_tile" }} />
         </div>
         <DialogContent
           className="max-h-[calc(100dvh-2rem)] max-w-none gap-0 overflow-y-auto border-border bg-background p-0 text-foreground sm:max-w-none"
@@ -63,7 +64,7 @@ function Preview({ url, poster, title, entryId }: CardVideoPreviewProps) {
           </div>
           <div className="px-4 pb-4">
             {/* Unmount immediately on close, including during the exit animation. */}
-            {open && <VideoPlayer url={url} poster={poster} autoPlay enlarged onAspectRatio={setAspectRatio} analytics={{ entryId, surface: "preview_dialog" }} />}
+            {open && <VideoPlayer url={url} poster={poster} autoPlay enlarged onAspectRatio={setAspectRatio} analytics={analytics && { ...analytics, surface: "preview_dialog" }} />}
           </div>
         </DialogContent>
       </Dialog>

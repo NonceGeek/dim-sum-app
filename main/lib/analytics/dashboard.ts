@@ -209,7 +209,7 @@ async function search(r: DateRange) {
 }
 
 async function content(r: DateRange) {
-  const [video, funnel, entries] = await prisma.$transaction([
+  const [video, videoErrors, funnel, attributedOpens, entries] = await prisma.$transaction([
     prisma.$queryRaw<Rows>`
       SELECT properties->>'surface' AS surface,
         count(*) FILTER (WHERE event_name = 'video_play')::int AS plays,
@@ -217,6 +217,17 @@ async function content(r: DateRange) {
       FROM analytics_events
       WHERE ${inRange(r)} AND event_name IN ('video_play', 'video_load_failed')
       GROUP BY 1 ORDER BY plays DESC`,
+    // #508 failure breakdown: error type, time to failure and what users fell back to.
+    prisma.$queryRaw<Rows>`
+      SELECT coalesce(properties->>'errorType', properties->>'reason', 'unknown') AS error_type,
+        count(*)::int AS failures,
+        round(avg((properties->>'loadElapsedMs')::int))::int AS avg_elapsed_ms,
+        count(*) FILTER (WHERE properties->>'fallbackType' = 'text_audio')::int AS text_audio,
+        count(*) FILTER (WHERE properties->>'fallbackType' = 'text')::int AS text_only,
+        count(*) FILTER (WHERE properties->>'fallbackType' = 'none')::int AS no_fallback
+      FROM analytics_events
+      WHERE ${inRange(r)} AND event_name = 'video_load_failed'
+      GROUP BY 1 ORDER BY failures DESC`,
     prisma.$queryRaw<Rows>`
       SELECT event_name, count(*)::int AS events, count(DISTINCT entry_id)::int AS entries
       FROM analytics_events
@@ -224,6 +235,17 @@ async function content(r: DateRange) {
         ('share_card_open', 'share_link_copy', 'share_image_download', 'share_card_link_click', 'share_link_open')
         AND (event_name <> 'share_image_download' OR (properties->>'success')::boolean)
       GROUP BY event_name`,
+    // Share-link opens whose share_id matches a share created on the site (#508 attribution).
+    prisma.$queryRaw<Rows>`
+      SELECT count(*)::int AS opens
+      FROM analytics_events o
+      WHERE ${Prisma.sql`o.occurred_at >= ${r.start} AND o.occurred_at < ${r.end}`}
+        AND o.event_name = 'share_link_open' AND o.properties ? 'shareId'
+        AND EXISTS (
+          SELECT 1 FROM analytics_events s
+          WHERE s.event_name IN ('share_card_open', 'share_link_copy')
+            AND s.properties->>'shareId' = o.properties->>'shareId'
+        )`,
     prisma.$queryRaw<Rows>`
       SELECT e.entry_id, c.data AS name,
         count(*) FILTER (WHERE e.event_name = 'search_result_click')::int AS clicks,
@@ -250,7 +272,16 @@ async function content(r: DateRange) {
       imageDownloads: count("share_image_download"),
       cardLinkClicks: count("share_card_link_click"),
       linkOpens: count("share_link_open"),
+      attributedLinkOpens: n(attributedOpens[0]?.opens),
     },
+    videoErrors: videoErrors.map((v) => ({
+      errorType: String(v.error_type),
+      failures: n(v.failures),
+      avgElapsedMs: v.avg_elapsed_ms === null ? null : n(v.avg_elapsed_ms),
+      textAudio: n(v.text_audio),
+      textOnly: n(v.text_only),
+      noFallback: n(v.no_fallback),
+    })),
     topEntries: entries.map((e) => ({
       entryId: String(e.entry_id),
       name: e.name ? String(e.name).slice(0, 80) : null,

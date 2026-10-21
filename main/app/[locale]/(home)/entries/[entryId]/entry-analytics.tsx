@@ -1,17 +1,35 @@
 "use client";
 
 import { useEffect } from "react";
-import { track } from "@/lib/analytics/client";
+import { newAnalyticsId, track } from "@/lib/analytics/client";
+import { DEFAULT_SHARE_CHANNEL } from "@/lib/analytics/events";
 
 const reportedOpens = new Set<string>();
 
-/** Counts visits that arrived through a copied share link (?from=share), once per page load. */
-export function ShareLinkOpenTracker({ entryId }: { entryId: string }) {
+/**
+ * Counts a visit that arrived through a share link (?from=share&sid=…), once per
+ * page load. Rendered only after the entry was found, i.e. the target content loaded.
+ */
+export function ShareLinkOpenTracker({
+  entryId,
+  shareId,
+}: {
+  entryId: string;
+  shareId?: string;
+}) {
   useEffect(() => {
-    if (reportedOpens.has(entryId)) return;
-    reportedOpens.add(entryId);
-    track("share_link_open", { entryId });
-  }, [entryId]);
+    const key = `${entryId}|${shareId ?? ""}`;
+    if (reportedOpens.has(key)) return;
+    reportedOpens.add(key);
+    const validShareId = shareId && /^[0-9a-f-]{36}$/i.test(shareId) ? shareId : undefined;
+    track("share_link_open", {
+      entryId,
+      shareId: validShareId,
+      landingVisitId: newAnalyticsId(),
+      // The channel can't be identified from a plain link; never guessed (#508).
+      sourceChannel: DEFAULT_SHARE_CHANNEL,
+    });
+  }, [entryId, shareId]);
   return null;
 }
 
@@ -30,7 +48,13 @@ export function ShareCardLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => track("share_card_link_click", { entryId, surface: "entry_detail" })}
+      onClick={() =>
+        track("share_card_link_click", {
+          entryId,
+          shareId: newAnalyticsId(),
+          surface: "entry_detail",
+        })
+      }
     >
       {children}
     </a>

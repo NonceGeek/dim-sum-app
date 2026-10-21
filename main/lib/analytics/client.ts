@@ -28,6 +28,11 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let listening = false;
 let memoryIds: { anon: string; session: string } | null = null;
 
+/** Random UUID for analytics identifiers (share_id, play sessions, visits). */
+export function newAnalyticsId() {
+  return uuid();
+}
+
 function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto)
     return crypto.randomUUID();
