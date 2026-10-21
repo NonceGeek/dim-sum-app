@@ -1,5 +1,26 @@
 {
   "AdminAnalytics": {
+    "source": {
+      "web": "Web",
+      "miniprogram": "Miniprogram"
+    },
+    "scene": {
+      "1001": "Discover tab entry",
+      "1007": "Card in a one-to-one chat",
+      "1008": "Card in a group chat",
+      "1011": "QR code scan",
+      "1012": "QR code in image (long press)",
+      "1035": "Official account menu",
+      "1037": "Opened from another miniprogram",
+      "1043": "Official account template message",
+      "1047": "Miniprogram code scan",
+      "1048": "Miniprogram code in image (long press)",
+      "1074": "Card from official account chat",
+      "1089": "Pull-down on chat list",
+      "1104": "Pull-down \"My miniprograms\"",
+      "1154": "Moments single-page mode",
+      "1155": "Opened from single-page mode"
+    },
     "title": "Analytics",
     "description": "First-party tracking: page views, Search 3.0 behavior, video and sharing. Days in Beijing time; admin pages and bots excluded.",
     "range": "Date range",
@@ -70,6 +91,9 @@
       "entry_detail": "Entry page"
     },
     "traffic": {
+      "sources": "Client",
+      "scenes": "Miniprogram launch scenes",
+      "scenesHint": "WeChat scene value of each miniprogram visit (landing view only).",
       "pages": "Top pages",
       "referrers": "Referrers",
       "referrersHint": "Landing page of each visit only.",
@@ -84,6 +108,8 @@
       "unknown": "Unknown"
     },
     "col": {
+      "source": "Client",
+      "scene": "Scene",
       "query": "Query",
       "searches": "Searches",
       "users": "Users",

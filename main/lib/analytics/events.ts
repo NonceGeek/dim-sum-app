@@ -1,18 +1,21 @@
 import { z } from "zod";
 
 /**
- * First-party analytics event catalog (#396). Shared by the browser tracker and
- * the ingest API: anything not listed here is dropped server-side.
+ * First-party analytics event catalog (#396). Shared by the browser tracker, the
+ * WeChat miniprogram (source "miniprogram") and the ingest API: anything not
+ * listed here is dropped server-side.
  * Columns hold the fields the dashboard groups by; everything else goes to `properties`.
  */
 export const SEARCH_SECTIONS = ["primary", "similar", "recommended"] as const;
-export const SHARE_SURFACES = ["search_primary", "entry_detail"] as const;
+export const SHARE_SURFACES = ["search_primary", "entry_detail", "miniprogram"] as const;
 export const VIDEO_SURFACES = [
   "search_primary",
   "search_tile",
   "preview_dialog",
   "entry_detail",
+  "miniprogram",
 ] as const;
+export const MP_SHARE_CHANNELS = ["chat", "timeline"] as const;
 
 const id = z.string().trim().min(1).max(100);
 const query = z.string().trim().max(100);
@@ -21,7 +24,11 @@ const mediaType = z.string().trim().max(20);
 
 export const CLIENT_EVENT_SCHEMAS = {
   // landing=true marks the first view of a visit; only it carries the external referrer.
-  page_view: z.object({ landing: z.boolean().optional() }),
+  // scene is the WeChat miniprogram launch scene value (e.g. 1007 chat card, 1011 QR code).
+  page_view: z.object({
+    landing: z.boolean().optional(),
+    scene: z.number().int().min(0).max(100000).optional(),
+  }),
   search_submit: z.object({
     query,
     dataset: z.string().max(500).optional(),
@@ -58,6 +65,11 @@ export const CLIENT_EVENT_SCHEMAS = {
   share_link_copy: z.object({ entryId: id }),
   share_card_link_click: z.object({ entryId: id, surface: z.enum(SHARE_SURFACES) }),
   share_link_open: z.object({ entryId: id }),
+  // Miniprogram forward to a chat (onShareAppMessage) or Moments (onShareTimeline).
+  mp_share: z.object({
+    entryId: id.optional(),
+    channel: z.enum(MP_SHARE_CHANNELS),
+  }),
 } as const;
 
 export type ClientEventName = keyof typeof CLIENT_EVENT_SCHEMAS;

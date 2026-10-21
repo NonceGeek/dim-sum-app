@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
+import { getOptionalMiniprogramUser } from "@/lib/miniprogram-auth";
 import { prisma } from "@/lib/prisma";
 import {
   deviceFromUserAgent,
@@ -16,6 +17,8 @@ const MAX_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
 /**
  * Ingest for the first-party tracker. Accepts small batches (also via
  * navigator.sendBeacon), drops bots and unknown events, never stores IPs.
+ * Web callers are identified by the NextAuth cookie; the miniprogram may send
+ * its access token as `Authorization: Bearer <token>`. Both are optional.
  */
 export async function POST(req: NextRequest) {
   const ok = new NextResponse(null, { status: 204 });
@@ -34,7 +37,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid batch" }, { status: 400 });
 
   const batch = parsed.data;
-  const session = await getAuthSession().catch(() => null);
+  const userId = req.headers.get("authorization")
+    ? ((await getOptionalMiniprogramUser(req))?.userId ?? null)
+    : ((await getAuthSession().catch(() => null))?.user?.id ?? null);
   const ownHost = req.nextUrl.hostname;
   const now = Date.now();
   const rows = batch.events.flatMap((event) => {
@@ -50,7 +55,7 @@ export async function POST(req: NextRequest) {
             : null,
         anonymous_id: batch.anonymousId,
         session_id: batch.sessionId,
-        user_id: session?.user?.id ?? null,
+        user_id: userId,
         path: event.path ?? null,
         locale: event.locale ?? null,
         device: deviceFromUserAgent(ua),

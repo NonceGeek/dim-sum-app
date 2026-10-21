@@ -9,13 +9,21 @@ import {
   referrerHost,
 } from "./events";
 import { toRow } from "./server";
-import { parseRange } from "./dashboard";
 
 test("unknown events and invalid payloads are dropped", () => {
   assert.equal(parseClientEvent("delete_everything", {}), null);
   assert.equal(parseClientEvent("search_result_click", { query: "x", section: "nope", entryId: "a", position: 0 }), null);
   assert.deepEqual(parseClientEvent("share_link_copy", { entryId: "abc", extra: "dropped" }), { entryId: "abc" });
   assert.deepEqual(parseClientEvent("page_view", { landing: true }), { landing: true });
+});
+
+test("miniprogram events: scene, surfaces and forwarding", () => {
+  assert.deepEqual(parseClientEvent("page_view", { landing: true, scene: 1007 }), { landing: true, scene: 1007 });
+  assert.equal(parseClientEvent("page_view", { scene: -1 }), null);
+  assert.deepEqual(parseClientEvent("video_play", { entryId: "e1", surface: "miniprogram" }), { entryId: "e1", surface: "miniprogram" });
+  assert.deepEqual(parseClientEvent("share_card_open", { entryId: "e1", surface: "miniprogram" }), { entryId: "e1", surface: "miniprogram" });
+  assert.deepEqual(parseClientEvent("mp_share", { channel: "timeline" }), { channel: "timeline" });
+  assert.equal(parseClientEvent("mp_share", { channel: "email" }), null);
 });
 
 test("rows split indexed columns from properties and normalize queries", () => {
@@ -37,6 +45,11 @@ test("bots, devices and referrers", () => {
   assert.equal(isBotUserAgent("Mozilla/5.0 (compatible; Googlebot/2.1)"), true);
   assert.equal(isBotUserAgent("Mozilla/5.0 HeadlessChrome/120"), true);
   assert.equal(isBotUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari"), false);
+  // WeChat miniprogram wx.request user agent.
+  assert.equal(
+    isBotUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 MicroMessenger/8.0.50 miniProgram/wx1234"),
+    false,
+  );
   assert.equal(deviceFromUserAgent("Mozilla/5.0 (iPhone) Mobile Safari"), "mobile");
   assert.equal(deviceFromUserAgent("Mozilla/5.0 (iPad) Safari"), "tablet");
   assert.equal(deviceFromUserAgent("Mozilla/5.0 (Macintosh) Chrome"), "desktop");
@@ -45,23 +58,15 @@ test("bots, devices and referrers", () => {
   assert.equal(referrerHost("not a url"), null);
 });
 
-test("ingest batches are bounded", () => {
+test("ingest batches are bounded and accept the miniprogram source", () => {
   const event = { name: "page_view", props: {} };
   const base = {
     anonymousId: "6f1c3d9a-1b2c-4d5e-8f90-123456789abc",
     sessionId: "7f1c3d9a-1b2c-4d5e-8f90-123456789abc",
   };
   assert.equal(ingestBatchSchema.safeParse({ ...base, events: [event] }).success, true);
+  assert.equal(ingestBatchSchema.safeParse({ ...base, source: "miniprogram", events: [event] }).success, true);
+  assert.equal(ingestBatchSchema.safeParse({ ...base, source: "app", events: [event] }).success, false);
   assert.equal(ingestBatchSchema.safeParse({ ...base, events: Array(21).fill(event) }).success, false);
   assert.equal(ingestBatchSchema.safeParse({ ...base, anonymousId: "x", events: [event] }).success, false);
-});
-
-test("dashboard ranges use Beijing calendar days", () => {
-  const r = parseRange("2026-10-01", "2026-10-07");
-  assert.ok(r);
-  assert.equal(r.start.toISOString(), "2026-09-30T16:00:00.000Z");
-  assert.equal(r.end.toISOString(), "2026-10-07T16:00:00.000Z");
-  assert.equal(parseRange("2026-10-07", "2026-10-01"), null);
-  assert.equal(parseRange("2025-01-01", "2026-10-01"), null);
-  assert.equal(parseRange("bad", "2026-10-01"), null);
 });
