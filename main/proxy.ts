@@ -15,6 +15,7 @@ const protectedPatterns = [
   /^\/marker(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/workplace(\/|$)/,
+  /^\/assistant(\/|$)/,
 ];
 
 // Routes that require specific roles
