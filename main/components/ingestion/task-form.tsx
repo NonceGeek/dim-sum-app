@@ -16,6 +16,8 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
+  CONTENT_ATTRIBUTES,
+  type ContentAttribute,
   defaultTaskTitle,
   type IngestionType,
   isMediaPath,
@@ -76,6 +78,9 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
   const [type, setType] = useState<IngestionType>(initialType);
   const [existingName, setExistingName] = useState(initialType === "supplement_existing" ? initialName : "");
   const [newName, setNewName] = useState(initialType === "new_dataset" ? initialName : "");
+  const [contentAttribute, setContentAttribute] = useState<ContentAttribute>(
+    task?.targetContentAttribute ?? "oral",
+  );
   const [modalities, setModalities] = useState<TaskModality[]>(task?.modalities ?? ["text"]);
   const [title, setTitle] = useState(task?.title ?? "");
   // 标题未手动改过时跟随语料集名生成
@@ -150,6 +155,7 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
         body: JSON.stringify({
           targetIngestionType: type,
           targetDatasetName: datasetName,
+          targetContentAttribute: type === "new_dataset" ? contentAttribute : undefined,
           modalities,
           sourceCollectionMethod: source,
           title: titleEdited ? title : autoTitle,
@@ -336,14 +342,35 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
                 )}
               </>
             ) : (
-              <Field label={t("create.newDataset")} htmlFor="task-new-dataset" required hint={t("create.datasetHint")}>
-                <Input
-                  id="task-new-dataset"
-                  maxLength={200}
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                />
-              </Field>
+              <div className="space-y-2">
+                <div className="grid gap-6 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
+                  <Field label={t("create.newDataset")} htmlFor="task-new-dataset" required>
+                    <Input
+                      id="task-new-dataset"
+                      maxLength={200}
+                      placeholder={t("create.newDatasetPlaceholder")}
+                      className="bg-background"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                    />
+                  </Field>
+                  <Field label={t("create.contentAttribute")} htmlFor="task-content-attribute" required>
+                    <select
+                      id="task-content-attribute"
+                      value={contentAttribute}
+                      onChange={(e) => setContentAttribute(e.target.value as ContentAttribute)}
+                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    >
+                      {CONTENT_ATTRIBUTES.map((value) => (
+                        <option key={value} value={value}>
+                          {t(`contentAttribute.${value}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("create.datasetHint")}</p>
+              </div>
             )}
           </Section>
 

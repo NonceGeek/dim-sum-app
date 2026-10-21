@@ -1490,6 +1490,8 @@ model ingestion_tasks {
   target_dataset_name      String
   /// new_dataset | supplement_existing，与 ingestion_leads.target_ingestion_type 同值
   target_ingestion_type    String                  @default("new_dataset")
+  /// 新建语料集的类型 oral | cultural_knowledge，对应 cantonese_categories.content_attribute；补充已有语料集时为空
+  target_content_attribute String?
   /// text 必选，另可含 audio / video / image
   modalities               String[]                @default(["text"])
   source_collection_method String                  @default("")

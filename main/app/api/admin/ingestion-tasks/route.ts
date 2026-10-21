@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/admin/ingestion-tasks {targetIngestionType, targetDatasetName, modalities, sourceCollectionMethod,
- * title?, description?, leadId?}：建草稿，创建人即负责人
+ * POST /api/admin/ingestion-tasks {targetIngestionType, targetDatasetName, targetContentAttribute?, modalities,
+ * sourceCollectionMethod, title?, description?, leadId?}：建草稿，创建人即负责人；新建语料集时 targetContentAttribute 必填
  */
 export async function POST(req: NextRequest) {
   return withLibraryOps(req, async (access) => {

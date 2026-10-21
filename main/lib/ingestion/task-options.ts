@@ -4,6 +4,10 @@
 export const INGESTION_TYPES = ["supplement_existing", "new_dataset"] as const;
 export type IngestionType = (typeof INGESTION_TYPES)[number];
 
+/** 新建语料集的类型，对应 cantonese_categories.content_attribute */
+export const CONTENT_ATTRIBUTES = ["oral", "cultural_knowledge"] as const;
+export type ContentAttribute = (typeof CONTENT_ATTRIBUTES)[number];
+
 /** 取自 CONTRIBUTION_MODALITIES；文字必选 */
 export const TASK_MODALITIES = ["text", "audio", "video", "image"] as const;
 export type TaskModality = (typeof TASK_MODALITIES)[number];

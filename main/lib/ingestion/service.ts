@@ -20,6 +20,7 @@ import {
 } from "./tasks";
 import { headObject, signNewUpload, uploadMaxBytes } from "./oss";
 import {
+  CONTENT_ATTRIBUTES,
   defaultTaskTitle,
   INGESTION_TYPES,
   type IngestionType,
@@ -81,34 +82,54 @@ function taskEvent(
 
 /* ---------- Create ---------- */
 
-const taskConfigSchema = z.object({
+const taskConfigFields = z.object({
   title: z.string().trim().max(200).default(""),
   description: z.string().trim().max(2000).default(""),
   targetIngestionType: z.enum(INGESTION_TYPES),
   targetDatasetName: z.string().trim().min(1).max(200),
+  // 新建语料集时必填，补充已有语料集时忽略
+  targetContentAttribute: z.enum(CONTENT_ATTRIBUTES).optional(),
   modalities: z.array(z.enum(TASK_MODALITIES)).max(TASK_MODALITIES.length).default([]),
   // 草稿可以先空着；开始智能清洗前由表单要求填写
   sourceCollectionMethod: z.string().trim().max(2000).default(""),
 });
 
-export const createTaskSchema = taskConfigSchema.extend({
-  leadId: z.string().regex(/^\d+$/).optional(),
-});
+const requireContentAttribute = (
+  input: { targetIngestionType?: IngestionType; targetContentAttribute?: string },
+  ctx: z.RefinementCtx,
+) => {
+  if (input.targetIngestionType === "new_dataset" && !input.targetContentAttribute)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["targetContentAttribute"] });
+};
 
-/** 选已有语料集时它必须存在；新建时不能与已有语料集重名 */
+const taskConfigSchema = taskConfigFields.superRefine(requireContentAttribute);
+
+export const createTaskSchema = taskConfigFields
+  .extend({ leadId: z.string().regex(/^\d+$/).optional() })
+  .superRefine(requireContentAttribute);
+
+/** 选已有语料集时它必须存在；新建时不能与已有语料集的标识或展示名重名 */
 async function assertDatasetTarget(tx: Tx, type: IngestionType, name: string) {
-  const existing = await tx.cantonese_categories.findUnique({ where: { name }, select: { name: true } });
-  if (type === "supplement_existing" && !existing) throw new AccessError(400, "所选语料集不存在");
-  if (type === "new_dataset" && existing)
-    throw new AccessError(409, "已有同名语料集，请改为选择已有语料集");
+  if (type === "supplement_existing") {
+    const existing = await tx.cantonese_categories.findUnique({ where: { name }, select: { name: true } });
+    if (!existing) throw new AccessError(400, "所选语料集不存在");
+    return;
+  }
+  const existing = await tx.cantonese_categories.findFirst({
+    where: { OR: [{ name }, { nickname: name }] },
+    select: { name: true },
+  });
+  if (existing) throw new AccessError(409, "已有同名语料集，请改为选择已有语料集");
 }
 
-function taskConfigData(input: z.infer<typeof taskConfigSchema>) {
+function taskConfigData(input: z.infer<typeof taskConfigFields>) {
   return {
     title: input.title || defaultTaskTitle(input.targetDatasetName),
     description: input.description,
     target_ingestion_type: input.targetIngestionType,
     target_dataset_name: input.targetDatasetName,
+    target_content_attribute:
+      input.targetIngestionType === "new_dataset" ? (input.targetContentAttribute ?? null) : null,
     modalities: normalizeModalities(input.modalities),
     source_collection_method: input.sourceCollectionMethod,
   };
@@ -438,6 +459,7 @@ function serializeTask(task: Task, run: RunSummary | null, names: Record<string,
     description: task.description,
     targetDatasetName: task.target_dataset_name,
     targetIngestionType: task.target_ingestion_type,
+    targetContentAttribute: task.target_content_attribute,
     modalities: task.modalities,
     sourceCollectionMethod: task.source_collection_method,
     status: task.status,

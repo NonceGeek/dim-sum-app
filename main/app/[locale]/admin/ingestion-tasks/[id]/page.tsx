@@ -136,6 +136,12 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
             <dd className="break-all">{task.targetDatasetName}</dd>
             <dt className="text-muted-foreground">{t("fields.targetIngestionType")}</dt>
             <dd>{t(`create.ingestionType.${task.targetIngestionType}`)}</dd>
+            {task.targetContentAttribute && (
+              <>
+                <dt className="text-muted-foreground">{t("fields.targetContentAttribute")}</dt>
+                <dd>{t(`contentAttribute.${task.targetContentAttribute}`)}</dd>
+              </>
+            )}
             <dt className="text-muted-foreground">{t("fields.modalities")}</dt>
             <dd>{task.modalities.map((m) => t(`modality.${m}`)).join(" + ")}</dd>
             <dt className="text-muted-foreground">{t("fields.assignee")}</dt>

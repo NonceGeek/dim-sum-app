@@ -1,5 +1,5 @@
 import type { DisplayStatus } from "@/lib/ingestion/display-status";
-import type { IngestionType, TaskModality } from "@/lib/ingestion/task-options";
+import type { ContentAttribute, IngestionType, TaskModality } from "@/lib/ingestion/task-options";
 
 /* ---------- dim-sum-app /api/admin/ingestion-tasks ---------- */
 
@@ -19,6 +19,8 @@ export type TaskSummary = {
   description: string;
   targetDatasetName: string;
   targetIngestionType: IngestionType;
+  /** 新建语料集的类型；补充已有语料集时为 null */
+  targetContentAttribute: ContentAttribute | null;
   modalities: TaskModality[];
   sourceCollectionMethod: string;
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
