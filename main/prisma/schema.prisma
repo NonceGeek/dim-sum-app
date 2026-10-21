@@ -1305,3 +1305,29 @@ model corpus_collection_operator_roles {
   updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
+
+/// 自建埋点：前台行为事件与服务端搜索请求（#396）。不存 IP；query 为规范化后的搜索词原文
+model analytics_events {
+  id                BigInt    @id @default(autoincrement())
+  event_name        String
+  source            String    @default("web")
+  occurred_at       DateTime  @default(now()) @db.Timestamptz(6)
+  client_time       DateTime? @db.Timestamptz(6)
+  anonymous_id      String?
+  session_id        String?
+  user_id           String?
+  path              String?
+  locale            String?
+  device            String?
+  referrer_host     String?
+  entry_id          String?
+  section           String?
+  query             String?
+  media_type        String?
+  content_attribute String?
+  properties        Json      @default("{}")
+
+  @@index([event_name, occurred_at])
+  @@index([occurred_at])
+  @@index([entry_id, occurred_at])
+}
