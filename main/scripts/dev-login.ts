@@ -15,6 +15,8 @@ import { PrismaClient } from "@prisma/client";
 
 /** Supabase 测试库项目 ref（连接串用户名形如 postgres.<ref>） */
 const TEST_DATABASE_REFS = ["lesgvmmlsbckbupcouou"];
+/** Neon 测试库 endpoint（host 形如 <endpoint>[-pooler].<region>.aws.neon.tech） */
+const TEST_NEON_ENDPOINTS = ["ep-flat-dust-b32e9ezh"];
 const LOCAL_HOSTS = ["localhost", "127.0.0.1"];
 
 function assertTestDatabase(databaseUrl: string | undefined) {
@@ -23,7 +25,14 @@ function assertTestDatabase(databaseUrl: string | undefined) {
   if (!databaseUrl) throw new Error("DATABASE_URL 未配置");
   const url = new URL(databaseUrl);
   const ref = decodeURIComponent(url.username).split(".")[1];
-  if (!LOCAL_HOSTS.includes(url.hostname) && !(ref && TEST_DATABASE_REFS.includes(ref)))
+  const neonEndpoint = url.hostname.endsWith(".neon.tech")
+    ? url.hostname.split(".")[0].replace(/-pooler$/, "")
+    : undefined;
+  if (
+    !LOCAL_HOSTS.includes(url.hostname) &&
+    !(ref && TEST_DATABASE_REFS.includes(ref)) &&
+    !(neonEndpoint && TEST_NEON_ENDPOINTS.includes(neonEndpoint))
+  )
     throw new Error(`DATABASE_URL 不是本地或测试库（host ${url.hostname}），拒绝运行`);
 }
 
