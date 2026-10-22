@@ -27,10 +27,16 @@ type Probe = { size: bigint | null; contentType: string | null; duration: number
 
 async function probeSize(url: string): Promise<Pick<Probe, "size" | "contentType">> {
   const head = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
+  if (head.ok && /^(text\/html|application\/xhtml\+xml)(;|$)/i.test(head.headers.get("content-type") ?? "")) {
+    throw new Error("HTML page is not a media file");
+  }
   const length = head.ok ? head.headers.get("content-length") : null;
   if (head.ok && length) return { size: BigInt(length), contentType: head.headers.get("content-type") };
   const ranged = await fetch(url, { headers: { Range: "bytes=0-0" }, redirect: "follow", signal: AbortSignal.timeout(15_000) });
   await ranged.body?.cancel();
+  if (ranged.ok && /^(text\/html|application\/xhtml\+xml)(;|$)/i.test(ranged.headers.get("content-type") ?? "")) {
+    throw new Error("HTML page is not a media file");
+  }
   const total = ranged.headers.get("content-range")?.match(/\/(\d+)$/)?.[1];
   if (!ranged.ok || !total) throw new Error(`HTTP ${head.status}/${ranged.status}`);
   return { size: BigInt(total), contentType: ranged.headers.get("content-type") };
@@ -93,7 +99,13 @@ async function main() {
     while (done < limit) {
       const batch = await database(() => prisma.corpus_media_assets.findMany({
         where: {
-          probe_status: { in: arg("retry-failed") ? ["pending", "failed"] : ["pending"] },
+          ...(arg("retry-failed")
+            ? { OR: [
+                { probe_status: { in: ["pending", "failed"] } },
+                { content_type: { startsWith: "text/html", mode: "insensitive" as const } },
+                { content_type: { startsWith: "application/xhtml+xml", mode: "insensitive" as const } },
+              ] }
+            : { probe_status: "pending" }),
           ...(afterUrl === undefined ? {} : { url: { gt: afterUrl } }),
         },
         select: { url: true, media_type: true },
