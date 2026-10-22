@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -55,6 +55,11 @@ export default function AdminCategoriesPage() {
   const t = useTranslations("AdminCategories");
   const locale = useLocale();
   const [search, setSearch] = useState("");
+  // ?search= deep link, e.g. from the corpus asset detail page.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("search");
+    if (requested) setSearch(requested);
+  }, []);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Category | null>(null);
   const [libraryEditing, setLibraryEditing] = useState<string | null>(null);
