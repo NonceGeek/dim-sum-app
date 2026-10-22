@@ -1,4 +1,12 @@
 "use client";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { canCreate } from "@/lib/admin/policy";
@@ -50,34 +58,59 @@ export function DatasetCreate() {
             create.mutate();
           }}
         >
-          <Input
-            required
-            aria-label={en ? "Dataset slug" : "语料集标识"}
-            placeholder={en ? "Unique slug" : "唯一标识（字母、数字、连字符）"}
-            pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            required
-            maxLength={100}
-            aria-label={en ? "Dataset name" : "语料集名称"}
-            placeholder={en ? "Display name" : "展示名称"}
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-          />
-          <select
-            className="border rounded p-2"
-            aria-label={en ? "Content class" : "语料大类"}
-            value={contentAttribute}
-            onChange={(e) => setType(e.target.value)}
-          >
-            <option value="oral">{en ? "Oral corpus" : "口语语料"}</option>
-            <option value="cultural_knowledge">
-              {en ? "Cultural knowledge" : "文化知识"}
-            </option>
-          </select>
-          <Button disabled={create.isPending}>
+          <div className="space-y-2">
+            <Label htmlFor="dataset-slug">
+              {en ? "Dataset slug" : "语料集标识"}
+            </Label>
+            <Input
+              id="dataset-slug"
+              required
+              aria-label={en ? "Dataset slug" : "语料集标识"}
+              placeholder={
+                en ? "Unique slug" : "唯一标识（字母、数字、连字符）"
+              }
+              pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dataset-name">
+              {en ? "Dataset name" : "语料集名称"}
+            </Label>
+            <Input
+              id="dataset-name"
+              required
+              maxLength={100}
+              aria-label={en ? "Dataset name" : "语料集名称"}
+              placeholder={en ? "Display name" : "展示名称"}
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dataset-content-class">
+              {en ? "Content class" : "语料大类"}
+            </Label>
+            <Select value={contentAttribute} onValueChange={setType}>
+              <SelectTrigger
+                id="dataset-content-class"
+                className="w-full"
+                aria-label={en ? "Content class" : "语料大类"}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="oral">
+                  {en ? "Oral corpus" : "口语语料"}
+                </SelectItem>
+                <SelectItem value="cultural_knowledge">
+                  {en ? "Cultural knowledge" : "文化知识"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="self-end" disabled={create.isPending}>
             {en ? "Create (private by default)" : "创建（默认非公开）"}
           </Button>
         </form>

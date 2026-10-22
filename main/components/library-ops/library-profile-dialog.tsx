@@ -1,26 +1,34 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	DATASET_ACCESS_MODES,
-	DATASET_MODALITIES,
-	DATASET_USE_CASES,
+  DATASET_ACCESS_MODES,
+  DATASET_MODALITIES,
+  DATASET_USE_CASES,
 } from "@/lib/library/options";
-import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LibraryCoverGenerator } from "./library-cover-generator";
 import { json } from "./ops-shared";
@@ -60,7 +68,11 @@ export function LibraryProfileDialog({
     queryKey: ["library-profile", name],
     enabled: !!name,
     queryFn: async () =>
-      json<Profile>(await fetch(`/api/admin/library-profiles?name=${encodeURIComponent(name!)}`)),
+      json<Profile>(
+        await fetch(
+          `/api/admin/library-profiles?name=${encodeURIComponent(name!)}`,
+        ),
+      ),
   });
   useEffect(() => {
     if (profile.data) {
@@ -98,11 +110,22 @@ export function LibraryProfileDialog({
   });
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
     setDraft((d) => (d ? { ...d, [key]: value } : d));
-  const toggleIn = (key: "modalities" | "useCases", value: string, on: boolean) =>
-    draft && set(key, on ? [...draft[key], value] : draft[key].filter((v) => v !== value));
+  const toggleIn = (
+    key: "modalities" | "useCases",
+    value: string,
+    on: boolean,
+  ) =>
+    draft &&
+    set(
+      key,
+      on ? [...draft[key], value] : draft[key].filter((v) => v !== value),
+    );
 
   return (
-    <Dialog open={!!name} onOpenChange={(open) => !open && !save.isPending && onClose()}>
+    <Dialog
+      open={!!name}
+      onOpenChange={(open) => !open && !save.isPending && onClose()}
+    >
       <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
@@ -111,7 +134,9 @@ export function LibraryProfileDialog({
           </DialogDescription>
         </DialogHeader>
         {!draft ? (
-          <p className="text-muted-foreground">{profile.isError ? (profile.error as Error).message : "…"}</p>
+          <p className="text-muted-foreground">
+            {profile.isError ? (profile.error as Error).message : "…"}
+          </p>
         ) : (
           <form
             className="grid gap-4 sm:grid-cols-2"
@@ -123,9 +148,15 @@ export function LibraryProfileDialog({
             <label className="flex items-center justify-between gap-3 rounded-lg border p-3 sm:col-span-2">
               <span>
                 <b className="block text-sm">{t("listed")}</b>
-                <span className="text-xs text-muted-foreground">{t("listedHint")}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t("listedHint")}
+                </span>
               </span>
-              <Switch aria-label={t("listed")} checked={draft.listed} onCheckedChange={(v) => set("listed", v)} />
+              <Switch
+                aria-label={t("listed")}
+                checked={draft.listed}
+                onCheckedChange={(v) => set("listed", v)}
+              />
             </label>
             <div className="space-y-1.5">
               <Label>{t("zhName")}</Label>
@@ -133,14 +164,24 @@ export function LibraryProfileDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lp-en">{t("enName")}</Label>
-              <Input id="lp-en" maxLength={200} value={draft.enName ?? ""} onChange={(e) => set("enName", e.target.value)} />
+              <Input
+                id="lp-en"
+                maxLength={200}
+                value={draft.enName ?? ""}
+                onChange={(e) => set("enName", e.target.value)}
+              />
             </div>
             <fieldset className="space-y-1.5">
               <legend className="text-sm font-medium">{t("modalities")}</legend>
               <div className="flex flex-wrap gap-3">
                 {DATASET_MODALITIES.map((v) => (
                   <label key={v} className="flex items-center gap-1.5 text-sm">
-                    <input type="checkbox" checked={draft.modalities.includes(v)} onChange={(e) => toggleIn("modalities", v, e.target.checked)} />
+                    <Checkbox
+                      checked={draft.modalities.includes(v)}
+                      onCheckedChange={(checked) =>
+                        toggleIn("modalities", v, checked === true)
+                      }
+                    />
                     {tOpt(`modality.${v}`)}
                   </label>
                 ))}
@@ -151,7 +192,12 @@ export function LibraryProfileDialog({
               <div className="flex flex-wrap gap-3">
                 {DATASET_USE_CASES.map((v) => (
                   <label key={v} className="flex items-center gap-1.5 text-sm">
-                    <input type="checkbox" checked={draft.useCases.includes(v)} onChange={(e) => toggleIn("useCases", v, e.target.checked)} />
+                    <Checkbox
+                      checked={draft.useCases.includes(v)}
+                      onCheckedChange={(checked) =>
+                        toggleIn("useCases", v, checked === true)
+                      }
+                    />
                     {tOpt(`useCase.${v}`)}
                   </label>
                 ))}
@@ -159,68 +205,124 @@ export function LibraryProfileDialog({
             </fieldset>
             <div className="space-y-1.5">
               <Label htmlFor="lp-access">{t("accessMode")}</Label>
-              <select
-                id="lp-access"
+              <Select
                 value={draft.accessMode}
-                onChange={(e) => set("accessMode", e.target.value)}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                onValueChange={(value) => set("accessMode", value)}
               >
-                {DATASET_ACCESS_MODES.map((v) => (
-                  <option key={v} value={v}>
-                    {tOpt(`access.${v}`)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="lp-access" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DATASET_ACCESS_MODES.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {tOpt(`access.${v}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col justify-end gap-2 text-sm">
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={draft.isOfficial} onChange={(e) => set("isOfficial", e.target.checked)} />
+                <Checkbox
+                  checked={draft.isOfficial}
+                  onCheckedChange={(checked) =>
+                    set("isOfficial", checked === true)
+                  }
+                />
                 {tOpt("quality.official")}
               </label>
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={draft.metadataVerified} onChange={(e) => set("metadataVerified", e.target.checked)} />
+                <Checkbox
+                  checked={draft.metadataVerified}
+                  onCheckedChange={(checked) =>
+                    set("metadataVerified", checked === true)
+                  }
+                />
                 {tOpt("quality.verified")}
               </label>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lp-scale">{t("scaleSummary")}</Label>
-              <Input id="lp-scale" maxLength={200} placeholder={t("scalePlaceholder")} value={draft.scaleSummary ?? ""} onChange={(e) => set("scaleSummary", e.target.value)} />
+              <Input
+                id="lp-scale"
+                maxLength={200}
+                placeholder={t("scalePlaceholder")}
+                value={draft.scaleSummary ?? ""}
+                onChange={(e) => set("scaleSummary", e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lp-lang">{t("languageScope")}</Label>
-              <Input id="lp-lang" maxLength={200} placeholder={t("languagePlaceholder")} value={draft.languageScope ?? ""} onChange={(e) => set("languageScope", e.target.value)} />
+              <Input
+                id="lp-lang"
+                maxLength={200}
+                placeholder={t("languagePlaceholder")}
+                value={draft.languageScope ?? ""}
+                onChange={(e) => set("languageScope", e.target.value)}
+              />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lp-tags">{t("tags")}</Label>
-              <Input id="lp-tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
+              <Input
+                id="lp-tags"
+                value={tagsText}
+                onChange={(e) => setTagsText(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lp-cover">{t("cover")}</Label>
-              <Input id="lp-cover" type="url" value={draft.cover ?? ""} onChange={(e) => set("cover", e.target.value)} />
+              <Input
+                id="lp-cover"
+                type="url"
+                value={draft.cover ?? ""}
+                onChange={(e) => set("cover", e.target.value)}
+              />
               {draft.cover && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={draft.cover} alt={t("coverPreview")} className="aspect-video w-full rounded-md border bg-muted object-cover" />
+                <img
+                  src={draft.cover}
+                  alt={t("coverPreview")}
+                  className="aspect-video w-full rounded-md border bg-muted object-cover"
+                />
               )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lp-link">{t("link")}</Label>
-              <Input id="lp-link" type="url" value={draft.link ?? ""} onChange={(e) => set("link", e.target.value)} />
+              <Input
+                id="lp-link"
+                type="url"
+                value={draft.link ?? ""}
+                onChange={(e) => set("link", e.target.value)}
+              />
               <p className="text-xs text-muted-foreground">{t("linkHint")}</p>
             </div>
             <div className="sm:col-span-2">
               <LibraryCoverGenerator
                 datasetName={draft.name}
-                defaultPrompt={t("ai.defaultPrompt", { name: profile.data?.nickname || name || "" })}
+                defaultPrompt={t("ai.defaultPrompt", {
+                  name: profile.data?.nickname || name || "",
+                })}
                 currentCover={draft.cover}
                 onSelect={(url) => set("cover", url)}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lp-notes">{t("usageNotes")}</Label>
-              <Textarea id="lp-notes" rows={4} maxLength={5000} value={draft.usageNotes ?? ""} onChange={(e) => set("usageNotes", e.target.value)} />
+              <Textarea
+                id="lp-notes"
+                rows={4}
+                maxLength={5000}
+                value={draft.usageNotes ?? ""}
+                onChange={(e) => set("usageNotes", e.target.value)}
+              />
             </div>
             <DialogFooter className="sm:col-span-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={save.isPending}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={save.isPending}
+              >
                 {t("cancel")}
               </Button>
               <Button type="submit" disabled={save.isPending}>
