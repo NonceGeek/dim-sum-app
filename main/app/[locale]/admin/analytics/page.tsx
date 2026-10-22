@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
@@ -24,8 +24,10 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
+import { AssetSummaryCard, AssetsTab } from "@/components/admin/corpus-assets/asset-ui";
 
-type Tab = "overview" | "search" | "content" | "traffic";
+const TABS = ["overview", "search", "content", "traffic", "assets"] as const;
+type Tab = (typeof TABS)[number];
 type Preset = "today" | "7d" | "30d" | "custom";
 
 /** Calendar day in Asia/Shanghai, matching the API's day buckets. */
@@ -218,7 +220,7 @@ type OverviewData = {
   daily: Array<{ day: string; pv: number; uv: number; searches: number; shares: number }>;
 };
 
-function OverviewTab({ from, to }: { from: string; to: string }) {
+function OverviewTab({ from, to, onOpenAssets }: { from: string; to: string; onOpenAssets: () => void }) {
   const t = useTranslations("AdminAnalytics");
   const fmt = useNumber();
   const [metric, setMetric] = useState("pv");
@@ -252,6 +254,7 @@ function OverviewTab({ from, to }: { from: string; to: string }) {
               </div>
             ))}
           </div>
+          <AssetSummaryCard onOpen={onOpenAssets} />
         </div>
       )}
     </TabState>
@@ -519,6 +522,11 @@ export default function AnalyticsDashboardPage() {
   const [custom, setCustom] = useState(range);
   const [tab, setTab] = useState<Tab>("overview");
   const [refreshKey, setRefreshKey] = useState(0);
+  // Deep link (?tab=assets) used by the asset detail page's back link.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (TABS.includes(requested as Tab)) setTab(requested as Tab);
+  }, []);
   const choose = (p: Exclude<Preset, "custom">) => {
     setPreset(p);
     setRange(presetRange(p));
@@ -563,20 +571,23 @@ export default function AnalyticsDashboardPage() {
           </Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">{t("rangeLabel", { from: range.from, to: range.to })}</p>
+      <p className="text-xs text-muted-foreground">
+        {tab === "assets" ? t("assetsRangeNote") : t("rangeLabel", { from: range.from, to: range.to })}
+      </p>
       <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
         <TabsList>
-          {(["overview", "search", "content", "traffic"] as const).map((x) => (
+          {TABS.map((x) => (
             <TabsTrigger key={x} value={x}>
               {t(`tab.${x}`)}
             </TabsTrigger>
           ))}
         </TabsList>
         <div key={refreshKey} className="mt-4">
-          <TabsContent value="overview"><OverviewTab from={range.from} to={range.to} /></TabsContent>
+          <TabsContent value="overview"><OverviewTab from={range.from} to={range.to} onOpenAssets={() => setTab("assets")} /></TabsContent>
           <TabsContent value="search"><SearchTab from={range.from} to={range.to} /></TabsContent>
           <TabsContent value="content"><ContentTab from={range.from} to={range.to} /></TabsContent>
           <TabsContent value="traffic"><TrafficTab from={range.from} to={range.to} /></TabsContent>
+          <TabsContent value="assets"><AssetsTab /></TabsContent>
         </div>
       </Tabs>
     </div>

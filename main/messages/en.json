@@ -35,11 +35,13 @@
     "apply": "Apply",
     "refresh": "Refresh",
     "rangeLabel": "Range: {from} to {to}",
+    "assetsRangeNote": "Corpus assets show current stock, independent of the date range",
     "tab": {
       "overview": "Overview",
       "search": "Search",
       "content": "Engagement",
-      "traffic": "Traffic"
+      "traffic": "Traffic",
+      "assets": "Corpus assets"
     },
     "loading": "Loading…",
     "noData": "No data in this range",
@@ -1729,6 +1731,110 @@
       "today": "Today",
       "week": "Previous 7 days",
       "earlier": "Earlier"
+    }
+  },
+  "CorpusAssets": {
+    "summaryTitle": "Corpus assets",
+    "stockNote": "Current stock; not affected by the date range",
+    "open": "View corpus assets",
+    "loading": "Loading…",
+    "noData": "No datasets match",
+    "computedAt": "Computed {time}",
+    "refresh": "Recompute now",
+    "pending": "Pending",
+    "partial": "({count} pending)",
+    "unit": {
+      "h": "h",
+      "m": "min",
+      "s": "s"
+    },
+    "kpi": {
+      "datasets": "Datasets with corpus",
+      "publicSplit": "{public} public · {private} private",
+      "entries": "Corpus entries",
+      "audioDuration": "Audio duration",
+      "videoDuration": "Video duration",
+      "files": "{count} files",
+      "images": "Images",
+      "size": "Total storage",
+      "sizeHint": "Resources shared across datasets count once",
+      "probed": "Resources with size / duration",
+      "probedHint": "Unprobed resources show as pending"
+    },
+    "listTitle": "Datasets",
+    "searchPlaceholder": "Search name / ID",
+    "export": "Export current results",
+    "total": "{count} datasets",
+    "prev": "Previous",
+    "next": "Next",
+    "public": "Public",
+    "private": "Private",
+    "filter": {
+      "allAttributes": "All categories",
+      "allVisibility": "All visibility",
+      "media": "Contains media",
+      "allMedia": "All media"
+    },
+    "media": {
+      "audio": "Audio",
+      "video": "Video",
+      "image": "Images",
+      "model3d": "3D models"
+    },
+    "sort": {
+      "label": "Sort",
+      "entries": "By entries",
+      "avDuration": "By audio/video duration",
+      "size": "By storage",
+      "lastIngested": "By last ingested"
+    },
+    "col": {
+      "name": "Name / ID",
+      "id": "ID",
+      "attribute": "Category",
+      "visibility": "Visibility",
+      "entries": "Entries",
+      "textEntries": "Text entries",
+      "audio": "Audio / duration",
+      "video": "Video / duration",
+      "images": "Images",
+      "size": "Storage",
+      "lastIngested": "Last ingested"
+    },
+    "csv": {
+      "audioCount": "Audio files",
+      "audioSeconds": "Audio seconds (measured)",
+      "audioPending": "Audio pending",
+      "videoCount": "Video files",
+      "videoSeconds": "Video seconds (measured)",
+      "videoPending": "Video pending",
+      "models": "3D models",
+      "bytes": "Bytes (measured)",
+      "sizePending": "Size pending"
+    },
+    "back": "Back to corpus assets",
+    "manage": "Edit in dataset management",
+    "detail": {
+      "basic": "Basics",
+      "visibilityNote": "Visibility only controls access; it does not mean the content is openly licensed or cleared for model training. Change it in dataset management.",
+      "createdAt": "Created",
+      "source": "Source notes",
+      "composition": "Composition",
+      "capacity": "Storage breakdown",
+      "trend": "Ingestion trend (new in period)",
+      "trendNote": "{from} to {to}, by entry creation time; reported separately from current stock",
+      "days": "Last {days} days",
+      "newEntries": "New entries",
+      "newAv": "New audio/video duration",
+      "newAvMinutes": "New audio/video (minutes)",
+      "records": "Ingestion records",
+      "recordsPending": "Batches, success counts and times will appear here once smart ingestion (#433) ships; historical corpus has no batch records."
+    },
+    "capacity": {
+      "text": "Text",
+      "textNote": "Stored in the database, no separate files",
+      "other": "Other files (3D models)",
+      "shareNote": "Shares are of the measured {total}"
     }
   }
 }

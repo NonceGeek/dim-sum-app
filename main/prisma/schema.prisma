@@ -1519,3 +1519,19 @@ model analytics_events {
   @@index([occurred_at])
   @@index([entry_id, occurred_at])
 }
+
+/// 语料资产看板（#509）：语料 note 中引用的唯一媒体资源（按 URL 去重）及补采到的容量、时长。
+/// 语料与资源的关联不落表，统计时从 note / structured_note 实时提取；未补采的值保持 null，前台显示“待统计”。
+model corpus_media_assets {
+  url              String    @id
+  media_type       String
+  size_bytes       BigInt?
+  duration_seconds Float?
+  content_type     String?
+  probe_status     String    @default("pending")
+  probe_error      String?
+  probed_at        DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([probe_status])
+}
