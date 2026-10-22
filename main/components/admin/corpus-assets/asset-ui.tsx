@@ -1,5 +1,6 @@
 "use client";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
@@ -220,21 +221,24 @@ export function AssetsTab() {
   };
 
   const select = (value: string, onChange: (v: string) => void, label: string, options: Array<[string, string]>) => (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(e) => {
-        onChange(e.target.value);
+    <Select
+      value={value || "__all__"}
+      onValueChange={(v) => {
+        onChange(v === "__all__" ? "" : v);
         setPage(1);
       }}
-      className="h-9 rounded-md border bg-background px-2 text-sm"
     >
-      {options.map(([v, l]) => (
-        <option key={v} value={v}>
-          {l}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger aria-label={label} className="w-full sm:w-auto">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(([v, l]) => (
+          <SelectItem key={v} value={v || "__all__"}>
+            {l}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 
   if (q.isLoading) return <p className="py-10 text-center text-muted-foreground">{t("loading")}</p>;
