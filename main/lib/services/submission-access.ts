@@ -1,77 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
-  COLLECTION_ROLES,
-  CollectionAccess,
-  CollectionRole,
-  allowedActivityIds,
-  validActions,
+	CollectionAccess,
+	allowedActivityIds
 } from "@/lib/collection-permissions";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { NextRequest,NextResponse } from "next/server";
 
-export class AccessError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-export function jsonSnapshot(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(
-    JSON.stringify(value, (_k, v) => (typeof v === "bigint" ? String(v) : v)),
-  );
-}
-export async function lockUsers(tx: Prisma.TransactionClient, ids: string[]) {
-  // Permission edits and writes serialize on the same user rows, including revocation.
-  for (const id of [...new Set(ids)].sort()) {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR UPDATE`;
-  }
-}
+import { loadAdminAccess } from "@/lib/admin/access";
+import { activityActions } from "@/lib/admin/policy";
+import { AccessError,jsonSnapshot } from "@/lib/admin/security";
+export { AccessError,jsonSnapshot,lockUsers } from "@/lib/admin/security";
 export async function loadSubmissionAccess(
   userId: string,
   db: Prisma.TransactionClient = prisma,
 ): Promise<CollectionAccess> {
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: {
-      status: true,
-      isSystemAdmin: true,
-      isSuperAdmin: true,
-      collectionOperatorRole: true,
-    },
-  });
-  if (!user || user.status !== "ACTIVE")
-    throw new AccessError(403, "账号不可用");
-  if (user.isSystemAdmin || user.isSuperAdmin)
-    return {
-      userId,
-      role: user.isSuperAdmin ? "SUPER_ADMIN" : "SYSTEM_ADMIN",
-      isAdmin: true,
-      grants: {},
-    };
-  const role = user.collectionOperatorRole;
-  if (
-    !role?.active ||
-    !COLLECTION_ROLES.includes(role.role_code as CollectionRole)
-  )
-    throw new AccessError(403, "没有有效的活动运营角色");
-  const permissions = await db.corpus_collection_activity_permissions.findMany({
-    where: { user_id: userId },
-  });
-  return {
-    userId,
-    role: role.role_code,
-    isAdmin: false,
-    grants: Object.fromEntries(
-      permissions.map((p) => [
-        String(p.activity_id),
-        validActions(p.submission_actions),
-      ]),
-    ),
-  };
+  const access = await loadAdminAccess(userId, db);
+  if (access.isPlatformAdmin) return { userId, role: access.isSuperAdmin ? "SUPER_ADMIN" : "SYSTEM_ADMIN", isAdmin: true, grants: {} };
+  const grants = Object.fromEntries(access.grants.filter(g => g.scopeType === "activity").map(g => [g.scopeId, activityActions(access, g.scopeId)]).filter(([, actions]) => (actions as string[]).length));
+  if (!Object.keys(grants).length && !access.businessRoles.includes("ACTIVITY_ADMIN")) throw new AccessError(403, "没有有效的活动权限");
+  return { userId, role: access.businessRoles.includes("ACTIVITY_ADMIN") ? "ACTIVITY_ADMIN" : "ACTIVITY_OPERATOR", isAdmin: false, grants };
 }
+
 export function submissionScope(
   access: CollectionAccess,
 ): Prisma.corpus_collection_submissionsWhereInput {
@@ -107,6 +57,8 @@ export async function audit(
       operator_role: access.role,
       action,
       activity_id: options.activityId,
+      scope_type: options.activityId ? "activity" : null,
+      scope_id: options.activityId ? String(options.activityId) : null,
       submission_id: options.submissionId,
       before_state: jsonSnapshot(options.before ?? {}),
       after_state: jsonSnapshot(options.after ?? {}),

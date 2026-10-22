@@ -1,24 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { assertScope,withAdminAccess } from "@/lib/admin/access";
 import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
-  parseActivityMediaRequirements,
-  parseActivityTags,
-  parseActivityTextFields,
-  parseActivityWindow,
-  parseBigIntId,
-  serializeActivity,
+	parseActivityMediaRequirements,
+	parseActivityTags,
+	parseActivityTextFields,
+	parseActivityWindow,
+	parseBigIntId,
+	serializeActivity,
 } from "@/lib/services/corpus-collection";
+import { Prisma } from "@prisma/client";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(req: NextRequest, context: AppRouteContext) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
+    assertScope(access, "activity", id, req.method === "GET" ? "view" : "manage");
 
-    const activity = await prisma.corpus_collection_activities.findUnique({
+    const activity = await db.corpus_collection_activities.findUnique({
       where: { id },
       include: { dataset: true, _count: { select: { submissions: true } } },
     });
@@ -28,9 +28,10 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
 }
 
 export async function PATCH(req: NextRequest, context: AppRouteContext) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
+    assertScope(access, "activity", id, req.method === "GET" ? "view" : "manage");
 
     const body = await req.json();
     if (body.contentAttribute !== undefined || body.datasetName !== undefined || body.dataset_name !== undefined) {
@@ -75,7 +76,7 @@ export async function PATCH(req: NextRequest, context: AppRouteContext) {
       ends_at: endsAt,
     } as Prisma.corpus_collection_activitiesUncheckedUpdateInput;
 
-    const activity = await prisma.corpus_collection_activities.update({
+    const activity = await db.corpus_collection_activities.update({
       where: { id },
       data,
       include: { dataset: true },

@@ -1,29 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DATASET_ACCESS_MODES,
-  DATASET_MODALITIES,
-  DATASET_USE_CASES,
+	DATASET_ACCESS_MODES,
+	DATASET_MODALITIES,
+	DATASET_USE_CASES,
 } from "@/lib/library/options";
-import { json } from "./ops-shared";
+import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
+import { useEffect,useState } from "react";
+import { toast } from "sonner";
 import { LibraryCoverGenerator } from "./library-cover-generator";
+import { json } from "./ops-shared";
 
 type Profile = {
   name: string;
@@ -209,6 +209,7 @@ export function LibraryProfileDialog({
             </div>
             <div className="sm:col-span-2">
               <LibraryCoverGenerator
+                datasetName={draft.name}
                 defaultPrompt={t("ai.defaultPrompt", { name: profile.data?.nickname || name || "" })}
                 currentCover={draft.cover}
                 onSelect={(url) => set("cover", url)}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { Check, Image, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useMutation } from "@tanstack/react-query";
+import { Check,Image,Loader2,Upload } from "lucide-react";
+import { useLocale,useTranslations } from "next-intl";
+import { useEffect,useState } from "react";
+import { toast } from "sonner";
 import { json } from "./ops-shared";
 
 type CoverResponse = {
@@ -21,10 +21,12 @@ type CoverResponse = {
  * only persisted when the profile dialog is saved.
  */
 export function LibraryCoverGenerator({
+  datasetName,
   defaultPrompt,
   currentCover,
   onSelect,
 }: {
+  datasetName: string;
   defaultPrompt: string;
   currentCover: string | null;
   onSelect: (url: string) => void;
@@ -44,7 +46,7 @@ export function LibraryCoverGenerator({
         await fetch("/api/admin/corpus-collection/covers/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: prompt.trim() }),
+          body: JSON.stringify({ prompt: prompt.trim(), datasetName }),
         }),
       ),
     onSuccess: (result) => {
@@ -62,7 +64,7 @@ export function LibraryCoverGenerator({
         await fetch("/api/admin/corpus-collection/covers/select", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url, datasetName }),
         }),
       );
     },

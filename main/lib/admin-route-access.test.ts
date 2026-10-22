@@ -1,12 +1,13 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { NextRequest } from "next/server";
 import { encode } from "next-auth/jwt";
-import proxy from "../proxy";
+import { NextRequest } from "next/server";
+import assert from "node:assert/strict";
+import test from "node:test";
 import { POST as reviewWebhook } from "../app/api/admin/corpus-collection/webhooks/reviews/route";
+import proxy from "../proxy";
 
 const secret = "isolated-proxy-test-secret-not-a-real-credential";
 process.env.NEXTAUTH_SECRET = secret;
+process.env.NEXTAUTH_URL = "http://localhost:3000";
 async function request(
   path: string,
   authenticated = true,
@@ -29,6 +30,11 @@ async function request(
 }
 test("delegated collection pages reach their database authorization instead of rejecting the role at proxy", async () => {
   for (const path of [
+    "/admin/categories",
+    "/admin/corpus",
+    "/admin/analytics/assets/test",
+    "/admin/business-permissions",
+    "/admin/corpus-collection/activities",
     "/admin",
     "/admin/corpus-collection/submissions",
     "/admin/corpus-collection/submissions/1",
@@ -46,7 +52,7 @@ test("delegated collection pages reach their database authorization instead of r
 test("delegation does not allow unrelated admin pages or prefix lookalikes", async () => {
   for (const path of [
     "/admin/users",
-    "/admin/corpus-collection/activities",
+    "/admin/corpus-collection/activities-unsafe",
     "/admin/corpus-collection/submission-permissions",
     "/admin/corpus-collection/submission-audit",
     "/admin/corpus-collection/submissions-unsafe",

@@ -1,7 +1,7 @@
+import type { DateRange } from "@/lib/analytics/dashboard";
+import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import type { DateRange } from "@/lib/analytics/dashboard";
 
 /**
  * Corpus asset inventory (#509). Current stock only — no visits, searches or plays.
@@ -185,7 +185,9 @@ type DatasetBaseRow = {
 /** One scan of the corpus: per-dataset rows plus deduplicated platform totals (grp = NULL). */
 export async function computeSnapshot(
   db: Pick<Prisma.TransactionClient, "$queryRaw"> = prisma,
+  datasetNames: string[] | null = null,
 ): Promise<{ overview: AssetOverview; datasets: AssetDatasetRow[] }> {
+  const namesFilter = (column: string) => datasetNames === null ? Prisma.sql`TRUE` : datasetNames.length ? Prisma.sql`${Prisma.raw(column)} IN (${Prisma.join(datasetNames)})` : Prisma.sql`FALSE`;
   const [base, media] = await Promise.all([
     db.$queryRaw<DatasetBaseRow[]>`
       SELECT k.name, k.id::int AS id, k.nickname, k.content_attribute, k.is_public,
@@ -193,9 +195,10 @@ export async function computeSnapshot(
         count(c.id) FILTER (WHERE btrim(c.data) <> '')::int AS text_entries,
         max(c.created_at) AS last_ingested_at
       FROM cantonese_categories k JOIN cantonese_corpus_all c ON c.category = k.name
+      WHERE ${namesFilter("k.name")}
       GROUP BY k.name, k.id, k.nickname, k.content_attribute, k.is_public`,
     db.$queryRaw<Array<MediaRow & { grp: string | null }>>`
-      WITH ${linksCte()}
+      WITH ${linksCte(namesFilter("c.category"))}
       ${mediaAggregate(Prisma.sql`category`, "grp")}
       UNION ALL
       ${mediaAggregate(Prisma.sql`NULL::text`, "grp")}`,

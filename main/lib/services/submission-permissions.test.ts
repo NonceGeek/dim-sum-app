@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  canAct,
-  COLLECTION_ACTIONS,
-  ROLE_PRESETS,
-  validActions,
-  CollectionAccess,
+	canAct,
+	COLLECTION_ACTIONS,
+	CollectionAccess,
+	ROLE_PRESETS,
+	validActions,
 } from "../collection-permissions";
 import {
-  loadSubmissionAccess,
-  AccessError,
-  batchScope,
-  submissionScope,
+	AccessError,
+	batchScope,
+	loadSubmissionAccess,
+	submissionScope,
 } from "./submission-access";
-import { mutateSubmissions, submissionIdsSchema } from "./submission-mutations";
+import { mutateSubmissions,submissionIdsSchema } from "./submission-mutations";
 
 function fixture(actions: string[] = [...COLLECTION_ACTIONS]) {
   const state = {
@@ -50,7 +50,7 @@ function fixture(actions: string[] = [...COLLECTION_ACTIONS]) {
       state.locks.push(args);
       return [];
     },
-    user: { findUnique: async () => state.user },
+    user: { findUnique: async () => ({ ...state.user, adminBusinessRoles: [], adminScopeGrants: state.user.collectionOperatorRole.active && ["ACTIVITY_REVIEWER","ACTIVITY_OPERATOR","ACTIVITY_ADMIN"].includes(state.user.collectionOperatorRole.role_code) ? state.grants.map(g => ({ scope_type: "activity", scope_id: String(g.activity_id), role: "OPERATOR", actions: g.submission_actions, revoked_at: null })) : [] }) },
     corpus_collection_activity_permissions: {
       findMany: async () => state.grants,
     },

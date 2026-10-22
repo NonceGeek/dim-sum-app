@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
+import { getAuthSession, hasPlatformAdminAccess } from "@/lib/auth";
 import { userIdentityWhere } from "@/lib/services/collection-user-search";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   try {
     const session = await getAuthSession();
-    if (!session?.user?.isSystemAdmin) {
+    if (!(await hasPlatformAdminAccess(session?.user?.id))) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 },
