@@ -1672,6 +1672,7 @@
     "files": {
       "pickFiles": "Upload files",
       "pickFolder": "Upload folder",
+      "skipped": "Skipped {count, plural, one {# file} other {# files}} in the folder that didn't match the allowed types",
       "closed": "The job has ended; uploads are closed.",
       "locked": "The agent is running or waiting on you; upload once it stops.",
       "hint": "Files go under input/ in the job workspace. Existing files can't be overwritten.",

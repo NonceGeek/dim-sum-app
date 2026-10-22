@@ -48,6 +48,9 @@ export type LeadPrefill = {
   ingestionType: string;
 };
 
+/** 选中或拖入的文件，path 为相对路径（来自文件夹时带目录） */
+type Picked = { file: File; path: string };
+
 /** 本页发起、尚未出现在任务文件列表里的上传 */
 type Upload = { file: File; path: string; state: "uploading" | "done" | "error"; error?: string };
 
@@ -213,14 +216,9 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
     setUploads((current) => current.filter((u) => !(paths.has(u.path) && u.state === "done")));
   };
 
-  const addFiles = (kind: "text" | "media", files: File[]) => {
+  const addFiles = (kind: "text" | "media", items: Picked[]) => {
     if (!taskId && !datasetName) return toast.error(t("create.datasetFirst"));
-    void upload(
-      files.map((file) => {
-        const relative = file.webkitRelativePath || file.name;
-        return { file, path: kind === "media" ? `${MEDIA_DIR}/${relative}` : relative };
-      }),
-    );
+    void upload(items.map((i) => ({ file: i.file, path: kind === "media" ? `${MEDIA_DIR}/${i.path}` : i.path })));
   };
 
   const dismiss = (path: string) => setUploads((current) => current.filter((u) => u.path !== path));
@@ -557,17 +555,25 @@ function DropZone({
   accept: string;
   disabled?: boolean;
   folder?: boolean;
-  onFiles: (files: File[]) => void;
+  onFiles: (items: Picked[]) => void;
 }) {
   const t = useTranslations("IngestionTasks.files");
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
+  // 文件夹里的文件不受 accept 限制，按 accept 过滤掉 .DS_Store 等无关文件；单独选中的文件照常上传
+  const deliver = (items: Picked[]) => {
+    const kept = items.filter((i) => !i.path.includes("/") || matchesAccept(i.file, accept));
+    if (kept.length < items.length) toast.info(t("skipped", { count: items.length - kept.length }));
+    if (kept.length) onFiles(kept);
+  };
   const pick = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = [...(event.target.files ?? [])];
     event.target.value = "";
-    if (files.length) onFiles(files);
+    deliver(files.map((file) => ({ file, path: file.webkitRelativePath || file.name })));
   };
+  // 隐藏 input 的 click 会冒泡到外层，触发外层的「选择文件」
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
   return (
     <div
       role="button"
@@ -589,7 +595,8 @@ function DropZone({
       onDrop={(e) => {
         e.preventDefault();
         setOver(false);
-        if (!disabled && e.dataTransfer.files.length) onFiles([...e.dataTransfer.files]);
+        if (disabled || !e.dataTransfer.items.length) return;
+        collectDropped(e.dataTransfer).then(deliver, (error: Error) => toast.error(error.message));
       }}
       className={cn(
         "flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/[0.02] p-6 text-center transition-colors",
@@ -597,12 +604,13 @@ function DropZone({
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
-      <input ref={fileInput} type="file" multiple hidden accept={accept} onChange={pick} />
+      <input ref={fileInput} type="file" multiple hidden accept={accept} onClick={stop} onChange={pick} />
       {folder && (
         <input
           ref={folderInput}
           type="file"
           hidden
+          onClick={stop}
           onChange={pick}
           {...({ webkitdirectory: "" } as Record<string, string>)}
         />
@@ -628,6 +636,45 @@ function DropZone({
       )}
     </div>
   );
+}
+
+/** 按 input 的 accept 规则（.ext、type/*、完整 MIME）判断文件是否可接受 */
+function matchesAccept(file: File, accept: string) {
+  const name = file.name.toLowerCase();
+  return accept
+    .split(",")
+    .map((rule) => rule.trim().toLowerCase())
+    .some((rule) =>
+      rule.startsWith(".")
+        ? name.endsWith(rule)
+        : rule.endsWith("/*")
+          ? file.type.startsWith(rule.slice(0, -1))
+          : file.type === rule,
+    );
+}
+
+/** 拖入的条目里文件夹要逐层展开，dataTransfer.files 只给出文件夹本身 */
+async function collectDropped(transfer: DataTransfer) {
+  const entries = [...transfer.items]
+    .map((item) => item.webkitGetAsEntry())
+    .filter((entry): entry is FileSystemEntry => entry !== null);
+  const collected: Picked[] = [];
+  const walk = async (entry: FileSystemEntry): Promise<void> => {
+    if (entry.isFile) {
+      const file = await new Promise<File>((resolve, reject) => (entry as FileSystemFileEntry).file(resolve, reject));
+      collected.push({ file, path: entry.fullPath.replace(/^\//, "") });
+      return;
+    }
+    const reader = (entry as FileSystemDirectoryEntry).createReader();
+    // readEntries 每次只返回一批，读到空为止
+    for (;;) {
+      const batch = await new Promise<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
+      if (!batch.length) break;
+      for (const child of batch) await walk(child);
+    }
+  };
+  for (const entry of entries) await walk(entry);
+  return collected;
 }
 
 function FileList({
