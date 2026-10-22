@@ -73,17 +73,11 @@ async function probe(rawUrl: string, kind: string): Promise<Probe> {
 
 async function main() {
   const { prisma } = await import("@/lib/prisma");
-  const { listReferencedMedia } = await import("@/lib/analytics/corpus-assets");
+  const { registerReferencedMedia } = await import("@/lib/analytics/corpus-assets");
 
-  const referenced = await listReferencedMedia();
-  for (let i = 0; i < referenced.length; i += 2000) {
-    await prisma.corpus_media_assets.createMany({
-      data: referenced.slice(i, i + 2000).map((r) => ({ url: r.url, media_type: r.kind })),
-      skipDuplicates: true,
-    });
-  }
+  const added = await registerReferencedMedia();
   const counts = await prisma.corpus_media_assets.groupBy({ by: ["probe_status"], _count: true });
-  console.log(`referenced ${referenced.length} urls;`, Object.fromEntries(counts.map((c) => [c.probe_status, c._count])));
+  console.log(`registered ${added} new urls;`, Object.fromEntries(counts.map((c) => [c.probe_status, c._count])));
   if (arg("register-only")) return prisma.$disconnect();
 
   const queue = await prisma.corpus_media_assets.findMany({

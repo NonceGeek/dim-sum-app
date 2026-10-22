@@ -80,14 +80,16 @@ END`;
 /**
  * CTE `links(corpus_id, category, created_at, kind, url)`: one row per distinct
  * entry × resource. `where` narrows the scanned entries (e.g. one dataset).
+ * MATERIALIZED: when inlined into a single-reference query the planner picks a
+ * plan that hits the statement timeout on production data.
  */
 export function linksCte(where: Prisma.Sql = Prisma.sql`TRUE`) {
   return Prisma.sql`
-    entries AS (
+    entries AS MATERIALIZED (
       SELECT id, category, created_at, note, structured_note
       FROM cantonese_corpus_all c WHERE ${where}
     ),
-    raw_links AS (
+    raw_links AS MATERIALIZED (
       SELECT e.id AS corpus_id, CASE WHEN lower(b.block->>'type') = 'voxel' THEN 'model3d' ELSE lower(b.block->>'type') END AS kind,
              ${urlOf(Prisma.sql`b.block`)} AS url
       FROM entries e
@@ -106,7 +108,7 @@ export function linksCte(where: Prisma.Sql = Prisma.sql`TRUE`) {
       CROSS JOIN LATERAL ${urlsIn(Prisma.sql`(e.note->'video_clips')`)} u
       WHERE jsonb_typeof(e.note) = 'object'
     ),
-    links AS (
+    links AS MATERIALIZED (
       SELECT DISTINCT ON (r.corpus_id, r.url) r.corpus_id, e.category, e.created_at, r.kind, r.url
       FROM raw_links r JOIN entries e ON e.id = r.corpus_id
       WHERE r.url ~* '^https?://'
@@ -298,9 +300,15 @@ export async function loadAssetDataset(name: string, range: DateRange): Promise<
   };
 }
 
-/** Distinct media URLs referenced by any entry — input for the probe script. */
-export async function listReferencedMedia() {
-  return prisma.$queryRaw<Array<{ url: string; kind: AssetMediaType }>>`
+/**
+ * Registers every media URL referenced by any entry as a pending asset (input for
+ * the probe script). Runs inside the database: shipping ~41k rows to the client
+ * takes minutes through the pooler. Returns how many new URLs were added.
+ */
+export async function registerReferencedMedia() {
+  return prisma.$executeRaw`
     WITH ${linksCte()}
-    SELECT DISTINCT ON (url) url, kind FROM links ORDER BY url, kind`;
+    INSERT INTO corpus_media_assets (url, media_type)
+    SELECT DISTINCT ON (url) url, kind FROM links ORDER BY url, kind
+    ON CONFLICT (url) DO NOTHING`;
 }
