@@ -1,30 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useLocale, useTranslations } from "next-intl";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { RefreshCw } from "lucide-react";
+import { AssetSummaryCard,AssetsTab } from "@/components/admin/corpus-assets/asset-ui";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card,CardContent,CardHeader,CardTitle } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+	type ChartConfig,
 } from "@/components/ui/chart";
+import { Input } from "@/components/ui/input";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Tabs,TabsContent,TabsList,TabsTrigger } from "@/components/ui/tabs";
+import { useAdminAccess } from "@/lib/hooks/use-admin-access";
 import { cn } from "@/lib/utils";
-import { AssetSummaryCard, AssetsTab } from "@/components/admin/corpus-assets/asset-ui";
+import { useQuery } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
+import { useLocale,useTranslations } from "next-intl";
+import { useEffect,useMemo,useState } from "react";
+import { CartesianGrid,Line,LineChart,XAxis,YAxis } from "recharts";
 
 const TABS = ["overview", "search", "content", "traffic", "assets"] as const;
 type Tab = (typeof TABS)[number];
@@ -517,6 +518,7 @@ function TrafficTab({ from, to }: { from: string; to: string }) {
 
 export default function AnalyticsDashboardPage() {
   const t = useTranslations("AdminAnalytics");
+  const { data: access } = useAdminAccess();
   const [preset, setPreset] = useState<Preset>("7d");
   const [range, setRange] = useState(presetRange("7d"));
   const [custom, setCustom] = useState(range);
@@ -527,10 +529,13 @@ export default function AnalyticsDashboardPage() {
     const requested = new URLSearchParams(window.location.search).get("tab");
     if (TABS.includes(requested as Tab)) setTab(requested as Tab);
   }, []);
+  useEffect(() => { if (access && !access.isPlatformAdmin) setTab("assets"); }, [access]);
   const choose = (p: Exclude<Preset, "custom">) => {
     setPreset(p);
     setRange(presetRange(p));
   };
+  if (access && !access.isPlatformAdmin) return <AssetsTab />;
+  if (!access) return null;
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

@@ -1,18 +1,20 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Search, X } from "lucide-react";
-import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from "@/components/ui/select";
+import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from "@/components/ui/table";
+import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import { Check,Search,X } from "lucide-react";
+import { useLocale,useTranslations } from "next-intl";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type CommentItem = {
+  canApprove: boolean;
+  canReject: boolean;
   id: string;
   content: string;
   status: string;
@@ -133,10 +135,10 @@ export default function CorpusCollectionCommentsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button size="icon" variant="outline" aria-label={t("approve")} onClick={() => actionMutation.mutate({ id: comment.id, action: "approve" })}>
+                        <Button disabled={!comment.canApprove || actionMutation.isPending} size="icon" variant="outline" aria-label={t("approve")} onClick={() => actionMutation.mutate({ id: comment.id, action: "approve" })}>
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="outline" aria-label={t("reject")} onClick={() => actionMutation.mutate({ id: comment.id, action: "reject" })}>
+                        <Button disabled={!comment.canReject || actionMutation.isPending} size="icon" variant="outline" aria-label={t("reject")} onClick={() => actionMutation.mutate({ id: comment.id, action: "reject" })}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>

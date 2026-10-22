@@ -1,20 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { activityWhere,withAdminAccess } from "@/lib/admin/access";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  return requireAdmin(req, async () => {
-    const submissionRows = await prisma.corpus_collection_submissions.groupBy({
+  return withAdminAccess(req, async (access, db) => {
+    const submissionRows = await db.corpus_collection_submissions.groupBy({
       by: ["review_status"],
+      where: { activity: activityWhere(access) },
       _count: { _all: true },
     });
-    const activityRows = await prisma.corpus_collection_activities.groupBy({
+    const activityRows = await db.corpus_collection_activities.groupBy({
       by: ["status"],
+      where: activityWhere(access),
       _count: { _all: true },
     });
-    const [totalLikes, totalComments] = await prisma.$transaction([
-      prisma.corpus_collection_likes.count(),
-      prisma.corpus_collection_comments.count(),
+    const [totalLikes, totalComments] = await Promise.all([
+      db.corpus_collection_likes.count({ where: { submission: { activity: activityWhere(access) } } }),
+      db.corpus_collection_comments.count({ where: { submission: { activity: activityWhere(access) } } }),
     ]);
 
     const submissionCounts = new Map(

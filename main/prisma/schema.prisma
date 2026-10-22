@@ -35,6 +35,8 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
+  adminBusinessRoles                                                                        admin_business_roles[]
+  adminScopeGrants                                                                          admin_scope_grants[]
   id                                                                                        String                                     @id @default(cuid())
   name                                                                                      String?
   email                                                                                     String?                                    @unique
@@ -117,6 +119,7 @@ model api_key {
 }
 
 model cantonese_categories {
+  created_by           String?
   id                   BigInt                        @default(autoincrement())
   name                 String                        @unique
   nickname             String?
@@ -794,6 +797,8 @@ model corpus_collection_activity_permissions {
 
 /// 语料采集 - 问卷洞察访问与导出审计
 model corpus_collection_audit_logs {
+  scope_type     String?
+  scope_id       String?
   id             BigInt   @id @default(autoincrement())
   operator_id    String
   action         String
@@ -1534,4 +1539,36 @@ model corpus_media_assets {
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([probe_status])
+}
+
+/// #506 module-level creation qualifications. Scope is granted separately.
+model admin_business_roles {
+  user_id    String
+  role       String
+  active     Boolean  @default(true)
+  granted_by String
+  note       String   @default("")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, role])
+}
+
+/// #506 roles scoped to one dataset or activity; audit logs retain every change.
+model admin_scope_grants {
+  user_id    String
+  scope_type String
+  scope_id   String
+  role       String
+  actions    String[]  @default([])
+  granted_by String
+  note       String    @default("")
+  revoked_at DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, scope_type, scope_id])
+  @@index([scope_type, scope_id, revoked_at])
 }

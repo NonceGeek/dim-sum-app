@@ -1323,10 +1323,11 @@
       "questionnairePermissions": "活动问卷数据权限",
       "questionnaireSettings": "问卷门禁",
       "questionnaireDefinition": "问卷定义",
-      "submissionPermissions": "活动运营权限",
+      "submissionPermissions": "业务范围权限",
       "submissionAudit": "投稿操作记录"
     },
     "roles": {
+      "businessOperator": "业务范围用户",
       "superAdministrator": "超级管理员",
       "systemAdministrator": "系统管理员",
       "activityOperator": "活动运营"

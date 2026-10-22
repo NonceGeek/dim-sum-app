@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
-import { AuthOptions } from "next-auth";
+import { AuthOptions,getServerSession } from "next-auth";
+import { NextRequest,NextResponse } from "next/server";
 // import { JWT } from "next-auth/jwt";
 // import { User } from "next-auth";
-import WechatProvider from "@/providers/wechat";
 import { EmailProvider } from "@/providers/email-provider";
 import { SmsProvider } from "@/providers/sms-provider";
+import WechatProvider from "@/providers/wechat";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { Role } from "@prisma/client";
 import { prisma } from "./prisma";
@@ -437,6 +436,12 @@ export async function requireMarker(
   return handler(req, session.user.id);
 }
 
+export async function hasPlatformAdminAccess(userId?: string) {
+  if (!userId) return false;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { status: true, isSystemAdmin: true, isSuperAdmin: true } });
+  return user?.status === "ACTIVE" && (user.isSystemAdmin || user.isSuperAdmin);
+}
+
 // 管理员权限检查
 export async function requireAdmin(
   req: NextRequest,
@@ -451,11 +456,9 @@ export async function requireAdmin(
     );
   }
 
-  if (!session.user.isSystemAdmin) {
-    return NextResponse.json(
-      { error: "Permission denied. Admin access required." },
-      { status: 403 }
-    );
+  const current = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isSystemAdmin: true, isSuperAdmin: true, status: true } });
+  if (current?.status !== "ACTIVE" || (!current.isSystemAdmin && !current.isSuperAdmin)) {
+    return NextResponse.json({ error: "Permission denied. Admin access required." }, { status: 403 });
   }
 
   return handler(req, session.user.id);

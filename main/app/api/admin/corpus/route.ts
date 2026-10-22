@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { assertDataset,corpusWhere,withAdminAccess } from "@/lib/admin/access";
+import { AccessError } from "@/lib/admin/security";
+import { NextRequest,NextResponse } from "next/server";
 
 /**
  * GET /api/admin/corpus
@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
  * 需要管理员权限
  */
 export async function GET(req: NextRequest) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     try {
       const { searchParams } = new URL(req.url);
       const page = parseInt(searchParams.get("page") || "1");
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       const skip = (page - 1) * limit;
 
       // 构建查询条件
-      const where: any = {};
+      const where: any = { AND: [corpusWhere(access)] };
 
       if (search) {
         where.data = { contains: search, mode: "insensitive" };
@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
       }
 
       // 使用同一连接读取总数和分页列表，避免连接池扇出。
-      const [total, corpusEntries] = await prisma.$transaction([
-        prisma.cantonese_corpus_all.count({ where }),
-        prisma.cantonese_corpus_all.findMany({
+      const [total, corpusEntries] = await Promise.all([
+        db.cantonese_corpus_all.count({ where }),
+        db.cantonese_corpus_all.findMany({
           where,
           skip,
           take: limit,
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
  * 需要管理员权限
  */
 export async function DELETE(req: NextRequest) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     try {
       const { searchParams } = new URL(req.url);
       const uniqueId = searchParams.get("uniqueId");
@@ -110,7 +110,10 @@ export async function DELETE(req: NextRequest) {
         );
       }
 
-      await prisma.cantonese_corpus_all.delete({
+      const entry = await db.cantonese_corpus_all.findUnique({ where: { unique_id: uniqueId }, select: { category: true } });
+      if (!entry) throw new AccessError(404, "语料不存在");
+      await assertDataset(access, entry.category, "operate", db);
+      await db.cantonese_corpus_all.delete({
         where: { unique_id: uniqueId },
       });
 
@@ -118,6 +121,7 @@ export async function DELETE(req: NextRequest) {
         message: "Corpus entry deleted successfully",
       });
     } catch (error) {
+      if (error instanceof AccessError) throw error;
       console.error("Failed to delete corpus:", error);
       return NextResponse.json(
         { error: "Failed to delete corpus entry" },

@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { corpusWhere,withAdminAccess } from "@/lib/admin/access";
+import { NextRequest,NextResponse } from "next/server";
 
 /**
  * GET /api/admin/stats
@@ -8,17 +7,18 @@ import { prisma } from "@/lib/prisma";
  * 需要管理员权限
  */
 export async function GET(req: NextRequest) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     try {
-      const [totalUsers, totalCorpusEntries, recentActiveUsers] = await prisma.$transaction([
+      if (!access.isPlatformAdmin) return NextResponse.json({ totalUsers: null, activeUsers: null, totalCorpusEntries: await db.cantonese_corpus_all.count({ where: corpusWhere(access) }) });
+      const [totalUsers, totalCorpusEntries, recentActiveUsers] = await Promise.all([
         // 总用户数（排除已合并/软删除账号）
-        prisma.user.count({ where: { status: { not: "MERGED" } } }),
+        db.user.count({ where: { status: { not: "MERGED" } } }),
 
         // 总语料数据条目数
-        prisma.cantonese_corpus_all.count(),
+        db.cantonese_corpus_all.count(),
 
         // 活跃用户数（过去30天有互动的用户）
-        prisma.user_corpus_interactions.findMany({
+        db.user_corpus_interactions.findMany({
           where: {
             updated_at: {
               gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30天前

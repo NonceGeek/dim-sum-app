@@ -1,14 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { loadAdminAccess } from "@/lib/admin/access";
+import { hasDatasetAdmin } from "@/lib/admin/policy";
 import { getAuthSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
-  COLLECTION_ROLES,
-  CollectionRole,
-  GlobalAction,
-  validGlobalActions,
+	GlobalAction
 } from "@/lib/collection-permissions";
+import { prisma } from "@/lib/prisma";
 import { AccessError } from "@/lib/services/submission-access";
+import { Prisma } from "@prisma/client";
+import { NextRequest,NextResponse } from "next/server";
 
 export type LibraryOpsAccess = {
   userId: string;
@@ -22,30 +21,10 @@ export async function loadLibraryOpsAccess(
   userId: string,
   db: Prisma.TransactionClient = prisma,
 ): Promise<LibraryOpsAccess> {
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: {
-      status: true,
-      isSystemAdmin: true,
-      isSuperAdmin: true,
-      collectionOperatorRole: true,
-    },
-  });
-  if (!user || user.status !== "ACTIVE")
-    throw new AccessError(403, "账号不可用");
-  if (user.isSystemAdmin || user.isSuperAdmin)
-    return {
-      userId,
-      role: user.isSuperAdmin ? "SUPER_ADMIN" : "SYSTEM_ADMIN",
-      isAdmin: true,
-      actions: ["contribution_review", "ingestion_assignee"],
-    };
-  const role = user.collectionOperatorRole;
-  if (!role?.active || !COLLECTION_ROLES.includes(role.role_code as CollectionRole))
-    throw new AccessError(403, "没有有效的运营角色");
-  const actions = validGlobalActions(role.global_actions);
-  if (!actions.length) throw new AccessError(403, "没有语料运营权限");
-  return { userId, role: role.role_code, isAdmin: false, actions };
+  const access = await loadAdminAccess(userId, db);
+  if (!hasDatasetAdmin(access)) throw new AccessError(403, "需要语料管理员角色");
+  return { userId, role: access.isPlatformAdmin ? "SYSTEM_ADMIN" : "DATASET_ADMIN", isAdmin: access.isPlatformAdmin, actions: ["contribution_review", "ingestion_assignee"] };
+
 }
 
 export function can(access: LibraryOpsAccess, action: GlobalAction) {
@@ -68,11 +47,7 @@ export async function usersWithCapability(action: GlobalAction) {
         { isSystemAdmin: true },
         { isSuperAdmin: true },
         {
-          collectionOperatorRole: {
-            active: true,
-            role_code: { in: [...COLLECTION_ROLES] },
-            global_actions: { has: action },
-          },
+          adminBusinessRoles: { some: { active: true, role: "DATASET_ADMIN" } },
         },
       ],
     },

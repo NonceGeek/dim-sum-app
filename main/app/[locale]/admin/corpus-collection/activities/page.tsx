@@ -1,43 +1,45 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Check, Copy, Eye, Image, Loader2, Plus, Search, Upload } from "lucide-react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  activityDateTimeToISOString,
-  formatActivityDateTime,
-  parseActivityDateTime,
+	activityDateTimeToISOString,
+	formatActivityDateTime,
+	parseActivityDateTime,
 } from "@/lib/activity-time";
+import { canCreate,canScope } from "@/lib/admin/policy";
+import { useAdminAccess } from "@/lib/hooks/use-admin-access";
+import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import { CalendarDays,Check,Copy,Eye,Image,Loader2,Plus,Search,Upload } from "lucide-react";
+import { useLocale,useTranslations } from "next-intl";
+import { FormEvent,useRef,useState } from "react";
+import { toast } from "sonner";
 
 type Activity = {
   id: string;
@@ -87,6 +89,7 @@ function countCharacters(value: string) {
 
 export default function CorpusCollectionActivitiesPage() {
   const t = useTranslations("CorpusCollectionActivities");
+  const { data: access } = useAdminAccess();
   const locale = useLocale();
   const queryClient = useQueryClient();
   const dateLocale = locale === "zh-CN" ? "zh-CN" : "en-US";
@@ -291,7 +294,7 @@ export default function CorpusCollectionActivitiesPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      {access && canCreate(access,"activity") && <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>{t("create.title")}</CardTitle>
@@ -488,7 +491,7 @@ export default function CorpusCollectionActivitiesPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
       <Card className="bg-card border-border">
         <CardHeader>
@@ -581,8 +584,8 @@ export default function CorpusCollectionActivitiesPage() {
                           <Eye className="mr-2 h-4 w-4" />
                           {t("actions.preview")}
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "publish" })}>{t("actions.publish")}</Button>
-                        <Button size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "offline" })}>{t("status.offline")}</Button>
+                        <Button disabled={!access || !canScope(access,"activity",activity.id,"manage")} size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "publish" })}>{t("actions.publish")}</Button>
+                        <Button disabled={!access || !canScope(access,"activity",activity.id,"manage")} size="sm" variant="outline" onClick={() => setStatusMutation.mutate({ id: activity.id, action: "offline" })}>{t("status.offline")}</Button>
                       </div>
                     </TableCell>
                   </TableRow>

@@ -1322,10 +1322,11 @@
       "questionnairePermissions": "Activity questionnaire data permissions",
       "questionnaireSettings": "Questionnaire Settings",
       "questionnaireDefinition": "Questionnaire Definition",
-      "submissionPermissions": "Activity operations permissions",
+      "submissionPermissions": "Business permissions",
       "submissionAudit": "Submission operation records"
     },
     "roles": {
+      "businessOperator": "Business operator",
       "superAdministrator": "Super Administrator",
       "systemAdministrator": "System Administrator",
       "activityOperator": "Activity Operator"
