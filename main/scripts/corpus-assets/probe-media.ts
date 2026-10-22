@@ -11,6 +11,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { loadEnvConfig } from "@next/env";
+import { createSerialWriter } from "./probe-writer";
 loadEnvConfig(process.cwd());
 
 const run = promisify(execFile);
@@ -86,14 +87,17 @@ async function main() {
     orderBy: { url: "asc" },
     take: num("limit", 500),
   });
+  // Media requests remain concurrent; DB writes use one connection at a time.
+  const write = createSerialWriter();
+  let stopped = false;
   let done = 0;
   let failed = 0;
   const worker = async () => {
-    for (let item = queue.shift(); item; item = queue.shift()) {
+    for (let item = queue.shift(); item && !stopped; item = queue.shift()) {
       const r = await probe(item.url, item.media_type);
       const needsDuration = item.media_type === "audio" || item.media_type === "video";
       const ok = r.size !== null && (!needsDuration || r.duration !== null);
-      await prisma.corpus_media_assets.update({
+      await write(() => prisma.corpus_media_assets.update({
         where: { url: item.url },
         data: {
           size_bytes: r.size,
@@ -103,15 +107,24 @@ async function main() {
           probe_error: r.error,
           probed_at: new Date(),
         },
-      });
+      }));
       done += 1;
       if (!ok) failed += 1;
       if (done % 100 === 0) console.log(`probed ${done} (failed ${failed})`);
     }
   };
-  await Promise.all(Array.from({ length: num("concurrency", 8) }, worker));
-  console.log(`finished: probed ${done}, failed ${failed}`);
+  const outcomes = await Promise.allSettled(Array.from({ length: num("concurrency", 8) }, async () => {
+    try {
+      await worker();
+    } catch (error) {
+      stopped = true; // finish in-flight writes, leave unprocessed URLs pending
+      throw error;
+    }
+  }));
   await prisma.$disconnect();
+  const errors = outcomes.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+  console.log(`finished: probed ${done}, failed ${failed}, write errors ${errors.length}`);
+  if (errors.length) throw errors[0].reason;
 }
 
 main().catch((e) => {
