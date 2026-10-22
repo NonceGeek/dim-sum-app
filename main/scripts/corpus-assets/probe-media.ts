@@ -11,6 +11,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { loadEnvConfig } from "@next/env";
+import { Prisma } from "@prisma/client";
 import { createSerialWriter } from "./probe-writer";
 loadEnvConfig(process.cwd());
 
@@ -76,7 +77,8 @@ async function main() {
   const { prisma } = await import("@/lib/prisma");
   const { registerReferencedMedia } = await import("@/lib/analytics/corpus-assets");
 
-  const added = await registerReferencedMedia();
+  const write = createSerialWriter();
+  const added = await write(() => registerReferencedMedia());
   const counts = await prisma.corpus_media_assets.groupBy({ by: ["probe_status"], _count: true });
   console.log(`registered ${added} new urls;`, Object.fromEntries(counts.map((c) => [c.probe_status, c._count])));
   if (arg("register-only")) return prisma.$disconnect();
@@ -87,44 +89,42 @@ async function main() {
     orderBy: { url: "asc" },
     take: num("limit", 500),
   });
-  // Media requests remain concurrent; DB writes use one connection at a time.
-  const write = createSerialWriter();
-  let stopped = false;
+  // Probe a bounded batch concurrently, then use one UPDATE for the batch.
+  // The pool only sees one write, regardless of --concurrency.
   let done = 0;
   let failed = 0;
-  const worker = async () => {
-    for (let item = queue.shift(); item && !stopped; item = queue.shift()) {
-      const r = await probe(item.url, item.media_type);
-      const needsDuration = item.media_type === "audio" || item.media_type === "video";
-      const ok = r.size !== null && (!needsDuration || r.duration !== null);
-      await write(() => prisma.corpus_media_assets.update({
-        where: { url: item.url },
-        data: {
-          size_bytes: r.size,
-          content_type: r.contentType,
-          duration_seconds: r.duration,
-          probe_status: ok ? "ok" : "failed",
-          probe_error: r.error,
-          probed_at: new Date(),
-        },
-      }));
-      done += 1;
-      if (!ok) failed += 1;
-      if (done % 100 === 0) console.log(`probed ${done} (failed ${failed})`);
+  try {
+    while (queue.length) {
+      const batch = queue.splice(0, 100);
+      const results: Array<Probe & { url: string; ok: boolean }> = [];
+      const worker = async () => {
+        for (let item = batch.shift(); item; item = batch.shift()) {
+          const r = await probe(item.url, item.media_type);
+          const needsDuration = item.media_type === "audio" || item.media_type === "video";
+          results.push({ ...r, url: item.url, ok: r.size !== null && (!needsDuration || r.duration !== null) });
+        }
+      };
+      await Promise.all(Array.from({ length: num("concurrency", 8) }, worker));
+      const values = results.map((r) => Prisma.sql`(
+        ${r.url}::text, ${r.size}::bigint, ${r.contentType}::text,
+        ${r.duration}::double precision, ${r.ok ? "ok" : "failed"}::text, ${r.error}::text
+      )`);
+      await write(() => prisma.$executeRaw`
+        UPDATE corpus_media_assets AS a SET
+          size_bytes = v.size_bytes, content_type = v.content_type,
+          duration_seconds = v.duration_seconds, probe_status = v.probe_status,
+          probe_error = v.probe_error, probed_at = now()
+        FROM (VALUES ${Prisma.join(values)}) AS v(url, size_bytes, content_type, duration_seconds, probe_status, probe_error)
+        WHERE a.url = v.url
+      `);
+      done += results.length;
+      failed += results.filter((r) => !r.ok).length;
+      console.log(`probed ${done} (failed ${failed})`);
     }
-  };
-  const outcomes = await Promise.allSettled(Array.from({ length: num("concurrency", 8) }, async () => {
-    try {
-      await worker();
-    } catch (error) {
-      stopped = true; // finish in-flight writes, leave unprocessed URLs pending
-      throw error;
-    }
-  }));
-  await prisma.$disconnect();
-  const errors = outcomes.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-  console.log(`finished: probed ${done}, failed ${failed}, write errors ${errors.length}`);
-  if (errors.length) throw errors[0].reason;
+    console.log(`finished: probed ${done}, failed ${failed}`);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 main().catch((e) => {

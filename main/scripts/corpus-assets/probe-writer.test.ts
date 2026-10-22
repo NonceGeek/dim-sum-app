@@ -40,3 +40,13 @@ test("retries are bounded and permanent failures do not poison queued writes", a
   assert.equal(attempts, 1);
   assert.equal(await write(async () => 42), 42);
 });
+
+test("initial connection failures without errorCode are retried", async () => {
+  const write = createSerialWriter(async () => {});
+  let attempts = 0;
+  assert.equal(await write(async () => {
+    if (attempts++ === 0) throw Object.assign(new Error("Can't reach database server"), { name: "PrismaClientInitializationError" });
+    return "connected";
+  }), "connected");
+  assert.equal(attempts, 2);
+});
