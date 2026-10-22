@@ -6,7 +6,7 @@ import { NextRequest,NextResponse } from "next/server";
 import { z } from "zod";
 
 const updateSchema = z.object({
-  activityId: z.string().regex(/^\d+$/).optional(),
+  activityId: z.string().regex(/^[1-9]\d*$/).optional(),
   enabled: z.boolean(),
 }).strict();
 
