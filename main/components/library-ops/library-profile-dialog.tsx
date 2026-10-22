@@ -23,6 +23,7 @@ import {
   DATASET_USE_CASES,
 } from "@/lib/library/options";
 import { json } from "./ops-shared";
+import { LibraryCoverGenerator } from "./library-cover-generator";
 
 type Profile = {
   name: string;
@@ -196,11 +197,22 @@ export function LibraryProfileDialog({
             <div className="space-y-1.5">
               <Label htmlFor="lp-cover">{t("cover")}</Label>
               <Input id="lp-cover" type="url" value={draft.cover ?? ""} onChange={(e) => set("cover", e.target.value)} />
+              {draft.cover && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={draft.cover} alt={t("coverPreview")} className="aspect-video w-full rounded-md border bg-muted object-cover" />
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lp-link">{t("link")}</Label>
               <Input id="lp-link" type="url" value={draft.link ?? ""} onChange={(e) => set("link", e.target.value)} />
               <p className="text-xs text-muted-foreground">{t("linkHint")}</p>
+            </div>
+            <div className="sm:col-span-2">
+              <LibraryCoverGenerator
+                defaultPrompt={t("ai.defaultPrompt", { name: profile.data?.nickname || name || "" })}
+                currentCover={draft.cover}
+                onSelect={(url) => set("cover", url)}
+              />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lp-notes">{t("usageNotes")}</Label>
