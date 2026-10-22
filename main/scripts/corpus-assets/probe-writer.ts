@@ -11,11 +11,11 @@ export function createSerialWriter(
         } catch (error) {
           const details = error as { code?: string; errorCode?: string; name?: string; message?: string } | null;
           const code = details?.code ?? details?.errorCode ?? (
-            details?.name === "PrismaClientInitializationError" && details.message?.includes("Can\'t reach database server")
+            details?.name === "PrismaClientInitializationError" && details.message?.includes("Can't reach database server")
               ? "P1001" : undefined
           );
           if (attempt >= 4 || !["P2024", "P1001", "P1002", "P1017"].includes(code ?? "")) throw error;
-          console.warn(`DB write retry ${attempt + 1}/4 (${code})`);
+          console.warn(`DB operation retry ${attempt + 1}/4 (${code})`);
           await pause(Math.min(1000 * 2 ** attempt, 8000));
         }
       }

@@ -50,3 +50,14 @@ test("initial connection failures without errorCode are retried", async () => {
   }), "connected");
   assert.equal(attempts, 2);
 });
+
+test("a disconnected batch read retries P1017 before continuing", async () => {
+  const database = createSerialWriter(async () => {});
+  let attempts = 0;
+  const batch = await database(async () => {
+    if (attempts++ === 0) throw Object.assign(new Error("connection closed"), { code: "P1017" });
+    return [{ url: "https://example.com/a.wav" }];
+  });
+  assert.equal(attempts, 2);
+  assert.equal(batch.length, 1);
+});

@@ -77,25 +77,31 @@ async function main() {
   const { prisma } = await import("@/lib/prisma");
   const { registerReferencedMedia } = await import("@/lib/analytics/corpus-assets");
 
-  const write = createSerialWriter();
-  const added = await write(() => registerReferencedMedia());
-  const counts = await prisma.corpus_media_assets.groupBy({ by: ["probe_status"], _count: true });
-  console.log(`registered ${added} new urls;`, Object.fromEntries(counts.map((c) => [c.probe_status, c._count])));
-  if (arg("register-only")) return prisma.$disconnect();
-
-  const queue = await prisma.corpus_media_assets.findMany({
-    where: { probe_status: { in: arg("retry-failed") ? ["pending", "failed"] : ["pending"] } },
-    select: { url: true, media_type: true },
-    orderBy: { url: "asc" },
-    take: num("limit", 500),
-  });
-  // Probe a bounded batch concurrently, then use one UPDATE for the batch.
-  // The pool only sees one write, regardless of --concurrency.
-  let done = 0;
-  let failed = 0;
+  const database = createSerialWriter();
   try {
-    while (queue.length) {
-      const batch = queue.splice(0, 100);
+    const added = await database(() => registerReferencedMedia());
+    const counts = await database(() => prisma.corpus_media_assets.groupBy({ by: ["probe_status"], _count: true }));
+    console.log(`registered ${added} new urls;`, Object.fromEntries(counts.map((c) => [c.probe_status, c._count])));
+    if (arg("register-only")) return;
+
+    // Read only one batch of URLs at a time: the full list takes minutes to
+    // transfer and can lose its connection before probing even begins.
+    let afterUrl: string | undefined;
+    let done = 0;
+    let failed = 0;
+    const limit = num("limit", 500);
+    while (done < limit) {
+      const batch = await database(() => prisma.corpus_media_assets.findMany({
+        where: {
+          probe_status: { in: arg("retry-failed") ? ["pending", "failed"] : ["pending"] },
+          ...(afterUrl === undefined ? {} : { url: { gt: afterUrl } }),
+        },
+        select: { url: true, media_type: true },
+        orderBy: { url: "asc" },
+        take: Math.min(100, limit - done),
+      }));
+      if (!batch.length) break;
+      afterUrl = batch[batch.length - 1].url;
       const results: Array<Probe & { url: string; ok: boolean }> = [];
       const worker = async () => {
         for (let item = batch.shift(); item; item = batch.shift()) {
@@ -109,7 +115,7 @@ async function main() {
         ${r.url}::text, ${r.size}::bigint, ${r.contentType}::text,
         ${r.duration}::double precision, ${r.ok ? "ok" : "failed"}::text, ${r.error}::text
       )`);
-      await write(() => prisma.$executeRaw`
+      await database(() => prisma.$executeRaw`
         UPDATE corpus_media_assets AS a SET
           size_bytes = v.size_bytes, content_type = v.content_type,
           duration_seconds = v.duration_seconds, probe_status = v.probe_status,
