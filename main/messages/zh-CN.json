@@ -1314,6 +1314,7 @@
     "unnamedUser": "后台用户",
     "backToMainApp": "返回主应用",
     "nav": {
+      "searchApp": "Search 小程序",
       "analytics": "数据看板",
       "libraryOps": "语料运营",
       "dashboard": "概览",

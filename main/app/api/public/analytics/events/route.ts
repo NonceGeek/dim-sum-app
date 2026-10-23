@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!props) return [];
     const clientTime = event.time ? new Date(event.time) : null;
     return [
-      toRow(event.name, props, {
+      toRow(event.name, { ...props, ...(batch.source === "miniprogram" && batch.app ? { app: batch.app } : {}) }, {
         source: batch.source,
         client_time:
           clientTime && Math.abs(clientTime.getTime() - now) < MAX_CLOCK_SKEW_MS

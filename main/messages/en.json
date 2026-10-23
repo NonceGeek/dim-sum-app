@@ -1313,6 +1313,7 @@
     "unnamedUser": "Backend user",
     "backToMainApp": "Back to Main App",
     "nav": {
+      "searchApp": "Search mini-program",
       "analytics": "Analytics",
       "libraryOps": "Corpus operations",
       "dashboard": "Dashboard",
