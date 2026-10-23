@@ -193,7 +193,11 @@ AW 可复用既有通用埋点对接代码，但发送批次时务必增加 app�
 
 ## 发布状态与接续
 
-本批待创建 dev/main 两个 PR；上线状态、PR 链接、具体预览地址和验证证据由后端完成后回填。复测命令（代码库 `main/`）：`npm run test:search-miniprogram`、`npm run test:analytics`、`node --import tsx scripts/search-miniprogram/verify-live.ts`。最后一项使用配置的数据库，在单个回滚事务中验证过滤、游标、反馈幂等、限流和权限，不保留 QA 行。
+- dev：[PR #519](https://github.com/NonceGeek/dim-sum-app/pull/519)。
+- main：[PR #520](https://github.com/NonceGeek/dim-sum-app/pull/520)。
+- 两份 PR 已创建，当前未合并，正式接口尚未随本批发布。最新构建和 Preview 地址以各 PR 的 Vercel 检查为准。
+- 后端已通过 7 项 Search 测试、dev 既有埋点 18 项 / main 既有埋点 7 项测试，以及两基线类型检查；dev 生产构建通过。实际数据库回滚验证及最终构建 HTTP 联调通过，QA 反馈、用户和埋点已精确清理。
+- 可先用公开词 `唔该` 联调并从响应中取详情 ID，不要写死数据 ID。真实微信 code 登录和真机音频/域名验收尚未完成。复测命令（代码库 `main/`）：`npm run test:search-miniprogram`、`npm run test:analytics`、`node --import tsx scripts/search-miniprogram/verify-live.ts`。最后一项使用配置的数据库，在单个回滚事务中验证过滤、游标、反馈幂等、限流和权限，不保留 QA 行。
 
 数据库为增量新表 search_feedback，已按 db pull → 差异审阅 → db push 应用并启用 RLS；应用行为以实际部署版本为准，不需要 AW 操作数据库。
 
