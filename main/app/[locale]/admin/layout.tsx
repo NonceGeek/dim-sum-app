@@ -28,6 +28,7 @@ import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 
 const adminNavItems = [
+  { titleKey: "nav.searchApp", href: "/admin/search-miniprogram", icon: FileText },
   {
     titleKey: "nav.dashboard",
     href: "/admin",

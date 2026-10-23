@@ -4,6 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "test:search-miniprogram": "node --import tsx --test lib/search-miniprogram/*.test.ts",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",

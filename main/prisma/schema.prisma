@@ -35,6 +35,7 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
+  searchFeedback search_feedback[]
   id                                                                                        String                                     @id @default(cuid())
   name                                                                                      String?
   email                                                                                     String?                                    @unique
@@ -1330,4 +1331,27 @@ model analytics_events {
   @@index([event_name, occurred_at])
   @@index([occurred_at])
   @@index([entry_id, occurred_at])
+}
+
+/// Search mini-program feedback. Public clients can submit, never list or read records.
+model search_feedback {
+  id           String    @id @default(uuid()) @db.Uuid
+  request_id   String    @unique @db.Uuid
+  anonymous_id String    @db.Uuid
+  user_id      String?
+  entry_id     String?   @db.Uuid
+  type         String
+  description  String    @db.VarChar(300)
+  status       String    @default("OPEN")
+  staff_note   String    @default("") @db.VarChar(1000)
+  handled_by   String?
+  handled_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @updatedAt @db.Timestamptz(6)
+  user         User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([status, created_at])
+  @@index([anonymous_id, created_at])
+  @@index([user_id, created_at])
+  @@index([entry_id])
 }

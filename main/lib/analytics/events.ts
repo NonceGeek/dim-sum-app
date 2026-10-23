@@ -53,6 +53,18 @@ function enhancedGroup<T extends z.AnyZodObject>(schema: T, fields: string[], re
   });
 }
 
+const audioFields = z.object({
+  entryId:id,
+  audioId:z.string().trim().min(1).max(300).regex(/^\/[^?#\s]*$/),
+  playSessionId:uuid,
+  surface:z.enum(["search_result","entry_detail"]),
+  target:z.enum(["expression","example"]),
+  senseIndex:z.number().int().min(0).max(100),
+  exampleIndex:z.number().int().min(0).max(2).optional(),
+});
+const validAudioTarget = (v:z.infer<typeof audioFields>) => v.target === "example" ? v.exampleIndex !== undefined : v.exampleIndex === undefined;
+const feedbackType = z.enum(["content_error","audio_issue","suggestion","other"]);
+
 export const CLIENT_EVENT_SCHEMAS = {
   // landing=true marks the first view of a visit; only it carries the external referrer.
   // scene is the WeChat miniprogram launch scene value (e.g. 1007 chat card, 1011 QR code).
@@ -61,6 +73,8 @@ export const CLIENT_EVENT_SCHEMAS = {
     scene: z.number().int().min(0).max(100000).optional(),
   }),
   search_submit: z.object({
+    requestId: z.string().uuid().optional(),
+    origin: z.enum(["search_box", "history"]).optional(),
     query,
     dataset: z.string().max(500).optional(),
     mediaType: mediaType.optional(),
@@ -74,6 +88,7 @@ export const CLIENT_EVENT_SCHEMAS = {
     mediaType: mediaType.optional(),
   }),
   search_result_click: z.object({
+    requestId: z.string().uuid().optional(),
     query,
     section,
     entryId: id,
@@ -122,6 +137,12 @@ export const CLIENT_EVENT_SCHEMAS = {
     landingVisitId: uuid.optional(),
     sourceChannel: z.string().trim().min(1).max(40).optional(),
   }), ["shareId", "landingVisitId", "sourceChannel"], ["landingVisitId", "sourceChannel"]),
+  audio_play: audioFields.refine(validAudioTarget, { message: "Example audio requires an exampleIndex" }),
+  audio_error: audioFields.extend({ loadAttemptId: uuid, errorType: z.enum(["timeout","network","resource_unavailable","unsupported","unknown"]) }).refine(validAudioTarget, { message: "Example audio requires an exampleIndex" }),
+  feedback_submit: z.discriminatedUnion("status", [
+    z.object({requestId:uuid,type:feedbackType,status:z.literal("success"),feedbackId:uuid}),
+    z.object({requestId:uuid,type:feedbackType,status:z.literal("error"),errorCode:z.enum(["INVALID_FEEDBACK","INVALID_JSON","BODY_TOO_LARGE","INVALID_TOKEN","ENTRY_UNAVAILABLE","REQUEST_CONFLICT","RATE_LIMITED","SERVICE_UNAVAILABLE","NETWORK_ERROR"])})
+  ]),
   // Miniprogram forward to a chat (onShareAppMessage) or Moments (onShareTimeline).
   mp_share: z.object({
     entryId: id.optional(),
@@ -185,6 +206,7 @@ export const ingestBatchSchema = z.object({
   anonymousId: z.string().uuid(),
   sessionId: z.string().uuid(),
   source: z.enum(["web", "miniprogram"]).default("web"),
+  app: z.enum(["search-app","review-app","corpus-collection-app","yue-cube-game"]).optional(),
   events: z.array(envelope).min(1).max(20),
 });
 export type IngestBatch = z.infer<typeof ingestBatchSchema>;
