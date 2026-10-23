@@ -593,6 +593,7 @@
     "unnamedUser": "Administrator",
     "backToMainApp": "Back to Main App",
     "nav": {
+      "searchApp": "Search mini-program",
       "dashboard": "Dashboard",
       "users": "Users",
       "administrators": "Administrator Management",

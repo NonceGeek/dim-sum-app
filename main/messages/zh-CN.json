@@ -594,6 +594,7 @@
     "unnamedUser": "管理员",
     "backToMainApp": "返回主应用",
     "nav": {
+      "searchApp": "Search 小程序",
       "dashboard": "概览",
       "users": "用户管理",
       "administrators": "管理员管理",
