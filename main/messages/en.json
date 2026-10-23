@@ -1,5 +1,17 @@
 {
   "AdminAnalytics": {
+    "errorType": {
+      "timeout": "Timeout",
+      "network": "Network",
+      "resource_unavailable": "Unavailable",
+      "unsupported": "Unsupported",
+      "unknown": "Unknown"
+    },
+    "fallback": {
+      "text": "Text",
+      "text_audio": "Text + audio",
+      "none": "None"
+    },
     "source": {
       "web": "Web",
       "miniprogram": "Miniprogram"
@@ -69,17 +81,20 @@
       "mediaFilters": "Media filter usage"
     },
     "section": {
-      "primary": "Exact match",
-      "similar": "Related",
-      "recommended": "Recommended"
+      "primary": "exact · Exact match",
+      "similar": "related · Related",
+      "recommended": "recommended · Recommended"
     },
     "content": {
+      "videoErrors": "Video load failures",
+      "videoErrorsHint": "Load errors or 15s timeouts before first playback, at most once per load attempt; closing or leaving does not count.",
       "video": "Video plays and failures",
       "shareFunnel": "Share funnel",
       "shareFunnelHint": "Image downloads count successes only; link opens come from copied share links.",
       "topEntries": "Most engaged entries"
     },
     "share": {
+      "attributedLinkOpens": "Opens linked by share_id",
       "cardOpens": "Share dialog opened",
       "linkCopies": "Share link copied",
       "imageDownloads": "Share image downloaded",
@@ -110,6 +125,9 @@
       "unknown": "Unknown"
     },
     "col": {
+      "errorType": "Error type",
+      "avgElapsed": "Avg time to failure",
+      "fallback": "Fallback",
       "source": "Client",
       "scene": "Scene",
       "query": "Query",

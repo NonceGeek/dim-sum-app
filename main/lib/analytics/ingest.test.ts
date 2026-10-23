@@ -13,16 +13,52 @@ import { toRow } from "./server";
 test("unknown events and invalid payloads are dropped", () => {
   assert.equal(parseClientEvent("delete_everything", {}), null);
   assert.equal(parseClientEvent("search_result_click", { query: "x", section: "nope", entryId: "a", position: 0 }), null);
-  assert.deepEqual(parseClientEvent("share_link_copy", { entryId: "abc", extra: "dropped" }), { entryId: "abc" });
+  const shareId = "6f1c3d9a-1b2c-4d5e-8f90-123456789abc";
+  assert.deepEqual(
+    parseClientEvent("share_link_copy", { entryId: "abc", shareId, copyEntry: "share_card", extra: "dropped" }),
+    { entryId: "abc", shareId, copyEntry: "share_card" },
+  );
+  // Older deployed clients remain valid; no attribution IDs are invented.
+  assert.deepEqual(parseClientEvent("share_link_copy", { entryId: "abc" }), { entryId: "abc" });
   assert.deepEqual(parseClientEvent("page_view", { landing: true }), { landing: true });
 });
 
 test("miniprogram events: scene, surfaces and forwarding", () => {
   assert.deepEqual(parseClientEvent("page_view", { landing: true, scene: 1007 }), { landing: true, scene: 1007 });
   assert.equal(parseClientEvent("page_view", { scene: -1 }), null);
-  assert.deepEqual(parseClientEvent("video_play", { entryId: "e1", surface: "miniprogram" }), { entryId: "e1", surface: "miniprogram" });
-  assert.deepEqual(parseClientEvent("share_card_open", { entryId: "e1", surface: "miniprogram" }), { entryId: "e1", surface: "miniprogram" });
+  const playSessionId = "7f1c3d9a-1b2c-4d5e-8f90-123456789abc";
+  const shareId = "8f1c3d9a-1b2c-4d5e-8f90-123456789abc";
+  assert.deepEqual(
+    parseClientEvent("video_play", { entryId: "e1", videoId: "v1", playSessionId, surface: "miniprogram" }),
+    { entryId: "e1", videoId: "v1", playSessionId, surface: "miniprogram" },
+  );
+  assert.deepEqual(
+    parseClientEvent("share_card_open", { entryId: "e1", shareId, surface: "miniprogram" }),
+    { entryId: "e1", shareId, surface: "miniprogram" },
+  );
   assert.deepEqual(parseClientEvent("mp_share", { channel: "timeline" }), { channel: "timeline" });
+});
+
+test("#508 video failure and share landing parameters", () => {
+  const ids = {
+    playSessionId: "7f1c3d9a-1b2c-4d5e-8f90-123456789abc",
+    loadAttemptId: "9f1c3d9a-1b2c-4d5e-8f90-123456789abc",
+  };
+  const failure = {
+    entryId: "e1", videoId: "/v.mp4", ...ids, errorType: "timeout", loadElapsedMs: 15000,
+    fallbackType: "text_audio", surface: "search_tile", query: "食饭", section: "similar",
+  };
+  assert.deepEqual(parseClientEvent("video_load_failed", failure), failure);
+  assert.equal(parseClientEvent("video_load_failed", { ...failure, errorType: "aborted" }), null);
+  assert.equal(parseClientEvent("video_load_failed", { ...failure, fallbackType: undefined }), null);
+  const open = {
+    entryId: "e1",
+    shareId: "8f1c3d9a-1b2c-4d5e-8f90-123456789abc",
+    landingVisitId: "af1c3d9a-1b2c-4d5e-8f90-123456789abc",
+    sourceChannel: "shared_link",
+  };
+  assert.deepEqual(parseClientEvent("share_link_open", open), open);
+  assert.deepEqual(parseClientEvent("share_link_open", { entryId: "e1" }), { entryId: "e1" });
   assert.equal(parseClientEvent("mp_share", { channel: "email" }), null);
 });
 
@@ -32,7 +68,8 @@ test("rows split indexed columns from properties and normalize queries", () => {
     { query: "  Dim   SUM ", section: "similar", resultCount: 3, mediaType: "video", page: 0 },
     { source: "web" },
   );
-  assert.equal(row.query, "dim sum");
+  // #508 search_keyword: trimmed only, original spacing and case kept.
+  assert.equal(row.query, "Dim   SUM");
   assert.equal(row.section, "similar");
   assert.equal(row.media_type, "video");
   assert.deepEqual(row.properties, { resultCount: 3, page: 0 });
@@ -69,4 +106,19 @@ test("ingest batches are bounded and accept the miniprogram source", () => {
   assert.equal(ingestBatchSchema.safeParse({ ...base, source: "app", events: [event] }).success, false);
   assert.equal(ingestBatchSchema.safeParse({ ...base, events: Array(21).fill(event) }).success, false);
   assert.equal(ingestBatchSchema.safeParse({ ...base, anonymousId: "x", events: [event] }).success, false);
+});
+
+
+test("legacy clients remain accepted; partial enhanced groups and invalid IDs are rejected", () => {
+  const base = { entryId: "e1", surface: "miniprogram" };
+  assert.deepEqual(parseClientEvent("video_play", base), base);
+  assert.deepEqual(parseClientEvent("video_load_failed", { ...base, reason: "load_error" }), { ...base, reason: "load_error" });
+  assert.deepEqual(parseClientEvent("share_card_open", base), base);
+  const uuid = "7f1c3d9a-1b2c-4d5e-8f90-123456789abc";
+  assert.equal(parseClientEvent("video_play", { ...base, videoId: "/v.mp4" }), null);
+  assert.equal(parseClientEvent("video_load_failed", { ...base, errorType: "timeout" }), null);
+  assert.equal(parseClientEvent("share_link_copy", { entryId: "e1", shareId: uuid }), null);
+  assert.equal(parseClientEvent("share_link_open", { entryId: "e1", shareId: uuid }), null);
+  assert.equal(parseClientEvent("share_card_open", { ...base, shareId: "invalid" }), null);
+  assert.deepEqual(parseClientEvent("share_link_open", { entryId: "e1", landingVisitId: uuid, sourceChannel: "shared_link" }), { entryId: "e1", landingVisitId: uuid, sourceChannel: "shared_link" });
 });
