@@ -18,8 +18,8 @@ test("unknown events and invalid payloads are dropped", () => {
     parseClientEvent("share_link_copy", { entryId: "abc", shareId, copyEntry: "share_card", extra: "dropped" }),
     { entryId: "abc", shareId, copyEntry: "share_card" },
   );
-  // #508: copy without share_id / copy_entry is rejected.
-  assert.equal(parseClientEvent("share_link_copy", { entryId: "abc" }), null);
+  // Older deployed clients remain valid; no attribution IDs are invented.
+  assert.deepEqual(parseClientEvent("share_link_copy", { entryId: "abc" }), { entryId: "abc" });
   assert.deepEqual(parseClientEvent("page_view", { landing: true }), { landing: true });
 });
 
@@ -58,7 +58,7 @@ test("#508 video failure and share landing parameters", () => {
     sourceChannel: "shared_link",
   };
   assert.deepEqual(parseClientEvent("share_link_open", open), open);
-  assert.equal(parseClientEvent("share_link_open", { entryId: "e1" }), null);
+  assert.deepEqual(parseClientEvent("share_link_open", { entryId: "e1" }), { entryId: "e1" });
   assert.equal(parseClientEvent("mp_share", { channel: "email" }), null);
 });
 
@@ -106,4 +106,19 @@ test("ingest batches are bounded and accept the miniprogram source", () => {
   assert.equal(ingestBatchSchema.safeParse({ ...base, source: "app", events: [event] }).success, false);
   assert.equal(ingestBatchSchema.safeParse({ ...base, events: Array(21).fill(event) }).success, false);
   assert.equal(ingestBatchSchema.safeParse({ ...base, anonymousId: "x", events: [event] }).success, false);
+});
+
+
+test("legacy clients remain accepted; partial enhanced groups and invalid IDs are rejected", () => {
+  const base = { entryId: "e1", surface: "miniprogram" };
+  assert.deepEqual(parseClientEvent("video_play", base), base);
+  assert.deepEqual(parseClientEvent("video_load_failed", { ...base, reason: "load_error" }), { ...base, reason: "load_error" });
+  assert.deepEqual(parseClientEvent("share_card_open", base), base);
+  const uuid = "7f1c3d9a-1b2c-4d5e-8f90-123456789abc";
+  assert.equal(parseClientEvent("video_play", { ...base, videoId: "/v.mp4" }), null);
+  assert.equal(parseClientEvent("video_load_failed", { ...base, errorType: "timeout" }), null);
+  assert.equal(parseClientEvent("share_link_copy", { entryId: "e1", shareId: uuid }), null);
+  assert.equal(parseClientEvent("share_link_open", { entryId: "e1", shareId: uuid }), null);
+  assert.equal(parseClientEvent("share_card_open", { ...base, shareId: "invalid" }), null);
+  assert.deepEqual(parseClientEvent("share_link_open", { entryId: "e1", landingVisitId: uuid, sourceChannel: "shared_link" }), { entryId: "e1", landingVisitId: uuid, sourceChannel: "shared_link" });
 });

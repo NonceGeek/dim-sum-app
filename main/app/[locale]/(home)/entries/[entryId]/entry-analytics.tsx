@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { newAnalyticsId, track } from "@/lib/analytics/client";
 import { DEFAULT_SHARE_CHANNEL } from "@/lib/analytics/events";
 
-const reportedOpens = new Set<string>();
 
 /**
  * Counts a visit that arrived through a share link (?from=share&sid=…), once per
@@ -17,11 +16,12 @@ export function ShareLinkOpenTracker({
   entryId: string;
   shareId?: string;
 }) {
+  const reportedOpens = useRef(new Set<string>());
   useEffect(() => {
     const key = `${entryId}|${shareId ?? ""}`;
-    if (reportedOpens.has(key)) return;
-    reportedOpens.add(key);
-    const validShareId = shareId && /^[0-9a-f-]{36}$/i.test(shareId) ? shareId : undefined;
+    if (reportedOpens.current.has(key)) return;
+    reportedOpens.current.add(key);
+    const validShareId = shareId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(shareId) ? shareId : undefined;
     track("share_link_open", {
       entryId,
       shareId: validShareId,

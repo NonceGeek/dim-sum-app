@@ -120,6 +120,7 @@ export default async function EntryPage({ params, searchParams }: EntryPageProps
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       {resolvedSearchParams?.[SHARE_ATTRIBUTION_PARAM] === SHARE_ATTRIBUTION_VALUE && (
         <ShareLinkOpenTracker
+          key={`${entry.entryId}|${resolvedSearchParams?.[SHARE_ID_PARAM] ?? ""}`}
           entryId={entry.entryId}
           shareId={resolvedSearchParams?.[SHARE_ID_PARAM]}
         />
