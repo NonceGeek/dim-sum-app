@@ -107,7 +107,7 @@ export async function requireCollectionAdmin(
   handler: (req: NextRequest, userId: string) => Promise<NextResponse>,
 ) {
   return withSubmissionAccess(req, async (access) => {
-    if (!access.isAdmin) throw new AccessError(403, "仅系统管理员可配置权限");
+    if (!access.isAdmin) throw new AccessError(403, "仅平台管理员可配置权限");
     return handler(req, access.userId);
   });
 }
