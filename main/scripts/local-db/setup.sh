@@ -31,7 +31,7 @@ if docker container inspect "$NAME" >/dev/null 2>&1; then
 fi
 
 docker build -q -t "$IMAGE" . >/dev/null
-docker run -d --name "$NAME" -p "127.0.0.1:$PORT:5432" -v "$NAME-data:/var/lib/postgresql/data" \
+docker run -d --restart unless-stopped --name "$NAME" -p "127.0.0.1:$PORT:5432" -v "$NAME-data:/var/lib/postgresql/data" \
   -e POSTGRES_PASSWORD=postgres "$IMAGE" >/dev/null
 until docker exec "$NAME" pg_isready -U postgres -q && docker exec "$NAME" psql -U postgres -Atqc 'select 1' >/dev/null 2>&1; do
   sleep 1
