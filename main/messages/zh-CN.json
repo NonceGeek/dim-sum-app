@@ -1668,7 +1668,35 @@
       "files": "文件",
       "approvals": "审批",
       "records": "已入库",
+      "report": "报告",
       "events": "动态"
+    },
+    "report": {
+      "loading": "正在加载报告…",
+      "pending": "任务已结束，报告生成中…",
+      "notClosed": "任务结束后自动生成入库报告；结束前可先生成草稿预览。",
+      "regenerate": "重新生成",
+      "draft": "生成草稿",
+      "scheduled": "已开始生成报告",
+      "withoutNarrative": "AI 导读未生成或未通过校验，本报告只有系统整理的内容。",
+      "unreadable": "报告正文暂时无法读取，可直接下载。",
+      "read": "全屏阅读",
+      "title": "入库报告 v{version}",
+      "kinds": {
+        "final": "正式版",
+        "draft": "草稿"
+      },
+      "statuses": {
+        "generating": "生成中",
+        "ready": "已生成",
+        "ready_without_narrative": "已生成（无 AI 导读）",
+        "failed": "生成失败"
+      },
+      "formats": {
+        "md": "文字报告",
+        "xlsx": "Excel 明细",
+        "json": "JSON"
+      }
     },
     "files": {
       "pickFiles": "上传文件",

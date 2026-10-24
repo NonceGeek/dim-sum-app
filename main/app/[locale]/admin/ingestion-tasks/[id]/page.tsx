@@ -23,11 +23,12 @@ import { Button } from "@/components/ui/button";
 import { AgentChat } from "@/components/ingestion/agent-chat";
 import { AgentClient } from "@/components/ingestion/agent-client";
 import { ApprovalsPanel, EventsPanel, FilesPanel, RecordsPanel } from "@/components/ingestion/task-panels";
+import { ReportPanel } from "@/components/ingestion/report-panel";
 import { TaskForm } from "@/components/ingestion/task-form";
 import { FormattedTime, TaskStatusBadge } from "@/components/ingestion/task-shared";
 import type { RunView, TaskDetail } from "@/components/ingestion/types";
 
-const PANELS = ["files", "approvals", "records", "events"] as const;
+const PANELS = ["files", "approvals", "records", "report", "events"] as const;
 type Panel = (typeof PANELS)[number];
 
 export default function IngestionTaskPage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,6 +59,7 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
     if (!runKey) return;
     void queryClient.invalidateQueries({ queryKey: ["ingestion-task", id] });
     void queryClient.invalidateQueries({ queryKey: ["ingestion-task-records", id] });
+    void queryClient.invalidateQueries({ queryKey: ["ingestion-task-report", id] });
   }, [runKey, id, queryClient]);
 
   const lifecycle = useMutation({
@@ -201,6 +203,7 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
               {panel === "files" && <FilesPanel task={task} />}
               {panel === "approvals" && <ApprovalsPanel task={task} />}
               {panel === "records" && <RecordsPanel taskId={task.id} />}
+              {panel === "report" && <ReportPanel task={task} />}
               {panel === "events" && <EventsPanel task={task} />}
             </div>
           </div>

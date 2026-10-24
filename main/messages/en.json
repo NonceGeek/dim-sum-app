@@ -1667,7 +1667,35 @@
       "files": "Files",
       "approvals": "Approvals",
       "records": "Ingested",
+      "report": "Report",
       "events": "Activity"
+    },
+    "report": {
+      "loading": "Loading report…",
+      "pending": "Task closed; the report is being generated…",
+      "notClosed": "The ingestion report is generated when the task ends. You can preview a draft before then.",
+      "regenerate": "Regenerate",
+      "draft": "Generate draft",
+      "scheduled": "Report generation started",
+      "withoutNarrative": "The AI summary was not generated or failed validation; this report contains system records only.",
+      "unreadable": "The report text can't be loaded right now. You can still download it.",
+      "read": "Read full screen",
+      "title": "Ingestion report v{version}",
+      "kinds": {
+        "final": "Final",
+        "draft": "Draft"
+      },
+      "statuses": {
+        "generating": "Generating",
+        "ready": "Ready",
+        "ready_without_narrative": "Ready (no AI summary)",
+        "failed": "Failed"
+      },
+      "formats": {
+        "md": "Report",
+        "xlsx": "Excel details",
+        "json": "JSON"
+      }
     },
     "files": {
       "pickFiles": "Upload files",
