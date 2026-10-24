@@ -52,11 +52,6 @@ const adminNavItems = [
     icon: Users,
   },
   {
-    titleKey: "nav.categories",
-    href: "/admin/categories",
-    icon: FolderOpen,
-  },
-  {
     titleKey: "nav.permissions",
     href: "/admin/permissions",
     icon: Shield,
@@ -66,16 +61,21 @@ const adminNavItems = [
         href: "/admin/administrators",
         superAdminOnly: true,
       },
-      { titleKey: "nav.corpusPermissions", href: "/admin/permissions" },
       {
         titleKey: "corpusNav.submissionPermissions",
         href: "/admin/business-permissions",
       },
+      { titleKey: "nav.corpusPermissions", href: "/admin/permissions" },
       {
         titleKey: "corpusNav.questionnairePermissions",
         href: "/admin/corpus-collection/questionnaire-permissions",
       },
     ],
+  },
+  {
+    titleKey: "nav.categories",
+    href: "/admin/categories",
+    icon: FolderOpen,
   },
   {
     titleKey: "nav.corpusData",
