@@ -305,15 +305,15 @@ export default function AdminPermissionsPage() {
   const getPermissionBadgeColor = (permission: string) => {
     switch (permission) {
       case "FULL":
-        return "bg-error text-error-foreground";
+        return "bg-error text-error-foreground dark:bg-error dark:hover:bg-error";
       case "CREATE":
-        return "bg-primary text-primary-foreground";
+        return "bg-primary text-primary-foreground dark:bg-primary dark:hover:bg-primary";
       case "WRITE":
-        return "bg-info text-info-foreground";
+        return "bg-info text-info-foreground dark:bg-info dark:hover:bg-info";
       case "READ":
-        return "bg-success text-success-foreground";
+        return "bg-success text-success-foreground dark:bg-success dark:hover:bg-success";
       default:
-        return "bg-secondary text-secondary-foreground";
+        return "bg-secondary text-secondary-foreground dark:bg-secondary dark:hover:bg-secondary";
     }
   };
 

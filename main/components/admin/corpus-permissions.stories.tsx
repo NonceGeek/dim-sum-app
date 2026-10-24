@@ -17,7 +17,15 @@ function Preview() {
       },
     });
     queryClient.setQueryData(["admin-permissions", "", ""], {
-      permissions: [],
+      permissions: ["READ", "WRITE", "CREATE", "FULL"].map((permission, index) => ({
+        id: index + 1,
+        user_id: `preview-${index}`,
+        category_name: "internal-test",
+        permission,
+        created_at: "2026-10-14T00:00:00.000Z",
+        user: { id: `preview-${index}`, name: `样例标注员 ${index + 1}`, role: "TAGGER_PARTNER", image: null },
+        category: { name: "internal-test", nickname: "测试语料（内部）" },
+      })),
     });
     queryClient.setQueryData(["admin-categories-list"], {
       categories: [
@@ -54,7 +62,7 @@ function Preview() {
     >
       <QueryClientProvider client={client}>
         <p className="mb-4 text-sm text-muted-foreground">
-          本地样例：只检查分类搜索与选择，不提交权限变更。
+          本地样例：检查四种权限在明暗主题下的显示，不提交权限变更。
         </p>
         <AdminPermissionsPage />
       </QueryClientProvider>
@@ -65,3 +73,5 @@ const meta: Meta = { title: "Admin/Corpus permissions", component: Preview };
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
+
+export const Dark: Story = { globals: { theme: "dark" } };

@@ -82,10 +82,10 @@ export const ColoredPermissions: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
       {[
-        ["READ", "只读", "bg-success text-success-foreground"],
-        ["WRITE", "编辑", "bg-info text-info-foreground"],
-        ["CREATE", "创建", "bg-primary text-primary-foreground"],
-        ["FULL", "完全控制", "bg-error text-error-foreground"],
+        ["READ", "只读", "bg-success text-success-foreground dark:bg-success dark:hover:bg-success"],
+        ["WRITE", "编辑", "bg-info text-info-foreground dark:bg-info dark:hover:bg-info"],
+        ["CREATE", "创建", "bg-primary text-primary-foreground dark:bg-primary dark:hover:bg-primary"],
+        ["FULL", "完全控制", "bg-error text-error-foreground dark:bg-error dark:hover:bg-error"],
       ].map(([value, label, color]) => (
         <Select key={value} defaultValue={value}>
           <SelectTrigger aria-label={`${label}权限`} className={`w-28 h-9 ${color} border-0 text-sm font-medium hover:brightness-95 data-[state=open]:brightness-95`}>
