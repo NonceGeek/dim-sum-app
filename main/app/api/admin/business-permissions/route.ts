@@ -72,9 +72,45 @@ export async function GET(req: NextRequest) {
             canScope(access, g.scope_type as ScopeType, g.scope_id, "manage"),
         )
       : [];
+    // Read-only overview fields. Keep the existing actor checks and scope filtering above.
+    const target = userId
+      ? await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phoneNumber: true,
+            image: true,
+            status: true,
+            isSystemAdmin: true,
+            isSuperAdmin: true,
+          },
+        })
+      : null;
+    const questionnaireGrants =
+      userId && access.isPlatformAdmin
+        ? await prisma.corpus_collection_activity_permissions.findMany({
+            where: { user_id: userId, can_view_insights: true },
+            select: {
+              activity_id: true,
+              can_view_insights: true,
+              can_export_insights: true,
+            },
+          })
+        : null;
     return NextResponse.json(
       jsonSnapshot({
         roles,
+        target: target
+          ? {
+              ...userSearchSummary(target),
+              image: target.image,
+              status: target.status,
+              isSuperAdmin: target.isSuperAdmin,
+            }
+          : null,
+        questionnaireGrants,
         grants,
         datasets,
         activities,

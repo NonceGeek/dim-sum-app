@@ -1342,7 +1342,7 @@
       "questionnairePermissions": "活动问卷数据权限",
       "questionnaireSettings": "问卷门禁",
       "questionnaireDefinition": "问卷定义",
-      "submissionPermissions": "业务范围权限",
+      "submissionPermissions": "业务权限管理",
       "submissionAudit": "投稿操作记录"
     },
     "roles": {

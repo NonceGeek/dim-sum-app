@@ -37,6 +37,9 @@ export function ScopeObjectSelect({
   placeholder,
   searchPlaceholder,
   emptyLabel,
+  disabledIds = [],
+  disabledLabel,
+  disabled = false,
 }: {
   objects?: ScopeObject[];
   value: string;
@@ -45,14 +48,18 @@ export function ScopeObjectSelect({
   placeholder: string;
   searchPlaceholder: string;
   emptyLabel: string;
+  disabledIds?: string[];
+  disabledLabel?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = objects.find((object) => String(object.id) === value);
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           id="scope-object"
+          disabled={disabled}
           variant="outline"
           role="combobox"
           aria-label={label}
@@ -89,6 +96,7 @@ export function ScopeObjectSelect({
                 <CommandItem
                   key={String(object.id)}
                   value={String(object.id)}
+                  disabled={disabledIds.includes(String(object.id))}
                   keywords={[
                     objectLabel(object),
                     object.name ?? "",
@@ -102,6 +110,12 @@ export function ScopeObjectSelect({
                 >
                   <span className="min-w-0 flex-1 break-words">
                     {objectLabel(object)}
+                    {disabledIds.includes(String(object.id)) &&
+                      disabledLabel && (
+                        <span className="block text-xs text-muted-foreground">
+                          {disabledLabel}
+                        </span>
+                      )}
                   </span>
                   <Check
                     className={cn(
