@@ -516,7 +516,7 @@ export function BusinessPermissionsWorkspace({
                     {data.questionnaireGrants
                       ? t("暂无问卷数据授权。", "No questionnaire data grants.")
                       : t(
-                          "请到活动问卷数据权限页查看。",
+                          "请到活动问卷权限管理页查看。",
                           "See Questionnaire data permissions.",
                         )}
                   </p>
@@ -526,8 +526,8 @@ export function BusinessPermissionsWorkspace({
                   href={`/${en ? "en" : "zh-CN"}/admin/corpus-collection/questionnaire-permissions`}
                 >
                   {t(
-                    "前往活动问卷数据权限",
-                    "Open questionnaire data permissions",
+                    "前往活动问卷权限管理",
+                    "Open Activity Questionnaire Permission Management",
                   )}
                 </a>
               </CardContent>

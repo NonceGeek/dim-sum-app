@@ -85,7 +85,7 @@ export default function BusinessPermissionsPage() {
     <div className="max-w-5xl space-y-5">
       <div>
         <h2 className="text-2xl font-bold">
-          {t("业务权限管理", "Business permissions")}
+          {t("用户权限管理", "User Permission Management")}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {t(
