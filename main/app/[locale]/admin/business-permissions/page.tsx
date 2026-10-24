@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { ScopeObjectSelect } from "@/components/admin/scope-object-select";
 import {
   Select,
   SelectContent,
@@ -223,24 +224,16 @@ export default function BusinessPermissionsPage() {
                 </div>
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="scope-object">{t("对象", "Object")}</Label>
-                  <Select value={scopeId} onValueChange={setScopeId}>
-                    <SelectTrigger
-                      id="scope-object"
-                      className="w-full min-w-0 [&_[data-slot=select-value]]:truncate"
-                      aria-label={t("对象", "Object")}
-                    >
-                      <SelectValue
-                        placeholder={t("请选择对象", "Select object")}
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="max-w-[calc(100vw-2rem)]">
-                      {objects?.map((o: any) => (
-                        <SelectItem key={o.id} value={String(o.id)}>
-                          #{o.id} {o.nickname || o.name || o.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ScopeObjectSelect
+                    key={scopeType}
+                    objects={objects}
+                    value={scopeId}
+                    onChange={setScopeId}
+                    label={t("对象", "Object")}
+                    placeholder={t("请选择对象", "Select object")}
+                    searchPlaceholder={t("按名称或编号搜索对象…", "Search objects by name or ID…")}
+                    emptyLabel={t("未找到匹配对象", "No matching objects")}
+                  />
                 </div>
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="scope-role">

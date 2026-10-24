@@ -8,6 +8,16 @@ const fixture = {
   isPlatformAdmin: true,
   roles: [],
   datasets: [
+    {
+      id: "68",
+      name: "autumn-a",
+      nickname: "自在禅城，舒度时光 - 地道岭南秋韵",
+    },
+    {
+      id: "69",
+      name: "autumn-b",
+      nickname: "自在禅城，舒度时光 - 地道岭南秋韵",
+    },
     { id: "72", name: "internal-test", nickname: "测试语料（内部）" },
     {
       id: "20",
@@ -15,7 +25,10 @@ const fixture = {
       nickname: "粤语勾漏片藤县方言口述文化语料集：长名称布局示例",
     },
   ],
-  activities: [{ id: "22", title: "声音征集活动" }],
+  activities: [
+    { id: "22", title: "声音征集活动" },
+    { id: "23", title: "秋日粤语活动" },
+  ],
   grants: [
     {
       scope_type: "activity",
