@@ -797,7 +797,7 @@ export default function AdminPermissionsPage() {
                         }
                       >
                         <SelectTrigger
-                          className={`w-28 h-8 ${getPermissionBadgeColor(perm.permission)} border-0 text-xs`}
+                          className={`w-28 h-9 ${getPermissionBadgeColor(perm.permission)} border-0 text-sm font-medium hover:brightness-95 data-[state=open]:brightness-95`}
                         >
                           <SelectValue />
                         </SelectTrigger>
