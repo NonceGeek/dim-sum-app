@@ -1776,10 +1776,15 @@
       "unknownCall": "执行结果未知：{name}",
       "resumeNote": "核对结论（必填）",
       "resume": "继续任务",
-      "retry": "重新获取本次请求",
+      "stoppedTitle": "Agent 已中断",
+      "unknownHint": "以下工具调用开始执行后中断，请先核对它们是否已生效，再继续任务。",
+      "retry": "重新连接",
       "inputLabel": "发给 Agent 的消息",
       "placeholder": "输入指令，Enter 发送，Shift+Enter 换行",
       "placeholderBlocked": "Agent 正在执行或等待处理",
+      "placeholderInterrupted": "Agent 已中断，请先点击上方「继续任务」",
+      "placeholderQuestion": "请先回答上方的问题",
+      "placeholderApproval": "请先处理上方的入库提案",
       "send": "发送"
     },
     "approval": {

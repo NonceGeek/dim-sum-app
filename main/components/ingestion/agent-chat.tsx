@@ -261,9 +261,15 @@ function ChatInner({
   );
   const applyingApproval = run?.approvals.find((item) => item.status === "applying");
   const closed = taskClosed || run?.status === "cancelled" || run?.status === "completed";
+  // 中断的原因和恢复操作放在同一个面板里
+  const stopped = !closed && (run?.status === "failed" || run?.status === "interrupted");
   // 取消会中止进行中的流，此时的流错误不再有意义
   const error =
-    loadError || (streamError ? t("eventsDisconnected") : "") || run?.last_error || (closed ? "" : chat.error?.message);
+    loadError ||
+    (streamError ? t("eventsDisconnected") : "") ||
+    (stopped ? "" : run?.last_error) ||
+    (closed || stopped ? "" : chat.error?.message);
+  const stopReason = stopped ? run?.last_error || chat.error?.message : undefined;
   const compaction = compactionStatus(run);
   const questions = useMemo(() => new Map((run?.questions ?? []).map((item) => [item.tool_call_id, item])), [run?.questions]);
   const answerQuestion = useCallback(
@@ -283,6 +289,17 @@ function ChatInner({
     [client, setMessages, refresh],
   );
   const canSend = !closed && !busy && (started ? run?.status === "ready" : true);
+  const placeholder = canSend
+    ? t("placeholder")
+    : stopped
+      ? run?.can_resume
+        ? t("placeholderInterrupted")
+        : run?.resume_blocker || t("placeholderBlocked")
+      : run?.status === "waiting_input"
+        ? t("placeholderQuestion")
+        : run?.status === "waiting_approval"
+          ? t("placeholderApproval")
+          : t("placeholderBlocked");
   const send = () => {
     const text = input.trim();
     if (!text || !canSend) return;
@@ -377,46 +394,60 @@ function ChatInner({
         {pendingApproval && !closed ? (
           <ApprovalCard taskId={client.taskId} approval={pendingApproval} busy={busy} onExecute={executeApproval} />
         ) : null}
-        {run?.can_resume && !closed ? (
-          <div className="space-y-2 rounded-xl border p-3 text-sm">
-            {run.unknown_calls.map((call) => (
-              <details key={call.tool_call_id}>
-                <summary className="cursor-pointer">{t("unknownCall", { name: call.tool_name })}</summary>
-                <pre className="mt-1 max-h-60 overflow-auto rounded bg-muted/50 p-2 text-xs">
-                  {JSON.stringify(call.input, null, 2)}
-                </pre>
-              </details>
-            ))}
-            {run.unknown_calls.length ? (
-              <Textarea
-                aria-label={t("resumeNote")}
-                placeholder={t("resumeNote")}
-                rows={2}
-                value={resumeNote}
-                onChange={(event) => setResumeNote(event.target.value)}
-              />
+        {stopped && run ? (
+          <div role="alert" className="space-y-2 rounded-xl border border-destructive/40 p-3 text-sm">
+            <p className="font-medium text-destructive">{t("stoppedTitle")}</p>
+            {stopReason ? (
+              <p className="line-clamp-3 break-all text-destructive/90" title={stopReason}>
+                {stopReason}
+              </p>
             ) : null}
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                disabled={busy || (!!run.unknown_calls.length && !resumeNote.trim())}
-                onClick={() => {
-                  // 同一中断点、同一核对结论重试时复用 request_id，Agent 据此去重
-                  if (resumeId.current?.from !== run.active_turn?.id || resumeId.current?.note !== resumeNote)
-                    resumeId.current = { id: crypto.randomUUID(), from: run.active_turn?.id, note: resumeNote };
-                  void sendMessage(undefined, {
-                    body: { resume: { request_id: resumeId.current.id, note: resumeNote } },
-                  });
-                }}
-              >
-                {t("resume")}
-              </Button>
-            </div>
+            {run.can_resume ? (
+              <>
+                {run.unknown_calls.length ? (
+                  <>
+                    <p className="text-muted-foreground">{t("unknownHint")}</p>
+                    {run.unknown_calls.map((call) => (
+                      <details key={call.tool_call_id}>
+                        <summary className="cursor-pointer">{t("unknownCall", { name: call.tool_name })}</summary>
+                        <pre className="mt-1 max-h-60 overflow-auto rounded bg-muted/50 p-2 text-xs">
+                          {JSON.stringify(call.input, null, 2)}
+                        </pre>
+                      </details>
+                    ))}
+                    <Textarea
+                      aria-label={t("resumeNote")}
+                      placeholder={t("resumeNote")}
+                      rows={2}
+                      value={resumeNote}
+                      onChange={(event) => setResumeNote(event.target.value)}
+                    />
+                  </>
+                ) : null}
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    disabled={busy || (!!run.unknown_calls.length && !resumeNote.trim())}
+                    onClick={() => {
+                      // 同一中断点、同一核对结论重试时复用 request_id，Agent 据此去重
+                      if (resumeId.current?.from !== run.active_turn?.id || resumeId.current?.note !== resumeNote)
+                        resumeId.current = { id: crypto.randomUUID(), from: run.active_turn?.id, note: resumeNote };
+                      void sendMessage(undefined, {
+                        body: { resume: { request_id: resumeId.current.id, note: resumeNote } },
+                      });
+                    }}
+                  >
+                    {t("resume")}
+                  </Button>
+                </div>
+              </>
+            ) : run.resume_blocker ? (
+              <p className="text-muted-foreground">{run.resume_blocker}</p>
+            ) : null}
           </div>
-        ) : run?.resume_blocker && !closed ? (
-          <p className="text-sm text-muted-foreground">{run.resume_blocker}</p>
         ) : null}
-        {chat.status === "error" && !closed ? (
+        {/* 流断开但 run 仍在执行，或请求未送达时重连；同一 request_id 由 Agent 去重 */}
+        {chat.status === "error" && !closed && !stopped ? (
           <Button variant="outline" size="sm" onClick={() => void chat.regenerate()}>
             {t("retry")}
           </Button>
@@ -433,7 +464,7 @@ function ChatInner({
               aria-label={t("inputLabel")}
               className="max-h-48 min-h-10 flex-1 resize-none"
               rows={input.includes("\n") || input.length > 60 ? 4 : 1}
-              placeholder={canSend ? t("placeholder") : t("placeholderBlocked")}
+              placeholder={placeholder}
               value={input}
               disabled={busy}
               onChange={(e) => setInput(e.target.value)}

@@ -1775,10 +1775,15 @@
       "unknownCall": "Unknown result: {name}",
       "resumeNote": "What you verified (required)",
       "resume": "Continue",
-      "retry": "Retry this request",
+      "stoppedTitle": "The agent stopped",
+      "unknownHint": "These tool calls started but were interrupted. Check whether they took effect before continuing.",
+      "retry": "Reconnect",
       "inputLabel": "Message to the agent",
       "placeholder": "Enter to send, Shift+Enter for a new line",
       "placeholderBlocked": "The agent is running or waiting on you",
+      "placeholderInterrupted": "The agent stopped. Click Continue above first",
+      "placeholderQuestion": "Answer the question above first",
+      "placeholderApproval": "Review the proposal above first",
       "send": "Send"
     },
     "approval": {
