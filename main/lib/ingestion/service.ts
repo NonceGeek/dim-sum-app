@@ -1,5 +1,4 @@
 import { posix } from "node:path";
-import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -20,15 +19,7 @@ import {
   workspacePrefix,
 } from "./tasks";
 import { headObject, signDownload, signNewUpload, uploadMaxBytes, getObjectText } from "./oss";
-import {
-  generateReport,
-  GENERATING_STALE_MS,
-  needsFinalReport,
-  REPORT_FORMATS,
-  type ReportFormat,
-  reportFileName,
-  scheduleFinalReport,
-} from "./report";
+import { GENERATING_STALE_MS, REPORT_FORMATS, type ReportFormat, reportFileName } from "./report";
 import {
   CONTENT_ATTRIBUTES,
   defaultTaskTitle,
@@ -575,8 +566,6 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
     ...events.flatMap((e) => (e.operator_id ? [e.operator_id] : [])),
     ...approvals.flatMap((a) => (a.decided_by ? [a.decided_by] : [])),
   ]);
-  const closed = isTaskClosed(row.status);
-  if (closed) maybeScheduleFinalReport(id, access.userId);
   return {
     ...serializeTask(row, run, names),
     lead: lead && { id: String(lead.id), leadNo: lead.lead_no },
@@ -742,22 +731,6 @@ export async function corpusProvenance(access: LibraryOpsAccess, corpusId: bigin
 
 /* ---------- Reports ---------- */
 
-const pendingReports = new Set<string>();
-
-/** 任务已结束且没有可用正式报告时在响应后生成；完成、取消与 Agent 侧结束都经过这里 */
-function maybeScheduleFinalReport(id: bigint, actor: string) {
-  const key = String(id);
-  if (pendingReports.has(key)) return;
-  pendingReports.add(key);
-  after(async () => {
-    try {
-      if (await needsFinalReport(id)) await scheduleFinalReport(id, actor);
-    } finally {
-      pendingReports.delete(key);
-    }
-  });
-}
-
 function serializeReport(r: Prisma.ingestion_reportsGetPayload<object>, names: Record<string, string>) {
   const stale =
     r.status === "generating" && Date.now() - r.updated_at.getTime() > GENERATING_STALE_MS;
@@ -793,34 +766,6 @@ export async function getTaskReports(access: LibraryOpsAccess, id: bigint) {
     reports,
     current: readable ? { version: readable.version, kind: readable.kind, markdown } : null,
   };
-}
-
-export const regenerateReportSchema = z.object({
-  kind: z.enum(["final", "draft"]).default("final"),
-  narrative: z.boolean().optional(),
-});
-
-/** 重新生成正式报告（任务须已结束）或生成草稿预览；在响应后执行，页面轮询状态 */
-export async function regenerateReport(access: LibraryOpsAccess, id: bigint, body: unknown) {
-  const task = await loadTask(access, id);
-  const { kind, narrative } = parseBody(regenerateReportSchema, body ?? {});
-  if (kind === "final" && !isTaskClosed(task.status))
-    throw new AccessError(409, "任务结束后才能生成正式报告，结束前请生成草稿");
-  const generating = await prisma.ingestion_reports.findFirst({
-    where: {
-      task_id: id,
-      status: "generating",
-      updated_at: { gt: new Date(Date.now() - GENERATING_STALE_MS) },
-    },
-    select: { id: true },
-  });
-  if (generating) throw new AccessError(409, "报告正在生成，请稍候");
-  after(() =>
-    generateReport(id, { kind, actor: access.userId, narrative }).catch((error) => {
-      console.error(`[ingestion-report] task ${id} failed`, error);
-    }),
-  );
-  return getTaskReports(access, id);
 }
 
 /** 报告下载：返回带文件名的临时 URL */

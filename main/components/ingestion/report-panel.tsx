@@ -1,12 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DownloadIcon, Loader2Icon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { DownloadIcon, Loader2Icon, Maximize2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { toast } from "sonner";
 import { json } from "@/components/library-ops/ops-shared";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -61,41 +60,16 @@ function Markdown({ text }: { text: string }) {
   );
 }
 
-/** 入库报告：任务结束后自动生成；结束前可生成草稿预览 */
+/** 入库报告：入库 Agent 在对话中生成草稿，结束任务时生成正式版 */
 export function ReportPanel({ task }: { task: TaskDetail }) {
   const t = useTranslations("IngestionTasks.report");
-  const queryClient = useQueryClient();
   const [reading, setReading] = useState(false);
-  const key = ["ingestion-task-report", task.id];
-
   const view = useQuery({
-    queryKey: key,
+    queryKey: ["ingestion-task-report", task.id],
     queryFn: async () => json<ReportsView>(await fetch(`/api/admin/ingestion-tasks/${task.id}/report`)),
-    // 生成中（或刚结束、正式报告还没出现）时轮询
-    refetchInterval: (query) => {
-      const reports = query.state.data?.reports ?? [];
-      const generating = reports.some((r) => r.status === "generating");
-      const awaitingFinal = task.closed && !reports.some((r) => r.kind === "final");
-      return generating || awaitingFinal ? 4000 : false;
-    },
-  });
-
-  const regenerate = useMutation({
-    mutationFn: async (kind: "final" | "draft") =>
-      json<ReportsView>(
-        await fetch(`/api/admin/ingestion-tasks/${task.id}/report`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind }),
-        }),
-      ),
-    onSuccess: (data) => {
-      queryClient.setQueryData(key, data);
-      toast.success(t("scheduled"));
-      // 生成在响应后开始，稍后刷新以拿到 generating 状态
-      setTimeout(() => void queryClient.invalidateQueries({ queryKey: key }), 1500);
-    },
-    onError: (e: Error) => toast.error(e.message),
+    // 生成中时轮询
+    refetchInterval: (query) =>
+      query.state.data?.reports.some((r) => r.status === "generating") ? 4000 : false,
   });
 
   if (view.isLoading) return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
@@ -118,19 +92,9 @@ export function ReportPanel({ task }: { task: TaskDetail }) {
             <FormattedTime value={latest.createdAt} />
           </span>
         ) : (
-          <span className="text-muted-foreground">{task.closed ? t("pending") : t("notClosed")}</span>
+          <span className="text-muted-foreground">{task.closed ? t("none") : t("notClosed")}</span>
         )}
         {generating && <Loader2Icon className="size-4 animate-spin text-muted-foreground" />}
-        <Button
-          size="sm"
-          variant="outline"
-          className="ml-auto"
-          disabled={generating || regenerate.isPending}
-          onClick={() => regenerate.mutate(task.closed ? "final" : "draft")}
-        >
-          <RefreshCwIcon className="size-4" />
-          {task.closed ? t("regenerate") : t("draft")}
-        </Button>
       </div>
 
       {latest?.status === "failed" && latest.error && <p className="text-xs text-destructive">{latest.error}</p>}
