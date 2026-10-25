@@ -68,7 +68,8 @@ async function claimVersion(taskId: bigint, kind: ReportKind, basePath: string, 
 
 /**
  * 生成入库报告：组装系统记录 → 写 JSON → AI 导读并校验 → 写 Markdown 与 Excel。
- * 文件写在批次工作区 report/ 下，不覆盖旧版本；AI 导读失败时报告仍可用（ready_without_narrative）。
+ * 文件写在批次工作区 report/ 下，不覆盖旧版本；个别章节导读未通过校验时只省略这些章节，
+ * 全部未通过时报告仍可用（ready_without_narrative）。
  */
 export async function generateReport(
   taskId: bigint,
@@ -106,9 +107,12 @@ export async function generateReport(
     const narrativeError = narrative
       ? narrative.narrative
         ? undefined
-        : (narrative.meta.attempts.at(-1)?.error ?? "AI 导读未通过校验")
+        : (narrative.meta.attempts.at(-1)?.error ?? "自动撰写的导读未通过事实校验")
       : undefined;
-    await put("md", renderMarkdown(report, narrative?.narrative ?? null, { narrativeError }));
+    await put(
+      "md",
+      renderMarkdown(report, narrative?.narrative ?? null, { narrativeError, dropped: narrative?.meta.dropped }),
+    );
     await put("xlsx", renderXlsx(report));
     return await prisma.ingestion_reports.update({
       where: { id: row.id },

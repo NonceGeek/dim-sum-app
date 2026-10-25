@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as XLSX from "xlsx";
 import { assembleReport } from "./assemble";
-import { buildDigest, requiredRefs } from "./digest";
+import { buildDigest } from "./digest";
 import { lineagePathsOf, parseJsonl } from "./load";
 import { parseJsonObject, writeNarrative } from "./narrative";
 import { describeAnchor, renderMarkdown } from "./render-md";
@@ -122,15 +122,79 @@ test("degrades gracefully for batches without lineage", () => {
 
 test("validates narrative numbers, references and coverage", () => {
   const r = report();
-  assert.deepEqual(validateNarrative(r, goodNarrative()), { ok: true, errors: [] });
+  assert.deepEqual(validateNarrative(r, goodNarrative()), { ok: true, errors: [], failed: [] });
   const bad = { ...goodNarrative(), overview: "本批入库 3 条，见 [c-9999]、{{nope}}。", attention: "无" };
   const { ok, errors } = validateNarrative(r, bad);
   assert.equal(ok, false);
-  assert.ok(errors.some((e) => e.includes("阿拉伯数字")));
+  assert.ok(errors.some((e) => e.includes("找不到出处")));
   assert.ok(errors.some((e) => e.includes("[c-9999]")));
   assert.ok(errors.some((e) => e.includes("{{nope}}")));
-  assert.ok(errors.some((e) => e.includes("[c-0002]")));
   assert.ok(!validateNarrative(r, { ...goodNarrative(), files: "## 标题" }).ok);
+  assert.ok(errors.some((e) => e.includes("「本批入库 3 条")));
+});
+
+test("allows digits only inside words copied from the material", () => {
+  const r = report();
+  const ok = { ...goodNarrative(), attention: "[c-0002] 多音字「床」由人确认读 cong1，见 [q-1]。" };
+  assert.deepEqual(validateNarrative(r, ok), { ok: true, errors: [], failed: [] });
+  const made = { ...goodNarrative(), attention: "[c-0002] 改读 cong2。" };
+  assert.ok(validateNarrative(r, made).errors.some((e) => e.includes("「 改读 cong2。」")));
+  // 材料里没有这个写法的数量
+  const bare = { ...goodNarrative(), overview: "本批入库 7 条，主要文件为 [f-3]。" };
+  assert.ok(!validateNarrative(r, bare).ok);
+});
+
+test("checks quantities in Chinese numerals and against the material's own wording", () => {
+  const r = report();
+  const material = "说明：每首切成 4 段/首；第9首原文有误";
+  const check = (overview: string) => validateNarrative(r, { ...goodNarrative(), overview }, material, ["overview"]);
+  assert.ok(check("每首切成四段，第九首已修正。").ok);
+  assert.ok(check("每首切成 4段。").ok);
+  assert.ok(validateNarrative(r, { overview: "源格式有 44.1k 与 48k。" }, "（44.1k/48k）", ["overview"]).ok);
+  assert.deepEqual(check("每首切成五段。").failed, ["overview"]);
+  assert.ok(!check("共六处存疑。").ok);
+  // 提示引用模型的原文，并给出数值相同的 key
+  assert.ok(check("共三个文件。").errors.some((e) => e.includes("「共三个文件。」") && e.includes("{{input_files}}")));
+  // 「一」与诗句里的数字不追究
+  assert.ok(check("统一转码，一行白鹭上青天。").ok);
+});
+
+test("keeps sections that pass and drops the ones that never do", async () => {
+  process.env.INGESTION_REPORT_LLM_API_KEY = "test-key";
+  const bodies: string[] = [];
+  const result = await writeNarrative(report(), (async (_: unknown, init?: RequestInit) => {
+    bodies.push(String(init?.body));
+    const content = bodies.length === 1 ? { ...goodNarrative(), overview: "入库 7 条" } : { overview: "共 9 条" };
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }), { status: 200 });
+  }) as typeof fetch);
+  delete process.env.INGESTION_REPORT_LLM_API_KEY;
+  assert.equal(result.meta.attempts.length, 3);
+  assert.deepEqual(result.meta.dropped, ["overview"]);
+  assert.equal(result.narrative?.overview, "");
+  assert.equal(result.narrative?.files, goodNarrative().files);
+  assert.match(bodies[1], /只含 overview 这几个键/);
+  const md = renderMarkdown(report(), result.narrative, { dropped: result.meta.dropped });
+  assert.match(md, /「概览」的导读未通过事实校验，已省略/);
+  assert.ok(md.includes("[f-2]") === false && md.includes("`朗诵.wav` 按句切分"));
+});
+
+test("lists parts that could not be compared with the original as an open issue", () => {
+  const raw = fixture();
+  raw.operations[0].unchecked = 3;
+  const r = assembleReport(raw, { kind: "final", version: 1 });
+  assert.match(r.openIssues.find((i) => i.kind === "unchecked_changes")?.detail ?? "", /^3 处内容/);
+});
+
+test("keeps a failed proposal open only until a later one of the same kind succeeds", () => {
+  const raw = fixture();
+  raw.approvals.unshift({ ...raw.approvals[0], id: "ap-0", proposalId: "pr-0", status: "failed", createdAt: "2026-10-24T01:30:00.000Z" });
+  raw.checkpoints.push({ at: "2026-10-24T02:20:00.000Z", summary: "Agent 单轮已提交" });
+  const r = assembleReport(raw, { kind: "final", version: 1 });
+  assert.equal(r.summary.failedProposals, 1);
+  assert.ok(!r.openIssues.some((i) => i.kind === "failed_proposal"));
+  assert.deepEqual(r.checkpoints.map((c) => c.summary), ["表格转换完成"]);
+  raw.approvals[1] = { ...raw.approvals[1], status: "denied" };
+  assert.ok(assembleReport(raw, { kind: "final", version: 1 }).openIssues.some((i) => i.kind === "failed_proposal"));
 });
 
 test("keeps the LLM digest within budget for large batches", () => {
@@ -143,18 +207,18 @@ test("keeps the LLM digest within budget for large batches", () => {
   raw.operations[0].changes = [...raw.operations[0].changes!, ...many];
   const r = assembleReport(raw, { kind: "final", version: 1 });
   assert.ok(JSON.stringify(buildDigest(r)).length < 200_000);
-  // 存疑项过多时不强制逐条引用，清单由模板全量列出
-  assert.deepEqual(requiredRefs(r), []);
 });
 
 test("renders markdown with resolved narrative and the full attention list", () => {
   const md = renderMarkdown(report(), goodNarrative());
-  for (const heading of ["## 一、概览", "## 二、原始文件与处理方式", "### 4.2 AI 存疑、人工确认或修正", "## 七、遗留问题"])
+  for (const heading of ["## 一、概览", "## 二、原始文件与处理方式", "### AI 存疑、人工确认或修正", "## 七、遗留问题"])
     assert.ok(md.includes(heading), heading);
   assert.match(md, /本批入库 1 条，跳过 1 条，主要文件为 `清单\.xlsx`/);
-  assert.match(md, /`c-0002` 清单\.xlsx 「S」 第 4 行 · jyutping：`cong4 cin4` → `cong1 cin4`/);
+  assert.match(md, /`c-0002` 清单\.xlsx 「S」 第 4 行「床前明月光」 · 粤拼：`cong4 cin4` → `cong1 cin4` · 存疑：多音字:床 · AI 存疑经人工确认（决策 `q-1`）：用户确认/);
+  assert.match(md, /以下几类本批没有：AI 自动修正、拆分与合并。/);
+  assert.match(md, /AI 存疑经人工确认 1 处，/);
   assert.match(md, /丢弃 朗诵\.wav 0\.00–3\.00s：诗题/);
-  assert.match(renderMarkdown(report(), null, { narrativeError: "超时" }), /AI 导读未生成（超时）/);
+  assert.match(renderMarkdown(report(), null, { narrativeError: "超时" }), /本版没有 AI 导读（超时）/);
   assert.equal(describeAnchor("input/a.xlsx#sheet=%E8%A1%A8&row=3&col=C"), "a.xlsx 「表」 第 3 行 C 列");
 });
 
@@ -163,25 +227,25 @@ test("writes the detail workbook", () => {
   assert.deepEqual(book.SheetNames, ["概览", "文件处理", "入库语料", "变动明细", "人工决策", "提案审批"]);
   const changes = XLSX.utils.sheet_to_json<Record<string, unknown>>(book.Sheets["变动明细"]);
   assert.equal(changes.length, 4);
-  assert.equal(changes[1]["来由"], "AI 存疑、人工确认");
+  assert.equal(changes[1]["来由"], "AI 存疑经人工确认");
 });
 
-test("retries the narrative once with validation errors, then falls back", async () => {
+test("retries the narrative with validation errors, then falls back", async () => {
   process.env.INGESTION_REPORT_LLM_API_KEY = "test-key";
   const reply = (content: unknown) =>
     new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }), { status: 200 });
   const bodies: string[] = [];
   const fixed = await writeNarrative(report(), (async (_: unknown, init?: RequestInit) => {
     bodies.push(String(init?.body));
-    return reply(bodies.length === 1 ? { ...goodNarrative(), overview: "入库 1 条" } : goodNarrative());
+    return reply(bodies.length === 1 ? { ...goodNarrative(), overview: "入库 7 条" } : goodNarrative());
   }) as typeof fetch);
   assert.ok(fixed.narrative);
   assert.deepEqual(fixed.meta.attempts.map((a) => a.ok), [false, true]);
-  assert.match(bodies[1], /阿拉伯数字/);
+  assert.match(bodies[1], /找不到出处/);
 
   const failed = await writeNarrative(report(), (async () => reply({ overview: "1" })) as typeof fetch);
   assert.equal(failed.narrative, null);
-  assert.equal(failed.meta.attempts.length, 2);
+  assert.equal(failed.meta.attempts.length, 3);
   delete process.env.INGESTION_REPORT_LLM_API_KEY;
 });
 

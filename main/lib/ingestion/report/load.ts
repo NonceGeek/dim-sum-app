@@ -88,6 +88,7 @@ export async function loadReportInput(taskId: bigint): Promise<RawReportInput> {
         readText(prefix + paths.changes),
         readText(prefix + paths.manifest),
       ]);
+      const manifestJson = parseJson<{ files: ManifestFile[]; unchecked_total?: number }>(manifest);
       return {
         id: o.id,
         approvalId: o.approval_id,
@@ -100,7 +101,8 @@ export async function loadReportInput(taskId: bigint): Promise<RawReportInput> {
         created: o.records.map((r) => ({ corpusId: String(r.corpus_id), row: r.record_row })),
         records: parseJsonl<LineageRecord>(records),
         changes: parseJsonl<LineageChange>(changes),
-        manifest: parseJson<{ files: ManifestFile[] }>(manifest)?.files ?? null,
+        manifest: manifestJson?.files ?? null,
+        unchecked: manifestJson?.unchecked_total ?? 0,
       };
     }),
   );
@@ -137,13 +139,15 @@ export async function loadReportInput(taskId: bigint): Promise<RawReportInput> {
       size: Number(f.size),
       status: f.status,
     })),
-    // 一个审批是一个计划：按步骤展开，每步沿用审批的状态与审批人
+    // 一个审批是一个计划：按步骤展开，每步沿用审批的状态与审批人。
+    // 计划格式之前的审批只有一步，kind/input 直接在 proposal 上
     approvals: approvals.flatMap((a): RawApproval[] => {
-      const proposal = (a.proposal ?? {}) as {
-        steps?: { kind: string; summary: string; input: Record<string, unknown>; expected: unknown }[];
-      };
-      const results = (a.result as { result?: { steps?: unknown[] } } | null)?.result?.steps;
-      return (proposal.steps ?? []).map((step, i) => ({
+      type Step = { kind: string; summary: string; input: Record<string, unknown>; expected: unknown };
+      const proposal = (a.proposal ?? {}) as Partial<Step> & { steps?: Step[] };
+      const result = a.result as { result?: { steps?: unknown[] } & Record<string, unknown> } | null;
+      const steps = proposal.steps ?? (proposal.kind ? [proposal as Step] : []);
+      const results = proposal.steps ? result?.result?.steps : [result?.result ?? null];
+      return steps.map((step, i) => ({
         id: a.id,
         proposalId: a.proposal_id,
         kind: step.kind,
@@ -154,7 +158,8 @@ export async function loadReportInput(taskId: bigint): Promise<RawReportInput> {
         result: results?.[i] ?? null,
         decidedBy: a.decided_by ? name(a.decided_by) : null,
         decidedAt: a.decided_at?.toISOString() ?? null,
-        decisionNote: a.decision_note,
+        // 执行失败时审批人通常不写备注，用执行错误代替
+        decisionNote: a.decision_note ?? (a.result as { error?: { message?: string } } | null)?.error?.message ?? null,
         createdAt: a.created_at.toISOString(),
       }));
     }),

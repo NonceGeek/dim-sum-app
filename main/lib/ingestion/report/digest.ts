@@ -2,8 +2,6 @@ import type { ReportV1 } from "./types";
 
 /** LLM 输入上限（字符）；中文约一字一 token */
 export const DIGEST_MAX_CHARS = 40_000;
-/** 需要逐条覆盖的条目超过这个数时不强制逐条引用，正文只需概括，清单由模板全量列出 */
-export const MAX_REQUIRED_REFS = 60;
 
 /** 报告中可被 {{key}} 引用的数字 */
 export function reportNumbers(report: ReportV1): Record<string, number> {
@@ -33,19 +31,11 @@ export function reportNumbers(report: ReportV1): Record<string, number> {
   for (const [k, v] of Object.entries(s.byTag)) n[`tag.${k}`] = v;
   for (const f of report.inputs) {
     n[`${f.id}.records`] = f.records;
+    n[`${f.id}.artifacts`] = f.artifacts.length;
     n[`${f.id}.discarded`] = f.discarded.length;
     n[`${f.id}.uncovered`] = f.uncovered_total;
   }
   return n;
-}
-
-/** 正文必须逐条引用的编号 */
-export function requiredRefs(report: ReportV1) {
-  const refs = [
-    ...report.changes.filter((c) => c.attention).map((c) => c.id),
-    ...report.openIssues.map((i) => i.id),
-  ];
-  return refs.length <= MAX_REQUIRED_REFS ? refs : [];
 }
 
 /** 报告内所有可引用编号 */
@@ -143,7 +133,6 @@ export function buildDigest(report: ReportV1, maxChars = DIGEST_MAX_CHARS) {
       stages: report.checkpoints
         .slice(-[40, 20, 10, 5][level])
         .map((c) => clip(c.summary, textMax * 2)),
-      required_refs: requiredRefs(report),
     };
   };
   let digest = build(0);

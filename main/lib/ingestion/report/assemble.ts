@@ -10,6 +10,9 @@ import {
   type ReportV1,
 } from "./types";
 
+/** 宿主每轮自动写的检查点，没有内容 */
+const ROUTINE_CHECKPOINTS = new Set(["Agent 单轮已提交"]);
+
 /** 进入「AI 存疑、人工确认或修正」一节的变动 */
 export const isAttention = (c: { origin: string; kind: string }) =>
   c.origin === "ai_flagged_human_confirmed" ||
@@ -191,6 +194,13 @@ export function assembleReport(
     });
   if (lineage === "none" && ops.length)
     issues.push({ kind: "no_lineage", detail: "本任务入库时没有来源追溯记录，无法对照原文件", refs: [] });
+  const unchecked = ops.reduce((n, o) => n + (o.unchecked ?? 0), 0);
+  if (unchecked)
+    issues.push({
+      kind: "unchecked_changes",
+      detail: `${unchecked} 处内容来自原始文件，但找不到可对照的原值，和原文相比改了什么没有记录`,
+      refs: [],
+    });
   const unknown = records.filter((r) => r.status === "unknown");
   if (unknown.length)
     issues.push({
@@ -211,9 +221,12 @@ export function assembleReport(
     decisionNote: a.decisionNote,
     createdAt: a.createdAt,
   }));
-  // 计划的各步共享一个审批，失败只记一次
+  // 计划的各步共享一个审批，失败只记一次；之后同类步骤已执行成功的不算遗留
   for (const p of operations.filter(
-    (o, i, all) => o.status === "failed" && all.findIndex((x) => x.approvalId === o.approvalId) === i,
+    (o, i, all) =>
+      o.status === "failed" &&
+      all.findIndex((x) => x.approvalId === o.approvalId) === i &&
+      !all.some((x, j) => j > i && x.kind === o.kind && x.status === "approved"),
   ))
     issues.push({ kind: "failed_proposal", detail: `提案执行失败：${p.summary ?? p.kind}`, refs: [p.id] });
   const openIssues = issues.map((x, i) => ({ id: `i-${i + 1}`, ...x }));
@@ -262,6 +275,7 @@ export function assembleReport(
         contentAttribute: raw.task.targetContentAttribute,
         registered: registered
           ? {
+              name: registered.input.name as string | undefined,
               nickname: registered.input.nickname as string | undefined,
               description: registered.input.description as string | undefined,
             }
@@ -292,6 +306,8 @@ export function assembleReport(
     changes,
     decisions,
     openIssues,
-    checkpoints: [...raw.checkpoints].sort((a, b) => a.at.localeCompare(b.at)),
+    checkpoints: raw.checkpoints
+      .filter((c) => !ROUTINE_CHECKPOINTS.has(c.summary))
+      .sort((a, b) => a.at.localeCompare(b.at)),
   };
 }

@@ -81,6 +81,8 @@ export type RawOperation = {
   records: LineageRecord[] | null;
   changes: LineageChange[] | null;
   manifest: ManifestFile[] | null;
+  /** 来自原始文件、却没有可对照原值的部分（build_records 的 unchecked_total）；旧批次没有 */
+  unchecked?: number;
 };
 
 export type RawApproval = {
@@ -187,7 +189,8 @@ export type ReportIssue = {
     | "no_lineage"
     | "unprocessed_file"
     | "failed_proposal"
-    | "unknown_records";
+    | "unknown_records"
+    | "unchecked_changes";
   detail: string;
   refs: string[];
 };
@@ -256,7 +259,7 @@ export type ReportV1 = {
       name: string;
       ingestionType: string;
       contentAttribute: string | null;
-      registered: { nickname?: string; description?: string } | null;
+      registered: { name?: string; nickname?: string; description?: string } | null;
     };
     newCategories: { slug: string; name: string; parent: string | null; approvalId: string }[];
     newTags: { slug: string; name: string; facet?: string; gloss?: string; approvalId: string }[];
