@@ -39,8 +39,9 @@ export type TaskSummary = {
 export type TaskApproval = {
   id: string;
   proposalId: string;
-  kind: string | null;
   summary: string | null;
+  /** 计划的各步写入，一个审批覆盖全部 */
+  steps: { kind: string; summary: string }[];
   expected: Record<string, number>;
   status: ApprovalStatus;
   decidedByName: string | null;
@@ -142,7 +143,10 @@ export type Approval = {
   decision_note: string | null;
   /** Agent 已按决定续跑 */
   settled_at: string | null;
-  proposal: { kind?: string; summary?: string };
+  proposal: {
+    summary: string;
+    steps: { kind: string; summary: string; expected: Record<string, number> }[];
+  };
 };
 
 export type QuestionSpec = {

@@ -1713,6 +1713,7 @@
       }
     },
     "approvals": {
+      "plan": "入库计划（{count} 步）",
       "empty": "还没有入库提案",
       "decided": "{name} 决定",
       "status": {
@@ -1788,7 +1789,7 @@
       "send": "发送"
     },
     "approval": {
-      "untitled": "{kind} 提案",
+      "plan": "入库计划（{count} 步，一次审批全部写入）",
       "expiresAt": "待你审批，{time} 前有效",
       "approved": "已批准",
       "denied": "已拒绝",

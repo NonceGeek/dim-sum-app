@@ -161,7 +161,7 @@ export function assembleReport(
   const approvals = [...raw.approvals].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const approved = approvals.filter((a) => a.status === "approved");
   const registered = approved.find((a) => a.kind === "register_corpus");
-  const uploads = approved.filter((a) => a.kind === "upload_audio").map((a) => obj(a.expected));
+  const uploads = approved.filter((a) => a.kind === "upload_audio").map((a) => obj(a.result));
 
   /* 遗留问题 */
   const issues: Omit<ReportIssue, "id">[] = [];
@@ -211,7 +211,10 @@ export function assembleReport(
     decisionNote: a.decisionNote,
     createdAt: a.createdAt,
   }));
-  for (const p of operations.filter((o) => o.status === "failed"))
+  // 计划的各步共享一个审批，失败只记一次
+  for (const p of operations.filter(
+    (o, i, all) => o.status === "failed" && all.findIndex((x) => x.approvalId === o.approvalId) === i,
+  ))
     issues.push({ kind: "failed_proposal", detail: `提案执行失败：${p.summary ?? p.kind}`, refs: [p.id] });
   const openIssues = issues.map((x, i) => ({ id: `i-${i + 1}`, ...x }));
 
@@ -235,7 +238,7 @@ export function assembleReport(
       inserted: inserted.length,
       skipped: records.filter((r) => r.status === "skipped").length,
       unknown: unknown.length,
-      publishedMedia: uploads.reduce((n, u) => n + num(u.objects), 0),
+      publishedMedia: uploads.reduce((n, u) => n + num(u.uploaded), 0),
       reusedMedia: uploads.reduce((n, u) => n + num(u.reused), 0),
       changes: changes.length,
       changesByKind: count(changes.map((c) => c.kind)),

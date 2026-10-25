@@ -33,13 +33,14 @@ function fixture(): RawReportInput {
       { path: "input/备注.txt", name: "备注.txt", size: 10, status: "UPLOADED" },
     ],
     approvals: [
-      { id: "ap-1", proposalId: "pr-1", kind: "register_corpus", summary: "登记 dbl", input: { nickname: "朗诵" }, status: "approved", expected: {}, result: {}, decidedBy: "审批人", decidedAt: "2026-10-24T02:00:00.000Z", decisionNote: null, createdAt: "2026-10-24T02:00:00.000Z" },
-      { id: "ap-2", proposalId: "pr-2", kind: "upload_audio", summary: "上传 3 个音频", input: {}, status: "approved", expected: { objects: 3, reused: 0 }, result: {}, decidedBy: "审批人", decidedAt: "2026-10-24T03:00:00.000Z", decisionNote: null, createdAt: "2026-10-24T03:00:00.000Z" },
-      { id: "ap-3", proposalId: "pr-3", kind: "insert_records", summary: "插入 2 条", input: { records: "output/records.jsonl" }, status: "approved", expected: {}, result: {}, decidedBy: "审批人", decidedAt: "2026-10-24T04:00:00.000Z", decisionNote: "ok", createdAt: "2026-10-24T04:00:00.000Z" },
+      // 一个计划审批按步骤展开（见 load.ts）
+      { id: "ap-1", proposalId: "pr-1", kind: "upload_audio", summary: "发布 3 个音频", input: { manifest: "output/uploads.plan.csv" }, status: "approved", expected: { audio_files: 3 }, result: { uploaded: 3, reused: 0 }, decidedBy: "审批人", decidedAt: "2026-10-24T02:00:00.000Z", decisionNote: "ok", createdAt: "2026-10-24T02:00:00.000Z" },
+      { id: "ap-1", proposalId: "pr-1", kind: "register_corpus", summary: "登记 dbl", input: { nickname: "朗诵" }, status: "approved", expected: {}, result: {}, decidedBy: "审批人", decidedAt: "2026-10-24T02:00:00.000Z", decisionNote: "ok", createdAt: "2026-10-24T02:00:00.000Z" },
+      { id: "ap-1", proposalId: "pr-1", kind: "insert_records", summary: "插入 2 条", input: { records: "output/records.jsonl" }, status: "approved", expected: {}, result: {}, decidedBy: "审批人", decidedAt: "2026-10-24T02:00:00.000Z", decisionNote: "ok", createdAt: "2026-10-24T02:00:00.000Z" },
     ],
     operations: [
       {
-        id: "op-1", approvalId: "ap-3", proposalId: "pr-3", recordsPath: "output/records.jsonl", recordsHash: "abcdef0123456789",
+        id: "op-1", approvalId: "ap-1", proposalId: "pr-1", recordsPath: "output/records.jsonl", recordsHash: "abcdef0123456789",
         committedAt: "2026-10-24T04:01:00.000Z", approvedBy: "审批人",
         result: { ids: [{ id: 101, row: 1 }], skipped: [{ row: 3, dedupe: "x", existing_id: 55 }] },
         created: [{ corpusId: "101", row: 1 }],

@@ -167,9 +167,16 @@ export function ApprovalsPanel({ task }: { task: TaskDetail }) {
       {task.approvals.map((a) => (
         <li key={a.id} className="space-y-1 rounded-md border p-3 text-sm">
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 font-medium">{a.summary ?? a.kind ?? a.proposalId}</p>
+            <p className="min-w-0 flex-1 font-medium">{t("plan", { count: a.steps.length })}</p>
             <span className="shrink-0 text-xs text-muted-foreground">{t(`status.${a.status}`)}</span>
           </div>
+          <ol className="list-decimal space-y-0.5 pl-5 text-xs">
+            {a.steps.map((s) => (
+              <li key={`${s.kind}:${s.summary}`}>
+                <span className="font-mono text-muted-foreground">{s.kind}</span> {s.summary}
+              </li>
+            ))}
+          </ol>
           {Object.keys(a.expected).length > 0 && (
             <p className="text-xs tabular-nums text-muted-foreground">
               {Object.entries(a.expected)

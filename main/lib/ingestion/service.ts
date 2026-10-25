@@ -355,16 +355,19 @@ export const decideApprovalSchema = z.object({
   note: z.string().trim().max(2000).optional(),
 });
 
+/** 入库 Agent 的计划提案快照（corpus_agent_approvals.proposal） */
+type ProposalPlan = { summary?: string; steps?: { kind: string; summary: string }[] };
+
 function serializeApproval(
   approval: Prisma.corpus_agent_approvalsGetPayload<object>,
   names: Record<string, string> = {},
 ) {
-  const proposal = approval.proposal as { kind?: string; summary?: string } | null;
+  const proposal = approval.proposal as ProposalPlan | null;
   return {
     id: approval.id,
     proposalId: approval.proposal_id,
-    kind: proposal?.kind ?? null,
     summary: proposal?.summary ?? null,
+    steps: (proposal?.steps ?? []).map(({ kind, summary }) => ({ kind, summary })),
     expected: approval.expected,
     status: approval.status,
     decidedBy: approval.decided_by,
@@ -417,13 +420,13 @@ export async function decideApproval(
         decision_note: input.note ?? null,
       },
     });
-    const proposal = approval.proposal as { kind?: string; summary?: string } | null;
+    const proposal = approval.proposal as ProposalPlan | null;
     await taskEvent(tx, access, task, `approval_${status}`, {
       note: input.note,
       payload: {
         approvalId,
         proposalId: approval.proposal_id,
-        kind: proposal?.kind ?? null,
+        steps: (proposal?.steps ?? []).map((s) => s.kind),
         summary: proposal?.summary ?? null,
         expected: approval.expected as Prisma.InputJsonValue,
       },

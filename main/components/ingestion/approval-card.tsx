@@ -46,19 +46,28 @@ export function ApprovalCard({
   });
   const pending = approval.status === "pending";
   const approved = approval.status === "authorized";
-  const expected = Object.entries(approval.expected);
 
   return (
     <div className="space-y-3 rounded-xl border border-warning/50 bg-warning/5 p-3 text-sm">
       <div className="flex items-start gap-2">
         <ShieldCheckIcon className="mt-0.5 size-4 shrink-0 text-warning" />
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="font-medium">{approval.proposal.summary ?? t("untitled", { kind: approval.proposal.kind ?? "change" })}</p>
-          {expected.length ? (
-            <p className="text-xs tabular-nums text-muted-foreground">
-              {expected.map(([name, count]) => `${name} ${count}`).join(" · ")}
-            </p>
-          ) : null}
+          <p className="font-medium">{t("plan", { count: approval.proposal.steps.length })}</p>
+          <ol className="list-decimal space-y-0.5 pl-5 text-xs">
+            {approval.proposal.steps.map((step) => (
+              <li key={`${step.kind}:${step.summary}`}>
+                <span className="font-mono text-muted-foreground">{step.kind}</span> {step.summary}
+                {Object.keys(step.expected).length ? (
+                  <span className="tabular-nums text-muted-foreground">
+                    {" "}
+                    ({Object.entries(step.expected)
+                      .map(([name, count]) => `${name} ${count}`)
+                      .join(" · ")})
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ol>
           <p className="text-xs text-muted-foreground">
             {pending
               ? t("expiresAt", {

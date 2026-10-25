@@ -137,26 +137,26 @@ export async function loadReportInput(taskId: bigint): Promise<RawReportInput> {
       size: Number(f.size),
       status: f.status,
     })),
-    approvals: approvals.map((a): RawApproval => {
+    // 一个审批是一个计划：按步骤展开，每步沿用审批的状态与审批人
+    approvals: approvals.flatMap((a): RawApproval[] => {
       const proposal = (a.proposal ?? {}) as {
-        kind?: string;
-        summary?: string;
-        input?: Record<string, unknown>;
+        steps?: { kind: string; summary: string; input: Record<string, unknown>; expected: unknown }[];
       };
-      return {
+      const results = (a.result as { result?: { steps?: unknown[] } } | null)?.result?.steps;
+      return (proposal.steps ?? []).map((step, i) => ({
         id: a.id,
         proposalId: a.proposal_id,
-        kind: proposal.kind ?? null,
-        summary: proposal.summary ?? null,
-        input: proposal.input ?? {},
+        kind: step.kind,
+        summary: step.summary,
+        input: step.input ?? {},
         status: a.status,
-        expected: a.expected,
-        result: a.result,
+        expected: step.expected,
+        result: results?.[i] ?? null,
         decidedBy: a.decided_by ? name(a.decided_by) : null,
         decidedAt: a.decided_at?.toISOString() ?? null,
         decisionNote: a.decision_note,
         createdAt: a.created_at.toISOString(),
-      };
+      }));
     }),
     operations,
     questions: (task.run?.questions ?? []).map(

@@ -1712,6 +1712,7 @@
       }
     },
     "approvals": {
+      "plan": "Ingestion plan ({count} steps)",
       "empty": "No proposals yet",
       "decided": "Decided by {name}",
       "status": {
@@ -1787,7 +1788,7 @@
       "send": "Send"
     },
     "approval": {
-      "untitled": "{kind} proposal",
+      "plan": "Ingestion plan ({count} steps, approved as a whole)",
       "expiresAt": "Waiting for your approval until {time}",
       "approved": "Approved",
       "denied": "Denied",
