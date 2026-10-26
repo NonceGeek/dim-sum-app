@@ -29,7 +29,8 @@ async function run() {
     try {
       await prisma.$transaction(
         async (tx) => {
-          await tx.$executeRaw`SET LOCAL statement_timeout='10000ms'`;
+          await tx.$executeRaw`SET LOCAL statement_timeout='5000ms'`;
+          await tx.$executeRaw`SET LOCAL jit=off`;
           const cats = [];
           for (const [tag, is_public, content_attribute] of [
             ["oral", true, "oral"],
