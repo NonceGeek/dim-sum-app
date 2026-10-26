@@ -104,7 +104,7 @@ export function ProvenanceDialog({ onClose }: { onClose: () => void }) {
             </dd>
             <dt className="text-muted-foreground">{t("provenance.recordRow")}</dt>
             <dd className="font-mono text-xs">
-              {p.batchId} · #{p.recordRow}
+              {p.task.taskNo} · #{p.recordRow}
             </dd>
           </dl>
         )}

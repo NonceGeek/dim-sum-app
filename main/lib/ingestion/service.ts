@@ -14,7 +14,6 @@ import {
   canUploadFiles,
   inputPath,
   isTaskClosed,
-  newBatchId,
   TASK_STATUSES,
   workspacePrefix,
 } from "./tasks";
@@ -166,15 +165,14 @@ export async function createTask(access: LibraryOpsAccess, body: unknown) {
           lead = found;
         }
         await assertDatasetTarget(tx, input.targetIngestionType, input.targetDatasetName);
-        const batchId = newBatchId();
+        const taskNo = await nextTaskNo(tx, new Date());
         const task = await tx.ingestion_tasks.create({
           data: {
-            task_no: await nextTaskNo(tx, new Date()),
+            task_no: taskNo,
             ...taskConfigData(input),
             assignee_id: access.userId,
             created_by: access.userId,
-            batch_id: batchId,
-            workspace_prefix: workspacePrefix(batchId),
+            workspace_prefix: workspacePrefix(taskNo),
           },
         });
         if (lead)
@@ -473,7 +471,6 @@ function serializeTask(task: Task, run: RunSummary | null, names: Record<string,
     assigneeName: names[task.assignee_id] ?? task.assignee_id,
     createdBy: task.created_by,
     createdByName: names[task.created_by] ?? task.created_by,
-    batchId: task.batch_id,
     run: run && {
       id: run.id,
       status: run.status,
@@ -701,7 +698,6 @@ export async function corpusProvenance(access: LibraryOpsAccess, corpusId: bigin
     provenance: {
       recordRow: record.record_row,
       operationId: operation.id,
-      batchId: operation.batch_id,
       proposalId: operation.proposal_id,
       approvalId: operation.approval_id,
       turnId: operation.turn_id,

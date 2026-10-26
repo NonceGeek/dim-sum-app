@@ -1498,7 +1498,6 @@ model ingestion_tasks {
   status                   String                  @default("PENDING")
   assignee_id              String
   created_by               String
-  batch_id                 String                  @unique
   workspace_prefix         String
   completed_at             DateTime?               @db.Timestamptz(6)
   cancelled_at             DateTime?               @db.Timestamptz(6)
@@ -1560,7 +1559,6 @@ model ingestion_operations {
   turn_id      String?
   tool_call_id String?
   approval_id  String
-  batch_id     String
   proposal_id  String
   approved_by  String
   approved_at  DateTime            @db.Timestamptz(6)
@@ -1572,7 +1570,7 @@ model ingestion_operations {
   approver     User                @relation(fields: [approved_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   records      ingestion_records[]
 
-  @@unique([batch_id, proposal_id])
+  @@unique([task_id, proposal_id])
   @@index([task_id], map: "ingestion_operations_task_idx")
 }
 
@@ -1753,7 +1751,6 @@ model corpus_agent_context_summaries {
 model corpus_agent_approvals {
   id            String              @id
   run_id        String
-  batch_id      String
   proposal_id   String
   turn_id       String?
   tool_call_id  String?

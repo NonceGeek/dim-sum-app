@@ -4,7 +4,7 @@ import { jwtVerify } from "jose";
 import { formatSerial } from "@/lib/library/application-workflow";
 import { signSessionToken } from "./agent";
 import { displayStatus } from "./display-status";
-import { BATCH_ID_RE, canUploadFiles, inputPath, newBatchId, workspacePrefix } from "./tasks";
+import { canUploadFiles, inputPath, workspacePrefix } from "./tasks";
 import { defaultTaskTitle, isDraft, isMediaPath, MEDIA_DIR, normalizeModalities } from "./task-options";
 
 test("display status combines the task status with the agent session status", () => {
@@ -55,11 +55,10 @@ test("default task titles use the dataset name and the Shanghai day", () => {
   assert.equal(defaultTaskTitle(" 日常口语词条集 ", new Date("2026-10-20T17:00:00Z")), "日常口语词条集 · 2026-10-21");
 });
 
-test("batch ids match the agent's format and own a workspace prefix", () => {
-  const id = newBatchId(new Date("2026-10-19T08:01:02Z"));
-  assert.match(id, BATCH_ID_RE);
-  assert.ok(id.startsWith("20261019-080102-"));
-  assert.equal(workspacePrefix(id), `batches/${id}/`);
+test("workspace prefixes start with the task number and stay unique", () => {
+  const prefix = workspacePrefix("IT-20261026-001");
+  assert.match(prefix, /^batches\/IT-20261026-001-[a-z0-9]{6}\/$/);
+  assert.notEqual(workspacePrefix("IT-20261026-001"), prefix);
 });
 
 test("task numbers use the Shanghai calendar day", () => {

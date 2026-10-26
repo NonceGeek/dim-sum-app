@@ -17,13 +17,10 @@ export function canUploadFiles(taskStatus: string, runStatus: string | null) {
 }
 
 /**
- * 批次 ID：UTC 时间 + 随机后缀，如 20260929-143012-k3f9x2。
- * 与 yue-lint-agent packages/corpus-control/src/batch.ts 的 newBatchId 一致（Agent 按 BATCH_ID_RE 校验）。
+ * 任务工作区：任务编号 + 随机后缀，如 batches/IT-20261026-001-k3f9x2/（RAM 授权按 batches/* 配）。
+ * 任务编号只在本库内唯一，各测试库共用一个 bucket，靠后缀避免撞路径。
  */
-export const BATCH_ID_RE = /^\d{8}-\d{6}-[a-z0-9]{6}$/;
-
-export function newBatchId(now = new Date()): string {
-  const stamp = now.toISOString().slice(0, 19).replace(/[-:]/g, "");
+export function workspacePrefix(taskNo: string): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
   let suffix = "";
   while (suffix.length < 6) {
@@ -32,10 +29,8 @@ export function newBatchId(now = new Date()): string {
       if (b < 252 && suffix.length < 6) suffix += alphabet[b % 36];
     }
   }
-  return `${stamp.replace("T", "-")}-${suffix}`;
+  return `batches/${taskNo}-${suffix}/`;
 }
-
-export const workspacePrefix = (batchId: string) => `batches/${batchId}/`;
 
 /** 上传路径相对任务工作区的 input/，拒绝绝对路径与 .. 穿越 */
 export function inputPath(path: string) {

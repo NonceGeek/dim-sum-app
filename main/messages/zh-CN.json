@@ -1579,8 +1579,7 @@
       "description": "备注",
       "assignee": "负责人",
       "createdAt": "创建",
-      "lead": "入库待办",
-      "batchId": "批次"
+      "lead": "入库待办"
     },
     "modality": {
       "text": "文字",

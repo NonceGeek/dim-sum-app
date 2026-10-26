@@ -1578,8 +1578,7 @@
       "description": "Notes",
       "assignee": "Owner",
       "createdAt": "Created",
-      "lead": "Ingestion lead",
-      "batchId": "Batch"
+      "lead": "Ingestion lead"
     },
     "modality": {
       "text": "Text",

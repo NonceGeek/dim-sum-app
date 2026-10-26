@@ -162,8 +162,6 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
                 </dd>
               </>
             )}
-            <dt className="text-muted-foreground">{t("fields.batchId")}</dt>
-            <dd className="break-all font-mono text-xs leading-5">{task.batchId}</dd>
             {task.sourceCollectionMethod && (
               <>
                 <dt className="col-span-2 mt-1 border-t pt-2 text-muted-foreground">

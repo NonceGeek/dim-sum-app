@@ -28,7 +28,6 @@ export type TaskSummary = {
   assigneeId: string;
   assigneeName: string;
   createdByName: string;
-  batchId: string;
   run: RunSummary | null;
   completedAt: string | null;
   cancelledAt: string | null;
@@ -95,7 +94,6 @@ export type Provenance = {
   corpusId: string;
   provenance: {
     recordRow: number;
-    batchId: string;
     proposalId: string;
     approvalId: string;
     turnId: string | null;
