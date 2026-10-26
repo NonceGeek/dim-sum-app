@@ -45,8 +45,15 @@ export function searchSql(
   cursor: ReturnType<typeof decodeCursor>,
 ) {
   const terms = queryTerms(query);
+  // Native JSONPath is a cheap candidate filter, not the final expression
+  // match. Quoted regex treats user input (including brackets/%/backslashes)
+  // literally; the path itself is still a bound SQL parameter.
+  const candidates = or(terms.map((term) => {
+    const path = `$.data[*].blocks[*] ? (@.type == "sentence" && @.content.type() == "string" && @.content like_regex ${JSON.stringify(term)} flag "iq")`;
+    return Prisma.sql`strpos(lower(c.data),lower(${term}))>0 OR jsonb_path_exists(c.structured_note,${path}::jsonpath)`;
+  }));
   const base = eligibleSql(
-    Prisma.sql`true`,
+    candidates,
     or(terms.map((term) => Prisma.sql`strpos(lower(expression),lower(${term}))>0`)),
   );
   return Prisma.sql`WITH eligible AS (${base}), ranked AS (SELECT *,CASE WHEN lower(expression) IN (${Prisma.join(terms.map((t) => t.toLowerCase()))}) THEN 0 ELSE 1 END AS rank FROM eligible) SELECT * FROM ranked ${cursor ? Prisma.sql`WHERE (rank,id)>(${cursor.rank},${cursor.id})` : Prisma.empty} ORDER BY rank,id LIMIT ${limit + 1}`;
