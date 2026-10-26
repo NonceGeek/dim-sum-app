@@ -117,6 +117,21 @@ async function run() {
           assert.equal(next.length, 3);
           assert.ok(next.every((r) => r.id !== page[0].id));
           checks.push("keyset pagination and imported expression suffix");
+          // The prefilter must keep structured-only expressions and interpret
+          // JSONPath regex metacharacters/quotes/backslashes literally.
+          const literal = word + '[".*%_\\';
+          const special = await add(0, {
+            data: "opaque_literal_" + suffix,
+            structured_note: { data: [{ blocks: [
+              { type: "sentence", content: literal },
+              { type: "definition", content: "literal structured expression" },
+            ] }] },
+          });
+          const literalRows = await tx.$queryRaw<any[]>(searchSql(literal, 20, null));
+          assert.equal(literalRows.length, 1);
+          assert.equal(literalRows[0].unique_id, special.unique_id);
+          assert.equal(literalRows[0].rank, 0);
+          checks.push("structured-only literal candidate filtering with quotes, regex symbols and backslash");
           const input = {
             requestId: randomUUID(),
             anonymousId: randomUUID(),
