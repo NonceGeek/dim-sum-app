@@ -571,7 +571,7 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
     lead: lead && { id: String(lead.id), leadNo: lead.lead_no },
     canUploadFiles: canUploadFiles(row.status, run?.status ?? null),
     draft: isDraft(row.status, !!run),
-    closed,
+    closed: isTaskClosed(row.status),
     approvals: approvals.map((a) => serializeApproval(a, names)),
     files: files.map((f) => ({
       id: String(f.id),
