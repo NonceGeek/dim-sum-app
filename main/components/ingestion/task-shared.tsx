@@ -26,7 +26,7 @@ const DISPLAY_TONE: Record<DisplayStatus, string> = {
   WAITING_INPUT: "bg-primary/10 text-primary",
   ERROR: "bg-destructive/10 text-destructive",
   COMPLETED: "bg-success/15 text-success",
-  CANCELLED: "bg-muted text-muted-foreground line-through",
+  CANCELLED: "bg-muted text-muted-foreground",
 };
 
 export function TaskStatusBadge({ status }: { status: DisplayStatus }) {
