@@ -34,7 +34,7 @@
       "1155": "Opened from single-page mode"
     },
     "title": "Analytics",
-    "description": "First-party tracking: page views, Search 3.0 behavior, video and sharing. Days in Beijing time; admin pages and bots excluded.",
+    "description": "Web and mini-program visits, searches, media and shares. Beijing-time reporting excludes admin pages and bots.",
     "range": "Date range",
     "preset": {
       "today": "Today",
@@ -53,7 +53,8 @@
       "search": "Search",
       "content": "Engagement",
       "traffic": "Traffic",
-      "assets": "Corpus assets"
+      "assets": "Corpus assets",
+      "miniprogram": "Mini-programs"
     },
     "loading": "Loading…",
     "noData": "No data in this range",

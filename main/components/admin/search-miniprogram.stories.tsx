@@ -1,4 +1,6 @@
-import Page from "@/app/[locale]/admin/search-miniprogram/page";
+import { AnalyticsDashboard } from "./analytics-dashboard";
+import zh from "@/messages/zh-CN.json";
+import { MiniprogramDashboard } from "./miniprogram-dashboard";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react";
 import { NextIntlClientProvider } from "next-intl";
@@ -20,7 +22,7 @@ const record = {
   createdAt: "2026-10-23T04:00:00.000Z",
   updatedAt: "2026-10-23T04:00:00.000Z",
 };
-function Preview() {
+function Preview({ dashboard = false, noData = false, invalidRange = false }: { dashboard?: boolean; noData?: boolean; invalidRange?: boolean }) {
   const [client] = useState(() => {
     const c = new QueryClient({
       defaultOptions: { queries: { staleTime: Infinity, retry: false } },
@@ -43,12 +45,12 @@ function Preview() {
           items:
             (status === "all" || status === "OPEN") &&
             (type === "all" || type === "audio_issue")
-              ? [record]
+              ? (noData ? [] : [record])
               : [],
           total:
             (status === "all" || status === "OPEN") &&
             (type === "all" || type === "audio_issue")
-              ? 1
+              ? (noData ? 0 : 1)
               : 0,
           page: 1,
           pageSize: 20,
@@ -68,23 +70,34 @@ function Preview() {
         feedback_errors: 0,
       },
     });
+    for (const [from, requests] of [[day(), 22], [day(-29), 540]] as const) {
+      const sample = c.getQueryData<{ data: Record<string, number | null> }>(["search-app-analytics", { from: day(-6), to: day() }]);
+      c.setQueryData(["search-app-analytics", { from, to: day() }], { data: { ...sample?.data, requests } });
+    }
+    if (noData) c.setQueryData(["search-app-analytics", { from: day(-6), to: day() }], { data: { requests: 0, emptyRate: null, directRate: null, errors: 0, visitors: 0, result_clicks: 0, audio_plays: 0, audio_errors: 0, share_triggers: 0, feedbacks: 0, feedback_errors: 0 } });
+    c.setQueryData(["analytics", "overview", day(-6), day()], { kpis: { pv: 0, uv: 0, sessions: 0, searches: 0, noPrimaryRate: null, shareCopies: 0, shareOpens: 0, videoPlays: 0 }, daily: [] });
     return c;
   });
   return (
-    <NextIntlClientProvider locale="zh-CN" messages={{}}>
+    <NextIntlClientProvider locale="zh-CN" messages={zh}>
       <QueryClientProvider client={client}>
         <p className="mb-4 text-sm text-muted-foreground">
           界面验收静态样例，非真实用户数据。
         </p>
-        <Page />
+        {dashboard ? <AnalyticsDashboard isPlatformAdmin /> : <MiniprogramDashboard from={invalidRange ? day(-60) : day(-6)} to={day()} />}
       </QueryClientProvider>
     </NextIntlClientProvider>
   );
 }
 const meta: Meta = {
-  title: "Admin/Search mini-program",
+  title: "Admin/Analytics/Mini-programs",
   component: Preview,
   parameters: { layout: "fullscreen" },
 };
 export default meta;
 export const Default: StoryObj<typeof meta> = {};
+
+export const Dashboard: StoryObj<typeof meta> = { render: () => <Preview dashboard /> };
+export const Empty: StoryObj<typeof meta> = { render: () => <Preview noData /> };
+
+export const OutOfRange: StoryObj<typeof meta> = { render: () => <Preview invalidRange /> };
