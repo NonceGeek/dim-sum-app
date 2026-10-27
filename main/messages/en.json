@@ -1574,10 +1574,15 @@
       "CANCELLED": "Cancelled"
     },
     "columns": {
-      "task": "Job",
+      "title": "Job title",
+      "targetDataset": "Target dataset",
+      "modalities": "Media type",
       "status": "Status",
-      "updatedAt": "Last update"
+      "createdBy": "Created by",
+      "updatedAt": "Updated",
+      "actions": "Actions"
     },
+    "viewDetail": "View details",
     "fields": {
       "title": "Job title",
       "targetDatasetName": "Dataset",

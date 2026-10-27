@@ -1575,10 +1575,15 @@
       "CANCELLED": "已取消"
     },
     "columns": {
-      "task": "任务",
+      "title": "任务名称",
+      "targetDataset": "目标语料集",
+      "modalities": "媒体类型",
       "status": "状态",
-      "updatedAt": "最近更新"
+      "createdBy": "创建人",
+      "updatedAt": "更新时间",
+      "actions": "操作"
     },
+    "viewDetail": "查看详情",
     "fields": {
       "title": "任务标题",
       "targetDatasetName": "语料集",

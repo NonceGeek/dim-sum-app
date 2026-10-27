@@ -4,7 +4,7 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { PlusIcon, SearchIcon } from "lucide-react";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useLibraryOps } from "@/lib/hooks/use-library-ops";
 import { json } from "@/components/library-ops/ops-shared";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,6 @@ function StatCard({ label, value, hint, className }: { label: string; value: num
 
 export default function IngestionTasksPage() {
   const t = useTranslations("IngestionTasks");
-  const router = useRouter();
   const { data: ops } = useLibraryOps();
   const [scope, setScope] = useState<"me" | "all">("me");
   const [status, setStatus] = useState("");
@@ -181,37 +180,37 @@ export default function IngestionTasksPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("columns.task")}</TableHead>
-                <TableHead>{t("fields.targetDatasetName")}</TableHead>
+                <TableHead>{t("columns.title")}</TableHead>
+                <TableHead>{t("columns.targetDataset")}</TableHead>
+                <TableHead>{t("columns.modalities")}</TableHead>
                 <TableHead>{t("columns.status")}</TableHead>
-                <TableHead>{t("fields.assignee")}</TableHead>
-                <TableHead className="text-right">{t("columns.updatedAt")}</TableHead>
+                <TableHead>{t("columns.createdBy")}</TableHead>
+                <TableHead>{t("columns.updatedAt")}</TableHead>
+                <TableHead className="text-right">{t("columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {list.data.items.map((task) => (
-                <TableRow
-                  key={task.id}
-                  className="cursor-pointer"
-                  onClick={() => router.push(`/admin/ingestion-tasks/${task.id}`)}
-                >
+                <TableRow key={task.id}>
                   <TableCell className="max-w-md">
-                    <Link
-                      href={`/admin/ingestion-tasks/${task.id}`}
-                      className="block truncate font-medium hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {task.title}
-                    </Link>
+                    <p className="truncate font-medium">{task.title}</p>
                     <span className="font-mono text-xs text-muted-foreground">{task.taskNo}</span>
                   </TableCell>
                   <TableCell>{task.targetDatasetName}</TableCell>
+                  <TableCell>{task.modalities.map((m) => t(`modality.${m}`)).join(" + ") || "—"}</TableCell>
                   <TableCell>
                     <TaskStatusBadge status={task.displayStatus} />
                   </TableCell>
-                  <TableCell>{task.assigneeName}</TableCell>
-                  <TableCell className="text-right text-sm text-muted-foreground">
+                  <TableCell>{task.createdByName}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     <FormattedTime value={task.run?.updatedAt ?? task.updatedAt} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild size="sm" variant="link" className="h-auto p-0">
+                      <Link href={`/admin/ingestion-tasks/${task.id}`}>
+                        {t("viewDetail")}
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
