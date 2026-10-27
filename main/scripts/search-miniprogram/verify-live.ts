@@ -17,6 +17,7 @@ async function run() {
     );
     const { formatEntry } = await import("@/lib/search-miniprogram/content");
     const { processFeedback } = await import("@/lib/search-miniprogram/admin");
+    const { isPublicEntry } = await import("@/lib/search-miniprogram/public-entry");
     const { saveFeedback } = await import("@/lib/search-miniprogram/feedback");
     const { encodeCursor, decodeCursor } = await import(
       "@/lib/search-miniprogram/contracts"
@@ -108,6 +109,13 @@ async function run() {
           checks.push(
             "public oral eligibility before pagination, exact vs related, private/culture/missing definitions denied",
           );
+          for (const entry of [good, missing, culture]) {
+            assert.equal(await isPublicEntry(entry.unique_id, tx), true);
+            const accepted = await saveFeedback(tx, { requestId: randomUUID(), anonymousId: randomUUID(), type: "content_error", description: "QA public scope", entryId: entry.unique_id }, null);
+            assert.equal(accepted.feedback.entry_id, entry.unique_id);
+          }
+          assert.equal(await isPublicEntry(privateRow.unique_id, tx), false);
+          checks.push("all-public feedback accepts cultural/missing-definition entries; private denied; legacy/daily eligibility unchanged");
           const page = await tx.$queryRaw<any[]>(searchSql(word, 1, null));
           const cursor = decodeCursor(
             word,
@@ -225,6 +233,20 @@ async function run() {
           >`SELECT relrowsecurity FROM pg_class WHERE oid='public.search_feedback'::regclass`;
           assert.equal(rls[0].relrowsecurity, true);
           checks.push("feedback RLS enabled");
+          const { searchAnalyticsSql } = await import("@/lib/search-miniprogram/analytics");
+          const start = new Date("2199-01-01T00:00:00Z"), end = new Date("2199-01-02T00:00:00Z");
+          const before = (await tx.$queryRaw<any[]>(searchAnalyticsSql(start, end)))[0];
+          await tx.analytics_events.createMany({ data: [
+            { source: "server", event_name: "search_request", occurred_at: start, properties: { app: "search-app", paged: false, primaryCount: 0, similarCount: 0, recommendedCount: 1 } },
+            { source: "server", event_name: "search_request", occurred_at: start, properties: { app: "search-app", paged: false, primaryCount: 0, similarCount: 0, recommendedCount: 0 } },
+            { source: "server", event_name: "search_request", occurred_at: start, properties: { app: "search-app", paged: false, error: "semantic_failed" } },
+          ] });
+          const after = (await tx.$queryRaw<any[]>(searchAnalyticsSql(start, end)))[0];
+          assert.equal(after.related_only - before.related_only, 1);
+          assert.equal(after.empty - before.empty, 1);
+          assert.equal(after.errors - before.errors, 1);
+          checks.push("recommended-only results are not empty; semantic failures excluded from empty rate");
+
           throw rollback;
         },
         { maxWait: 15000, timeout: 60000 },

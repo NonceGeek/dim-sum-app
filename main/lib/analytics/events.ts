@@ -54,6 +54,7 @@ function enhancedGroup<T extends z.AnyZodObject>(schema: T, fields: string[], re
 }
 
 const audioFields = z.object({
+  schemaVersion:z.literal(1).optional(),
   entryId:id,
   audioId:z.string().trim().min(1).max(300).regex(/^\/[^?#\s]*$/),
   playSessionId:uuid,
@@ -63,6 +64,20 @@ const audioFields = z.object({
   exampleIndex:z.number().int().min(0).max(2).optional(),
 });
 const validAudioTarget = (v:z.infer<typeof audioFields>) => v.target === "example" ? v.exampleIndex !== undefined : v.exampleIndex === undefined;
+// v2 content has top-level assets and grouped blocks, not legacy senses.
+const audioV2Fields = z.object({
+  schemaVersion:z.literal(2), entryId:id,
+  audioId:z.string().trim().min(1).max(300).regex(/^\/[^?#\s]*$/),
+  playSessionId:uuid, surface:z.enum(["search_result","entry_detail"]),
+  target:z.enum(["asset","block","example"]),
+  sectionIndex:z.number().int().min(0).max(10000).optional(),
+  blockIndex:z.number().int().min(0).max(10000).optional(),
+  exampleIndex:z.number().int().min(0).max(10000).optional(),
+});
+const validAudioV2Target = (v:z.infer<typeof audioV2Fields>) =>
+  v.target === "asset" ? v.sectionIndex === undefined && v.blockIndex === undefined && v.exampleIndex === undefined
+  : v.sectionIndex !== undefined && v.blockIndex !== undefined && (v.target === "example" ? v.exampleIndex !== undefined : v.exampleIndex === undefined);
+const audioErrorFields = { loadAttemptId: uuid, errorType: z.enum(["timeout","network","resource_unavailable","unsupported","unknown"]) } as const;
 const feedbackType = z.enum(["content_error","audio_issue","suggestion","other"]);
 
 export const CLIENT_EVENT_SCHEMAS = {
@@ -137,8 +152,8 @@ export const CLIENT_EVENT_SCHEMAS = {
     landingVisitId: uuid.optional(),
     sourceChannel: z.string().trim().min(1).max(40).optional(),
   }), ["shareId", "landingVisitId", "sourceChannel"], ["landingVisitId", "sourceChannel"]),
-  audio_play: audioFields.refine(validAudioTarget, { message: "Example audio requires an exampleIndex" }),
-  audio_error: audioFields.extend({ loadAttemptId: uuid, errorType: z.enum(["timeout","network","resource_unavailable","unsupported","unknown"]) }).refine(validAudioTarget, { message: "Example audio requires an exampleIndex" }),
+  audio_play: z.union([audioV2Fields.refine(validAudioV2Target), audioFields.refine(validAudioTarget)]),
+  audio_error: z.union([audioV2Fields.extend(audioErrorFields).refine(validAudioV2Target), audioFields.extend(audioErrorFields).refine(validAudioTarget)]),
   feedback_submit: z.discriminatedUnion("status", [
     z.object({requestId:uuid,type:feedbackType,status:z.literal("success"),feedbackId:uuid}),
     z.object({requestId:uuid,type:feedbackType,status:z.literal("error"),errorCode:z.enum(["INVALID_FEEDBACK","INVALID_JSON","BODY_TOO_LARGE","INVALID_TOKEN","ENTRY_UNAVAILABLE","REQUEST_CONFLICT","RATE_LIMITED","SERVICE_UNAVAILABLE","NETWORK_ERROR"])})
