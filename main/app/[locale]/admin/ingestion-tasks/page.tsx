@@ -7,6 +7,7 @@ import { PlusIcon, SearchIcon } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLibraryOps } from "@/lib/hooks/use-library-ops";
 import { json } from "@/components/library-ops/ops-shared";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +16,27 @@ import type { TaskSummary } from "@/components/ingestion/types";
 
 // 与 lib/ingestion/tasks.ts 一致；那个模块依赖 node:crypto，不能进客户端包
 const TASK_STATUSES = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
+
+type TaskStats = {
+  total: number;
+  recent: number;
+  attention: number;
+  errors: number;
+  processing: number;
+  drafts: number;
+  todayRecords: number;
+  todayBatches: number;
+};
+
+function StatCard({ label, value, hint, className }: { label: string; value: number; hint: string; className?: string }) {
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className={cn("mt-2 text-3xl font-bold tabular-nums", className)}>{value.toLocaleString()}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
 
 export default function IngestionTasksPage() {
   const t = useTranslations("IngestionTasks");
@@ -39,6 +61,12 @@ export default function IngestionTasksPage() {
       );
     },
   });
+  const stats = useQuery({
+    queryKey: ["ingestion-task-stats", scope],
+    placeholderData: keepPreviousData,
+    refetchInterval: 30_000,
+    queryFn: async () => json<TaskStats>(await fetch(`/api/admin/ingestion-tasks/stats?assignee=${scope}`)),
+  });
   const pages = list.data ? Math.max(1, Math.ceil(list.data.total / list.data.pageSize)) : 1;
 
   return (
@@ -60,6 +88,34 @@ export default function IngestionTasksPage() {
           </Button>
         </div>
       </div>
+
+      {stats.data && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label={t("stats.total")}
+            value={stats.data.total}
+            hint={t("stats.recent", { count: stats.data.recent })}
+          />
+          <StatCard
+            label={t("stats.attention")}
+            value={stats.data.attention}
+            hint={t("stats.errors", { count: stats.data.errors })}
+            className="text-amber-600"
+          />
+          <StatCard
+            label={t("stats.processing")}
+            value={stats.data.processing}
+            hint={t("stats.drafts", { count: stats.data.drafts })}
+            className="text-violet-600"
+          />
+          <StatCard
+            label={t("stats.todayRecords")}
+            value={stats.data.todayRecords}
+            hint={t("stats.todayBatches", { count: stats.data.todayBatches })}
+            className="text-emerald-600"
+          />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         {ops?.isAdmin && (

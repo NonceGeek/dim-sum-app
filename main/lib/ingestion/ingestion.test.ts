@@ -5,7 +5,14 @@ import { formatSerial } from "@/lib/library/application-workflow";
 import { signSessionToken } from "./agent";
 import { displayStatus } from "./display-status";
 import { canUploadFiles, inputPath, workspacePrefix } from "./tasks";
-import { defaultTaskTitle, isDraft, isMediaPath, MEDIA_DIR, normalizeModalities } from "./task-options";
+import {
+  defaultTaskTitle,
+  isDraft,
+  isMediaPath,
+  MEDIA_DIR,
+  normalizeModalities,
+  shanghaiDayStart,
+} from "./task-options";
 
 test("display status combines the task status with the agent session status", () => {
   assert.equal(displayStatus("PENDING", null), "PENDING");
@@ -53,6 +60,11 @@ test("drafts are pending tasks without a session; media live under input/media/"
 
 test("default task titles use the dataset name and the Shanghai day", () => {
   assert.equal(defaultTaskTitle(" 日常口语词条集 ", new Date("2026-10-20T17:00:00Z")), "日常口语词条集 · 2026-10-21");
+});
+
+test("today starts at Shanghai midnight", () => {
+  assert.equal(shanghaiDayStart(new Date("2026-10-20T17:00:00Z")).toISOString(), "2026-10-20T16:00:00.000Z");
+  assert.equal(shanghaiDayStart(new Date("2026-10-20T15:59:59Z")).toISOString(), "2026-10-19T16:00:00.000Z");
 });
 
 test("workspace prefixes start with the task number and stay unique", () => {

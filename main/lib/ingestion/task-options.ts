@@ -29,3 +29,9 @@ export function defaultTaskTitle(datasetName: string, now = new Date()) {
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(now);
   return `${datasetName.trim()} · ${day}`;
 }
+
+/** 上海当天零点；上海不用夏令时，固定 +08:00 */
+export function shanghaiDayStart(now = new Date()) {
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai" }).format(now);
+  return new Date(`${day}T00:00:00+08:00`);
+}

@@ -9,7 +9,7 @@ import {
 } from "@/lib/library/ops-access";
 import { AccessError } from "@/lib/services/submission-access";
 import { agentBaseUrl, callAgent, SESSION_TTL_SECONDS, signSessionToken } from "./agent";
-import { DISPLAY_STATUSES, displayStatus } from "./display-status";
+import { DISPLAY_STATUSES, type DisplayStatus, displayStatus } from "./display-status";
 import {
   canUploadFiles,
   inputPath,
@@ -26,6 +26,7 @@ import {
   type IngestionType,
   isDraft,
   normalizeModalities,
+  shanghaiDayStart,
   TASK_MODALITIES,
 } from "./task-options";
 
@@ -534,6 +535,45 @@ export async function listTasks(access: LibraryOpsAccess, params: URLSearchParam
     total,
     page,
     pageSize,
+  };
+}
+
+/** 列表顶部的统计卡片；只随 assignee 范围变化，不受状态与搜索筛选影响 */
+export async function taskStats(access: LibraryOpsAccess, params: URLSearchParams) {
+  requireCapability(access, "ingestion_assignee");
+  const all = access.isAdmin && params.get("assignee") === "all";
+  const scope: Prisma.ingestion_tasksWhereInput = all ? {} : { assignee_id: access.userId };
+  const today = shanghaiDayStart();
+  const [total, recent, open, todayRecords, todayBatches] = await prisma.$transaction([
+    prisma.ingestion_tasks.count({ where: scope }),
+    prisma.ingestion_tasks.count({
+      where: { ...scope, created_at: { gte: new Date(Date.now() - 30 * 24 * 3600 * 1000) } },
+    }),
+    // 未关闭的任务量小，取出来按展示状态归类，与列表的状态徽标保持一致
+    prisma.ingestion_tasks.findMany({
+      where: { ...scope, status: { in: ["PENDING", "IN_PROGRESS"] } },
+      select: { status: true, run: { select: { status: true } } },
+    }),
+    prisma.ingestion_records.count({
+      where: { operation: { committed_at: { gte: today }, task: scope } },
+    }),
+    prisma.ingestion_operations.count({ where: { committed_at: { gte: today }, task: scope } }),
+  ]);
+  const counts: Partial<Record<DisplayStatus, number>> = {};
+  for (const t of open) {
+    const s = displayStatus(t.status, t.run?.status ?? null);
+    counts[s] = (counts[s] ?? 0) + 1;
+  }
+  const errors = counts.ERROR ?? 0;
+  return {
+    total,
+    recent,
+    attention: (counts.WAITING_APPROVAL ?? 0) + (counts.WAITING_INPUT ?? 0) + errors,
+    errors,
+    processing: counts.PROCESSING ?? 0,
+    drafts: counts.PENDING ?? 0,
+    todayRecords,
+    todayBatches,
   };
 }
 

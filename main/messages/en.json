@@ -1544,6 +1544,16 @@
     "prev": "Previous",
     "next": "Next",
     "completeNeedsRun": "The conversation hasn't started, so the job can't be completed",
+    "stats": {
+      "total": "All ingestion jobs",
+      "recent": "{count, plural, one {# new job} other {# new jobs}} in the last 30 days",
+      "attention": "Needs attention",
+      "errors": "{count, plural, one {# with an error} other {# with errors}}",
+      "processing": "Processing",
+      "drafts": "{count, plural, one {# draft} other {# drafts}} not started",
+      "todayRecords": "Records ingested today",
+      "todayBatches": "{count, plural, one {# batch} other {# batches}}"
+    },
     "scope": {
       "me": "Mine",
       "all": "All"

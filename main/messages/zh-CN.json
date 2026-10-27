@@ -1545,6 +1545,16 @@
     "prev": "上一页",
     "next": "下一页",
     "completeNeedsRun": "任务尚未开始对话，不能完成",
+    "stats": {
+      "total": "全部入库任务",
+      "recent": "近 30 天新增 {count} 个任务",
+      "attention": "待运营处理",
+      "errors": "含 {count} 个异常任务",
+      "processing": "入库处理中",
+      "drafts": "另有 {count} 个草稿待开始",
+      "todayRecords": "今日成功入库",
+      "todayBatches": "共 {count} 个入库批次"
+    },
     "scope": {
       "me": "我负责的",
       "all": "全部"
