@@ -252,9 +252,7 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">{taskId ? t("create.editTitle") : t("create.title")}</h2>
-          <p className="text-muted-foreground">
-            {lead ? t("create.fromLead", { no: lead.leadNo }) : t("create.description")}
-          </p>
+          {lead && <p className="text-muted-foreground">{t("create.fromLead", { no: lead.leadNo })}</p>}
         </div>
         <Button asChild variant="outline">
           <Link href="/admin/ingestion-tasks">
@@ -340,34 +338,31 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
                 )}
               </>
             ) : (
-              <div className="space-y-2">
-                <div className="grid gap-6 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
-                  <Field label={t("create.newDataset")} htmlFor="task-new-dataset" required>
-                    <Input
-                      id="task-new-dataset"
-                      maxLength={200}
-                      placeholder={t("create.newDatasetPlaceholder")}
-                      className="bg-background"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                    />
-                  </Field>
-                  <Field label={t("create.contentAttribute")} htmlFor="task-content-attribute" required>
-                    <select
-                      id="task-content-attribute"
-                      value={contentAttribute}
-                      onChange={(e) => setContentAttribute(e.target.value as ContentAttribute)}
-                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    >
-                      {CONTENT_ATTRIBUTES.map((value) => (
-                        <option key={value} value={value}>
-                          {t(`contentAttribute.${value}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-                <p className="text-xs text-muted-foreground">{t("create.datasetHint")}</p>
+              <div className="grid gap-6 rounded-lg border border-primary/20 bg-primary/5 p-4 md:grid-cols-2">
+                <Field label={t("create.newDataset")} htmlFor="task-new-dataset" required>
+                  <Input
+                    id="task-new-dataset"
+                    maxLength={200}
+                    placeholder={t("create.newDatasetPlaceholder")}
+                    className="bg-background"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                  />
+                </Field>
+                <Field label={t("create.contentAttribute")} htmlFor="task-content-attribute" required>
+                  <select
+                    id="task-content-attribute"
+                    value={contentAttribute}
+                    onChange={(e) => setContentAttribute(e.target.value as ContentAttribute)}
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    {CONTENT_ATTRIBUTES.map((value) => (
+                      <option key={value} value={value}>
+                        {t(`contentAttribute.${value}`)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
               </div>
             )}
           </Section>
@@ -403,16 +398,10 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
                   );
                 })}
               </div>
-              <p className="rounded-md border-l-4 border-primary bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-                {mediaModalities.length
-                  ? t("create.mediaHint", { combo: modalityLabel(modalities) })
-                  : t("create.textOnlyHint")}
-              </p>
             </div>
           </Section>
 
           <Section title={t("create.steps.files")}>
-            <p className="-mt-2 text-xs text-muted-foreground">{t("create.filesHint")}</p>
             <div className="grid gap-6 md:grid-cols-2">
               <Field label={t("create.textFiles")} required>
                 <DropZone
@@ -452,16 +441,29 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
           </Section>
 
           <Section title={t("create.steps.info")}>
-            <Field label={t("fields.sourceCollectionMethod")} htmlFor="task-source" required>
-              <Textarea
-                id="task-source"
-                rows={3}
-                maxLength={2000}
-                placeholder={t("create.sourcePlaceholder")}
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-              />
-            </Field>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Field label={t("fields.title")} htmlFor="task-title">
+                <Input
+                  id="task-title"
+                  maxLength={200}
+                  placeholder={autoTitle}
+                  value={titleEdited ? title : autoTitle}
+                  onChange={(e) => {
+                    setTitleEdited(true);
+                    setTitle(e.target.value);
+                  }}
+                />
+              </Field>
+              <Field label={t("fields.sourceCollectionMethod")} htmlFor="task-source" required>
+                <Input
+                  id="task-source"
+                  maxLength={2000}
+                  placeholder={t("create.sourcePlaceholder")}
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                />
+              </Field>
+            </div>
             <Field label={t("fields.description")} htmlFor="task-note">
               <Textarea
                 id="task-note"
@@ -472,25 +474,11 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
                 onChange={(e) => setNote(e.target.value)}
               />
             </Field>
-            <Field label={t("fields.title")} htmlFor="task-title" hint={t("create.titleHint")}>
-              <Input
-                id="task-title"
-                maxLength={200}
-                placeholder={autoTitle}
-                value={titleEdited ? title : autoTitle}
-                onChange={(e) => {
-                  setTitleEdited(true);
-                  setTitle(e.target.value);
-                }}
-              />
-            </Field>
           </Section>
         </div>
 
         <div className="sticky bottom-0 flex items-center justify-end gap-3 rounded-b-xl border-t bg-card/95 px-6 py-4 backdrop-blur">
-          <p className="mr-auto text-xs text-muted-foreground">
-            {uploading ? t("create.uploadsInProgress") : t("create.startHint")}
-          </p>
+          {uploading && <p className="mr-auto text-xs text-muted-foreground">{t("create.uploadsInProgress")}</p>}
           <Button type="button" variant="outline" disabled={!!saving || uploading} onClick={() => void submit("draft")}>
             {saving === "draft" ? t("saving") : t("create.saveDraft")}
           </Button>
@@ -517,13 +505,11 @@ function Field({
   label,
   htmlFor,
   required,
-  hint,
   children,
 }: {
   label: string;
   htmlFor?: string;
   required?: boolean;
-  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -533,7 +519,6 @@ function Field({
         {required && <span className="text-destructive"> *</span>}
       </Label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
