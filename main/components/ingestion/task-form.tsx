@@ -249,17 +249,16 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <Button asChild size="icon" variant="ghost" aria-label={t("back")}>
+          <Link href="/admin/ingestion-tasks">
+            <ArrowLeftIcon className="size-4" />
+          </Link>
+        </Button>
         <div>
           <h2 className="text-2xl font-bold">{taskId ? t("create.editTitle") : t("create.title")}</h2>
           {lead && <p className="text-muted-foreground">{t("create.fromLead", { no: lead.leadNo })}</p>}
         </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/ingestion-tasks">
-            <ArrowLeftIcon className="size-4" />
-            {t("back")}
-          </Link>
-        </Button>
       </div>
 
       <form
