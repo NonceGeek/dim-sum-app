@@ -58,3 +58,15 @@ test("v2 route rejects invalid parameters before any database request", async ()
   assert.equal(response.status, 400); assert.equal((await response.json()).error.code, "INVALID_SEARCH_REQUEST");
   assert.equal(response.headers.get("cache-control"), "private, no-store");
 });
+
+test("v2 audio events locate real assets/blocks/examples without inventing legacy sense indexes", async () => {
+  const { CLIENT_EVENT_SCHEMAS } = await import("@/lib/analytics/events");
+  const base = { schemaVersion: 2, entryId: "9fb359b2-f561-4264-8e5e-ec899fb0cab1", audioId: "/yue.m4a", playSessionId: "550e8400-e29b-41d4-a716-446655440000", surface: "entry_detail" };
+  for (const target of [{ target: "asset" }, { target: "block", sectionIndex: 0, blockIndex: 1 }, { target: "example", sectionIndex: 0, blockIndex: 2, exampleIndex: 4 }]) {
+    assert.equal(CLIENT_EVENT_SCHEMAS.audio_play.safeParse({ ...base, ...target }).success, true);
+    assert.equal(CLIENT_EVENT_SCHEMAS.audio_error.safeParse({ ...base, ...target, loadAttemptId: base.playSessionId, errorType: "network" }).success, true);
+  }
+  for (const target of [{ target: "asset", sectionIndex: 0 }, { target: "block" }, { target: "example", sectionIndex: 0, blockIndex: 1 }, { target: "expression", senseIndex: 0 }])
+    assert.equal(CLIENT_EVENT_SCHEMAS.audio_play.safeParse({ ...base, ...target }).success, false);
+  assert.equal(CLIENT_EVENT_SCHEMAS.audio_play.safeParse({ ...base, schemaVersion: undefined, target: "expression", senseIndex: 0 }).success, true);
+});
