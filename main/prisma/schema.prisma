@@ -1596,3 +1596,11 @@ model search_feedback {
   @@index([user_id, created_at])
   @@index([entry_id])
 }
+
+/// Search 小程序按北京时间固定的完整公开词条快照；仅服务端访问。
+model search_daily_entries {
+  date       DateTime @id @db.Date
+  entry_id   String   @db.Uuid
+  entry      Json
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
