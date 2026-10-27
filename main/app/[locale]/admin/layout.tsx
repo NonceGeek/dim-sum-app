@@ -25,6 +25,7 @@ import {
 	LayoutDashboard,
 	LogOut,
 	Menu,
+	MessageSquare,
 	Settings,
 	Shield,
 	Users,
@@ -35,7 +36,6 @@ import { useTranslations } from "next-intl";
 import { useEffect,useState } from "react";
 
 const adminNavItems = [
-  { titleKey: "nav.searchApp", href: "/admin/search-miniprogram", icon: FileText },
   {
     titleKey: "nav.dashboard",
     href: "/admin",
@@ -45,6 +45,11 @@ const adminNavItems = [
     titleKey: "nav.analytics",
     href: "/admin/analytics",
     icon: BarChart3,
+  },
+  {
+    titleKey: "nav.feedback",
+    href: "/admin/feedback",
+    icon: MessageSquare,
   },
   {
     titleKey: "nav.users",
