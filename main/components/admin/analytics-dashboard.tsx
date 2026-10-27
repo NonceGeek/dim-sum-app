@@ -594,7 +594,6 @@ export function AnalyticsDashboard({ isPlatformAdmin }: { isPlatformAdmin: boole
           <Button size="sm" variant="outline" onClick={() => {
             if (tab === "miniprogram") {
               void client.invalidateQueries({ queryKey: ["search-app-analytics"] });
-              void client.invalidateQueries({ queryKey: ["search-app-feedback"] });
             }
             setRefreshKey((k) => k + 1);
           }} aria-label={t("refresh")}>

@@ -14,7 +14,7 @@
     },
     "source": {
       "web": "网页",
-      "miniprogram": "小程序"
+      "miniprogram": "微信小程序"
     },
     "scene": {
       "1001": "发现栏小程序主入口",
@@ -54,7 +54,7 @@
       "content": "内容互动",
       "traffic": "流量",
       "assets": "语料资产",
-      "miniprogram": "小程序"
+      "miniprogram": "微信小程序"
     },
     "loading": "加载中…",
     "noData": "该时间范围内暂无数据",
@@ -1315,6 +1315,7 @@
     "unnamedUser": "后台用户",
     "backToMainApp": "返回主应用",
     "nav": {
+      "feedback": "用户反馈",
       "searchApp": "Search 小程序",
       "analytics": "数据看板",
       "libraryOps": "语料运营",

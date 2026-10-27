@@ -54,7 +54,7 @@
       "content": "Engagement",
       "traffic": "Traffic",
       "assets": "Corpus assets",
-      "miniprogram": "Mini-programs"
+      "miniprogram": "WeChat mini-programs"
     },
     "loading": "Loading…",
     "noData": "No data in this range",
@@ -1314,6 +1314,7 @@
     "unnamedUser": "Backend user",
     "backToMainApp": "Back to Main App",
     "nav": {
+      "feedback": "User feedback",
       "searchApp": "Search mini-program",
       "analytics": "Analytics",
       "libraryOps": "Corpus operations",

@@ -15,8 +15,10 @@ export async function GET(req: NextRequest) {
       const p = req.nextUrl.searchParams;
       const status = p.get("status");
       const type = p.get("type");
+      const source = p.get("source");
       const page = Number(p.get("page") ?? 1);
       if (
+        (source && source !== "wechat_miniprogram") ||
         !Number.isInteger(page) ||
         page < 1 ||
         page > 10000 ||
@@ -41,6 +43,8 @@ export async function GET(req: NextRequest) {
         {
           items: items.map((r) => ({
             id: r.id,
+            // This table is written exclusively by the Search WeChat mini-program endpoint.
+            source: "wechat_miniprogram",
             type: r.type,
             description: r.description,
             entryId: r.entry_id,
