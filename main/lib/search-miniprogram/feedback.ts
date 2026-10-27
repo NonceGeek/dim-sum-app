@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getOptionalMiniprogramUser } from "@/lib/miniprogram-auth";
 import type { NextRequest } from "next/server";
 import { feedbackInput, sameFeedback, SearchError } from "./contracts";
-import { getEntry } from "./service";
+import { isPublicEntry } from "./public-entry";
 import type { z } from "zod";
 export async function feedbackUser(req: NextRequest) {
   const token = await getOptionalMiniprogramUser(req);
@@ -66,7 +66,7 @@ export async function saveFeedback(
   });
   if (count >= 5)
     throw new SearchError(429, "RATE_LIMITED", "提交较频繁，请稍后再试");
-  if (input.entryId && !(await getEntry(input.entryId, tx)))
+  if (input.entryId && !(await isPublicEntry(input.entryId, tx)))
     throw new SearchError(
       404,
       "ENTRY_UNAVAILABLE",
