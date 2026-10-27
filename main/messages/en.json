@@ -1768,9 +1768,11 @@
       "toolError": "Error",
       "eventsDisconnected": "Live updates disconnected, reconnecting",
       "loadOlder": "Load earlier messages",
-      "empty": "Tell the agent how to handle the files in input/, or start from the standard flow.",
+      "empty": "The agent has not started on this job yet.",
       "emptyClosed": "This job has no conversation.",
-      "standardFlow": "Standard ingestion flow",
+      "start": "Start cleaning",
+      "pausedHint": "The agent has paused and is waiting for the next step.",
+      "continue": "Continue",
       "interrupted": "This reply was interrupted",
       "working": "Working",
       "compaction": {

@@ -1769,9 +1769,11 @@
       "toolError": "错误",
       "eventsDisconnected": "状态推送连接已断开，正在重连",
       "loadOlder": "加载更早消息",
-      "empty": "告诉 Agent 怎么处理 input/ 里的文件，或者从标准流程开始。",
+      "empty": "Agent 还没开始处理这个任务。",
       "emptyClosed": "这个任务没有对话记录。",
-      "standardFlow": "标准入库流程",
+      "start": "开始清洗",
+      "pausedHint": "Agent 已暂停，等待下一步指示。",
+      "continue": "继续",
       "interrupted": "此回复已中断",
       "working": "执行中",
       "compaction": {

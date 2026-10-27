@@ -29,8 +29,10 @@ import { SubtaskCard } from "./subtask-card";
 import type { QuestionRequest, RunTarget, RunView } from "./types";
 import { useRunEvents } from "./use-run-events";
 
-/** 给 Agent 的标准指令，与调试控制台一致；面向模型，不随界面语言切换 */
-const DEFAULT_INSTRUCTION = `请先探索 input/ 中的全部文件，不要根据扩展名预设格式。识别表格结构、文本字段与音频对应关系，必要时编写临时脚本并从错误中调整。完成清洗、音频 probe/切分、ASR 和 records 校验；每个阶段写 checkpoint，最后创建合适的入库 proposal，等待人工审批。`;
+/** 给 Agent 的标准指令，具体流程由 Agent 的 skill 定义；面向模型，不随界面语言切换 */
+const DEFAULT_INSTRUCTION = "开始入库流程";
+/** Agent 停下等输入时「继续」按钮发出的指令；同样面向模型 */
+const CONTINUE_INSTRUCTION = "继续";
 
 type Props = {
   client: AgentClient;
@@ -164,9 +166,13 @@ function ChatInner({
   const autoStarted = useRef(false);
   useEffect(() => {
     if (!autoStart || autoStarted.current || started || chat.messages.length) return;
-    autoStarted.current = true;
-    void sendMessage({ text: DEFAULT_INSTRUCTION });
-    onAutoStarted?.();
+    // 推迟到下一个宏任务：StrictMode 模拟卸载时 useChat 会 stop()，同步发出的消息会被静默丢弃
+    const timer = window.setTimeout(() => {
+      autoStarted.current = true;
+      void sendMessage({ text: DEFAULT_INSTRUCTION });
+      onAutoStarted?.();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [autoStart, started, chat.messages.length, sendMessage, onAutoStarted]);
 
   // 第一次对话创建了 run，刷新后开始订阅事件流
@@ -289,6 +295,8 @@ function ChatInner({
     [client, setMessages, refresh],
   );
   const canSend = !closed && !busy && (started ? run?.status === "ready" : true);
+  // 一轮结束却没有提问、提案或完成：Agent 停在等人打字，给一个继续按钮兜底
+  const paused = canSend && started && chat.messages.length > 0;
   const placeholder = canSend
     ? t("placeholder")
     : stopped
@@ -325,8 +333,8 @@ function ChatInner({
             <div className="flex flex-col items-center gap-3 py-16 text-center text-sm text-muted-foreground">
               <p>{closed ? t("emptyClosed") : t("empty")}</p>
               {!closed ? (
-                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setInput(DEFAULT_INSTRUCTION)}>
-                  {t("standardFlow")}
+                <Button size="sm" disabled={!canSend} onClick={() => void sendMessage({ text: DEFAULT_INSTRUCTION })}>
+                  {t("start")}
                 </Button>
               ) : null}
             </div>
@@ -388,6 +396,14 @@ function ChatInner({
             </p>
             <Button size="sm" variant="outline" disabled={reconciling} onClick={() => void reconcile(applyingApproval.id)}>
               {reconciling ? t("reconciling") : t("reconcile")}
+            </Button>
+          </div>
+        ) : null}
+        {paused ? (
+          <div className="flex items-center gap-3 rounded-xl border p-3 text-sm">
+            <p className="min-w-0 flex-1">{t("pausedHint")}</p>
+            <Button size="sm" onClick={() => void sendMessage({ text: CONTINUE_INSTRUCTION })}>
+              {t("continue")}
             </Button>
           </div>
         ) : null}
