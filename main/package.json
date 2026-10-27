@@ -14,6 +14,7 @@
     "test:activity-time": "node --import tsx --test lib/activity-time.test.ts",
     "test:library": "node --import tsx --test lib/library/library.test.ts",
     "test:admin-scopes": "node --import tsx --test lib/admin/*.test.ts lib/services/submission-permissions.test.ts lib/services/submission-ai.test.ts lib/admin-route-access.test.ts lib/library/library.test.ts lib/dataset-management.test.ts",
+    "test:yue-cube-game": "node --import tsx --test lib/services/yue-cube-game*.test.ts",
     "test:search-miniprogram": "node --import tsx --test lib/search-miniprogram/*.test.ts",
     "test:analytics": "node --import tsx --test lib/analytics/*.test.ts",
     "test:collection-category": "node --import tsx --test lib/corpus-collection-category.test.ts",
