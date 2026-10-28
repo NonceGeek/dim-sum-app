@@ -10,6 +10,7 @@ import { json } from "@/components/library-ops/ops-shared";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FormattedTime, ProvenanceDialog, TaskStatusBadge } from "@/components/ingestion/task-shared";
 import type { TaskSummary } from "@/components/ingestion/types";
@@ -28,12 +29,68 @@ type TaskStats = {
   todayBatches: number;
 };
 
-function StatCard({ label, value, hint, className }: { label: string; value: number; hint: string; className?: string }) {
+const SKELETON_ROWS = 5;
+
+/** 表格加载中的占位行，与真实行的列和高度一致 */
+function SkeletonRow() {
+  return (
+    <TableRow>
+      <TableCell>
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="mt-1 h-4 w-28" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-24" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-20" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-5 w-14 rounded-full" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-16" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-28" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="ml-auto h-4 w-12" />
+      </TableCell>
+    </TableRow>
+  );
+}
+
+/** 统计卡片；加载中用同尺寸骨架占位，加载失败显示「—」，避免布局跳动 */
+function StatCard({
+  label,
+  value,
+  hint,
+  loading,
+  className,
+}: {
+  label: string;
+  value?: number;
+  hint?: string;
+  loading: boolean;
+  className?: string;
+}) {
   return (
     <div className="rounded-lg border bg-card p-5">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={cn("mt-2 text-3xl font-bold tabular-nums", className)}>{value.toLocaleString()}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+      {loading ? (
+        <>
+          <Skeleton className="mt-2 h-9 w-16" />
+          <Skeleton className="mt-1 h-5 w-32" />
+        </>
+      ) : (
+        <>
+          <p className={cn("mt-2 text-3xl font-bold tabular-nums", value !== undefined && className)}>
+            {value?.toLocaleString() ?? "—"}
+          </p>
+          <p className="mt-1 min-h-5 text-sm text-muted-foreground">{hint}</p>
+        </>
+      )}
     </div>
   );
 }
@@ -88,33 +145,35 @@ export default function IngestionTasksPage() {
         </div>
       </div>
 
-      {stats.data && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label={t("stats.total")}
-            value={stats.data.total}
-            hint={t("stats.recent", { count: stats.data.recent })}
-          />
-          <StatCard
-            label={t("stats.attention")}
-            value={stats.data.attention}
-            hint={t("stats.errors", { count: stats.data.errors })}
-            className="text-amber-600"
-          />
-          <StatCard
-            label={t("stats.processing")}
-            value={stats.data.processing}
-            hint={t("stats.drafts", { count: stats.data.drafts })}
-            className="text-violet-600"
-          />
-          <StatCard
-            label={t("stats.todayRecords")}
-            value={stats.data.todayRecords}
-            hint={t("stats.todayBatches", { count: stats.data.todayBatches })}
-            className="text-emerald-600"
-          />
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label={t("stats.total")}
+          loading={stats.isPending}
+          value={stats.data?.total}
+          hint={stats.data && t("stats.recent", { count: stats.data.recent })}
+        />
+        <StatCard
+          label={t("stats.attention")}
+          loading={stats.isPending}
+          value={stats.data?.attention}
+          hint={stats.data && t("stats.errors", { count: stats.data.errors })}
+          className="text-amber-600"
+        />
+        <StatCard
+          label={t("stats.processing")}
+          loading={stats.isPending}
+          value={stats.data?.processing}
+          hint={stats.data && t("stats.drafts", { count: stats.data.drafts })}
+          className="text-violet-600"
+        />
+        <StatCard
+          label={t("stats.todayRecords")}
+          loading={stats.isPending}
+          value={stats.data?.todayRecords}
+          hint={stats.data && t("stats.todayBatches", { count: stats.data.todayBatches })}
+          className="text-emerald-600"
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         {ops?.isAdmin && (
@@ -170,12 +229,9 @@ export default function IngestionTasksPage() {
         </form>
       </div>
 
-      {list.isLoading && <p className="text-muted-foreground">{t("loading")}</p>}
-      {list.isError && <p className="text-destructive">{(list.error as Error).message}</p>}
-      {list.data?.items.length === 0 && (
+      {list.data?.items.length === 0 ? (
         <p className="rounded-lg border p-8 text-center text-muted-foreground">{t("empty")}</p>
-      )}
-      {!!list.data?.items.length && (
+      ) : (
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
@@ -190,7 +246,15 @@ export default function IngestionTasksPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {list.data.items.map((task) => (
+              {list.isPending && Array.from({ length: SKELETON_ROWS }, (_, i) => <SkeletonRow key={i} />)}
+              {list.isError && !list.data && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-destructive">
+                    {(list.error as Error).message}
+                  </TableCell>
+                </TableRow>
+              )}
+              {list.data?.items.map((task) => (
                 <TableRow key={task.id}>
                   <TableCell className="max-w-md">
                     <p className="truncate font-medium">{task.title}</p>
