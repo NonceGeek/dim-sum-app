@@ -179,6 +179,25 @@ test("completed tasks list every write and have no next step", () => {
   assert.deepEqual(kinds(nodes).slice(3), ["question:done", "write:done", "write:done", "end:done"]);
 });
 
+test("written proposals merge into their write node; others stay separate", () => {
+  const approval = (id: string, status: TaskApproval["status"], minute: number): TaskApproval => ({
+    id, proposalId: id, summary: "很长的提案摘要", steps: [], expected: {}, status, decidedByName: "dev", decidedAt: at(minute),
+    decisionNote: null, settledAt: null, expiresAt: at(59), createdAt: at(minute), turnId: null, toolCallId: null,
+  });
+  const nodes = buildTimeline(
+    {
+      ...baseTask,
+      approvals: [approval("p2", "approved", 30), approval("p1", "denied", 20)],
+      operations: [{ id: "w1", approvalId: "p2", approvedByName: "dev", approvedAt: at(30), committedAt: at(31), recordCount: 40, turnId: null, toolCallId: null }],
+    },
+    null,
+    null,
+  );
+  assert.deepEqual(kinds(nodes).slice(3), ["approval:stopped", "write:done", "next:todo"]);
+  const write = nodes[4];
+  assert.ok(write.kind === "write" && write.approval?.id === "p2");
+});
+
 test("tasks without files or a session still start with creation and files", () => {
   const nodes = buildTimeline({ ...baseTask, files: [], events: [] }, null, null);
   assert.deepEqual(kinds(nodes), ["created:done", "files:done", "next:todo"]);

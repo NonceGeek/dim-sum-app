@@ -30,7 +30,6 @@ export function TaskTimeline({ task, run }: { task: TaskDetail; run: RunView | n
   const reports = useTaskReports(task.id);
   const latest = reports.data?.reports[0] ?? null;
   const nodes = buildTimeline(task, run, latest);
-  const lastWrite = nodes.findLast((n) => n.kind === "write")?.key;
   return (
     <div className="flex flex-col gap-3">
       <TaskConfig task={task} />
@@ -40,12 +39,8 @@ export function TaskTimeline({ task, run }: { task: TaskDetail; run: RunView | n
             key={node.key}
             node={node}
             task={task}
-            defaultOpen={
-              node.state === "now" ||
-              node.key === lastWrite ||
-              node.kind === "report" ||
-              (node.kind === "files" && node.count === 0 && task.canUploadFiles)
-            }
+            // 已发生的节点默认收起，只展开等你处理的节点与还需上传文件的入口
+            defaultOpen={node.state === "now" || (node.kind === "files" && node.count === 0 && task.canUploadFiles)}
           />
         ))}
       </ol>
@@ -232,7 +227,8 @@ function describe(node: TimelineNode, task: TaskDetail, t: ReturnType<typeof use
       const a = node.approval;
       return {
         icon: <ShieldCheckIcon />,
-        title: a.summary ?? t("approvals.plan", { count: a.steps.length }),
+        // 提案摘要由 Agent 撰写、可能很长，放进展开内容；标题固定为短文案
+        title: t("approvals.plan", { count: a.steps.length }),
         meta: (
           <>
             {t(`approvals.status.${a.status}`)}
@@ -252,7 +248,12 @@ function describe(node: TimelineNode, task: TaskDetail, t: ReturnType<typeof use
             {t("timeline.approvedBy", { name: node.operation.approvedByName })} · <FormattedTime value={node.at} />
           </>
         ),
-        body: <RecordsPanel taskId={task.id} operationId={node.operation.id} />,
+        body: (
+          <>
+            {node.approval && <ApprovalDetail approval={node.approval} />}
+            <RecordsPanel taskId={task.id} operationId={node.operation.id} />
+          </>
+        ),
         chat: node.operation,
       };
     case "report":

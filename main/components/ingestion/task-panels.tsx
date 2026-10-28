@@ -163,6 +163,7 @@ async function uploadOne(taskId: string, file: File, path: string) {
 export function ApprovalDetail({ approval: a }: { approval: TaskApproval }) {
   return (
     <div className="space-y-1 text-sm">
+      {a.summary && <p className="text-xs break-all">{a.summary}</p>}
       <ol className="list-decimal space-y-0.5 pl-5 text-xs">
         {a.steps.map((s) => (
           <li key={`${s.kind}:${s.summary}`}>

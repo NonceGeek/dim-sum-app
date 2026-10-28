@@ -9,7 +9,8 @@ export type TimelineNode = { key: string; state: TimelineState } & (
   | { kind: "session"; at: string; by: string | null }
   | { kind: "question"; at: string; question: TaskQuestion }
   | { kind: "approval"; at: string; approval: TaskApproval }
-  | { kind: "write"; at: string; operation: TaskOperation }
+  /** 写入与它的提案合成一个节点；approval 为 null 时提案不在最近的审批列表里 */
+  | { kind: "write"; at: string; operation: TaskOperation; approval: TaskApproval | null }
   | { kind: "report"; at: string; version: number; reportKind: "final" | "draft"; generating: boolean }
   | { kind: "end"; at: string; by: string | null; outcome: "completed" | "cancelled" }
   | { kind: "working" }
@@ -52,7 +53,9 @@ export function buildTimeline(task: TimelineTask, run: TimelineRun, report: Time
       at: question.createdAt,
       question,
     });
-  for (const approval of task.approvals)
+  // 已写入的提案并进写入节点，只单独列出待审批、被拒绝或未写入的提案
+  const written = new Set(task.operations.map((o) => o.approvalId));
+  for (const approval of task.approvals.filter((a) => !written.has(a.id)))
     dated.push({
       key: `approval:${approval.id}`,
       kind: "approval",
@@ -61,7 +64,14 @@ export function buildTimeline(task: TimelineTask, run: TimelineRun, report: Time
       approval,
     });
   for (const operation of task.operations)
-    dated.push({ key: `write:${operation.id}`, kind: "write", state: "done", at: operation.committedAt, operation });
+    dated.push({
+      key: `write:${operation.id}`,
+      kind: "write",
+      state: "done",
+      at: operation.committedAt,
+      operation,
+      approval: task.approvals.find((a) => a.id === operation.approvalId) ?? null,
+    });
 
   if (report)
     dated.push({
