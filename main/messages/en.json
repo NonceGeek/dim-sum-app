@@ -1683,8 +1683,6 @@
       "notClosed": "After ingestion, the agent drafts the report in the chat; ask it there for changes. Ending the task turns the latest draft into the final report.",
       "withoutNarrative": "This version has no summary, only content compiled from system records.",
       "unreadable": "The report text can't be loaded right now. You can still download it.",
-      "read": "Read full screen",
-      "title": "Ingestion report v{version}",
       "kinds": {
         "final": "Final",
         "draft": "Draft"

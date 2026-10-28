@@ -1,14 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { DownloadIcon, Loader2Icon, Maximize2Icon } from "lucide-react";
+import { DownloadIcon, Loader2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { json } from "@/components/library-ops/ops-shared";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormattedTime } from "./task-shared";
 import type { TaskDetail } from "./types";
 
@@ -63,7 +61,6 @@ function Markdown({ text }: { text: string }) {
 /** 入库报告：入库 Agent 在对话中生成草稿，结束任务时生成正式版 */
 export function ReportPanel({ task }: { task: TaskDetail }) {
   const t = useTranslations("IngestionTasks.report");
-  const [reading, setReading] = useState(false);
   const view = useQuery({
     queryKey: ["ingestion-task-report", task.id],
     queryFn: async () => json<ReportsView>(await fetch(`/api/admin/ingestion-tasks/${task.id}/report`)),
@@ -112,12 +109,6 @@ export function ReportPanel({ task }: { task: TaskDetail }) {
               </a>
             </Button>
           ))}
-          {current?.markdown && (
-            <Button size="sm" variant="ghost" onClick={() => setReading(true)}>
-              <Maximize2Icon className="size-4" />
-              {t("read")}
-            </Button>
-          )}
         </div>
       )}
 
@@ -128,15 +119,6 @@ export function ReportPanel({ task }: { task: TaskDetail }) {
       ) : (
         readable && <p className="text-xs text-muted-foreground">{t("unreadable")}</p>
       )}
-
-      <Dialog open={reading} onOpenChange={setReading}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("title", { version: current?.version ?? 0 })}</DialogTitle>
-          </DialogHeader>
-          {current?.markdown && <Markdown text={current.markdown} />}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
