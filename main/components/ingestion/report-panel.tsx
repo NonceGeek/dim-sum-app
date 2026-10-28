@@ -58,16 +58,21 @@ function Markdown({ text }: { text: string }) {
   );
 }
 
-/** 入库报告：入库 Agent 在对话中生成草稿，结束任务时生成正式版 */
-export function ReportPanel({ task }: { task: TaskDetail }) {
-  const t = useTranslations("IngestionTasks.report");
-  const view = useQuery({
-    queryKey: ["ingestion-task-report", task.id],
-    queryFn: async () => json<ReportsView>(await fetch(`/api/admin/ingestion-tasks/${task.id}/report`)),
+/** 任务的报告版本列表（新的在前）；时间线与报告面板共用同一个查询 */
+export function useTaskReports(taskId: string) {
+  return useQuery({
+    queryKey: ["ingestion-task-report", taskId],
+    queryFn: async () => json<ReportsView>(await fetch(`/api/admin/ingestion-tasks/${taskId}/report`)),
     // 生成中时轮询
     refetchInterval: (query) =>
       query.state.data?.reports.some((r) => r.status === "generating") ? 4000 : false,
   });
+}
+
+/** 入库报告：入库 Agent 在对话中生成草稿，结束任务时生成正式版 */
+export function ReportPanel({ task }: { task: TaskDetail }) {
+  const t = useTranslations("IngestionTasks.report");
+  const view = useTaskReports(task.id);
 
   if (view.isLoading) return <p className="text-sm text-muted-foreground">{t("loading")}</p>;
   if (view.isError) return <p className="text-sm text-destructive">{(view.error as Error).message}</p>;

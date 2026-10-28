@@ -8,7 +8,7 @@ import { json } from "@/components/library-ops/ops-shared";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FormattedTime, formatBytes } from "./task-shared";
-import type { TaskDetail, TaskRecord } from "./types";
+import type { TaskApproval, TaskDetail, TaskRecord } from "./types";
 
 type Upload = { path: string; size: number; state: "uploading" | "done" | "error"; error?: string };
 
@@ -159,56 +159,39 @@ async function uploadOne(taskId: string, file: File, path: string) {
   );
 }
 
-export function ApprovalsPanel({ task }: { task: TaskDetail }) {
-  const t = useTranslations("IngestionTasks.approvals");
-  if (!task.approvals.length) return <p className="py-4 text-center text-sm text-muted-foreground">{t("empty")}</p>;
+/** 入库提案的计划步骤、预计写入量与审批备注；状态与决定人由时间线节点展示 */
+export function ApprovalDetail({ approval: a }: { approval: TaskApproval }) {
   return (
-    <ul className="space-y-2">
-      {task.approvals.map((a) => (
-        <li key={a.id} className="space-y-1 rounded-md border p-3 text-sm">
-          <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 font-medium">{t("plan", { count: a.steps.length })}</p>
-            <span className="shrink-0 text-xs text-muted-foreground">{t(`status.${a.status}`)}</span>
-          </div>
-          <ol className="list-decimal space-y-0.5 pl-5 text-xs">
-            {a.steps.map((s) => (
-              <li key={`${s.kind}:${s.summary}`}>
-                <span className="font-mono text-muted-foreground">{s.kind}</span> {s.summary}
-              </li>
-            ))}
-          </ol>
-          {Object.keys(a.expected).length > 0 && (
-            <p className="text-xs tabular-nums text-muted-foreground">
-              {Object.entries(a.expected)
-                .map(([name, count]) => `${name} ${count}`)
-                .join(" · ")}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            {a.decidedByName && a.decidedAt ? (
-              <>
-                {t("decided", { name: a.decidedByName })} · <FormattedTime value={a.decidedAt} />
-              </>
-            ) : (
-              <FormattedTime value={a.createdAt} />
-            )}
-          </p>
-          {a.decisionNote && <p className="whitespace-pre-line text-xs">{a.decisionNote}</p>}
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-1 text-sm">
+      <ol className="list-decimal space-y-0.5 pl-5 text-xs">
+        {a.steps.map((s) => (
+          <li key={`${s.kind}:${s.summary}`}>
+            <span className="font-mono text-muted-foreground">{s.kind}</span> {s.summary}
+          </li>
+        ))}
+      </ol>
+      {Object.keys(a.expected).length > 0 && (
+        <p className="text-xs tabular-nums text-muted-foreground">
+          {Object.entries(a.expected)
+            .map(([name, count]) => `${name} ${count}`)
+            .join(" · ")}
+        </p>
+      )}
+      {a.decisionNote && <p className="whitespace-pre-line text-xs">{a.decisionNote}</p>}
+    </div>
   );
 }
 
-export function RecordsPanel({ taskId }: { taskId: string }) {
+/** 已入库语料；传 operationId 时只列这一次写入 */
+export function RecordsPanel({ taskId, operationId }: { taskId: string; operationId?: string }) {
   const t = useTranslations("IngestionTasks.records");
   const records = useInfiniteQuery({
-    queryKey: ["ingestion-task-records", taskId],
+    queryKey: ["ingestion-task-records", taskId, operationId],
     initialPageParam: "",
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     queryFn: async ({ pageParam }: { pageParam: string }) =>
       json<{ items: TaskRecord[]; nextCursor: string | null }>(
-        await fetch(`/api/admin/ingestion-tasks/${taskId}/records?${new URLSearchParams({ cursor: pageParam, limit: "50" })}`),
+        await fetch(`/api/admin/ingestion-tasks/${taskId}/records?${new URLSearchParams({ cursor: pageParam, limit: "50", ...(operationId ? { operation: operationId } : {}) })}`),
       ),
   });
   const items = records.data?.pages.flatMap((p) => p.items) ?? [];
@@ -239,26 +222,5 @@ export function RecordsPanel({ taskId }: { taskId: string }) {
         </Button>
       )}
     </div>
-  );
-}
-
-export function EventsPanel({ task }: { task: TaskDetail }) {
-  const t = useTranslations("IngestionTasks.events");
-  if (!task.events.length) return <p className="py-4 text-center text-sm text-muted-foreground">{t("empty")}</p>;
-  return (
-    <ol className="space-y-2 border-l pl-4">
-      {task.events.map((e) => (
-        <li key={e.id} className="text-sm">
-          <p>
-            {t.has(`types.${e.operationType}`) ? t(`types.${e.operationType}`) : e.operationType}
-            {e.operator && <span className="text-muted-foreground"> · {e.operator}</span>}
-          </p>
-          {e.note && <p className="whitespace-pre-line text-xs">{e.note}</p>}
-          <p className="text-xs text-muted-foreground">
-            <FormattedTime value={e.createdAt} />
-          </p>
-        </li>
-      ))}
-    </ol>
   );
 }

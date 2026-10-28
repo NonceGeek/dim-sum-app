@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 import { ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
 import { json } from "@/components/library-ops/ops-shared";
 import {
   AlertDialog,
@@ -22,14 +21,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { AgentChat } from "@/components/ingestion/agent-chat";
 import { AgentClient } from "@/components/ingestion/agent-client";
-import { ApprovalsPanel, EventsPanel, FilesPanel, RecordsPanel } from "@/components/ingestion/task-panels";
-import { ReportPanel } from "@/components/ingestion/report-panel";
 import { TaskForm } from "@/components/ingestion/task-form";
-import { FormattedTime, TaskStatusBadge } from "@/components/ingestion/task-shared";
+import { TaskTimeline } from "@/components/ingestion/task-timeline";
+import { TaskStatusBadge } from "@/components/ingestion/task-shared";
 import type { RunView, TaskDetail } from "@/components/ingestion/types";
-
-const PANELS = ["files", "approvals", "records", "report", "events"] as const;
-type Panel = (typeof PANELS)[number];
 
 export default function IngestionTaskPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -45,7 +40,6 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
   const target = useMemo(() => ({ turnId, toolCallId }), [turnId, toolCallId]);
   const client = useMemo(() => new AgentClient(id), [id]);
   const [run, setRun] = useState<RunView | null>(null);
-  const [panel, setPanel] = useState<Panel>("files");
   const [confirm, setConfirm] = useState<"cancel" | "complete" | null>(null);
 
   const detail = useQuery({
@@ -132,79 +126,8 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
           />
         </section>
 
-        <aside className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-lg border p-4 text-sm">
-            <dt className="text-muted-foreground">{t("fields.targetDatasetName")}</dt>
-            <dd className="break-all">{task.targetDatasetName}</dd>
-            <dt className="text-muted-foreground">{t("fields.targetIngestionType")}</dt>
-            <dd>{t(`create.ingestionType.${task.targetIngestionType}`)}</dd>
-            {task.targetContentAttribute && (
-              <>
-                <dt className="text-muted-foreground">{t("fields.targetContentAttribute")}</dt>
-                <dd>{t(`contentAttribute.${task.targetContentAttribute}`)}</dd>
-              </>
-            )}
-            <dt className="text-muted-foreground">{t("fields.modalities")}</dt>
-            <dd>{task.modalities.map((m) => t(`modality.${m}`)).join(" + ")}</dd>
-            <dt className="text-muted-foreground">{t("fields.assignee")}</dt>
-            <dd>{task.assigneeName}</dd>
-            <dt className="text-muted-foreground">{t("fields.createdAt")}</dt>
-            <dd>
-              {task.createdByName} · <FormattedTime value={task.createdAt} />
-            </dd>
-            {task.lead && (
-              <>
-                <dt className="text-muted-foreground">{t("fields.lead")}</dt>
-                <dd>
-                  <Link href="/admin/ingestion-leads" className="underline underline-offset-4">
-                    {task.lead.leadNo}
-                  </Link>
-                </dd>
-              </>
-            )}
-            {task.sourceCollectionMethod && (
-              <>
-                <dt className="col-span-2 mt-1 border-t pt-2 text-muted-foreground">
-                  {t("fields.sourceCollectionMethod")}
-                </dt>
-                <dd className="col-span-2 whitespace-pre-line">{task.sourceCollectionMethod}</dd>
-              </>
-            )}
-            {task.description && (
-              <>
-                <dt className="col-span-2 mt-1 border-t pt-2 text-muted-foreground">{t("fields.description")}</dt>
-                <dd className="col-span-2 whitespace-pre-line">{task.description}</dd>
-              </>
-            )}
-          </dl>
-
-          <div className="rounded-lg border">
-            <div role="tablist" className="flex border-b p-1">
-              {PANELS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  role="tab"
-                  aria-selected={panel === p}
-                  onClick={() => setPanel(p)}
-                  className={cn(
-                    "flex-1 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground",
-                    panel === p && "bg-accent font-medium text-foreground",
-                  )}
-                >
-                  {t(`panels.${p}`)}
-                  {p === "files" && task.files.length > 0 && ` ${task.files.length}`}
-                </button>
-              ))}
-            </div>
-            <div role="tabpanel" className="p-3">
-              {panel === "files" && <FilesPanel task={task} />}
-              {panel === "approvals" && <ApprovalsPanel task={task} />}
-              {panel === "records" && <RecordsPanel taskId={task.id} />}
-              {panel === "report" && <ReportPanel task={task} />}
-              {panel === "events" && <EventsPanel task={task} />}
-            </div>
-          </div>
+        <aside className="min-h-0 lg:overflow-y-auto">
+          <TaskTimeline task={task} run={run} />
         </aside>
       </div>
 

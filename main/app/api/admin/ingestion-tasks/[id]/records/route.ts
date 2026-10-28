@@ -6,7 +6,7 @@ import { AccessError } from "@/lib/services/submission-access";
 import { PRIVATE_HEADERS, withLibraryOps } from "@/lib/library/ops-access";
 import { listTaskRecords } from "@/lib/ingestion/service";
 
-/** GET /api/admin/ingestion-tasks/:id/records?cursor=&limit= */
+/** GET /api/admin/ingestion-tasks/:id/records?cursor=&limit=&operation= */
 export async function GET(req: NextRequest, context: AppRouteContext) {
   return withLibraryOps(req, async (access) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));

@@ -1671,13 +1671,6 @@
       "cancelConfirm": "取消后 Agent 会停止执行，任务不能再继续；已入库的语料和历史对话都会保留。",
       "completeConfirm": "确认这个任务的入库工作已全部完成？完成后不能再发送消息或上传文件。"
     },
-    "panels": {
-      "files": "文件",
-      "approvals": "审批",
-      "records": "已入库",
-      "report": "报告",
-      "events": "动态"
-    },
     "report": {
       "loading": "正在加载报告…",
       "none": "本任务没有入库报告（没有写入语料）。",
@@ -1734,19 +1727,31 @@
       "empty": "还没有入库语料",
       "more": "加载更多"
     },
-    "events": {
-      "empty": "暂无动态",
-      "types": {
-        "created": "创建任务",
-        "updated": "修改草稿",
-        "session_started": "开始对话",
+    "timeline": {
+      "config": "任务配置",
+      "created": "创建任务",
+      "files": "上传 {count} 个文件",
+      "noFiles": "还没有上传文件",
+      "filesFailed": "{count} 个失败",
+      "session": "开始 Agent 对话",
+      "question": "Agent 提问 · {count} 个问题",
+      "questionStatus": {
+        "pending": "等你回答",
+        "answered": "已回答",
+        "cancelled": "未回答 · 已取消"
+      },
+      "write": "写入 {count} 条",
+      "approvedBy": "{name} 批准",
+      "report": "报告 v{version} · {kind}",
+      "end": {
         "completed": "完成任务",
-        "cancelled": "取消任务",
-        "file_uploaded": "上传文件",
-        "file_upload_failed": "文件上传失败",
-        "approval_authorized": "批准入库提案",
-        "approval_denied": "拒绝入库提案"
-      }
+        "cancelled": "取消任务"
+      },
+      "working": "Agent 处理中",
+      "error": "Agent 出错停下了",
+      "errorHint": "在对话里点「继续」让它接着做",
+      "next": "完成任务 · 生成正式报告",
+      "viewInChat": "在对话中查看"
     },
     "chat": {
       "loading": "加载会话",

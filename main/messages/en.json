@@ -1670,13 +1670,6 @@
       "cancelConfirm": "The agent will stop and the job can't continue. Ingested records and the conversation are kept.",
       "completeConfirm": "Is all ingestion work for this job done? You won't be able to send messages or upload files afterwards."
     },
-    "panels": {
-      "files": "Files",
-      "approvals": "Approvals",
-      "records": "Ingested",
-      "report": "Report",
-      "events": "Activity"
-    },
     "report": {
       "loading": "Loading report…",
       "none": "This task has no ingestion report (nothing was inserted).",
@@ -1733,19 +1726,31 @@
       "empty": "No ingested records yet",
       "more": "Load more"
     },
-    "events": {
-      "empty": "No activity",
-      "types": {
-        "created": "Created job",
-        "updated": "Edited draft",
-        "session_started": "Started conversation",
-        "completed": "Completed job",
-        "cancelled": "Cancelled job",
-        "file_uploaded": "Uploaded file",
-        "file_upload_failed": "File upload failed",
-        "approval_authorized": "Approved proposal",
-        "approval_denied": "Denied proposal"
-      }
+    "timeline": {
+      "config": "Task settings",
+      "created": "Task created",
+      "files": "Uploaded {count, plural, one {# file} other {# files}}",
+      "noFiles": "No files uploaded yet",
+      "filesFailed": "{count} failed",
+      "session": "Agent conversation started",
+      "question": "Agent asked {count, plural, one {# question} other {# questions}}",
+      "questionStatus": {
+        "pending": "Waiting for your answer",
+        "answered": "Answered",
+        "cancelled": "Unanswered · cancelled"
+      },
+      "write": "Wrote {count, plural, one {# record} other {# records}}",
+      "approvedBy": "Approved by {name}",
+      "report": "Report v{version} · {kind}",
+      "end": {
+        "completed": "Task completed",
+        "cancelled": "Task cancelled"
+      },
+      "working": "Agent is working",
+      "error": "The agent stopped with an error",
+      "errorHint": "Click Continue in the chat to resume",
+      "next": "Complete task · final report",
+      "viewInChat": "View in chat"
     },
     "chat": {
       "loading": "Loading conversation",

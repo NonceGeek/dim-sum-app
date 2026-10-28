@@ -369,6 +369,32 @@ function serializeApproval(
     settledAt: approval.settled_at?.toISOString() ?? null,
     expiresAt: approval.expires_at.toISOString(),
     createdAt: approval.created_at.toISOString(),
+    turnId: approval.turn_id,
+    toolCallId: approval.tool_call_id,
+  };
+}
+
+/** Agent 提问的快照（corpus_agent_questions）：问题标题与每题选择 */
+type QuestionSnapshot = { id: string; header: string }[];
+type AnswerSnapshot = { question_id: string; selected: string[]; other?: string }[];
+
+function serializeQuestion(row: Prisma.corpus_agent_questionsGetPayload<object>) {
+  const questions = (row.questions as QuestionSnapshot | null) ?? [];
+  const answers = row.answers as AnswerSnapshot | null;
+  return {
+    id: row.id,
+    toolCallId: row.tool_call_id,
+    turnId: row.turn_id,
+    headers: questions.map((q) => q.header),
+    answers: answers
+      ? questions.map((q) => {
+          const a = answers.find((item) => item.question_id === q.id);
+          return [...(a?.selected ?? []), ...(a?.other ? [a.other] : [])].join("、");
+        })
+      : null,
+    status: row.status as "pending" | "answered" | "cancelled",
+    createdAt: row.created_at.toISOString(),
+    resolvedAt: row.resolved_at?.toISOString() ?? null,
   };
 }
 
@@ -584,24 +610,50 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
     include: {
       run: { select: runSummarySelect },
       files: { orderBy: [{ path: "asc" }] },
-      events: { orderBy: [{ created_at: "desc" }, { id: "desc" }], take: 50 },
+      // 上传信息由 files 提供；逐文件的上传事件会占满条数、挤掉开始对话等节点
+      events: {
+        where: { operation_type: { notIn: ["file_uploaded", "file_upload_failed"] } },
+        orderBy: [{ created_at: "desc" }, { id: "desc" }],
+        take: 50,
+      },
       lead: { select: { id: true, lead_no: true } },
+      operations: {
+        select: {
+          id: true,
+          approval_id: true,
+          approved_by: true,
+          approved_at: true,
+          committed_at: true,
+          turn_id: true,
+          tool_call_id: true,
+          _count: { select: { records: true } },
+        },
+        orderBy: [{ committed_at: "asc" }],
+      },
     },
   });
-  const { run, files, events, lead, ...row } = task;
-  const approvals = run
-    ? await prisma.corpus_agent_approvals.findMany({
-        where: { run_id: run.id },
-        orderBy: [{ created_at: "desc" }],
-        take: 20,
-      })
-    : [];
+  const { run, files, events, lead, operations, ...row } = task;
+  const [approvals, questions] = run
+    ? await Promise.all([
+        prisma.corpus_agent_approvals.findMany({
+          where: { run_id: run.id },
+          orderBy: [{ created_at: "desc" }],
+          take: 20,
+        }),
+        prisma.corpus_agent_questions.findMany({
+          where: { run_id: run.id },
+          orderBy: [{ created_at: "asc" }],
+          take: 20,
+        }),
+      ])
+    : [[], []];
   const names = await userNames([
     row.assignee_id,
     row.created_by,
     ...files.map((f) => f.uploaded_by),
     ...events.flatMap((e) => (e.operator_id ? [e.operator_id] : [])),
     ...approvals.flatMap((a) => (a.decided_by ? [a.decided_by] : [])),
+    ...operations.map((o) => o.approved_by),
   ]);
   return {
     ...serializeTask(row, run, names),
@@ -629,6 +681,17 @@ export async function getTaskDetail(access: LibraryOpsAccess, id: bigint) {
       note: e.note,
       payload: e.payload,
       createdAt: e.created_at.toISOString(),
+    })),
+    questions: questions.map(serializeQuestion),
+    operations: operations.map((o) => ({
+      id: o.id,
+      approvalId: o.approval_id,
+      approvedByName: names[o.approved_by] ?? o.approved_by,
+      approvedAt: o.approved_at.toISOString(),
+      committedAt: o.committed_at.toISOString(),
+      recordCount: o._count.records,
+      turnId: o.turn_id,
+      toolCallId: o.tool_call_id,
     })),
   };
 }
@@ -673,10 +736,11 @@ export async function listTaskRecords(
 ) {
   await loadTask(access, id);
   const cursor = params.get("cursor");
+  const operation = params.get("operation");
   const limit = Math.min(100, Math.max(1, Number(params.get("limit")) || 20));
   const rows = await prisma.ingestion_records.findMany({
     where: {
-      operation: { task_id: id },
+      operation: { task_id: id, ...(operation ? { id: operation } : {}) },
       ...(cursor && /^\d+$/.test(cursor) ? { corpus_id: { gt: BigInt(cursor) } } : {}),
     },
     include: {

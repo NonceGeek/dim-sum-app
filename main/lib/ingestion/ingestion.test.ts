@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { jwtVerify } from "jose";
+import type { TaskApproval } from "@/components/ingestion/types";
 import { formatSerial } from "@/lib/library/application-workflow";
 import { signSessionToken } from "./agent";
 import { displayStatus } from "./display-status";
 import { canUploadFiles, inputPath, workspacePrefix } from "./tasks";
+import { buildTimeline } from "./timeline";
 import {
   defaultTaskTitle,
   isDraft,
@@ -90,4 +92,95 @@ test("session tokens carry the user and task for the agent", async () => {
   await assert.rejects(
     jwtVerify(token, new TextEncoder().encode("x".repeat(32)), { audience: "corpus-ingest-agent" }),
   );
+});
+
+/* ---------- 右栏时间线 ---------- */
+
+const at = (minute: number) => new Date(Date.UTC(2026, 9, 22, 11, minute)).toISOString();
+const baseTask = {
+  createdAt: at(0),
+  createdByName: "dev",
+  status: "IN_PROGRESS" as const,
+  closed: false,
+  completedAt: null,
+  cancelledAt: null,
+  files: [
+    { id: "f2", path: "input/b.wav", name: "b.wav", size: 1, status: "UPLOADED" as const, uploadedBy: "dev", createdAt: at(3) },
+    { id: "f1", path: "input/a.tsv", name: "a.tsv", size: 1, status: "FAILED" as const, uploadedBy: "dev", createdAt: at(2) },
+  ],
+  events: [{ id: "e1", operationType: "session_started", operator: "dev", note: null, createdAt: at(5) }],
+  approvals: [],
+  questions: [],
+  operations: [],
+};
+const question = (status: "pending" | "answered" | "cancelled", minute: number) => ({
+  id: `q${minute}`,
+  toolCallId: `call-${minute}`,
+  turnId: null,
+  headers: ["重复数据"],
+  answers: status === "answered" ? ["仍新建"] : null,
+  status,
+  createdAt: at(minute),
+  resolvedAt: null,
+});
+const kinds = (nodes: ReturnType<typeof buildTimeline>) => nodes.map((n) => `${n.kind}:${n.state}`);
+
+test("timeline orders milestones by time and ends with the next step while open", () => {
+  const nodes = buildTimeline({ ...baseTask, questions: [question("pending", 30)] }, { status: "waiting_input", last_error: null }, null);
+  assert.deepEqual(kinds(nodes), ["created:done", "files:done", "session:done", "question:now", "next:todo"]);
+  const files = nodes[1];
+  assert.ok(files.kind === "files" && files.at === at(2) && files.count === 2 && files.failed === 1);
+});
+
+test("timeline shows the agent working or failing after the last milestone", () => {
+  assert.deepEqual(kinds(buildTimeline(baseTask, { status: "running", last_error: null }, null)).slice(-2), ["working:now", "next:todo"]);
+  const failed = buildTimeline(baseTask, { status: "failed", last_error: "boom" }, null);
+  const error = failed.at(-2);
+  assert.ok(error?.kind === "error" && error.message === "boom" && error.state === "now");
+});
+
+test("timeline marks a pending approval as now and a denied one as stopped", () => {
+  const approval = (id: string, status: TaskApproval["status"], minute: number) => ({
+    id, proposalId: id, summary: null, steps: [], expected: {}, status, decidedByName: null, decidedAt: null,
+    decisionNote: null, settledAt: null, expiresAt: at(59), createdAt: at(minute), turnId: null, toolCallId: null,
+  });
+  // 审批接口按时间倒序返回
+  const nodes = buildTimeline({ ...baseTask, approvals: [approval("b", "pending", 40), approval("a", "denied", 20)] }, null, null);
+  assert.deepEqual(kinds(nodes).slice(3), ["approval:stopped", "approval:now", "next:todo"]);
+});
+
+test("cancelled tasks end on the cancel event with unanswered questions stopped", () => {
+  const nodes = buildTimeline(
+    {
+      ...baseTask,
+      status: "CANCELLED",
+      closed: true,
+      cancelledAt: at(50),
+      events: [{ id: "e2", operationType: "cancelled", operator: "ops", note: null, createdAt: at(50) }, ...baseTask.events],
+      questions: [question("cancelled", 30)],
+    },
+    { status: "cancelled", last_error: null },
+    { version: 1, kind: "final", status: "ready", createdAt: at(51) },
+  );
+  assert.deepEqual(kinds(nodes), ["created:done", "files:done", "session:done", "question:stopped", "end:stopped", "report:done"]);
+  const end = nodes[4];
+  assert.ok(end.kind === "end" && end.by === "ops" && end.outcome === "cancelled");
+});
+
+test("completed tasks list every write and have no next step", () => {
+  const write = (id: string, minute: number) => ({
+    id, approvalId: id, approvedByName: "dev", approvedAt: at(minute - 1), committedAt: at(minute), recordCount: 10, turnId: null, toolCallId: null,
+  });
+  const nodes = buildTimeline(
+    { ...baseTask, status: "COMPLETED", closed: true, completedAt: at(58), questions: [question("answered", 10)], operations: [write("w1", 30), write("w2", 45)] },
+    { status: "completed", last_error: null },
+    null,
+  );
+  assert.deepEqual(kinds(nodes).slice(3), ["question:done", "write:done", "write:done", "end:done"]);
+});
+
+test("tasks without files or a session still start with creation and files", () => {
+  const nodes = buildTimeline({ ...baseTask, files: [], events: [] }, null, null);
+  assert.deepEqual(kinds(nodes), ["created:done", "files:done", "next:todo"]);
+  assert.ok(nodes[1].kind === "files" && nodes[1].at === at(0) && nodes[1].count === 0);
 });

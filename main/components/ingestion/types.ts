@@ -49,6 +49,32 @@ export type TaskApproval = {
   settledAt: string | null;
   expiresAt: string;
   createdAt: string;
+  turnId: string | null;
+  toolCallId: string | null;
+};
+
+/** Agent 的一次提问；answers 与 headers 一一对应，未回答时为 null */
+export type TaskQuestion = {
+  id: string;
+  toolCallId: string;
+  turnId: string | null;
+  headers: string[];
+  answers: string[] | null;
+  status: "pending" | "answered" | "cancelled";
+  createdAt: string;
+  resolvedAt: string | null;
+};
+
+/** 一次已批准提案的写入 */
+export type TaskOperation = {
+  id: string;
+  approvalId: string;
+  approvedByName: string;
+  approvedAt: string;
+  committedAt: string;
+  recordCount: number;
+  turnId: string | null;
+  toolCallId: string | null;
 };
 
 export type TaskFile = {
@@ -78,6 +104,8 @@ export type TaskDetail = TaskSummary & {
   approvals: TaskApproval[];
   files: TaskFile[];
   events: TaskEvent[];
+  questions: TaskQuestion[];
+  operations: TaskOperation[];
 };
 
 export type TaskRecord = {
