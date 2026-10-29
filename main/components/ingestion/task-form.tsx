@@ -60,6 +60,8 @@ const MEDIA_ACCEPT: Record<Exclude<TaskModality, "text">, string> = {
   image: "image/*",
 };
 const TEXT_ACCEPT = ".xls,.xlsx,.csv,.doc,.docx,.pdf,.txt,.json,.zip";
+/** 媒体也可以打包成 zip 上传，提示文案里不单独列出 */
+const MEDIA_ARCHIVE_ACCEPT = ".zip";
 
 /** 语料集公开资料用的模态词表与任务不同：image_video 对应视频与图片 */
 function profileToTask(values: string[]) {
@@ -422,7 +424,7 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
                       ? t("create.mediaDropHint", { types: mediaModalities.map((m) => t(`modality.${m}`)).join("、") })
                       : t("create.mediaDropDisabled")
                   }
-                  accept={mediaModalities.map((m) => MEDIA_ACCEPT[m]).join(",")}
+                  accept={[...mediaModalities.map((m) => MEDIA_ACCEPT[m]), MEDIA_ARCHIVE_ACCEPT].join(",")}
                   disabled={!mediaModalities.length}
                   folder
                   onFiles={(files) => addFiles("media", files)}
