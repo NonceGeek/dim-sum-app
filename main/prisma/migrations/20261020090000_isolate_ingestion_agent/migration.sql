@@ -102,7 +102,7 @@ grant update (status, updated_at, completed_at, cancelled_at) on ingestion_tasks
 grant insert on ingestion_task_events to corpus_ingest_agent;
 grant select, insert on ingestion_operations, ingestion_records to corpus_ingest_agent;
 
-grant select (id, status, "isSystemAdmin", "isSuperAdmin") on "User" to corpus_ingest_agent;
+grant select (id, name, status, "isSystemAdmin", "isSuperAdmin") on "User" to corpus_ingest_agent;
 grant select (user_id, active, global_actions) on corpus_collection_operator_roles to corpus_ingest_agent;
 
 grant select, insert, update on cantonese_categories, cantonese_corpus_all, corpus_category,
