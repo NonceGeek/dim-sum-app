@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart, type UIMessage } from "ai";
-import { Loader2Icon, SendIcon } from "lucide-react";
+import { DownloadIcon, Loader2Icon, SendIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -44,6 +44,8 @@ type Props = {
   /** 尚未开始对话时自动发出标准指令（从新建表单点「开始智能清洗」进入） */
   autoStart?: boolean;
   onAutoStarted?: () => void;
+  /** 入库已写完且报告草稿是最新的：停下时给出下载报告与完成任务，而不是「继续」 */
+  wrapUp?: { reportHref: string; completeBlocker: string | null; onComplete: () => void };
 };
 
 export function AgentChat(props: Props) {
@@ -88,6 +90,7 @@ function ChatInner({
   onRun,
   autoStart,
   onAutoStarted,
+  wrapUp,
   history,
   initialCursor,
 }: Props & { history: UIMessage[]; initialCursor: string | null }) {
@@ -399,7 +402,27 @@ function ChatInner({
             </Button>
           </div>
         ) : null}
-        {paused ? (
+        {paused && wrapUp ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm">
+            <p className="min-w-0 flex-1">{t("wrapUpHint")}</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" asChild>
+                <a href={wrapUp.reportHref}>
+                  <DownloadIcon className="size-4" />
+                  {t("downloadReport")}
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                disabled={!!wrapUp.completeBlocker}
+                title={wrapUp.completeBlocker ?? undefined}
+                onClick={wrapUp.onComplete}
+              >
+                {t("completeTask")}
+              </Button>
+            </div>
+          </div>
+        ) : paused ? (
           <div className="flex items-center gap-3 rounded-xl border p-3 text-sm">
             <p className="min-w-0 flex-1">{t("pausedHint")}</p>
             <Button size="sm" onClick={() => void sendMessage({ text: CONTINUE_INSTRUCTION })}>

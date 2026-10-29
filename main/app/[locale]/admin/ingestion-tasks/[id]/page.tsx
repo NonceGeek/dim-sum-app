@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AgentChat } from "@/components/ingestion/agent-chat";
 import { AgentClient } from "@/components/ingestion/agent-client";
+import { reportDownloadHref, useTaskReports } from "@/components/ingestion/report-panel";
 import { TaskForm } from "@/components/ingestion/task-form";
 import { TaskTimeline } from "@/components/ingestion/task-timeline";
 import { TaskStatusBadge } from "@/components/ingestion/task-shared";
@@ -46,6 +47,7 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
     queryKey: ["ingestion-task", id],
     queryFn: async () => json<TaskDetail>(await fetch(`/api/admin/ingestion-tasks/${id}`)),
   });
+  const reports = useTaskReports(id);
 
   // Agent 推送的状态变化（开始对话、待审批、写入完成、结束）同步到本页的任务信息与入库记录
   const runKey = run && `${run.status}:${run.approvals.map((a) => `${a.id}=${a.status}`).join(",")}`;
@@ -82,6 +84,20 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
   // 已有会话时以 Agent 的判断为准（执行中、写入结果未知时不能取消）
   const cancelBlocker = run ? (run.can_cancel ? null : run.cancel_blocker) : null;
   const completeBlocker = run ? (run.can_complete ? null : run.complete_blocker) : t("completeNeedsRun");
+  // 最新草稿晚于最后一次写入时，入库和报告都已收尾，对话区的下一步换成下载报告 + 完成任务
+  const draft = reports.data?.reports[0];
+  const lastWriteAt = task.operations.reduce((max, o) => (o.committedAt > max ? o.committedAt : max), "");
+  const wrapUp =
+    draft?.kind === "draft" &&
+    (draft.status === "ready" || draft.status === "ready_without_narrative") &&
+    draft.formats.includes("md") &&
+    draft.createdAt >= lastWriteAt
+      ? {
+          reportHref: reportDownloadHref(id, draft.version, "md"),
+          completeBlocker,
+          onComplete: () => setConfirm("complete"),
+        }
+      : undefined;
 
   return (
     <div className="flex flex-col gap-4 lg:h-full">
@@ -121,6 +137,7 @@ export default function IngestionTaskPage({ params }: { params: Promise<{ id: st
             closed={task.closed}
             target={target}
             onRun={setRun}
+            wrapUp={wrapUp}
             autoStart={autoStart}
             onAutoStarted={() => router.replace(`/admin/ingestion-tasks/${id}`)}
           />

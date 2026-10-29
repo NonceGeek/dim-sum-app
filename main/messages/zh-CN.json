@@ -1770,6 +1770,9 @@
       "start": "开始清洗",
       "pausedHint": "Agent 已暂停，等待下一步指示。",
       "continue": "继续",
+      "wrapUpHint": "入库与报告草稿均已完成。请下载报告核对，需要修改就在下方告诉 Agent；确认无误后完成任务，最新草稿将成为正式报告。",
+      "downloadReport": "下载报告",
+      "completeTask": "完成任务",
       "interrupted": "此回复已中断",
       "working": "执行中",
       "compaction": {

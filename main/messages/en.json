@@ -1769,6 +1769,9 @@
       "start": "Start cleaning",
       "pausedHint": "The agent has paused and is waiting for the next step.",
       "continue": "Continue",
+      "wrapUpHint": "Ingestion and the draft report are done. Download the report to review it, or tell the agent below what to change. When it looks right, complete the task and the latest draft becomes the final report.",
+      "downloadReport": "Download report",
+      "completeTask": "Complete task",
       "interrupted": "This reply was interrupted",
       "working": "Working",
       "compaction": {

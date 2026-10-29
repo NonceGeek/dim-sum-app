@@ -58,6 +58,9 @@ function Markdown({ text }: { text: string }) {
   );
 }
 
+export const reportDownloadHref = (taskId: string, version: number, format: string) =>
+  `/api/admin/ingestion-tasks/${taskId}/report/download?${new URLSearchParams({ version: String(version), format })}`;
+
 /** 任务的报告版本列表（新的在前）；时间线与报告面板共用同一个查询 */
 export function useTaskReports(taskId: string) {
   return useQuery({
@@ -82,8 +85,7 @@ export function ReportPanel({ task }: { task: TaskDetail }) {
   const current = view.data?.current;
   const readable = current && reports.find((r) => r.version === current.version);
   const generating = reports.some((r) => r.status === "generating");
-  const download = (version: number, format: string) =>
-    `/api/admin/ingestion-tasks/${task.id}/report/download?${new URLSearchParams({ version: String(version), format })}`;
+  const download = (version: number, format: string) => reportDownloadHref(task.id, version, format);
 
   return (
     <div className="space-y-3 text-sm">
