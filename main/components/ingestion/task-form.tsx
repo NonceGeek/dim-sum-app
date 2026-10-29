@@ -40,12 +40,14 @@ import type { TaskDetail, TaskFile } from "./types";
 type Dataset = { name: string; nickname: string | null; contentAttribute: string; profileModalities: string[] };
 type DatasetOverview = { name: string; count: number; mediaTypes: string[] };
 
-/** 从入库待办发起时由待办页带入 */
+/** 从入库待办发起时按待办预填；来源说明和媒体类型取自贡献申请 */
 export type LeadPrefill = {
   id: string;
   leadNo: string;
   datasetName: string;
   ingestionType: string;
+  sourceCollectionMethod: string;
+  modalities: string[];
 };
 
 /** 选中或拖入的文件，path 为相对路径（来自文件夹时带目录） */
@@ -86,11 +88,15 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
   const [contentAttribute, setContentAttribute] = useState<ContentAttribute>(
     task?.targetContentAttribute ?? "oral",
   );
-  const [modalities, setModalities] = useState<TaskModality[]>(task?.modalities ?? ["text"]);
+  const [modalities, setModalities] = useState<TaskModality[]>(
+    task?.modalities ?? normalizeModalities(lead?.modalities ?? []),
+  );
   const [title, setTitle] = useState(task?.title ?? "");
   // 标题未手动改过时跟随语料集名生成
   const [titleEdited, setTitleEdited] = useState(!!task);
-  const [source, setSource] = useState(task?.sourceCollectionMethod ?? "");
+  const [source, setSource] = useState(task?.sourceCollectionMethod ?? lead?.sourceCollectionMethod ?? "");
+  // 从待办创建的任务沿用贡献申请里的来源说明，不能修改（服务端同样以申请为准）
+  const sourceLeadNo = lead?.leadNo ?? task?.lead?.leadNo;
   const [note, setNote] = useState(task?.description ?? "");
   const [taskId, setTaskId] = useState(task?.id);
   const [uploads, setUploads] = useState<Upload[]>([]);
@@ -453,14 +459,27 @@ export function TaskForm({ task, lead }: { task?: TaskDetail; lead?: LeadPrefill
                   }}
                 />
               </Field>
-              <Field label={t("fields.sourceCollectionMethod")} htmlFor="task-source" required>
-                <Input
-                  id="task-source"
-                  maxLength={2000}
-                  placeholder={t("create.sourcePlaceholder")}
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                />
+              <Field
+                label={t("fields.sourceCollectionMethod")}
+                htmlFor={sourceLeadNo ? undefined : "task-source"}
+                required
+              >
+                {sourceLeadNo ? (
+                  <>
+                    <p className="whitespace-pre-line rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                      {source}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{t("create.sourceFromLead", { no: sourceLeadNo })}</p>
+                  </>
+                ) : (
+                  <Input
+                    id="task-source"
+                    maxLength={2000}
+                    placeholder={t("create.sourcePlaceholder")}
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                  />
+                )}
               </Field>
             </div>
             <Field label={t("fields.description")} htmlFor="task-note">

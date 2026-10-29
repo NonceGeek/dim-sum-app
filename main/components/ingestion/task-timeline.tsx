@@ -83,7 +83,10 @@ function TaskConfig({ task }: { task: TaskDetail }) {
           <>
             <dt className="text-muted-foreground">{t("fields.lead")}</dt>
             <dd>
-              <Link href="/admin/ingestion-leads" className="underline underline-offset-4">
+              <Link
+                href={`/admin/ingestion-leads?${new URLSearchParams({ lead: task.lead.id })}`}
+                className="underline underline-offset-4"
+              >
                 {task.lead.leadNo}
               </Link>
             </dd>

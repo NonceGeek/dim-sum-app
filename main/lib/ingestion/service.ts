@@ -142,6 +142,11 @@ async function nextTaskNo(tx: Tx, now: Date) {
   return formatSerial("IT", now, count + 1);
 }
 
+/** 从入库待办创建的任务，来源说明固定取贡献申请里填写的，不接受表单传入 */
+const leadSourceSelect = {
+  application: { select: { source_collection_method: true } },
+} satisfies Prisma.ingestion_leadsInclude;
+
 /**
  * 建任务（草稿），创建人即负责人；带 leadId 时从入库待办创建并回写 ingestion_task_id。
  */
@@ -151,11 +156,14 @@ export async function createTask(access: LibraryOpsAccess, body: unknown) {
   for (let attempt = 0; ; attempt++) {
     try {
       return await prisma.$transaction(async (tx) => {
-        let lead: { id: bigint } | null = null;
+        let lead: { id: bigint; application: { source_collection_method: string } } | null = null;
         if (input.leadId) {
           const leadId = BigInt(input.leadId);
           await tx.$queryRaw`SELECT id FROM ingestion_leads WHERE id = ${leadId} FOR UPDATE`;
-          const found = await tx.ingestion_leads.findUnique({ where: { id: leadId } });
+          const found = await tx.ingestion_leads.findUnique({
+            where: { id: leadId },
+            include: leadSourceSelect,
+          });
           if (!found) throw new AccessError(404, "待办不存在");
           if (!access.isAdmin && found.assignee_id !== access.userId)
             throw new AccessError(403, "只有待办被指派人可以创建入库任务");
@@ -171,6 +179,7 @@ export async function createTask(access: LibraryOpsAccess, body: unknown) {
           data: {
             task_no: taskNo,
             ...taskConfigData(input),
+            ...(lead && { source_collection_method: lead.application.source_collection_method }),
             assignee_id: access.userId,
             created_by: access.userId,
             workspace_prefix: workspacePrefix(taskNo),
@@ -205,9 +214,17 @@ export async function updateTask(access: LibraryOpsAccess, id: bigint, body: unk
     });
     if (!isDraft(task.status, !!run)) throw new AccessError(409, "任务已开始，不能再修改配置");
     await assertDatasetTarget(tx, input.targetIngestionType, input.targetDatasetName);
+    const lead = await tx.ingestion_leads.findUnique({
+      where: { ingestion_task_id: id },
+      include: leadSourceSelect,
+    });
     await tx.ingestion_tasks.update({
       where: { id },
-      data: { ...taskConfigData(input), updated_at: new Date() },
+      data: {
+        ...taskConfigData(input),
+        ...(lead && { source_collection_method: lead.application.source_collection_method }),
+        updated_at: new Date(),
+      },
     });
     await taskEvent(tx, access, task, "updated");
   });

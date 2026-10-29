@@ -186,6 +186,8 @@
         "CLOSED": "Closed"
       },
       "empty": "No ingestion tasks",
+      "showingOne": "Showing lead {no} only",
+      "showAll": "Show all leads",
       "from": "From {no}",
       "closingNote": "Closing note",
       "meta": "Owner {assignee} · created by {creator} at {time}",
@@ -1609,6 +1611,8 @@
       "title": "New ingestion job",
       "editTitle": "Edit ingestion job draft",
       "fromLead": "Created from ingestion lead {no}",
+      "leadNotFound": "Ingestion lead not found or not visible to you",
+      "sourceFromLead": "From the contribution application of ingestion lead {no}; cannot be changed",
       "cardTitle": "Dataset and ingestion settings",
       "requiredHint": "Fields marked <mark>*</mark> are required",
       "steps": {

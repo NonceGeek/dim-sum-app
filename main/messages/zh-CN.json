@@ -186,6 +186,8 @@
         "CLOSED": "已关闭"
       },
       "empty": "暂无入库待办",
+      "showingOne": "只显示待办 {no}",
+      "showAll": "查看全部待办",
       "from": "来自 {no}",
       "closingNote": "关闭说明",
       "meta": "责任运营 {assignee} · 由 {creator} 于 {time} 创建",
@@ -1610,6 +1612,8 @@
       "title": "新建入库任务",
       "editTitle": "编辑入库任务草稿",
       "fromLead": "从入库待办 {no} 创建",
+      "leadNotFound": "入库待办不存在或无权查看",
+      "sourceFromLead": "来自入库待办 {no} 的贡献申请，不能修改",
       "cardTitle": "语料集与入库配置",
       "requiredHint": "标记 <mark>*</mark> 的项目为必填项",
       "steps": {
