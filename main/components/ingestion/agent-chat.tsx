@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { AgentClient } from "./agent-client";
 import { ApprovalCard } from "./approval-card";
+import { type ApprovalResultData, ApprovalResultEvent } from "./approval-result";
 import {
   ActivityGroup,
   type ActivityItem,
@@ -582,6 +583,8 @@ function MessageParts({
         </MessageResponse>
       );
     }
+    if (part.type === "data-approval-result")
+      return <ApprovalResultEvent key={key} data={part.data as ApprovalResultData} />;
     if (!isToolUIPart(part)) return null;
     if (getToolName(part) === "delegate_tasks") return <SubtaskCard key={key} output={part.output} />;
     const request = questions.get(part.toolCallId);

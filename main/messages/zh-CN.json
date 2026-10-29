@@ -1817,6 +1817,16 @@
       "execute": "执行写入",
       "continueDenied": "按拒绝继续"
     },
+    "approvalResult": {
+      "status": {
+        "approved": "已批准并写入",
+        "denied": "已拒绝",
+        "failed": "写入失败"
+      },
+      "alreadyApplied": "目标数据已存在",
+      "idRange": "语料 #{from}–#{to}",
+      "note": "备注：{note}"
+    },
     "question": {
       "title": "需要你的决定",
       "defaultHeader": "问题 {n}",

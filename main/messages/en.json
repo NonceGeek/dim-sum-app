@@ -1816,6 +1816,16 @@
       "execute": "Apply write",
       "continueDenied": "Continue with denial"
     },
+    "approvalResult": {
+      "status": {
+        "approved": "Approved and written",
+        "denied": "Denied",
+        "failed": "Write failed"
+      },
+      "alreadyApplied": "data already existed",
+      "idRange": "corpus #{from}–#{to}",
+      "note": "Note: {note}"
+    },
     "question": {
       "title": "Your decision is needed",
       "defaultHeader": "Question {n}",
