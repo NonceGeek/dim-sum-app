@@ -1,5 +1,6 @@
 import { SignJWT } from "jose";
 import { AccessError } from "@/lib/services/submission-access";
+import { agentSessionHeader } from "./agent-session";
 
 /**
  * 入库 Agent 的会话 token（HS256，与 Agent 共享 CORPUS_AGENT_SESSION_SECRET）。
@@ -45,7 +46,11 @@ export async function callAgent<T>(
       `${agentBaseUrl()}/v1/tasks/${encodeURIComponent(claims.taskId)}${path}`,
       {
         method: init.method ?? "GET",
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          ...agentSessionHeader(claims.taskId),
+        },
         cache: "no-store",
         signal: AbortSignal.timeout(20_000),
       },

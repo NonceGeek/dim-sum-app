@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai";
 import { json } from "@/components/library-ops/ops-shared";
+import { agentSessionHeader } from "@/lib/ingestion/agent-session";
 import type { RunView } from "./types";
 
 type Session = { token: string; expiresAt: string; agentBaseUrl: string };
@@ -43,7 +44,7 @@ export class AgentClient {
     const session = await this.current(force);
     return {
       url: `${session.agentBaseUrl}/v1/tasks/${encodeURIComponent(this.taskId)}${path}`,
-      headers: { authorization: `Bearer ${session.token}` },
+      headers: { authorization: `Bearer ${session.token}`, ...agentSessionHeader(this.taskId) },
     };
   }
 
