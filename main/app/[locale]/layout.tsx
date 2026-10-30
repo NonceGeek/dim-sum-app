@@ -5,6 +5,7 @@ import { routing } from '@/i18n/routing';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { Providers } from '../providers';
 import { Toaster } from '@/components/ui/sonner';
+import { PageViewTracker } from '@/components/analytics/page-view-tracker';
 
 type Props = {
   children: React.ReactNode;
@@ -29,6 +30,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <Providers>
         <ConditionalLayout>{children}</ConditionalLayout>
         <Toaster />
+        <PageViewTracker />
       </Providers>
     </NextIntlClientProvider>
   );

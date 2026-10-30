@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
+import { getAuthSession, hasPlatformAdminAccess } from "@/lib/auth";
 import {
   CorpusPermission,
   PermissionAction,
@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   try {
     const session = await getAuthSession();
-    if (!session?.user?.isSystemAdmin) {
+    if (!(await hasPlatformAdminAccess(session?.user?.id))) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 },
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getAuthSession();
-    if (!session?.user?.isSystemAdmin) {
+    if (!(await hasPlatformAdminAccess(session?.user?.id))) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 },
@@ -326,7 +326,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getAuthSession();
-    if (!session?.user?.isSystemAdmin) {
+    if (!(await hasPlatformAdminAccess(session?.user?.id))) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 },

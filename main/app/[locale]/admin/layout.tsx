@@ -1,34 +1,39 @@
 "use client";
 
-import { useEffect } from "react";
-import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
-import { useLibraryOps } from "@/lib/hooks/use-library-ops";
-import { isLibraryOpsPage } from "@/lib/admin-route-access";
-import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
-import { useRouter, usePathname, Link } from "@/i18n/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  Settings,
-  Database,
-  LogOut,
-  Menu,
-  X,
-  Code,
-  FolderOpen,
-  Shield,
-  FileText,
-  ClipboardList,
-  ChevronDown,
-  Inbox,
-} from "lucide-react";
+import { AdminQueryBoundary } from "@/components/admin/admin-query-boundary";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { Link,usePathname,useRouter } from "@/i18n/navigation";
+import { isLibraryOpsPage } from "@/lib/admin-route-access";
+import { adminLanding,canAdminPage } from "@/lib/admin/pages";
+import { useAdminAccess } from "@/lib/hooks/use-admin-access";
+import { useLibraryOps } from "@/lib/hooks/use-library-ops";
+import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
-import { LocaleSwitcher } from "@/components/locale-switcher";
+import { useQuery } from "@tanstack/react-query";
+import {
+	BarChart3,
+	ChevronDown,
+	ClipboardList,
+	Code,
+	Database,
+	FileText,
+	FolderOpen,
+	Inbox,
+	LayoutDashboard,
+	LogOut,
+	Menu,
+	MessageSquare,
+	Settings,
+	Shield,
+	Users,
+	X,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { useEffect,useState } from "react";
 
 const adminNavItems = [
   {
@@ -37,14 +42,19 @@ const adminNavItems = [
     icon: LayoutDashboard,
   },
   {
+    titleKey: "nav.analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
+  },
+  {
+    titleKey: "nav.feedback",
+    href: "/admin/feedback",
+    icon: MessageSquare,
+  },
+  {
     titleKey: "nav.users",
     href: "/admin/users",
     icon: Users,
-  },
-  {
-    titleKey: "nav.categories",
-    href: "/admin/categories",
-    icon: FolderOpen,
   },
   {
     titleKey: "nav.permissions",
@@ -56,16 +66,21 @@ const adminNavItems = [
         href: "/admin/administrators",
         superAdminOnly: true,
       },
-      { titleKey: "nav.corpusPermissions", href: "/admin/permissions" },
       {
         titleKey: "corpusNav.submissionPermissions",
-        href: "/admin/corpus-collection/submission-permissions",
+        href: "/admin/business-permissions",
       },
+      { titleKey: "nav.corpusPermissions", href: "/admin/permissions" },
       {
         titleKey: "corpusNav.questionnairePermissions",
         href: "/admin/corpus-collection/questionnaire-permissions",
       },
     ],
+  },
+  {
+    titleKey: "nav.categories",
+    href: "/admin/categories",
+    icon: FolderOpen,
   },
   {
     titleKey: "nav.corpusData",
@@ -163,6 +178,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
+  const business = useAdminAccess();
+  const insights = useQuery({ queryKey: ["questionnaire-access", session?.user?.id], enabled: !!session?.user?.id, retry: false, queryFn: async () => { const r = await fetch("/api/admin/corpus-collection/access", { cache: "no-store" }); return r.ok ? r.json() : null; } });
   const t = useTranslations("AdminLayout");
   const router = useRouter();
   const pathname = usePathname();
@@ -208,8 +225,10 @@ export default function AdminLayout({
   useEffect(() => {
     if (status === "loading") return;
 
-    if (session?.user?.isSystemAdmin) {
+    if (business.isLoading) return;
+    if (business.data && canAdminPage(business.data, pathname)) {
       setCorpusAccess(true);
+      if (pathname === "/admin" && !business.data.isPlatformAdmin) router.replace(adminLanding(business.data));
       return;
     }
     setCorpusAccess(null);
@@ -283,11 +302,11 @@ export default function AdminLayout({
     return () => {
       active = false;
     };
-  }, [pathname, session, status, router]);
+  }, [pathname, session, status, router, business.data, business.isLoading]);
 
   if (
     status === "loading" ||
-    (!session?.user?.isSystemAdmin && corpusAccess === null)
+    (corpusAccess === null)
   ) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -296,7 +315,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!session?.user?.isSystemAdmin && !corpusAccess) {
+  if (!corpusAccess) {
     return null;
   }
 
@@ -328,33 +347,19 @@ export default function AdminLayout({
 
         <nav className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-2">
           {adminNavItems
-            .filter(
-              (item) =>
-                session.user.isSystemAdmin ||
-                item.href === "/admin/corpus-collection" ||
-                (item.href === "/admin/library-ops" && !!libraryOps),
-            )
+            .filter(item => business.data?.isPlatformAdmin || (item.children ? item.children.some(child => business.data && canAdminPage(business.data,child.href)) : business.data && canAdminPage(business.data,item.href)) || (item.href === "/admin/corpus-collection" && (!!submissionAccess || !!insights.data)))
             .map((item) => {
               const visibleChildren = item.children?.filter((child) => {
                 if (
                   "superAdminOnly" in child &&
                   child.superAdminOnly &&
-                  !session.user.isSuperAdmin
+                  !business.data?.isSuperAdmin
                 )
                   return false;
                 if (item.href === "/admin/library-ops")
                   return libraryChildAllowed(child.href);
-                return (
-                  session.user.isSystemAdmin ||
-                  (child.href ===
-                    "/admin/corpus-collection/questionnaire-insights" &&
-                    (!submissionAccess || submissionAccess.canViewInsights)) ||
-                  (hasSubmissionAccess &&
-                    [
-                      "/admin/corpus-collection/submissions",
-                      "/admin/corpus-collection/review-batches",
-                    ].includes(child.href))
-                );
+                return !!business.data && canAdminPage(business.data, child.href) ||
+                  (child.href === "/admin/corpus-collection/questionnaire-insights" && !!insights.data);
               });
               const childActive = (href: string) =>
                 pathname === href ||
@@ -463,11 +468,11 @@ export default function AdminLayout({
                 {session.user.name}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {session.user.isSuperAdmin
+                {business.data?.isSuperAdmin
                   ? t("roles.superAdministrator")
-                  : session.user.isSystemAdmin
+                  : business.data?.isPlatformAdmin
                     ? t("roles.systemAdministrator")
-                    : t("roles.activityOperator")}
+                    : t("roles.businessOperator")}
               </p>
             </div>
           </div>
@@ -526,7 +531,7 @@ export default function AdminLayout({
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6 bg-background">
-          {children}
+          <AdminQueryBoundary identity={JSON.stringify(business.data ?? { userId: session.user.id })}>{children}</AdminQueryBoundary>
         </main>
       </div>
     </div>

@@ -1,77 +1,78 @@
 "use client";
+
+import { adminLanding } from "@/lib/admin/pages";
+import { useAdminAccess } from "@/lib/hooks/use-admin-access";
 import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
-import { useRouter } from "@/i18n/navigation";
-import {
-  Search,
-  X,
-  SlidersHorizontal,
-  Menu,
-  EllipsisVertical,
-  ChevronDown,
-  Settings,
-  LogOut,
-  Loader2,
-  Check,
-  Clock,
-} from "lucide-react";
-import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
-import type { SearchResult } from "@/lib/api/search";
-import { getCategoryNickname } from "@/lib/api/category";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { motion, AnimatePresence } from "motion/react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { HamburgerDropdownContent } from "@/components/layout/hamburger-dropdown-content";
-import { useSession } from "next-auth/react";
-import { signOut } from "next-auth/react";
-import { useAuthStore } from "@/lib/store/useAuthStore";
-import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
 import { LoginDialog } from "@/components/dialogs/login-dialog";
 import {
-  RoleSelectDialog,
-  UserRole,
+	RoleSelectDialog,
+	UserRole,
 } from "@/components/dialogs/role-select-dialog";
+import { HamburgerDropdownContent } from "@/components/layout/hamburger-dropdown-content";
 import {
-  getAccountSubmenuItems,
-  workplaceSubmenuItems,
+	getAccountSubmenuItems,
+	workplaceSubmenuItems,
 } from "@/components/layout/sidebar/menu-config";
+import { Avatar,AvatarFallback,AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Link,useRouter } from "@/i18n/navigation";
+import { getCategoryNickname } from "@/lib/api/category";
+import type { SearchResult } from "@/lib/api/search";
+import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { cn } from "@/lib/utils";
 import { Role } from "@prisma/client";
+import {
+	Check,
+	ChevronDown,
+	Clock,
+	EllipsisVertical,
+	Loader2,
+	LogOut,
+	Menu,
+	Search,
+	Settings,
+	SlidersHorizontal,
+	X,
+} from "lucide-react";
+import { AnimatePresence,motion } from "motion/react";
+import { signOut,useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
+import { useEffect,useState } from "react";
 import MobileSheetContent from "./sidebar/mobile-sheet-content";
 
 interface Category {
@@ -478,6 +479,7 @@ export function SearchHeader({
   const router = useRouter();
   const { data: session } = useSession();
   const { data: submissionAccess } = useSubmissionAccess();
+  const { data: businessAccess } = useAdminAccess();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
@@ -636,11 +638,11 @@ export function SearchHeader({
                       {t(item.labelKey)}
                     </DropdownMenuItem>
                   ))}
-                  {(session?.user?.isSystemAdmin || submissionAccess) && (
+                  {(businessAccess || submissionAccess) && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => window.open(session?.user?.isSystemAdmin ? "/admin" : "/admin/corpus-collection/submissions", "_blank")}
+                        onClick={() => window.open(businessAccess ? adminLanding(businessAccess) : "/admin/corpus-collection/submissions", "_blank")}
                       >
                         <Settings className="mr-2 h-4 w-4" />
                         {t("admin")}
@@ -773,11 +775,11 @@ export function SearchHeader({
                         {t(item.labelKey)}
                       </DropdownMenuItem>
                     ))}
-                    {(session?.user?.isSystemAdmin || submissionAccess) && (
+                    {(businessAccess || submissionAccess) && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => window.open(session?.user?.isSystemAdmin ? "/admin" : "/admin/corpus-collection/submissions", "_blank")}
+                          onClick={() => window.open(businessAccess ? adminLanding(businessAccess) : "/admin/corpus-collection/submissions", "_blank")}
                         >
                           <Settings className="mr-2 h-4 w-4" />
                           {t("admin")}

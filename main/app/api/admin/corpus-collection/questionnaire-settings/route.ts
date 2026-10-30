@@ -1,16 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { scopeIds } from "@/lib/admin/policy";
+import { AccessError } from "@/lib/admin/security";
+import { activityWhere,assertScope,withAdminAccess } from "@/lib/admin/access";
+import type { Prisma as AdminPrisma } from "@prisma/client";
+import { NextRequest,NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 const updateSchema = z.object({
-  activityId: z.string().regex(/^\d+$/).optional(),
+  activityId: z.string().regex(/^[1-9]\d*$/).optional(),
   enabled: z.boolean(),
 }).strict();
 
 export async function GET(req: NextRequest) {
-  return requireAdmin(req, async () => {
-    const activities = await prisma.corpus_collection_activities.findMany({
+  return withAdminAccess(req, async (access, db) => {
+    const activities = await db.corpus_collection_activities.findMany({
+      where: activityWhere(access, "manage"),
       select: {
         id: true,
         title: true,
@@ -43,14 +46,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  return requireAdmin(req, async (_req, operatorId) => {
+  return withAdminAccess(req, async (access, db) => {
+    const operatorId = access.userId;
     const parsed = updateSchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
     }
     const activityId = parsed.data.activityId ? BigInt(parsed.data.activityId) : null;
     if (activityId) {
-      const activity = await prisma.corpus_collection_activities.findUnique({
+      assertScope(access, "activity", activityId, "manage");
+      const activity = await db.corpus_collection_activities.findUnique({
         where: { id: activityId },
         select: { id: true },
       });
@@ -58,9 +63,14 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "ACTIVITY_NOT_FOUND" }, { status: 404 });
       }
     }
-    const result = await prisma.$transaction(async (tx) => {
+    if (!activityId && !access.isPlatformAdmin) {
+      const ids = scopeIds(access, "activity", "manage") ?? [];
+      if (!ids.length) throw new AccessError(403, "没有可管理的活动");
+      for (const id of ids) assertScope(access, "activity", id, "manage");
+    }
+    const result = await (async (tx: AdminPrisma.TransactionClient) => {
       const updateResult = await tx.corpus_collection_activities.updateMany({
-        where: activityId ? { id: activityId } : undefined,
+        where: activityId ? { id: activityId } : activityWhere(access, "manage"),
         data: { questionnaire_gate_enabled: parsed.data.enabled },
       });
       await tx.corpus_collection_audit_logs.create({
@@ -77,7 +87,7 @@ export async function PATCH(req: NextRequest) {
         },
       });
       return updateResult;
-    });
+    })(db);
     return NextResponse.json({
       success: true,
       affectedCount: result.count,

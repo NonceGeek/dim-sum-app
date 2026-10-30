@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { datasetWhere,loadAdminAccess } from "@/lib/admin/access";
+import { PRIVATE_HEADERS,can,withLibraryOps } from "@/lib/library/ops-access";
 import { prisma } from "@/lib/prisma";
-import { PRIVATE_HEADERS, can, withLibraryOps } from "@/lib/library/ops-access";
+import { NextRequest,NextResponse } from "next/server";
 
 /** Current user's Library ops capabilities and sidebar badge counts. */
 export async function GET(req: NextRequest) {
   return withLibraryOps(req, async (access) => {
+    const scoped = await loadAdminAccess(access.userId);
+    const datasets = scoped.isPlatformAdmin ? [] : await prisma.cantonese_categories.findMany({ where: datasetWhere(scoped, "manage"), select: { name: true } });
     const review = can(access, "contribution_review");
     const assignee = can(access, "ingestion_assignee");
     const [pendingInitialReview, myOpenLeads, openContactRequests, myWaitingTasks] =
@@ -18,7 +21,7 @@ export async function GET(req: NextRequest) {
             : { id: -1 },
         }),
         prisma.dataset_contact_requests.count({
-          where: review ? { status: "OPEN" } : { id: -1 },
+          where: review ? { status: "OPEN", ...(scoped.isPlatformAdmin ? {} : { dataset_name: { in: datasets.map(d => d.name) } }) } : { id: -1 },
         }),
         // 等待负责人审批或回答 Agent 提问的任务
         prisma.ingestion_tasks.count({

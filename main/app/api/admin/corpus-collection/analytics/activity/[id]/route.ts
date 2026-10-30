@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { assertScope,withAdminAccess } from "@/lib/admin/access";
 import type { AppRouteContext } from "@/lib/app-route-context";
 import { getStringRouteParam } from "@/lib/app-route-context";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { parseBigIntId, serializeActivity } from "@/lib/services/corpus-collection";
+import { parseBigIntId,serializeActivity } from "@/lib/services/corpus-collection";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(req: NextRequest, context: AppRouteContext) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     const id = parseBigIntId(await getStringRouteParam(context, "id"));
     if (!id) return NextResponse.json({ error: "Invalid activity id" }, { status: 400 });
 
-    const activity = await prisma.corpus_collection_activities.findUnique({
+    assertScope(access, "activity", id);
+    const activity = await db.corpus_collection_activities.findUnique({
       where: { id },
       include: { _count: { select: { submissions: true } } },
     });
@@ -18,12 +18,12 @@ export async function GET(req: NextRequest, context: AppRouteContext) {
       return NextResponse.json({ error: "Activity not found" }, { status: 404 });
     }
 
-    const statusRows = await prisma.corpus_collection_submissions.groupBy({
+    const statusRows = await db.corpus_collection_submissions.groupBy({
       by: ["review_status"],
       where: { activity_id: id },
       _count: { _all: true },
     });
-    const interaction = await prisma.corpus_collection_submissions.aggregate({
+    const interaction = await db.corpus_collection_submissions.aggregate({
       where: { activity_id: id },
       _sum: {
         like_count: true,

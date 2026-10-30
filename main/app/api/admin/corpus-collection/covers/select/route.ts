@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import { requireAdmin } from "@/lib/auth";
+import { withAdminAccess } from "@/lib/admin/access";
+import { assertCoverAccess,generatedCoverUrl, readCoverImage } from "@/lib/admin/cover-access";
+import { AccessError } from "@/lib/admin/security";
 import { uploadBufferToOss } from "@/lib/oss";
-import { prisma } from "@/lib/prisma";
 import { parseBigIntId } from "@/lib/services/corpus-collection";
+import type { Prisma as AdminPrisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { NextRequest,NextResponse } from "next/server";
 
 function extensionFromContentType(contentType: string | null) {
   if (contentType?.includes("png")) return "png";
@@ -13,8 +15,9 @@ function extensionFromContentType(contentType: string | null) {
 }
 
 export async function POST(req: NextRequest) {
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     const body = await req.json().catch(() => ({}));
+    await assertCoverAccess(access, body, db);
     if (!body.url || typeof body.url !== "string") {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
     }
@@ -22,7 +25,7 @@ export async function POST(req: NextRequest) {
     const activityId = parseBigIntId(body.activityId);
     const submissionId = parseBigIntId(body.submissionId);
 
-    const source = await fetch(body.url, { cache: "no-store" });
+    const source = await fetch(generatedCoverUrl(body.url), { cache: "no-store", redirect: "error" });
     if (!source.ok) {
       return NextResponse.json(
         { error: "Failed to fetch selected cover" },
@@ -31,13 +34,13 @@ export async function POST(req: NextRequest) {
     }
 
     const contentType = source.headers.get("content-type");
-    const buffer = Buffer.from(await source.arrayBuffer());
+    const buffer = await readCoverImage(source);
     const extension = extensionFromContentType(contentType);
     const objectName = `corpus-collection/covers/${Date.now()}-${crypto.randomUUID()}.${extension}`;
     const uploaded = await uploadBufferToOss(objectName, buffer, contentType, "corpusAsset");
 
     if (activityId || submissionId) {
-      await prisma.$transaction(async (tx) => {
+      await (async (tx: AdminPrisma.TransactionClient) => {
         if (activityId) {
           await tx.corpus_collection_activities.update({
             where: { id: activityId },
@@ -56,7 +59,7 @@ export async function POST(req: NextRequest) {
             },
           });
         }
-      });
+      })(db);
     }
 
     return NextResponse.json(uploaded);

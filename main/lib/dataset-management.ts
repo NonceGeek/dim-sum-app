@@ -1,5 +1,6 @@
+import { assertScope,grantCreatedObject,loadAdminAccess } from "@/lib/admin/access";
+import { Prisma,type PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
-import { Prisma, type PrismaClient } from "@prisma/client";
 
 export type ContentAttribute = "oral" | "cultural_knowledge";
 
@@ -41,7 +42,7 @@ function canonical(value: unknown): unknown {
 }
 
 export async function createActivityWithDataset(
-  client: PrismaClient,
+  client: PrismaClient | Prisma.TransactionClient,
   data: Omit<Prisma.corpus_collection_activitiesUncheckedCreateInput, "dataset_name">,
   contentAttribute: ContentAttribute,
   creationKey: string,
@@ -49,16 +50,18 @@ export async function createActivityWithDataset(
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(creationKey)) throw new Error("Invalid creation key");
   const key = creationKey.toLowerCase();
   const hash = createHash("sha256").update(JSON.stringify(canonical({ data, contentAttribute }))).digest("hex");
-  return client.$transaction(async (tx) => {
+  const create = async (tx: Prisma.TransactionClient) => {
     // Serialize retries before creating either row, including requests racing each other.
     await tx.$queryRaw`select pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
     const existing = await tx.corpus_collection_activities.findUnique({ where: { creation_key: key }, include: { dataset: true } });
     if (existing) {
       if (existing.creation_hash !== hash) throw new ActivityCreationConflict("Creation key was already used with different activity details");
+      if (typeof data.created_by === "string") assertScope(await loadAdminAccess(data.created_by, tx), "activity", existing.id, "manage");
       return { activity: existing, replayed: true };
     }
     const dataset = await tx.cantonese_categories.create({ data: {
       name: `activity-${key}`,
+      created_by: typeof data.created_by === "string" ? data.created_by : null,
       nickname: data.title,
       description: typeof data.description === "string" ? data.description : null,
       content_attribute: contentAttribute,
@@ -70,6 +73,13 @@ export async function createActivityWithDataset(
       data: { ...data, dataset_name: dataset.name, creation_key: key, creation_hash: hash },
       include: { dataset: true },
     });
+    if (typeof data.created_by === "string") {
+      await grantCreatedObject(tx, data.created_by, "activity", activity.id);
+      // Only dataset-qualified creators receive dataset admin rights; activity creation must not grant a different module role.
+      const role = await tx.admin_business_roles.findUnique({ where: { user_id_role: { user_id: data.created_by, role: "DATASET_ADMIN" } } });
+      if (role?.active) await grantCreatedObject(tx, data.created_by, "dataset", dataset.id);
+    }
     return { activity, replayed: false };
-  });
+  };
+  return "$transaction" in client ? client.$transaction(create) : create(client);
 }

@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  availableActions,
-  formatSerial,
-  leadTransition,
-  transition,
-} from "./application-workflow";
-import { contributionApplicationSchema } from "./options";
-import { filterAndSort, parsePublicDatasetQuery } from "./public-datasets";
-import { loadLibraryOpsAccess } from "./ops-access";
 import { AccessError } from "../services/submission-access";
+import {
+	availableActions,
+	formatSerial,
+	leadTransition,
+	transition,
+} from "./application-workflow";
+import { loadLibraryOpsAccess } from "./ops-access";
+import { contributionApplicationSchema } from "./options";
+import { filterAndSort,parsePublicDatasetQuery } from "./public-datasets";
 
 test("application workflow follows the PRD state machine", () => {
   assert.deepEqual(transition("assign", "PENDING_INITIAL_REVIEW", false), {
@@ -159,19 +159,14 @@ function fakeDb(user: unknown) {
   return { user: { findUnique: async () => user } } as never;
 }
 
-test("library ops access needs an active role with a global capability", async () => {
-  const role = { active: true, role_code: "ACTIVITY_REVIEWER", global_actions: [] as string[] };
-  const user = { status: "ACTIVE", isSystemAdmin: false, isSuperAdmin: false, collectionOperatorRole: role };
+test("dataset admins receive both intake capabilities, activity and dataset operators receive neither", async () => {
+  const user = { status: "ACTIVE", isSystemAdmin: false, isSuperAdmin: false, adminBusinessRoles: [] as Array<{role:string;active:boolean}>, adminScopeGrants: [] };
   await assert.rejects(loadLibraryOpsAccess("u", fakeDb(user)), AccessError);
-  role.global_actions = ["contribution_review", "unknown"];
-  assert.deepEqual((await loadLibraryOpsAccess("u", fakeDb(user))).actions, [
-    "contribution_review",
-  ]);
-  role.active = false;
+  user.adminBusinessRoles = [{ role: "ACTIVITY_ADMIN", active: true }];
   await assert.rejects(loadLibraryOpsAccess("u", fakeDb(user)), AccessError);
-  const admin = await loadLibraryOpsAccess(
-    "a",
-    fakeDb({ ...user, isSystemAdmin: true, collectionOperatorRole: null }),
-  );
-  assert.equal(admin.isAdmin, true);
+  user.adminBusinessRoles = [{ role: "DATASET_ADMIN", active: true }];
+  assert.deepEqual((await loadLibraryOpsAccess("u", fakeDb(user))).actions, ["contribution_review", "ingestion_assignee"]);
+  user.adminBusinessRoles[0].active = false;
+  await assert.rejects(loadLibraryOpsAccess("u", fakeDb(user)), AccessError);
+  assert.equal((await loadLibraryOpsAccess("a", fakeDb({...user,isSystemAdmin:true}))).isAdmin, true);
 });

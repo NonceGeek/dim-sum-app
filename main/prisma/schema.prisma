@@ -35,6 +35,9 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
+  searchFeedback                                                                            search_feedback[]
+  adminBusinessRoles                                                                        admin_business_roles[]
+  adminScopeGrants                                                                          admin_scope_grants[]
   id                                                                                        String                                     @id @default(cuid())
   name                                                                                      String?
   email                                                                                     String?                                    @unique
@@ -59,6 +62,7 @@ model User {
   assistantConversations                                                                    assistant_conversations[]
   cantonese_corpus_update_history_cantonese_corpus_update_history_contributor_user_idToUser cantonese_corpus_update_history[]          @relation("cantonese_corpus_update_history_contributor_user_idToUser")
   cantonese_corpus_update_history                                                           cantonese_corpus_update_history[]
+  createdContentCategories                                                                  content_categories[]                       @relation("content_categories_created_by")
   corpus_category                                                                           corpus_category[]
   corpusCollectionActivities                                                                corpus_collection_activities[]
   assignedQuestionnairePermissions                                                          corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionAssigner")
@@ -75,12 +79,12 @@ model User {
   corpusCollectionReviewedItems                                                             corpus_collection_submissions[]            @relation("CorpusCollectionReviewer")
   corpusCollectionSubmissions                                                               corpus_collection_submissions[]
   corpus_tags                                                                               corpus_tags[]
-  createdContentCategories                                                                  content_categories[]                       @relation("content_categories_created_by")
-  createdTags                                                                               tags[]                                     @relation("tags_created_by")
+  corpus_taxonomy_changes                                                                   corpus_taxonomy_changes[]
   gameAnswerRecords                                                                         game_answer_records[]
   gamePlayerProgress                                                                        game_player_progress?
   auditLogsAsOperator                                                                       permission_audit_logs[]                    @relation("AuditOperator")
   auditLogsAsTarget                                                                         permission_audit_logs[]                    @relation("AuditTarget")
+  createdTags                                                                               tags[]                                     @relation("tags_created_by")
   corpusInteractions                                                                        user_corpus_interactions[]
   corpusPermissions                                                                         user_corpus_permissions[]
   assignedIngestionTasks                                                                    ingestion_tasks[]                          @relation("IngestionTaskAssignee")
@@ -121,6 +125,7 @@ model api_key {
 }
 
 model cantonese_categories {
+  created_by           String?
   id                   BigInt                        @default(autoincrement())
   name                 String                        @unique
   nickname             String?
@@ -144,8 +149,8 @@ model cantonese_categories {
   content_attribute    String                        @default("unclassified")
   cantonese_corpus_all cantonese_corpus_all[]
   activity             corpus_collection_activities?
-  userPermissions      user_corpus_permissions[]
   libraryProfile       library_dataset_profiles?
+  userPermissions      user_corpus_permissions[]
 
   @@id([id, name])
   @@index([content_attribute])
@@ -172,6 +177,7 @@ model cantonese_corpus_all {
   embedding_neighbors_as_source corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_source")
   embedding_neighbors_as_target corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_target")
   corpus_tags                   corpus_tags[]
+  corpus_taxonomy_changes       corpus_taxonomy_changes[]
   corpus_zyzdv2                 corpus_zyzdv2[]
   userInteractions              user_corpus_interactions[]
   ingestionRecord               ingestion_records?
@@ -237,6 +243,7 @@ model cantonese_corpus_update_history {
   structured_note                                                Json?
   last_data                                                      String?
   contributor_user_id                                            String?
+  submission_id                                                  String?       @unique
   User_cantonese_corpus_update_history_contributor_user_idToUser User?         @relation("cantonese_corpus_update_history_contributor_user_idToUser", fields: [contributor_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cantonese_corpus_update_history_contributor_fkey")
   User                                                           User          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -797,6 +804,8 @@ model corpus_collection_activity_permissions {
 
 /// 语料采集 - 问卷洞察访问与导出审计
 model corpus_collection_audit_logs {
+  scope_type     String?
+  scope_id       String?
   id             BigInt   @id @default(autoincrement())
   operator_id    String
   action         String
@@ -1159,10 +1168,10 @@ model tags {
   corpus_count                             Int                    @default(0)
   created_at                               DateTime               @default(now()) @db.Timestamptz(6)
   created_by                               String?
-  creator                                  User?                  @relation("tags_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   corpus_tags                              corpus_tags[]
   tag_related_tag_related_related_idTotags tag_related[]          @relation("tag_related_related_idTotags")
   tag_related_tag_related_tag_idTotags     tag_related[]          @relation("tag_related_tag_idTotags")
+  creator                                  User?                  @relation("tags_created_by", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([embedding])
   @@index([facet])
@@ -1244,76 +1253,13 @@ model corpus_collection_operator_roles {
   user_id        String   @id
   role_code      String
   active         Boolean  @default(true)
-  /// Activity-independent capabilities, e.g. contribution_review / ingestion_assignee.
-  global_actions String[] @default([])
   assigned_by    String
   note           String?
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  /// Activity-independent capabilities, e.g. contribution_review / ingestion_assignee.
+  global_actions String[] @default([])
   user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-}
-
-enum Role {
-  LEARNER
-  TAGGER_PARTNER
-  TAGGER_OUTSOURCING
-  RESEARCHER
-}
-
-enum UserStatus {
-  ACTIVE
-  PENDING_DELETE
-  DELETED
-  MERGED
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum APIStatus {
-  PENDING
-  APPROVED
-  BANNED
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum Status {
-  PENDING
-  APPROVED
-  BANNED
-}
-
-/// 操作类型枚举
-enum OperationType {
-  CREATE
-  UPDATE
-  DELETE
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum APILevel {
-  ADMIN
-  NORMAL
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum CategoryStatus {
-  RAW
-  INPROGRASS
-}
-
-/// 语料库访问权限级别
-enum CorpusPermission {
-  READ
-  WRITE
-  CREATE
-  FULL
-}
-
-/// 权限变更操作类型
-enum PermissionAction {
-  GRANT
-  REVOKE
-  MODIFY
-  ROLE_CHANGE
 }
 
 /// Library - 公开语料集展示资料，与 cantonese_categories.name 一对一；只有 listed=true 才出现在前台
@@ -1332,7 +1278,7 @@ model library_dataset_profiles {
   updated_by        String?
   created_at        DateTime             @default(now()) @db.Timestamptz(6)
   updated_at        DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
-  dataset           cantonese_categories @relation(fields: [dataset_name], references: [name], onDelete: Cascade, onUpdate: Cascade)
+  dataset           cantonese_categories @relation(fields: [dataset_name], references: [name], onDelete: Cascade)
 
   @@index([listed])
 }
@@ -1419,7 +1365,7 @@ model ingestion_leads {
   closed_at                   DateTime?                 @db.Timestamptz(6)
   created_at                  DateTime                  @default(now()) @db.Timestamptz(6)
   updated_at                  DateTime                  @default(now()) @updatedAt @db.Timestamptz(6)
-  application                 contribution_applications @relation(fields: [contribution_application_id], references: [id], onDelete: Restrict)
+  application                 contribution_applications @relation(fields: [contribution_application_id], references: [id])
   ingestionTask               ingestion_tasks?          @relation(fields: [ingestion_task_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([assignee_id, status])
@@ -1800,4 +1746,190 @@ model corpus_agent_run_changes {
   run_id String            @id
   seq    BigInt            @default(0)
   run    corpus_agent_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_taxonomy_changes {
+  id                   BigInt               @id @default(autoincrement())
+  corpus_id            BigInt
+  submission_id        String?              @unique
+  task_id              String?
+  actor_ref            String
+  category_before      Json?
+  category_after       Json?
+  tags_added           Json?
+  tags_removed         Json?
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  User                 User                 @relation(fields: [actor_ref], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cantonese_corpus_all cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([corpus_id, created_at(sort: Desc)], map: "corpus_taxonomy_changes_corpus_idx")
+}
+
+enum Role {
+  LEARNER
+  TAGGER_PARTNER
+  TAGGER_OUTSOURCING
+  RESEARCHER
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_DELETE
+  DELETED
+  MERGED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APIStatus {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum Status {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// 操作类型枚举
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APILevel {
+  ADMIN
+  NORMAL
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum CategoryStatus {
+  RAW
+  INPROGRASS
+}
+
+/// 语料库访问权限级别
+enum CorpusPermission {
+  READ
+  WRITE
+  CREATE
+  FULL
+}
+
+/// 权限变更操作类型
+enum PermissionAction {
+  GRANT
+  REVOKE
+  MODIFY
+  ROLE_CHANGE
+}
+
+/// 自建埋点：前台行为事件与服务端搜索请求（#396）。不存 IP；query 为规范化后的搜索词原文
+model analytics_events {
+  id                BigInt    @id @default(autoincrement())
+  event_name        String
+  source            String    @default("web")
+  occurred_at       DateTime  @default(now()) @db.Timestamptz(6)
+  client_time       DateTime? @db.Timestamptz(6)
+  anonymous_id      String?
+  session_id        String?
+  user_id           String?
+  path              String?
+  locale            String?
+  device            String?
+  referrer_host     String?
+  entry_id          String?
+  section           String?
+  query             String?
+  media_type        String?
+  content_attribute String?
+  properties        Json      @default("{}")
+
+  @@index([event_name, occurred_at])
+  @@index([occurred_at])
+  @@index([entry_id, occurred_at])
+}
+
+/// 语料资产看板（#509）：语料 note 中引用的唯一媒体资源（按 URL 去重）及补采到的容量、时长。
+/// 语料与资源的关联不落表，统计时从 note / structured_note 实时提取；未补采的值保持 null，前台显示“待统计”。
+model corpus_media_assets {
+  url              String    @id
+  media_type       String
+  size_bytes       BigInt?
+  duration_seconds Float?
+  content_type     String?
+  probe_status     String    @default("pending")
+  probe_error      String?
+  probed_at        DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([probe_status])
+}
+
+/// #506 module-level creation qualifications. Scope is granted separately.
+model admin_business_roles {
+  user_id    String
+  role       String
+  active     Boolean  @default(true)
+  granted_by String
+  note       String   @default("")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, role])
+}
+
+/// #506 roles scoped to one dataset or activity; audit logs retain every change.
+model admin_scope_grants {
+  user_id    String
+  scope_type String
+  scope_id   String
+  role       String
+  actions    String[]  @default([])
+  granted_by String
+  note       String    @default("")
+  revoked_at DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, scope_type, scope_id])
+  @@index([scope_type, scope_id, revoked_at])
+}
+
+/// Search mini-program feedback. Public clients can submit, never list or read records.
+model search_feedback {
+  id           String    @id @default(uuid()) @db.Uuid
+  request_id   String    @unique @db.Uuid
+  anonymous_id String    @db.Uuid
+  user_id      String?
+  entry_id     String?   @db.Uuid
+  type         String
+  description  String    @db.VarChar(300)
+  status       String    @default("OPEN")
+  staff_note   String    @default("") @db.VarChar(1000)
+  handled_by   String?
+  handled_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @updatedAt @db.Timestamptz(6)
+  user         User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([status, created_at])
+  @@index([anonymous_id, created_at])
+  @@index([user_id, created_at])
+  @@index([entry_id])
+}
+
+/// Search 小程序按北京时间固定的完整公开词条快照；仅服务端访问。
+model search_daily_entries {
+  date       DateTime @id @db.Date
+  entry_id   String   @db.Uuid
+  entry      Json
+  created_at DateTime @default(now()) @db.Timestamptz(6)
 }
