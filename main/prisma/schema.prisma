@@ -1427,7 +1427,7 @@ model assistant_messages {
 }
 
 /// 入库 - 入库任务（#431）；status 只记录人为决定的业务状态，处理中的细分状态由 corpus_agent_runs.status 推出
-/// 入库 Agent（yue-lint-agent）直接读写本组表；check 约束、触发器见 migration 20261019090000_add_ingestion_tasks
+/// 入库 Agent（yue-lint-agent）直接读写本组表；check 约束、触发器见 migration 20261026090000_add_ingestion_tasks
 model ingestion_tasks {
   id                       BigInt                  @id @default(autoincrement())
   task_no                  String                  @unique
@@ -1578,7 +1578,7 @@ model corpus_agent_runs {
   questions          corpus_agent_questions[]
   changes            corpus_agent_run_changes?
 
-  @@index([sandbox_idle_until], map: "corpus_agent_runs_sandbox_idle_idx")
+  // corpus_agent_runs_sandbox_idle_idx 是部分索引，Prisma 无法表达，由 migration 20261026090000_add_ingestion_tasks 维护
 }
 
 model corpus_agent_events {
@@ -1693,7 +1693,7 @@ model corpus_agent_context_summaries {
 }
 
 /// 入库审批：pending → authorized（dim-sum-app 批准）→ applying → approved / failed，或 pending → denied（dim-sum-app 拒绝）
-/// 入库 Agent 的数据库角色不能写决定字段，见 migration 20261020090000_isolate_ingestion_agent
+/// 入库 Agent 的数据库角色不能写决定字段，见 migration 20261026090000_add_ingestion_tasks
 model corpus_agent_approvals {
   id            String              @id
   run_id        String
