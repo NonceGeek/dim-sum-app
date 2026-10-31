@@ -48,3 +48,5 @@ scripts/mp3_slicer/segments/
 out_audio/
 backend-linux
 .idea/
+
+CLAUDE.local.md

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { LEAD_STATUSES, LeadAction } from "@/lib/library/application-workflow";
 import { UserSelect, json, useOptionLabel } from "@/components/library-ops/ops-shared";
+import { Link, useRouter } from "@/i18n/navigation";
 
 type Lead = {
   id: string;
@@ -138,15 +140,18 @@ export default function IngestionLeadsPage() {
   const label = useOptionLabel();
   const locale = useLocale();
   const { data: session } = useSession();
+  const router = useRouter();
+  // 从入库任务点进来时只显示对应的那条待办
+  const leadId = useSearchParams().get("lead");
   const [scope, setScope] = useState<"me" | "all">("me");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [pending, setPending] = useState<{ lead: Lead; action: LeadAction } | null>(null);
   const list = useQuery({
-    queryKey: ["ingestion-leads", scope, status, page],
+    queryKey: ["ingestion-leads", leadId, scope, status, page],
     queryFn: async () => {
-      const params = new URLSearchParams({ assignee: scope, page: String(page) });
-      if (status) params.set("status", status);
+      const params = new URLSearchParams(leadId ? { id: leadId } : { assignee: scope, page: String(page) });
+      if (status && !leadId) params.set("status", status);
       return json<{ items: Lead[]; total: number; pageSize: number; canViewAll: boolean }>(
         await fetch(`/api/admin/ingestion-leads?${params}`),
       );
@@ -162,41 +167,52 @@ export default function IngestionLeadsPage() {
         <h2 className="text-2xl font-bold">{t("leads.title")}</h2>
         <p className="text-muted-foreground">{t("leads.description")}</p>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        {list.data?.canViewAll && (
-          <div className="flex rounded-md border p-0.5">
-            {(["me", "all"] as const).map((s) => (
-              <Button
-                key={s}
-                size="sm"
-                variant={scope === s ? "secondary" : "ghost"}
-                onClick={() => {
-                  setPage(1);
-                  setScope(s);
-                }}
-              >
-                {t(`leads.scope.${s}`)}
-              </Button>
+      {leadId ? (
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-muted-foreground">
+            {t("leads.showingOne", { no: list.data?.items[0]?.leadNo ?? leadId })}
+          </span>
+          <Button size="sm" variant="outline" onClick={() => router.replace("/admin/ingestion-leads")}>
+            {t("leads.showAll")}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          {list.data?.canViewAll && (
+            <div className="flex rounded-md border p-0.5">
+              {(["me", "all"] as const).map((s) => (
+                <Button
+                  key={s}
+                  size="sm"
+                  variant={scope === s ? "secondary" : "ghost"}
+                  onClick={() => {
+                    setPage(1);
+                    setScope(s);
+                  }}
+                >
+                  {t(`leads.scope.${s}`)}
+                </Button>
+              ))}
+            </div>
+          )}
+          <select
+            aria-label={t("statusFilter")}
+            value={status}
+            onChange={(e) => {
+              setPage(1);
+              setStatus(e.target.value);
+            }}
+            className="h-9 rounded-md border bg-background px-3 text-sm"
+          >
+            <option value="">{t("allStatuses")}</option>
+            {LEAD_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {t(`leads.status.${s}`)}
+              </option>
             ))}
-          </div>
-        )}
-        <select
-          aria-label={t("statusFilter")}
-          value={status}
-          onChange={(e) => {
-            setPage(1);
-            setStatus(e.target.value);
-          }}
-          className="h-9 rounded-md border bg-background px-3 text-sm"
-        >
-          <option value="">{t("allStatuses")}</option>
-          {LEAD_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {t(`leads.status.${s}`)}
-            </option>
-          ))}
-        </select>
-      </div>
+          </select>
+        </div>
+      )}
 
       {list.isLoading && <p className="text-muted-foreground">{t("loading")}</p>}
       {list.isError && <p className="text-destructive">{(list.error as Error).message}</p>}
@@ -281,6 +297,22 @@ export default function IngestionLeadsPage() {
                   {lead.acceptedAt && ` · ${t("leads.takenAt", { time: fmt(lead.acceptedAt) })}`}
                 </p>
                 <div className="flex flex-wrap gap-2">
+                  {lead.ingestionTaskId ? (
+                    <Button asChild size="sm" variant="secondary">
+                      <Link href={`/admin/ingestion-tasks/${lead.ingestionTaskId}`}>{t("leads.actions.openTask")}</Link>
+                    </Button>
+                  ) : (
+                    (isMine || list.data?.canViewAll) &&
+                    lead.status === "IN_PROGRESS" && (
+                      <Button asChild size="sm">
+                        <Link
+                          href={`/admin/ingestion-tasks/new?${new URLSearchParams({ lead: lead.id })}`}
+                        >
+                          {t("leads.actions.createTask")}
+                        </Link>
+                      </Button>
+                    )
+                  )}
                   {isMine && lead.status === "PENDING_OWNER_ACCEPTANCE" && (
                     <Button size="sm" onClick={() => setPending({ lead, action: "take" })}>
                       {t("leads.actions.take")}

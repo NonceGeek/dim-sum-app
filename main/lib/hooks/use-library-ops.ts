@@ -9,6 +9,7 @@ export type LibraryOpsSummary = {
     pendingInitialReview: number;
     myOpenLeads: number;
     openContactRequests: number;
+    myWaitingTasks: number;
   };
 };
 
