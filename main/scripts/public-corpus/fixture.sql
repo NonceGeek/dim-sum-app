@@ -1,6 +1,7 @@
 -- Minimal isolated integration fixture. Never execute on an existing database.
 create type "CategoryStatus" as enum ('RAW', 'ANNOTATING', 'ANNOTATED');
 create table cantonese_categories (
+  created_by text,
   id bigserial, name text unique not null, nickname text, description text,
   likes bigint default 0, created_at timestamptz not null default now(), updated_at timestamp default now(),
   cover text, link text, tags jsonb, pinned boolean not null default false,

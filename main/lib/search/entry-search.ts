@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import * as OpenCC from "opencc-js";
+import { getPrimarySearchTerms } from "@/lib/search/search-terms";
 import { prisma } from "@/lib/prisma";
 import {
   buildEntryIdentity,
@@ -36,8 +36,6 @@ const SEARCH_CACHE_HEADERS = {
   "Cache-Control": "no-store",
 } as const;
 const SEARCH_NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
-const toSimplified = OpenCC.Converter({ from: "hk", to: "cn" });
-const toTraditional = OpenCC.Converter({ from: "cn", to: "hk" });
 
 type ResultSection = "primary" | "similar" | "recommended";
 
@@ -133,17 +131,6 @@ function buildRelatedMediaFilter(
 
 function normalizeTags(value: CorpusTagRow[] | null): CorpusTagRow[] {
   return Array.isArray(value) ? value : [];
-}
-
-function getPrimarySearchTerms(query: string): string[] {
-  const normalized = query.trim();
-  return Array.from(
-    new Set(
-      [normalized, toSimplified(normalized), toTraditional(normalized)]
-        .map((term) => term.trim())
-        .filter(Boolean),
-    ),
-  );
 }
 
 function orJoin(parts: Prisma.Sql[]): Prisma.Sql {
