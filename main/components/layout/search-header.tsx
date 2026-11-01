@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Link,useRouter } from "@/i18n/navigation";
 import { getCategoryNickname } from "@/lib/api/category";
-import type { SearchResult } from "@/lib/api/search";
+import type { SearchSuggestion } from "@/lib/search/suggestions";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -100,7 +100,7 @@ interface SearchHeaderProps {
 interface DropdownState {
   showDropdown: boolean;
   mode: "history" | "suggestions";
-  suggestions: SearchResult[];
+  suggestions: SearchSuggestion[];
   history: string[];
   activeIndex: number;
   handleFocus: () => void;

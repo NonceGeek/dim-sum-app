@@ -25,6 +25,9 @@ async function main() {
   const { prisma } = await import("../../lib/prisma");
   const { fetchPrimarySearchRows, fetchSemanticSearchRows, fetchAggregatedSearchRows } = await import("../../lib/search/entry-search");
   const { fetchEntryIdentityByUniqueId } = await import("../../lib/search/entry-query");
+  const { fetchSearchSuggestions } = await import("../../lib/search/suggestions");
+  const { GET: getSuggestions } = await import("../../app/api/search/suggestions/route");
+  const { NextRequest } = await import("next/server");
   const { getCorpusItemForEditing, requireCorpusEditor } = await import("../../lib/services/corpus-edit-access");
   const hiddenId = "00000000-0000-4000-8000-000000000001";
   const publicId = "00000000-0000-4000-8000-000000000002";
@@ -35,6 +38,39 @@ async function main() {
     assert.ok(rows.every((row) => row.category === "published"));
   };
   try {
+    const suggestions = await fetchSearchSuggestions("needle", null);
+    assert.equal(suggestions.length, 6);
+    publicOnly(suggestions);
+    for (const scope of [[], ["hidden"], ["missing-dataset"]]) {
+      assert.deepEqual(await fetchSearchSuggestions("needle", scope), []);
+    }
+    publicOnly(await fetchSearchSuggestions("needle", ["hidden", "published"]));
+    for (const dataset of ["all", "published", "hidden,published", "hidden", "missing"]) {
+      const response = await getSuggestions(new NextRequest(
+        `https://example.com/api/search/suggestions?q=needle&dataset=${dataset}`,
+      ));
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      const body = await response.json();
+      if (["hidden", "missing"].includes(dataset)) assert.deepEqual(body.suggestions, []);
+      else {
+        publicOnly(body.suggestions);
+        assert.equal(body.suggestions.length, 6);
+        assert.deepEqual(Object.keys(body.suggestions[0]).sort(), ["category", "data", "id"]);
+      }
+    }
+    assert.deepEqual(await fetchSearchSuggestions("   ", null), []);
+    await prisma.$executeRaw`insert into cantonese_corpus_all(id,data,category) values
+      (2000,'suggestionrank','published'),
+      (2001,'suggestionrank longer','published'),
+      (2002,'pre suggestionrank','published'),
+      (2003,'廣東話','published'),
+      (2004,'suggestion_100%','published'),
+      (2005,'suggestionX100Y','published')`;
+    assert.deepEqual((await fetchSearchSuggestions("suggestionrank", null)).map(s => s.id), ["2000", "2001", "2002"]);
+    assert.equal((await fetchSearchSuggestions("广东话", null))[0]?.id, "2003");
+    assert.deepEqual((await fetchSearchSuggestions("suggestion_100%", null)).map(s => s.id), ["2004"]);
+    assert.deepEqual(await fetchSearchSuggestions("' OR true --", null), []);
     for (const attribute of [null, "oral"] as const) {
       const rows = await fetchPrimarySearchRows("needle", null, attribute);
       assert.equal(rows[0]?.id, BigInt(2), "private exact match must not win over public prefix match");
@@ -131,10 +167,11 @@ async function main() {
     await prisma.cantonese_categories.update({ where: { name: "published" }, data: { is_public: false } });
     assert.deepEqual(await fetchPrimarySearchRows("needle", null, null), []);
     assert.deepEqual(await fetchSemanticSearchRows(semantic), []);
+    assert.deepEqual(await fetchSearchSuggestions("needle", null), []);
     assert.deepEqual(await fetchAggregatedSearchRows(common), []);
     assert.equal(await fetchEntryIdentityByUniqueId(publicId), null);
     assert.equal((await getCorpusItemForEditing("outsider", publicId)).category, "published");
-    console.log("PASS: primary, semantic, fallback, offline neighbors, pagination, staged RPC tiers, input quoting, empty scope, attributes, deterministic ties, details, role matrix, revoked grants, public-to-private transition");
+    console.log("PASS: suggestions (visibility, dataset scope, limit, ranking, simplified/traditional, literal wildcards), primary, semantic, fallback, offline neighbors, pagination, staged RPC tiers, input quoting, empty scope, attributes, deterministic ties, details, role matrix, revoked grants, public-to-private transition");
   } finally { await prisma.$disconnect(); }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });

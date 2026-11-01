@@ -1,11 +1,17 @@
 # Next.js 公共语料访问隔离
 
-本次范围是 Next.js 新版搜索 `/api/search/entries`（主搜索、相似/推荐、语义查询及回退）
+本次范围是 Next.js 新版搜索 `/api/search/entries`（主搜索、相似/推荐、语义查询及回退）、
+搜索框联想 `/api/search/suggestions`
 以及 Next.js 公共详情 `/api/entries/[entryId]`、`/[locale]/entries/[entryId]`。
 这些入口只允许 `cantonese_categories.is_public = true` 的语料，登录、编辑授权、管理员身份
 都不会放宽条件。无有效所属语料集的记录也不公开。
 
-Deno 旧版搜索、搜索框联想及旧详情接口暂不调整，不包含在本次隔离保证中。
+Deno 旧版搜索及旧详情接口暂不调整，不包含在本次隔离保证中。
+
+2026-11-01：首页与搜索页的下拉联想改用应用自己的 `/api/search/suggestions?q=...&dataset=...`，
+不再调用 Deno `/v2/text_search`。新接口只返回公开语料的 `id`（字符串）、`data`、`category`，
+最多 6 条，按完全匹配、前缀、包含排序，支持简繁体及语料集筛选；不接入向量生成。
+空查询返回空列表，超过 200 字符返回 400，响应禁止缓存。公开搜索与联想共用简繁体查询变体。
 
 私有语料通过独立管理/编辑接口按权限读取：
 
