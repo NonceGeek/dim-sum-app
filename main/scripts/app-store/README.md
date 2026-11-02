@@ -23,6 +23,7 @@ The write switch also covers favorites and media uploads. Account merges use tab
 
 ## Verification
 
+- `npm run test:app-store:anonymous`: checks the actual local HTTP middleware with no cookie: public catalog GET must return 200; POST, sibling paths, admin and favorites must still return 401. Run the local server first (default localhost:3006), without the synthetic-session proxy.
 - `npm run test:app-store`: URL policy, legacy categories/content, publication requirements and combined search/filter/order behavior.
 - `scripts/app-store/integration-test.ts`: real transaction checks for drafts, old/public visibility, stale revision conflicts, administrator rights, favorite idempotency, inactive accounts, account favorite merging and offline privacy. This script **refuses non-local targets**; it requires `APP_STORE_LOCAL_TEST=true` and a disposable PostgreSQL database on `127.0.0.1:55438` with the necessary existing User/application and three new tables. It never loads production credentials itself.
 - TypeScript and the normal production build. Local build needs a Resend configuration value because an existing unrelated email route initializes its client at module load; do not invoke email endpoints during local validation.
