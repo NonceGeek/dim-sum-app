@@ -175,13 +175,15 @@ export function StoreCatalog() {
   }
   function launchButton(app: StoreApp, className = "") {
     const text =
-      app.kind === "miniprogram"
-        ? t.qr
-        : app.access === "request"
-          ? t.request
-          : app.access === "direct"
-            ? t.launch
-            : t.open;
+      !app.launchUrl && !app.qrUrl
+        ? t.noLaunch
+        : app.kind === "miniprogram"
+          ? t.qr
+          : app.access === "request"
+            ? t.request
+            : app.access === "direct"
+              ? t.launch
+              : t.open;
     return app.launchUrl &&
       app.kind !== "miniprogram" &&
       app.access !== "request" &&

@@ -48,6 +48,8 @@ test("legacy category links map to stable codes", () => {
   assert.equal(categoryCode("Learning"), "learning");
   assert.equal(categoryCode("Gaming"), "game");
   assert.equal(categoryCode("AI"), "ai");
+  assert.equal(categoryCode("TOOL"), "other");
+  assert.equal(categoryCode("TAG"), "community");
   assert.equal(categoryCode("Others"), "other");
 });
 test("legacy records do not invent access, login or device claims", () => {

@@ -73,10 +73,10 @@ export function publishIssues(d: AppDraft): string[] {
 export function categoryCode(type: string | null | undefined) {
   const t = (type ?? "").toLowerCase();
   if (["study", "learning", "学习", "学粤语"].includes(t)) return "learning";
-  if (["ai", "tool", "ai 工具"].includes(t)) return "ai";
+  if (["ai", "ai 工具"].includes(t)) return "ai";
   if (["game", "gaming", "游戏"].includes(t)) return "game";
   if (["data", "语料", "语料与数据"].includes(t)) return "data";
-  if (["community", "共建", "社区共建"].includes(t)) return "community";
+  if (["community", "tag", "共建", "社区共建"].includes(t)) return "community";
   return "other";
 }
 export type LegacyApp = {
