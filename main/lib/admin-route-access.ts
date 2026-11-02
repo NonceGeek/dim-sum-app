@@ -13,11 +13,15 @@ export function isDelegatedCollectionPage(pathname: string) {
 }
 /** Library ops pages are opened to operators holding a global capability. */
 export function isLibraryOpsPage(pathname: string) {
-  return /^\/admin\/(contribution-applications|ingestion-leads|dataset-contact-requests)(\/|$)/.test(
+  return /^\/admin\/(contribution-applications|ingestion-leads|ingestion-tasks|dataset-contact-requests)(\/|$)/.test(
     pathname,
   );
 }
 /** The review webhook has its own mandatory service authentication, not a browser session. */
+export function isCronJob(pathname: string, method: string) {
+  return method === "GET" && pathname.startsWith("/api/cron/");
+}
+
 export function isReviewWebhook(pathname: string, method: string) {
   return (
     method === "POST" &&

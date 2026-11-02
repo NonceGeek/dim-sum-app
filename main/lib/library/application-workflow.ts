@@ -122,8 +122,8 @@ export function leadTransition(
     : { ok: true, to: "CLOSED" };
 }
 
-/** CA-20260913-008 / IL-20260913-001; date in Asia/Shanghai. */
-export function formatSerial(prefix: "CA" | "IL", date: Date, seq: number) {
+/** CA-20260913-008 / IL-20260913-001 / IT-20260913-001; date in Asia/Shanghai. */
+export function formatSerial(prefix: "CA" | "IL" | "IT", date: Date, seq: number) {
   const day = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Shanghai",
     year: "numeric",

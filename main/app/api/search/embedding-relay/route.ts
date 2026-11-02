@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
     query?: unknown;
   } | null;
   const query = typeof input?.query === "string" ? input.query.trim() : "";
-  if (!query || query.length > 200) {
+  // Tag embedding inputs (name + up to 500-char gloss) also go through this relay.
+  if (!query || query.length > 600) {
     return NextResponse.json({ message: "Invalid query" }, { status: 400 });
   }
 

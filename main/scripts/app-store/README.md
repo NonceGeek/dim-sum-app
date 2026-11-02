@@ -5,7 +5,7 @@ Product scope and decisions live in the ai-docs DimSum S8 records.
 
 ## Data changes
 
-The existing application IDs and published legacy fields are preserved. Three new tables hold display drafts/public snapshots, account favorites, and append-only operation history. A reviewed live-schema introspection is included because dev was missing existing ingestion tables and the `ingestion_task_id` relation; these are baseline synchronization, not new App Store functionality. The ingestion-leads response serializes that existing BigInt relation as a string.
+The existing application IDs and published legacy fields are preserved. Three new tables hold display drafts/public snapshots, account favorites, and append-only operation history. The branch has been synchronized with `origin/dev` at `0bcad13`, retaining its ingestion schema and APIs. The App Store schema delta against that base contains only the three new models and their relation fields.
 
 No production data or schema is changed by building this branch. Writes are disabled unless `APP_STORE_WRITES_ENABLED=true`.
 
@@ -30,3 +30,11 @@ The write switch also covers favorites and media uploads. Account merges use tab
 Media uploads reuse OSS with a dedicated App Store purpose and a 4 MB limit. Larger demo videos use an operator-provided URL. Files are only uploaded by a platform administrator, not fetched from arbitrary URLs by the server.
 
 Browser QA used synthetic accounts and application rows in an isolated local database. Local proxy/session fixtures are outside the repository and must never be deployed. Desktop and a 390 × 844 responsive viewport were checked; physical iPhone Safari, real OSS uploads and production rollout remain separate acceptance steps.
+
+## Production database rollout — 2026-11-02
+
+The user explicitly authorized updating the production database using db pull before db push. Live introspection was saved separately, compared with the feature target, and the reviewed SQL contained only three tables, two indexes and three foreign keys. `prisma db push --skip-generate` completed without data-loss overrides; the RLS, grants, status constraint and legacy public view in `enable-rls.sql` were then applied transactionally. No credentials or public application exports are included in this repository.
+
+Post-checks: the database-to-target diff is empty; all three private tables have RLS enabled and no anon/authenticated table grants; all three tables contain zero records. The legacy public view returns the same 24 applications. A SHA-256 comparison of every legacy application row, ordered by ID, was identical before and after (`e30311639e0e119d01df4582b2e83b2efc9f3a7921400c4d6560751e1c38682d`). The schema was compared again after synchronizing the latest dev branch and still has an empty database diff.
+
+This records **database readiness only**. The Deno endpoint and Next.js changes have not yet been deployed or verified in production. Keep App Store writes disabled until release steps 3–5 pass. No production fixtures, profiles or favorites were created for verification. Valid WeChat launch URLs and physical-device acceptance remain pending; QR-only legacy entries continue to work.
