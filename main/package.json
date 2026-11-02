@@ -12,6 +12,8 @@
     "test:channel-video": "node --import tsx --test lib/services/channel-video.test.ts lib/services/submission-ai.test.ts lib/channel-video-scan.test.ts",
     "test:questionnaire": "node --import tsx --test lib/services/questionnaire-status.test.ts",
     "test:activity-time": "node --import tsx --test lib/activity-time.test.ts",
+    "test:app-store": "node --import tsx --test lib/app-store/*.test.ts",
+    "test:app-store:local": "node --import tsx scripts/app-store/integration-test.ts",
     "test:library": "node --import tsx --test lib/library/library.test.ts",
     "test:admin-scopes": "node --import tsx --test lib/admin/*.test.ts lib/services/submission-permissions.test.ts lib/services/submission-ai.test.ts lib/admin-route-access.test.ts lib/library/library.test.ts lib/dataset-management.test.ts",
     "test:yue-cube-game": "node --import tsx --test lib/services/yue-cube-game*.test.ts",

@@ -784,7 +784,7 @@ router
   .get("/corpus_apps", async (context) => {
 
     const { data, error } = await supabase
-      .from("cantonese_corpus_apps")
+      .from("app_store_public_legacy")
       .select("*");
 
     if (error) {

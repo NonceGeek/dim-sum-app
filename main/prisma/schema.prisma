@@ -35,9 +35,7 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
-  searchFeedback                                                                            search_feedback[]
-  adminBusinessRoles                                                                        admin_business_roles[]
-  adminScopeGrants                                                                          admin_scope_grants[]
+  appFavorites app_store_favorites[]
   id                                                                                        String                                     @id @default(cuid())
   name                                                                                      String?
   email                                                                                     String?                                    @unique
@@ -58,11 +56,14 @@ model User {
   accounts                                                                                  Account[]
   sessions                                                                                  Session[]
   walletNonces                                                                              WalletNonce[]
+  adminBusinessRoles                                                                        admin_business_roles[]
+  adminScopeGrants                                                                          admin_scope_grants[]
   api_key                                                                                   api_key[]
   assistantConversations                                                                    assistant_conversations[]
   cantonese_corpus_update_history_cantonese_corpus_update_history_contributor_user_idToUser cantonese_corpus_update_history[]          @relation("cantonese_corpus_update_history_contributor_user_idToUser")
   cantonese_corpus_update_history                                                           cantonese_corpus_update_history[]
   createdContentCategories                                                                  content_categories[]                       @relation("content_categories_created_by")
+  corpus_agent_approvals                                                                    corpus_agent_approvals[]
   corpus_category                                                                           corpus_category[]
   corpusCollectionActivities                                                                corpus_collection_activities[]
   assignedQuestionnairePermissions                                                          corpus_collection_activity_permissions[]   @relation("QuestionnairePermissionAssigner")
@@ -82,8 +83,13 @@ model User {
   corpus_taxonomy_changes                                                                   corpus_taxonomy_changes[]
   gameAnswerRecords                                                                         game_answer_records[]
   gamePlayerProgress                                                                        game_player_progress?
+  ingestion_operations                                                                      ingestion_operations[]
+  ingestion_task_files                                                                      ingestion_task_files[]
+  ingestion_tasks_ingestion_tasks_assignee_idToUser                                         ingestion_tasks[]                          @relation("ingestion_tasks_assignee_idToUser")
+  ingestion_tasks_ingestion_tasks_created_byToUser                                          ingestion_tasks[]                          @relation("ingestion_tasks_created_byToUser")
   auditLogsAsOperator                                                                       permission_audit_logs[]                    @relation("AuditOperator")
   auditLogsAsTarget                                                                         permission_audit_logs[]                    @relation("AuditTarget")
+  searchFeedback                                                                            search_feedback[]
   createdTags                                                                               tags[]                                     @relation("tags_created_by")
   corpusInteractions                                                                        user_corpus_interactions[]
   corpusPermissions                                                                         user_corpus_permissions[]
@@ -120,7 +126,6 @@ model api_key {
 }
 
 model cantonese_categories {
-  created_by           String?
   id                   BigInt                        @default(autoincrement())
   name                 String                        @unique
   nickname             String?
@@ -142,6 +147,7 @@ model cantonese_categories {
   is_public            Boolean                       @default(true)
   recommend_words      Json                          @default("[]")
   content_attribute    String                        @default("unclassified")
+  created_by           String?
   cantonese_corpus_all cantonese_corpus_all[]
   activity             corpus_collection_activities?
   libraryProfile       library_dataset_profiles?
@@ -174,6 +180,7 @@ model cantonese_corpus_all {
   corpus_tags                   corpus_tags[]
   corpus_taxonomy_changes       corpus_taxonomy_changes[]
   corpus_zyzdv2                 corpus_zyzdv2[]
+  ingestion_records             ingestion_records?
   userInteractions              user_corpus_interactions[]
 
   @@id([id, data])
@@ -183,6 +190,8 @@ model cantonese_corpus_all {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model cantonese_corpus_apps {
+  storeProfile app_store_profiles?
+  favorites app_store_favorites[]
   id               BigInt    @id @default(autoincrement())
   name             String?
   description      String?
@@ -798,8 +807,6 @@ model corpus_collection_activity_permissions {
 
 /// 语料采集 - 问卷洞察访问与导出审计
 model corpus_collection_audit_logs {
-  scope_type     String?
-  scope_id       String?
   id             BigInt   @id @default(autoincrement())
   operator_id    String
   action         String
@@ -813,6 +820,8 @@ model corpus_collection_audit_logs {
   operator_role  String?
   outcome        String   @default("success")
   submission_id  BigInt?
+  scope_id       String?
+  scope_type     String?
 
   @@index([operator_id, created_at])
   @@index([activity_id, created_at])
@@ -1353,13 +1362,14 @@ model ingestion_leads {
   rights_privacy_summary      Json                      @default("{}")
   status                      String                    @default("PENDING_OWNER_ACCEPTANCE")
   closing_note                String?
-  ingestion_task_id           String?
   created_by                  String
   accepted_at                 DateTime?                 @db.Timestamptz(6)
   closed_at                   DateTime?                 @db.Timestamptz(6)
   created_at                  DateTime                  @default(now()) @db.Timestamptz(6)
   updated_at                  DateTime                  @default(now()) @updatedAt @db.Timestamptz(6)
+  ingestion_task_id           BigInt?                   @unique
   application                 contribution_applications @relation(fields: [contribution_application_id], references: [id])
+  ingestion_tasks             ingestion_tasks?          @relation(fields: [ingestion_task_id], references: [id], onUpdate: NoAction)
 
   @@index([assignee_id, status])
 }
@@ -1435,69 +1445,6 @@ model corpus_taxonomy_changes {
   cantonese_corpus_all cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([corpus_id, created_at(sort: Desc)], map: "corpus_taxonomy_changes_corpus_idx")
-}
-
-enum Role {
-  LEARNER
-  TAGGER_PARTNER
-  TAGGER_OUTSOURCING
-  RESEARCHER
-}
-
-enum UserStatus {
-  ACTIVE
-  PENDING_DELETE
-  DELETED
-  MERGED
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum APIStatus {
-  PENDING
-  APPROVED
-  BANNED
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum Status {
-  PENDING
-  APPROVED
-  BANNED
-}
-
-/// 操作类型枚举
-enum OperationType {
-  CREATE
-  UPDATE
-  DELETE
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum APILevel {
-  ADMIN
-  NORMAL
-}
-
-/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-enum CategoryStatus {
-  RAW
-  INPROGRASS
-}
-
-/// 语料库访问权限级别
-enum CorpusPermission {
-  READ
-  WRITE
-  CREATE
-  FULL
-}
-
-/// 权限变更操作类型
-enum PermissionAction {
-  GRANT
-  REVOKE
-  MODIFY
-  ROLE_CHANGE
 }
 
 /// 自建埋点：前台行为事件与服务端搜索请求（#396）。不存 IP；query 为规范化后的搜索词原文
@@ -1589,7 +1536,7 @@ model search_feedback {
   handled_at   DateTime? @db.Timestamptz(6)
   created_at   DateTime  @default(now()) @db.Timestamptz(6)
   updated_at   DateTime  @updatedAt @db.Timestamptz(6)
-  user         User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user         User?     @relation(fields: [user_id], references: [id])
 
   @@index([status, created_at])
   @@index([anonymous_id, created_at])
@@ -1603,4 +1550,426 @@ model search_daily_entries {
   entry_id   String   @db.Uuid
   entry      Json
   created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_approvals {
+  id                 String              @id
+  run_id             String
+  proposal_id        String
+  turn_id            String?
+  tool_call_id       String?
+  proposal           Json
+  content_hash       String
+  expected           Json
+  status             String
+  expires_at         DateTime            @db.Timestamptz(6)
+  decided_at         DateTime?           @db.Timestamptz(6)
+  decided_by         String?
+  decision_note      String?
+  result             Json?
+  created_at         DateTime            @default(now()) @db.Timestamptz(6)
+  settled_at         DateTime?           @db.Timestamptz(6)
+  applied_txid       BigInt?             @unique
+  User               User?               @relation(fields: [decided_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  corpus_agent_runs  corpus_agent_runs   @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_turns corpus_agent_turns? @relation(fields: [turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([run_id, proposal_id])
+  @@index([run_id, created_at(sort: Desc)], map: "corpus_agent_approvals_run_created_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_context_summaries {
+  id                   String               @id
+  thread_id            String
+  turn_id              String
+  source_revision      Int
+  through_seq          Int
+  status               String
+  text                 String?
+  details              Json                 @default("{}")
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  corpus_agent_threads corpus_agent_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_turns   corpus_agent_turns   @relation(fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_events {
+  seq               BigInt            @id @default(autoincrement())
+  run_id            String
+  type              String
+  payload           Json              @default("{}")
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  corpus_agent_runs corpus_agent_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([run_id, seq(sort: Desc)], map: "corpus_agent_events_run_seq_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_messages {
+  id                      String                    @id
+  thread_id               String
+  turn_id                 String
+  seq                     Int
+  group_id                String
+  schema_version          Int                       @default(1)
+  role                    String
+  message                 Json
+  status                  String
+  source                  Json                      @default("{}")
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  corpus_agent_threads    corpus_agent_threads      @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_turns      corpus_agent_turns        @relation(fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_questions  corpus_agent_questions[]
+  corpus_agent_tool_calls corpus_agent_tool_calls[]
+
+  @@unique([thread_id, seq])
+  @@index([thread_id, group_id, seq], map: "corpus_agent_messages_group")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_questions {
+  id                    String                 @id
+  run_id                String
+  tool_call_id          String
+  turn_id               String?
+  message_id            String?
+  questions             Json
+  answers               Json?
+  status                String
+  created_at            DateTime               @default(now()) @db.Timestamptz(6)
+  resolved_at           DateTime?              @db.Timestamptz(6)
+  corpus_agent_messages corpus_agent_messages? @relation(fields: [message_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  corpus_agent_runs     corpus_agent_runs      @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_turns    corpus_agent_turns?    @relation(fields: [turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([run_id, tool_call_id])
+  @@index([run_id, created_at(sort: Desc)], map: "corpus_agent_questions_run_created_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_run_changes {
+  run_id            String            @id
+  seq               BigInt            @default(0)
+  corpus_agent_runs corpus_agent_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_runs {
+  id                       String                    @id
+  task_id                  BigInt                    @unique
+  status                   String
+  sandbox_id               String?
+  execution_version        Int                       @default(0)
+  lease_until              DateTime?                 @db.Timestamptz(6)
+  revision                 BigInt                    @default(0)
+  sandbox_idle_until       DateTime?                 @db.Timestamptz(6)
+  last_error               String?
+  created_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  corpus_agent_approvals   corpus_agent_approvals[]
+  corpus_agent_events      corpus_agent_events[]
+  corpus_agent_questions   corpus_agent_questions[]
+  corpus_agent_run_changes corpus_agent_run_changes?
+  ingestion_tasks          ingestion_tasks           @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_threads     corpus_agent_threads[]
+  corpus_agent_turns       corpus_agent_turns[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_threads {
+  id                             String                           @id
+  run_id                         String
+  task_id                        String?
+  parent_tool_call_id            String?
+  next_seq                       Int                              @default(1)
+  revision                       Int                              @default(0)
+  corpus_agent_context_summaries corpus_agent_context_summaries[]
+  corpus_agent_messages          corpus_agent_messages[]
+  corpus_agent_runs              corpus_agent_runs                @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_tool_calls        corpus_agent_tool_calls[]
+  corpus_agent_turns             corpus_agent_turns[]
+
+  @@unique([run_id, task_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_tool_calls {
+  id                                                                                String                @id
+  thread_id                                                                         String
+  turn_id                                                                           String
+  message_id                                                                        String
+  tool_call_id                                                                      String
+  tool_name                                                                         String
+  input                                                                             Json
+  status                                                                            String
+  output                                                                            Json?
+  reconciled_turn_id                                                                String?
+  corpus_agent_messages                                                             corpus_agent_messages @relation(fields: [message_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  corpus_agent_turns_corpus_agent_tool_calls_reconciled_turn_idTocorpus_agent_turns corpus_agent_turns?   @relation("corpus_agent_tool_calls_reconciled_turn_idTocorpus_agent_turns", fields: [reconciled_turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  corpus_agent_threads                                                              corpus_agent_threads  @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_turns_corpus_agent_tool_calls_turn_idTocorpus_agent_turns            corpus_agent_turns    @relation("corpus_agent_tool_calls_turn_idTocorpus_agent_turns", fields: [turn_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([thread_id, tool_call_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model corpus_agent_turns {
+  id                                                                                     String                           @id
+  run_id                                                                                 String
+  thread_id                                                                              String
+  request_id                                                                             String
+  input_hash                                                                             String
+  kind                                                                                   String
+  parent_turn_id                                                                         String?
+  execution_version                                                                      Int
+  status                                                                                 String                           @default("running")
+  config                                                                                 Json                             @default("{}")
+  result                                                                                 Json?
+  error                                                                                  String?
+  created_at                                                                             DateTime                         @default(now()) @db.Timestamptz(6)
+  finished_at                                                                            DateTime?                        @db.Timestamptz(6)
+  corpus_agent_approvals                                                                 corpus_agent_approvals[]
+  corpus_agent_context_summaries                                                         corpus_agent_context_summaries[]
+  corpus_agent_messages                                                                  corpus_agent_messages[]
+  corpus_agent_questions                                                                 corpus_agent_questions[]
+  corpus_agent_tool_calls_corpus_agent_tool_calls_reconciled_turn_idTocorpus_agent_turns corpus_agent_tool_calls[]        @relation("corpus_agent_tool_calls_reconciled_turn_idTocorpus_agent_turns")
+  corpus_agent_tool_calls_corpus_agent_tool_calls_turn_idTocorpus_agent_turns            corpus_agent_tool_calls[]        @relation("corpus_agent_tool_calls_turn_idTocorpus_agent_turns")
+  corpus_agent_turns                                                                     corpus_agent_turns?              @relation("corpus_agent_turnsTocorpus_agent_turns", fields: [parent_turn_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_corpus_agent_turns                                                               corpus_agent_turns[]             @relation("corpus_agent_turnsTocorpus_agent_turns")
+  corpus_agent_runs                                                                      corpus_agent_runs                @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  corpus_agent_threads                                                                   corpus_agent_threads             @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([run_id, request_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_operations {
+  id                String              @id
+  task_id           BigInt
+  thread_id         String?
+  turn_id           String?
+  tool_call_id      String?
+  approval_id       String
+  proposal_id       String
+  approved_by       String
+  approved_at       DateTime            @db.Timestamptz(6)
+  records_path      String
+  records_hash      String
+  committed_at      DateTime            @default(now()) @db.Timestamptz(6)
+  result            Json
+  User              User                @relation(fields: [approved_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ingestion_tasks   ingestion_tasks     @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ingestion_records ingestion_records[]
+
+  @@unique([task_id, proposal_id])
+  @@index([task_id], map: "ingestion_operations_task_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_records {
+  corpus_id            BigInt               @id
+  operation_id         String
+  record_row           Int
+  cantonese_corpus_all cantonese_corpus_all @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ingestion_operations ingestion_operations @relation(fields: [operation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([operation_id, corpus_id], map: "ingestion_records_operation_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_reports {
+  id              BigInt          @id @default(autoincrement())
+  task_id         BigInt
+  version         Int
+  kind            String          @default("final")
+  status          String          @default("generating")
+  formats         String[]        @default([])
+  base_path       String
+  facts_hash      String?
+  summary         Json            @default("{}")
+  narrative_meta  Json            @default("{}")
+  error           String?
+  generated_by    String?
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime        @default(now()) @db.Timestamptz(6)
+  ingestion_tasks ingestion_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([task_id, version])
+  @@index([task_id, created_at(sort: Desc)], map: "ingestion_reports_task_created_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_task_events {
+  id              BigInt          @id @default(autoincrement())
+  task_id         BigInt
+  operator_id     String?
+  operator_role   String?
+  operation_type  String
+  from_status     String?
+  to_status       String?
+  note            String?
+  payload         Json            @default("{}")
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  ingestion_tasks ingestion_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([task_id, created_at], map: "ingestion_task_events_task_created_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_task_files {
+  id              BigInt          @id @default(autoincrement())
+  task_id         BigInt
+  path            String
+  name            String
+  size            BigInt
+  etag            String?
+  status          String          @default("UPLOADING")
+  uploaded_by     String
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime        @default(now()) @db.Timestamptz(6)
+  ingestion_tasks ingestion_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User            User            @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([task_id, path])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingestion_tasks {
+  id                                     BigInt                  @id @default(autoincrement())
+  task_no                                String                  @unique
+  title                                  String
+  description                            String                  @default("")
+  target_dataset_name                    String
+  status                                 String                  @default("PENDING")
+  assignee_id                            String
+  created_by                             String
+  workspace_prefix                       String
+  completed_at                           DateTime?               @db.Timestamptz(6)
+  cancelled_at                           DateTime?               @db.Timestamptz(6)
+  created_at                             DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                             DateTime                @default(now()) @db.Timestamptz(6)
+  target_ingestion_type                  String                  @default("new_dataset")
+  modalities                             String[]                @default(["text"])
+  source_collection_method               String                  @default("")
+  target_content_attribute               String?
+  corpus_agent_runs                      corpus_agent_runs?
+  ingestion_leads                        ingestion_leads?
+  ingestion_operations                   ingestion_operations[]
+  ingestion_reports                      ingestion_reports[]
+  ingestion_task_events                  ingestion_task_events[]
+  ingestion_task_files                   ingestion_task_files[]
+  User_ingestion_tasks_assignee_idToUser User                    @relation("ingestion_tasks_assignee_idToUser", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User_ingestion_tasks_created_byToUser  User                    @relation("ingestion_tasks_created_byToUser", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([assignee_id, status], map: "ingestion_tasks_assignee_status_idx")
+  @@index([status, created_at(sort: Desc)], map: "ingestion_tasks_status_created_idx")
+}
+
+enum Role {
+  LEARNER
+  TAGGER_PARTNER
+  TAGGER_OUTSOURCING
+  RESEARCHER
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_DELETE
+  DELETED
+  MERGED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APIStatus {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum Status {
+  PENDING
+  APPROVED
+  BANNED
+}
+
+/// 操作类型枚举
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum APILevel {
+  ADMIN
+  NORMAL
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum CategoryStatus {
+  RAW
+  INPROGRASS
+}
+
+/// 语料库访问权限级别
+enum CorpusPermission {
+  READ
+  WRITE
+  CREATE
+  FULL
+}
+
+/// 权限变更操作类型
+enum PermissionAction {
+  GRANT
+  REVOKE
+  MODIFY
+  ROLE_CHANGE
+}
+
+
+
+/// App Store display data: only published_data is public. Existing legacy rows have no profile.
+model app_store_profiles {
+  app_id BigInt @id
+  status String @default("draft")
+  draft_data Json
+  published_data Json?
+  revision Int @default(1)
+  published_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  app cantonese_corpus_apps @relation(fields: [app_id], references: [id], onDelete: Cascade)
+}
+
+model app_store_favorites {
+  user_id String
+  app_id BigInt
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  app cantonese_corpus_apps @relation(fields: [app_id], references: [id], onDelete: Cascade)
+  @@id([user_id, app_id])
+  @@index([app_id])
+}
+
+/// Append-only server-side history; actor IDs retain historical attribution after account merges.
+model app_store_audit_logs {
+  id BigInt @id @default(autoincrement())
+  app_id BigInt
+  actor_id String
+  action String
+  revision Int
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@index([app_id, created_at])
 }

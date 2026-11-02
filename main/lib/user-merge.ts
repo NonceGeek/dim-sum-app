@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { mergeApplicationFavorites } from "./app-store/merge-favorites";
 
 /** 把含 BigInt / Date 的 Prisma 行转成可存入 Json 列的纯 JSON 值 */
 function toJsonSafe(value: unknown): Prisma.InputJsonValue {
@@ -30,10 +31,21 @@ export async function mergeUserRelations(
     throw new Error("mergeUserRelations: source 与 target 不能相同");
   }
 
+  // Serialize account moves with account-scoped favorite writes.
+  for (const id of [sourceUserId, targetUserId].sort())
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR UPDATE`;
+
   const sourceUser = await tx.user.findUnique({ where: { id: sourceUserId } });
   if (!sourceUser) {
     throw new Error("mergeUserRelations: 源用户不存在");
   }
+
+  // App favorites are independent of corpus interactions; preserve both accounts in the merge snapshot.
+  // Readiness is independent of the write kill switch: disabling new writes must not strand existing favorites.
+  const [appStoreTable] = await tx.$queryRaw<Array<{ ready: boolean }>>`SELECT to_regclass('public.app_store_favorites') IS NOT NULL AS ready`;
+  const appStoreReady = appStoreTable.ready;
+  const sourceAppFavorites = appStoreReady ? await tx.app_store_favorites.findMany({where: {user_id: sourceUserId}}) : [];
+  const targetAppFavorites = appStoreReady ? await tx.app_store_favorites.findMany({where: {user_id: targetUserId}}) : [];
 
   // ===================== Phase A：合并前快照（0 丢失，供撤回）=====================
   // 源账号名下的全部数据。sessions / walletNonces 属临时数据不快照（撤回后重登即可再生）。
@@ -136,6 +148,7 @@ export async function mergeUserRelations(
     source_rows: {
       accounts: srcAccounts,
       api_key: srcApiKeys,
+      app_store_favorites: sourceAppFavorites,
       user_corpus_interactions: srcInteractions,
       user_corpus_permissions: srcPermissions,
       corpus_collection_likes: srcLikes,
@@ -157,6 +170,7 @@ export async function mergeUserRelations(
       permission_audit_logs_target: srcAuditTarget,
     },
     target_before: {
+      app_store_favorites: targetAppFavorites,
       user_corpus_interactions: tgtInteractionsBefore,
       user_corpus_permissions: tgtPermissionsBefore,
       game_player_progress: tgtProgressBefore,
@@ -188,6 +202,8 @@ export async function mergeUserRelations(
       });
     }
   }
+
+  if (appStoreReady) await mergeApplicationFavorites(tx, sourceUserId, targetUserId, sourceAppFavorites);
 
   // user_corpus_permissions @@unique([user_id, category_name])：取更高等级
   const PERM_RANK: Record<string, number> = {

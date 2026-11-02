@@ -14,6 +14,7 @@ import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
+	Grid2X2,
 	BarChart3,
 	ChevronDown,
 	ClipboardList,
@@ -36,6 +37,7 @@ import { useTranslations } from "next-intl";
 import { useEffect,useState } from "react";
 
 const adminNavItems = [
+  {titleKey: "nav.applications", href: "/admin/applications", icon: Grid2X2},
   {
     titleKey: "nav.dashboard",
     href: "/admin",
