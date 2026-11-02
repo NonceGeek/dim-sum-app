@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   Check,
   ChevronDown,
-  Grid2X2,
   Heart,
   Search,
   Sparkles,
@@ -54,6 +53,7 @@ import {
 } from "@/lib/app-store/model";
 import { track } from "@/lib/analytics/client";
 import { appCopy } from "./copy";
+import { AppArtwork } from "./artwork";
 import { appJson, useAppFavorites } from "./favorites";
 
 function Overlay({
@@ -103,34 +103,6 @@ function Overlay({
         {children}
       </SheetContent>
     </Sheet>
-  );
-}
-export function AppArtwork({
-  app,
-  className = "",
-}: {
-  app: StoreApp;
-  className?: string;
-}) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [app.coverUrl]);
-  return (
-    <div
-      className={`relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-muted ${className}`}
-    >
-      {(!app.coverUrl || failed) && (
-        <Grid2X2 className="h-12 w-12 text-muted-foreground/30" aria-hidden />
-      )}
-      {app.coverUrl && !failed && (
-        <img
-          src={app.coverUrl}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-          onError={() => setFailed(true)}
-        />
-      )}
-    </div>
   );
 }
 export function StoreCatalog() {

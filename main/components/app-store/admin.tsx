@@ -31,7 +31,7 @@ import {
 } from "@/lib/app-store/model";
 import { appJson } from "./favorites";
 import { appCopy } from "./copy";
-import { AppArtwork } from "./catalog";
+import { AppArtwork } from "./artwork";
 type AdminRow = {
   id: string;
   status: string;
@@ -160,7 +160,7 @@ export function AppStoreAdmin() {
       setBusy(false);
     }
   }
-  async function upload(file: File, field: "coverUrl" | "qrUrl" | "demoUrl") {
+  async function upload(file: File, field: "coverUrl" | "iconUrl" | "qrUrl" | "demoUrl") {
     if (file.size > 4 * 1024 * 1024) {
       toast.error(
         L(
@@ -495,36 +495,42 @@ export function AppStoreAdmin() {
                 {L("素材与演示", "Artwork & demo")}
               </h2>
               <div className="grid gap-5 sm:grid-cols-2">
-                {(["coverUrl", "qrUrl", "demoUrl"] as const).map((field, i) => (
-                  <div key={field} className="space-y-2">
-                    {textField(
-                      field,
-                      [
-                        L("封面 URL *", "Cover URL *"),
-                        L("微信二维码 URL", "WeChat QR URL"),
-                        L("演示 URL（可选）", "Demo URL (optional)"),
-                      ][i],
-                    )}
-                    <Label className="inline-flex cursor-pointer items-center gap-2 text-xs text-primary">
-                      <Upload className="h-3 w-3" />
-                      {L("上传文件", "Upload file")}
-                      <input
-                        type="file"
-                        className="sr-only"
-                        accept={
-                          field === "demoUrl"
-                            ? "image/jpeg,image/png,image/webp,image/gif,video/mp4"
-                            : "image/jpeg,image/png,image/webp,image/gif"
-                        }
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) void upload(f, field);
-                          e.target.value = "";
-                        }}
-                      />
-                    </Label>
-                  </div>
-                ))}
+                {(["coverUrl", "iconUrl", "qrUrl", "demoUrl"] as const).map(
+                  (field, i) => (
+                    <div key={field} className="space-y-2">
+                      {textField(
+                        field,
+                        [
+                          L(
+                            "封面 URL（留空自动生成）",
+                            "Cover URL (generated when empty)",
+                          ),
+                          L("应用图标 URL（可选）", "App icon URL (optional)"),
+                          L("微信二维码 URL", "WeChat QR URL"),
+                          L("演示 URL（可选）", "Demo URL (optional)"),
+                        ][i],
+                      )}
+                      <Label className="inline-flex cursor-pointer items-center gap-2 text-xs text-primary">
+                        <Upload className="h-3 w-3" />
+                        {L("上传文件", "Upload file")}
+                        <input
+                          type="file"
+                          className="sr-only"
+                          accept={
+                            field === "demoUrl"
+                              ? "image/jpeg,image/png,image/webp,image/gif,video/mp4"
+                              : "image/jpeg,image/png,image/webp,image/gif"
+                          }
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void upload(f, field);
+                            e.target.value = "";
+                          }}
+                        />
+                      </Label>
+                    </div>
+                  ),
+                )}
                 {selectField("demoType", L("演示类型", "Demo type"), [
                   ["video", L("视频", "Video")],
                   ["image", L("图片", "Image")],

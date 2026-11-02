@@ -227,7 +227,7 @@ export async function saveApplication(
           url: draft.launchUrl,
           homepage_url: draft.homepageUrl,
           github_url: draft.githubUrl,
-          icon_img: draft.coverUrl,
+          icon_img: draft.coverUrl || draft.iconUrl,
           wechat_micro_app: draft.qrUrl,
           example_img: draft.demoUrl,
           sorting: BigInt(draft.rank),

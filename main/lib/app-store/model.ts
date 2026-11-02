@@ -40,6 +40,7 @@ export const appDraftSchema = z.object({
   homepageUrl: url.default(""),
   githubUrl: url.default(""),
   coverUrl: url.default(""),
+  iconUrl: url.default(""),
   qrUrl: url.default(""),
   demoUrl: url.default(""),
   demoType: z.enum(["image", "video"]).default("video"),
@@ -64,7 +65,6 @@ export function publishIssues(d: AppDraft): string[] {
   if (!d.name) issues.push("name");
   if (!d.summary) issues.push("summary");
   if (!d.authors) issues.push("authors");
-  if (!d.coverUrl) issues.push("coverUrl");
   if (d.kind === "miniprogram" ? !d.qrUrl : !d.launchUrl)
     issues.push(d.kind === "miniprogram" ? "qrUrl" : "launchUrl");
   if (d.launchUrl && !d.launchUrl.startsWith("https://")) issues.push("https");

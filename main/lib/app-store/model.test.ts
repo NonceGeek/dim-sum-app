@@ -23,7 +23,7 @@ test("URL policy rejects scripts, credentials and relative navigation", () => {
     "https://example.org/app?q=1",
   );
 });
-test("drafts may be incomplete but publication requires usable entry and artwork", () => {
+test("publication allows generated artwork but still requires a usable entry", () => {
   assert.equal(appDraftSchema.parse({}).name, "");
   assert.ok(publishIssues(EMPTY_DRAFT).includes("launchUrl"));
   const d = {
@@ -31,7 +31,7 @@ test("drafts may be incomplete but publication requires usable entry and artwork
     name: "Test",
     authors: "Team",
     summary: "Summary",
-    coverUrl: "https://example.org/cover.png",
+    coverUrl: "",
     kind: "miniprogram" as const,
     qrUrl: "https://example.org/qr.png",
   };

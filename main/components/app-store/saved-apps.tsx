@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Heart, ArrowUpRight } from "lucide-react";
 import { useAppFavorites } from "./favorites";
 import { appCopy } from "./copy";
-import { AppArtwork } from "./catalog";
+import { AppArtwork } from "./artwork";
 export function SavedApps() {
   const t = appCopy(useLocale());
   const f = useAppFavorites();
