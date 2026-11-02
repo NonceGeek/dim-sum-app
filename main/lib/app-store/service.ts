@@ -2,11 +2,9 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   appDraftSchema,
-  legacyDraft,
   publishIssues,
   type StoreApp,
   type AppDraft,
-  type LegacyApp,
 } from "./model";
 
 export class StoreError extends Error {
@@ -17,23 +15,6 @@ export class StoreError extends Error {
     super(message);
   }
 }
-export const legacySelect = {
-  id: true,
-  name: true,
-  description: true,
-  authors: true,
-  type: true,
-  url: true,
-  homepage_url: true,
-  github_url: true,
-  icon_img: true,
-  example_img: true,
-  wechat_micro_app: true,
-  pinned: true,
-  sorting: true,
-  created_at: true,
-  updated_at: true,
-} as const;
 export function parseId(value: string) {
   if (!/^[1-9]\d{0,17}$/.test(value))
     throw new StoreError(400, "Invalid application ID");
@@ -43,84 +24,53 @@ export function assertWritesEnabled() {
   if (process.env.APP_STORE_WRITES_ENABLED !== "true")
     throw new StoreError(
       503,
-      "App Store writes are not enabled. Complete the schema and legacy API rollout first.",
+      "App Store writes are not enabled. Complete the independent App Store schema and import first.",
     );
 }
-function missingTable(e: unknown) {
-  return (
-    e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2021"
-  );
-}
-// Strict output schema: neither draft data, audit details nor actor IDs can enter public responses.
-export function publicApp(
-  row: LegacyApp,
-  profile?: {
-    status: string;
-    published_data: unknown;
-    published_at: Date | null;
-    updated_at: Date;
-  } | null,
-): StoreApp | null {
-  if (profile && profile.status !== "published") return null;
-  const parsed = profile
-    ? appDraftSchema.safeParse(profile.published_data)
-    : null;
-  if (profile && !parsed?.success) return null;
+// Only the immutable public snapshot enters public responses; drafts are not selected.
+const publicSelect = {
+  app_id: true,
+  status: true,
+  published_data: true,
+  published_at: true,
+  updated_at: true,
+} as const;
+export function publicApp(profile: {
+  app_id: bigint;
+  status: string;
+  published_data: unknown;
+  published_at: Date | null;
+  updated_at: Date;
+}): StoreApp | null {
+  if (profile.status !== "published") return null;
+  const parsed = appDraftSchema.safeParse(profile.published_data);
+  if (!parsed.success) return null;
   return {
-    ...(parsed?.success ? parsed.data : legacyDraft(row)),
-    id: String(row.id),
-    publishedAt: (profile?.published_at ?? row.created_at).toISOString(),
-    updatedAt: (row.updated_at ?? row.created_at).toISOString(),
+    ...parsed.data,
+    id: String(profile.app_id),
+    publishedAt: (profile.published_at ?? profile.updated_at).toISOString(),
+    updatedAt: profile.updated_at.toISOString(),
   };
 }
 export async function publicApps(): Promise<StoreApp[]> {
-  // Profile query deliberately excludes draft_data. Before schema rollout the legacy catalog still works.
-  try {
-    const rows = await prisma.cantonese_corpus_apps.findMany({
-      select: {
-        ...legacySelect,
-        storeProfile: {
-          select: {
-            status: true,
-            published_data: true,
-            published_at: true,
-            updated_at: true,
-          },
-        },
-      },
-    });
-    return rows
-      .map((r) => publicApp(r, r.storeProfile))
-      .filter((r): r is StoreApp => !!r);
-  } catch (e) {
-    if (!missingTable(e) || process.env.APP_STORE_WRITES_ENABLED === "true")
-      throw e;
-    return (
-      await prisma.cantonese_corpus_apps.findMany({ select: legacySelect })
-    ).map((r) => publicApp(r));
-  }
+  const rows = await prisma.app_store_profiles.findMany({
+    where: { status: "published" },
+    select: publicSelect,
+  });
+  return rows.map(publicApp).filter((app): app is StoreApp => !!app);
 }
 export async function adminApps() {
-  const rows = await prisma.cantonese_corpus_apps.findMany({
-    select: { ...legacySelect, storeProfile: true },
-    orderBy: { id: "desc" },
+  const rows = await prisma.app_store_profiles.findMany({
+    orderBy: { app_id: "desc" },
   });
   return rows.map((row) => ({
-    id: String(row.id),
-    status: row.storeProfile?.status ?? "published",
-    revision: row.storeProfile?.revision ?? 0,
-    draft: row.storeProfile
-      ? appDraftSchema.parse(row.storeProfile.draft_data)
-      : legacyDraft(row),
+    id: String(row.app_id),
+    status: row.status,
+    revision: row.revision,
+    draft: appDraftSchema.parse(row.draft_data),
     hasChanges:
-      !!row.storeProfile &&
-      JSON.stringify(row.storeProfile.draft_data) !==
-        JSON.stringify(row.storeProfile.published_data),
-    updatedAt: (
-      row.storeProfile?.updated_at ??
-      row.updated_at ??
-      row.created_at
-    ).toISOString(),
+      JSON.stringify(row.draft_data) !== JSON.stringify(row.published_data),
+    updatedAt: row.updated_at.toISOString(),
   }));
 }
 export async function saveApplication(
@@ -153,92 +103,52 @@ export async function saveApplication(
       (!admin.isSystemAdmin && !admin.isSuperAdmin)
     )
       throw new StoreError(403, "Platform administrator required");
-    let row;
+    let before = null;
     if (input.id) {
       const id = parseId(input.id);
-      await tx.$queryRaw`SELECT id FROM cantonese_corpus_apps WHERE id = ${id} FOR UPDATE`;
-      row = await tx.cantonese_corpus_apps.findUnique({
-        where: { id },
-        include: { storeProfile: true },
+      await tx.$queryRaw`SELECT app_id FROM app_store_profiles WHERE app_id = ${id} FOR UPDATE`;
+      before = await tx.app_store_profiles.findUnique({
+        where: { app_id: id },
       });
-      if (!row) throw new StoreError(404, "Application not found");
-      if ((row.storeProfile?.revision ?? 0) !== input.revision)
+      if (!before) throw new StoreError(404, "Application not found");
+      if (before.revision !== input.revision)
         throw new StoreError(409, "Application changed. Reload before saving.");
-    } else {
-      if (input.action === "offline")
-        throw new StoreError(400, "Cannot take a new draft offline");
-      // Writes are rollout-gated: the legacy API must already filter draft/offline profiles.
-      row = await tx.cantonese_corpus_apps.create({
-        data: { name: "", description: "", authors: [] },
-      });
+    } else if (input.action === "offline") {
+      throw new StoreError(400, "Cannot take a new draft offline");
     }
-    const before = row.storeProfile;
     const status =
       input.action === "publish"
         ? "published"
         : input.action === "offline"
           ? "offline"
-          : (before?.status ?? (input.id ? "published" : "draft"));
+          : (before?.status ?? "draft");
     const revision = (before?.revision ?? 0) + 1;
-    // First edit of a legacy item snapshots its current public content; saves never change that content.
-    const previousPublished = before
-      ? before.published_data
-      : input.id
-        ? legacyDraft(row)
-        : null;
     const publishedData =
-      input.action === "publish" ? draft : previousPublished;
-    await tx.app_store_profiles.upsert({
-      where: { app_id: row.id },
-      create: {
-        app_id: row.id,
-        status,
-        revision,
-        draft_data: draft,
-        published_data: publishedData ?? Prisma.DbNull,
-        published_at:
-          input.action === "publish"
-            ? new Date()
-            : input.id
-              ? row.created_at
-              : null,
-      },
-      update: {
-        status,
-        revision,
-        draft_data: draft,
-        published_data: publishedData ?? Prisma.DbNull,
-        ...(input.action === "publish" && !before?.published_at
-          ? { published_at: new Date() }
-          : {}),
-      },
-    });
-    if (input.action === "publish")
-      await tx.cantonese_corpus_apps.update({
-        where: { id: row.id },
-        data: {
-          name: draft.name,
-          description: draft.description || draft.summary,
-          authors: draft.authors
-            .split(/[,，]/)
-            .map((v) => v.trim())
-            .filter(Boolean),
-          type: draft.category,
-          url: draft.launchUrl,
-          homepage_url: draft.homepageUrl,
-          github_url: draft.githubUrl,
-          icon_img: draft.coverUrl || draft.iconUrl,
-          wechat_micro_app: draft.qrUrl,
-          example_img: draft.demoUrl,
-          sorting: BigInt(draft.rank),
-          pinned: draft.badge === "featured",
-          updated_at: new Date(),
-        },
-      });
+      input.action === "publish" ? draft : before?.published_data;
+    const data = {
+      status,
+      revision,
+      draft_data: draft,
+      published_data: publishedData ?? Prisma.DbNull,
+      published_at:
+        before?.published_at ??
+        (input.action === "publish" ? new Date() : null),
+    };
+    const row = before
+      ? await tx.app_store_profiles.update({
+          where: { app_id: before.app_id },
+          data,
+        })
+      : await tx.app_store_profiles.create({ data });
     await tx.app_store_audit_logs.create({
-      data: { app_id: row.id, actor_id: actor, action: input.action, revision },
+      data: {
+        app_id: row.app_id,
+        actor_id: actor,
+        action: input.action,
+        revision,
+      },
     });
-    return { id: String(row.id), status, revision };
+    return { id: String(row.app_id), status, revision };
   });
 }
 export async function favoriteApplications(userId: string) {
@@ -254,25 +164,13 @@ export async function favoriteApplications(userId: string) {
     select: {
       app_id: true,
       created_at: true,
-      app: {
-        select: {
-          ...legacySelect,
-          storeProfile: {
-            select: {
-              status: true,
-              published_data: true,
-              published_at: true,
-              updated_at: true,
-            },
-          },
-        },
-      },
+      app: { select: publicSelect },
     },
   });
   return rows.map((r) => ({
     id: String(r.app_id),
     savedAt: r.created_at.toISOString(),
-    app: publicApp(r.app, r.app.storeProfile),
+    app: publicApp(r.app),
   }));
 }
 export async function setFavorite(userId: string, id: string, saved: boolean) {
@@ -287,23 +185,13 @@ export async function setFavorite(userId: string, id: string, saved: boolean) {
     if (user?.status !== "ACTIVE")
       throw new StoreError(403, "Active account required");
     // Same row lock as publishing: availability cannot change between check and write.
-    await tx.$queryRaw`SELECT id FROM cantonese_corpus_apps WHERE id = ${appId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT app_id FROM app_store_profiles WHERE app_id = ${appId} FOR UPDATE`;
     if (saved) {
-      const row = await tx.cantonese_corpus_apps.findUnique({
-        where: { id: appId },
-        select: {
-          ...legacySelect,
-          storeProfile: {
-            select: {
-              status: true,
-              published_data: true,
-              published_at: true,
-              updated_at: true,
-            },
-          },
-        },
+      const row = await tx.app_store_profiles.findUnique({
+        where: { app_id: appId },
+        select: publicSelect,
       });
-      if (!row || !publicApp(row, row.storeProfile))
+      if (!row || !publicApp(row))
         throw new StoreError(404, "Application unavailable");
       await tx.app_store_favorites.upsert({
         where: { user_id_app_id: { user_id: userId, app_id: appId } },

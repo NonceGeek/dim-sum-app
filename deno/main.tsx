@@ -781,10 +781,11 @@ router
     }
   })
   // APIs for corpus things.
+  // Historical catalog only. App Store is served by Next.js /api/app-store/apps.
   .get("/corpus_apps", async (context) => {
 
     const { data, error } = await supabase
-      .from("app_store_public_legacy")
+      .from("cantonese_corpus_apps")
       .select("*");
 
     if (error) {
