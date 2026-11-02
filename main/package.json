@@ -14,6 +14,7 @@
     "test:questionnaire": "node --import tsx --test lib/services/questionnaire-status.test.ts",
     "test:activity-time": "node --import tsx --test lib/activity-time.test.ts",
     "test:app-store": "node --import tsx --test lib/app-store/*.test.ts",
+    "test:app-store:anonymous": "node --import tsx scripts/app-store/verify-anonymous.ts",
     "test:app-store:local": "node --import tsx scripts/app-store/integration-test.ts",
     "test:library": "node --import tsx --test lib/library/library.test.ts",
     "test:ingestion": "node --import tsx --test lib/ingestion/ingestion.test.ts",

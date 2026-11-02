@@ -48,6 +48,11 @@ export default async function proxy(request: NextRequest) {
     pathname.startsWith('/_vercel/') ||
     pathname.includes('.')
   ) {
+    // This exact read-only catalog serves published snapshots to visitors.
+    // Do not exempt the whole namespace or any mutation method.
+    if (request.method === 'GET' && pathname === '/api/app-store/apps') {
+      return NextResponse.next();
+    }
     // Still apply auth for protected API routes
     if (pathname.startsWith('/api/') && !pathname.startsWith('/api/public') && !pathname.startsWith('/api/search') && !pathname.startsWith('/api/entries') && !pathname.startsWith('/api/auth') && !pathname.startsWith('/api/miniprogram')) {
       const token = await getToken({ req: request });

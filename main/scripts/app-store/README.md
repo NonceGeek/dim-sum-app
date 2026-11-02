@@ -1,40 +1,38 @@
 # App Store rollout and verification
 
-Feature branch: `codex/s8-app-store`, based on `origin/dev` at `e9ceec5`.
-Product scope and decisions live in the ai-docs DimSum S8 records.
+## Current architecture — independent service (2026-11-02)
 
-## Data changes
+App Store uses the same-origin Next.js API `GET /api/app-store/apps`, platform-admin `/api/admin/applications` APIs and account `/api/user/app-favorites`. The external Deno `/corpus_apps` service has been **replaced as the App Store data source**. This does not retire the server or its unrelated corpus APIs. No Deno deployment is required for the new App Store.
 
-The existing application IDs and published legacy fields are preserved. Three new tables hold display drafts/public snapshots, account favorites, and append-only operation history. The branch has been synchronized with `origin/dev` at `0bcad13`, retaining its ingestion schema and APIs. The App Store schema delta against that base contains only the three new models and their relation fields.
+`app_store_profiles` is now the application master table: its own auto-incrementing ID, private draft, public snapshot, status and revision. Favorites reference this table directly. Audits remain append-only. Only three App Store tables are used; no fourth table is added. Runtime APIs neither read nor write `cantonese_corpus_apps`, and there is no fallback to the old service.
 
-No production data or schema is changed by building this branch. Writes are disabled unless `APP_STORE_WRITES_ENABLED=true`.
+The one-time import retains the 24 legacy application IDs and public content. The old table, old endpoint and compatibility view are historical data: new edits, new applications and offline state do not synchronize back. Legacy consumers will see stale historical content and should migrate to the same-origin API. Do not describe the old endpoint as current or use it to validate new publication state.
+
+New applications, drafts, publication and offline transitions exist only in the new tables, so the old unfiltered service cannot reveal new drafts or newly published content. Public output is parsed from `published_data` only. Old entries with missing launch details retain their original data; new publication requires valid fields.
 
 ## Release order
 
-1. Keep writes disabled. Run the repository's normal **db pull → review database-to-schema diff → db push** workflow. Preserve any newer unrelated live changes. The App Store delta should contain only three tables, two indexes and three foreign keys; do not accept drops or unrelated alterations.
-2. Execute `enable-rls.sql` after reviewing it. It enables RLS with no public policies on the three private tables and exposes a deliberately limited legacy view. The view uses the legacy public fields only, excludes draft/offline items, and never includes draft JSON or actor data.
-3. Deploy the Deno `/corpus_apps` change and verify it reads `app_store_public_legacy`. **Do not enable new application writes while the old unfiltered endpoint is live.** Verify any direct consumers of the old table/API as part of release acceptance.
-4. Deploy Next.js with the new Prisma client. Verify anonymous public lists, administrator access and account favorites. Then enable `APP_STORE_WRITES_ENABLED=true` only in the approved environment.
-5. Test a disposable draft, publish, edit-without-publish, offline and favorite/unfavorite flow in that environment with explicit authorization. Check that neither public endpoint exposes the draft or an offline entry.
+1. Keep `APP_STORE_WRITES_ENABLED` disabled. Pull the live schema into a separate temporary file and review the database-to-target diff without overwriting the feature target. For the independent-storage update, the delta removes two legacy foreign keys, creates the profile ID sequence/default, and retargets the favorites foreign key. No legacy rows, tables or columns are deleted. If existing favorites are present, seed their profile targets before changing the foreign key; do not force past foreign-key failures.
+2. Apply the reviewed `prisma db push --skip-generate`, then run `enable-rls.sql`. It protects all private tables and ID sequences. Its legacy view is historical only, with no join to current publication state.
+3. Run `node --import tsx scripts/app-store/import-legacy.ts` for an import preview; add `--apply` for the authorized import. It inserts missing IDs, preserves all existing profiles, and advances the independent sequence beyond the maximum profile ID. Run before enabling writes. Re-running with unchanged historical data imports zero records; this is not a continuing synchronization job.
+4. Verify imported IDs/counts, old-table integrity, RLS/grants, sequence position and an empty database-to-target diff. Do not create production fixtures for these checks.
+5. Deploy Next.js with the generated Prisma client; verify visitors can load the catalog and administrators/account users retain their own access boundaries. Enable `APP_STORE_WRITES_ENABLED=true` in the approved environment only after schema/import/read checks pass. Verify publish, draft isolation, offline and favorites with an explicitly authorized acceptance record.
 
-Existing rows without a profile remain publicly visible as before. Their access/login/device requirements are explicitly “not specified”; no unverified claims are backfilled. Creating/editing profiles is incremental.
-
-The write switch also covers favorites and media uploads. Account merges use table-readiness detection independently, so disabling new writes after rollout does not strand existing favorites. Disable writes before rollback; keep the safe legacy projection while any private/offline entries exist. Reverting to the old unfiltered Deno endpoint is not a safe rollback.
+The write switch covers admin edits, favorites and media uploads. Account merges preserve existing favorites independently of the write switch. Disabling new writes must not strand existing favorites.
 
 ## Verification
 
-- `npm run test:app-store`: URL policy, legacy categories/content, publication requirements and combined search/filter/order behavior.
-- `scripts/app-store/integration-test.ts`: real transaction checks for drafts, old/public visibility, stale revision conflicts, administrator rights, favorite idempotency, inactive accounts, account favorite merging and offline privacy. This script **refuses non-local targets**; it requires `APP_STORE_LOCAL_TEST=true` and a disposable PostgreSQL database on `127.0.0.1:55438` with the necessary existing User/application and three new tables. It never loads production credentials itself.
-- TypeScript and the normal production build. Local build needs a Resend configuration value because an existing unrelated email route initializes its client at module load; do not invoke email endpoints during local validation.
+- `npm run test:app-store`: URL policies, legacy parsing, filters, publication rules and mobile/desktop WeChat launch selection.
+- `npm run test:app-store:anonymous`: actual local HTTP checks without session cookies. Published catalog GET returns 200; POST, adjacent paths, admin and favorites remain 401. Use localhost:3006, not the synthetic-session proxy.
+- `APP_STORE_LOCAL_TEST=true npm run test:app-store:local`: isolated PostgreSQL only (127.0.0.1:55438). Imports historical records, temporarily renames the old table, and verifies the full lifecycle still works without it. Covers import idempotency, draft/public isolation, admin rights, stale revisions, favorites/account merges and offline privacy; restores the old table and verifies it is unchanged.
+- TypeScript and the normal production build. Local build uses a non-sending placeholder because an existing email module initializes its client at build time; do not invoke email endpoints.
 
-Media uploads reuse OSS with a dedicated App Store purpose and a 4 MB limit. Larger demo videos use an operator-provided URL. Files are only uploaded by a platform administrator, not fetched from arbitrary URLs by the server.
+Media uploads reuse OSS and platform-admin permissions. Valid phone/desktop WeChat links must be supplied and tested; QR-only entries remain supported. Desktop/mobile browser QA is not physical-device acceptance.
 
-Browser QA used synthetic accounts and application rows in an isolated local database. Local proxy/session fixtures are outside the repository and must never be deployed. Desktop and a 390 × 844 responsive viewport were checked; physical iPhone Safari, real OSS uploads and production rollout remain separate acceptance steps.
+## Execution history
 
-## Production database rollout — 2026-11-02
+2026-11-02: initially applied the three new tables, two indexes and three foreign keys after pull/diff/push; enabled RLS and the then-required filtering view. Legacy count 24 and full-row SHA-256 were unchanged (`e30311639e0e119d01df4582b2e83b2efc9f3a7921400c4d6560751e1c38682d`). PR #542 merged into dev at `eeb4d59`. The original plan requiring Deno filtering has been superseded by the independent architecture above.
 
-The user explicitly authorized updating the production database using db pull before db push. Live introspection was saved separately, compared with the feature target, and the reviewed SQL contained only three tables, two indexes and three foreign keys. `prisma db push --skip-generate` completed without data-loss overrides; the RLS, grants, status constraint and legacy public view in `enable-rls.sql` were then applied transactionally. No credentials or public application exports are included in this repository.
+The independent update is authorized by the user. Its production execution and deployment evidence are recorded in the product documentation; database readiness alone does not mean the Next.js release or production write acceptance is complete. Never roll back to code that treats the frozen legacy table as the current application source.
 
-Post-checks: the database-to-target diff is empty; all three private tables have RLS enabled and no anon/authenticated table grants; all three tables contain zero records. The legacy public view returns the same 24 applications. A SHA-256 comparison of every legacy application row, ordered by ID, was identical before and after (`e30311639e0e119d01df4582b2e83b2efc9f3a7921400c4d6560751e1c38682d`). The schema was compared again after synchronizing the latest dev branch and still has an empty database diff.
-
-This records **database readiness only**. The Deno endpoint and Next.js changes have not yet been deployed or verified in production. Keep App Store writes disabled until release steps 3–5 pass. No production fixtures, profiles or favorites were created for verification. Valid WeChat launch URLs and physical-device acceptance remain pending; QR-only legacy entries continue to work.
+2026-11-02 independent update completed in production after a fresh pull and reviewed push: two old foreign keys removed, own sequence/default created, favorites now reference profiles. Imported 24 records with original IDs; historical full-row hash unchanged, 24 published profiles, sequence last value 25, RLS enabled, and post-update schema diff empty. No production test fixtures were created. A direct read through the new service returns all 24 original IDs with no private fields. Application deployment remains separate.

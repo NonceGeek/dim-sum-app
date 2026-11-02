@@ -190,8 +190,6 @@ model cantonese_corpus_all {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model cantonese_corpus_apps {
-  storeProfile app_store_profiles?
-  favorites app_store_favorites[]
   id               BigInt    @id @default(autoincrement())
   name             String?
   description      String?
@@ -1937,16 +1935,16 @@ model search_daily_entries {
   created_at DateTime @default(now()) @db.Timestamptz(6)
 }
 
-/// App Store display data: only published_data is public. Existing legacy rows have no profile.
+/// Independent App Store records; legacy IDs are preserved by the one-time import.
 model app_store_profiles {
-  app_id BigInt @id
+  app_id BigInt @id @default(autoincrement())
   status String @default("draft")
   draft_data Json
   published_data Json?
   revision Int @default(1)
   published_at DateTime? @db.Timestamptz(6)
   updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  app cantonese_corpus_apps @relation(fields: [app_id], references: [id], onDelete: Cascade)
+  favorites app_store_favorites[]
 }
 
 model app_store_favorites {
@@ -1954,7 +1952,7 @@ model app_store_favorites {
   app_id BigInt
   created_at DateTime @default(now()) @db.Timestamptz(6)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  app cantonese_corpus_apps @relation(fields: [app_id], references: [id], onDelete: Cascade)
+  app app_store_profiles @relation(fields: [app_id], references: [app_id], onDelete: Cascade)
   @@id([user_id, app_id])
   @@index([app_id])
 }
