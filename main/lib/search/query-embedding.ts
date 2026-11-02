@@ -1,8 +1,8 @@
-const DASHSCOPE_EMBEDDING_ENDPOINT =
+export const DASHSCOPE_EMBEDDING_ENDPOINT =
   "https://dashscope.aliyuncs.com/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding";
 const EMBEDDING_RELAY_PATH = "/api/search/embedding-relay";
-const EMBEDDING_MODEL = "qwen3-vl-embedding";
-const EMBEDDING_DIMENSION = 1024;
+export const EMBEDDING_MODEL = "qwen3-vl-embedding";
+export const EMBEDDING_DIMENSION = 1024;
 
 type DashScopeEmbeddingResponse = {
   output?: { embeddings?: Array<{ embedding?: number[] }> };
@@ -32,7 +32,7 @@ function positiveIntegerFromEnvironment(
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function getDashScopeApiKey(): string | null {
+export function getDashScopeApiKey(): string | null {
   return (
     process.env.DASHSCOPE_API_KEY ||
     process.env.ALIBABA_CLOUD_DASHSCOPE_API_KEY ||
