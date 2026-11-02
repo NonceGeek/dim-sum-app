@@ -349,6 +349,8 @@
         "CLOSED": "Closed"
       },
       "empty": "No ingestion tasks",
+      "showingOne": "Showing lead {no} only",
+      "showAll": "Show all leads",
       "from": "From {no}",
       "closingNote": "Closing note",
       "meta": "Owner {assignee} · created by {creator} at {time}",
@@ -356,7 +358,9 @@
       "actions": {
         "take": "Take",
         "close": "Close",
-        "reassign": "Reassign"
+        "reassign": "Reassign",
+        "openTask": "Open ingestion job",
+        "createTask": "Create ingestion job"
       }
     },
     "contactRequests": {
@@ -1306,6 +1310,7 @@
     "libraryNav": {
       "contributionApplications": "Contribution review",
       "ingestionLeads": "Ingestion tasks",
+      "ingestionTasks": "Ingestion jobs",
       "contactRequests": "Access requests"
     },
     "panelTitle": "Admin Panel",
@@ -1712,6 +1717,342 @@
     "loading": "Loading video…",
     "failed": "Video is temporarily unavailable",
     "retry": "Retry"
+  },
+  "IngestionTasks": {
+    "title": "Ingestion jobs",
+    "description": "Upload raw files and work with the ingestion agent to clean, transcribe and validate them. Writing to the corpus needs your approval.",
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "confirm": "Confirm",
+    "saved": "Saved",
+    "back": "Back to jobs",
+    "statusFilter": "Status filter",
+    "allStatuses": "All statuses",
+    "searchPlaceholder": "Search title or number",
+    "search": "Search",
+    "empty": "No ingestion jobs",
+    "prev": "Previous",
+    "next": "Next",
+    "completeNeedsRun": "The conversation hasn't started, so the job can't be completed",
+    "stats": {
+      "total": "All ingestion jobs",
+      "recent": "{count, plural, one {# new job} other {# new jobs}} in the last 30 days",
+      "attention": "Needs attention",
+      "errors": "{count, plural, one {# with an error} other {# with errors}}",
+      "processing": "Processing",
+      "drafts": "{count, plural, one {# draft} other {# drafts}} not started",
+      "todayRecords": "Records ingested today",
+      "todayBatches": "{count, plural, one {# batch} other {# batches}}"
+    },
+    "scope": {
+      "me": "Mine",
+      "all": "All"
+    },
+    "status": {
+      "PENDING": "Draft",
+      "IN_PROGRESS": "In progress",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "displayStatus": {
+      "PENDING": "Draft",
+      "PROCESSING": "Processing",
+      "WAITING_APPROVAL": "Needs approval",
+      "WAITING_INPUT": "Needs reply",
+      "ERROR": "Error",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "columns": {
+      "title": "Job title",
+      "targetDataset": "Target dataset",
+      "modalities": "Media type",
+      "status": "Status",
+      "createdBy": "Created by",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "viewDetail": "View details",
+    "fields": {
+      "title": "Job title",
+      "targetDatasetName": "Dataset",
+      "targetIngestionType": "Ingestion mode",
+      "targetContentAttribute": "Dataset type",
+      "modalities": "Media type",
+      "sourceCollectionMethod": "Source",
+      "description": "Notes",
+      "assignee": "Owner",
+      "createdAt": "Created",
+      "lead": "Ingestion lead"
+    },
+    "modality": {
+      "text": "Text",
+      "audio": "Audio",
+      "video": "Video",
+      "image": "Image"
+    },
+    "contentAttribute": {
+      "oral": "Spoken",
+      "cultural_knowledge": "Cultural knowledge"
+    },
+    "create": {
+      "title": "New ingestion job",
+      "editTitle": "Edit ingestion job draft",
+      "fromLead": "Created from ingestion lead {no}",
+      "leadNotFound": "Ingestion lead not found or not visible to you",
+      "sourceFromLead": "From the contribution application of ingestion lead {no}; cannot be changed",
+      "cardTitle": "Dataset and ingestion settings",
+      "requiredHint": "Fields marked <mark>*</mark> are required",
+      "steps": {
+        "dataset": "1. Choose or create a dataset",
+        "modalities": "2. Confirm the dataset's media",
+        "files": "3. Upload text and related media",
+        "info": "4. Source and notes"
+      },
+      "datasetMode": "Dataset",
+      "ingestionType": {
+        "supplement_existing": "Existing dataset",
+        "new_dataset": "New dataset"
+      },
+      "existingDataset": "Existing dataset",
+      "chooseDataset": "Choose a dataset",
+      "existingBadge": "Existing dataset",
+      "recordCount": "{count, number} records",
+      "newDataset": "New dataset name",
+      "newDatasetPlaceholder": "e.g. Hong Kong cha chaan teng phrases",
+      "contentAttribute": "Dataset type",
+      "modalities": "Content types in this dataset",
+      "textRequiredOption": "Text (required)",
+      "textFiles": "Main text file",
+      "textDropTitle": "Upload the main text file",
+      "textDropHint": "XLS / XLSX / CSV / DOC / DOCX / PDF; text content is required",
+      "mediaFiles": "Related media files",
+      "mediaDropTitle": "Upload audio / video / image files",
+      "mediaDropHint": "Expected: {types}; pick several files or a whole folder",
+      "mediaDropDisabled": "Tick audio, video or image above first",
+      "retry": "Retry",
+      "removeFile": "Remove",
+      "sourcePlaceholder": "Where the data comes from, how it was collected or compiled, licensing…",
+      "notePlaceholder": "File layout, anything to watch out for…",
+      "saveDraft": "Save draft",
+      "start": "Start AI cleaning",
+      "draftSaved": "Draft saved",
+      "datasetFirst": "Choose or name the dataset before uploading files",
+      "datasetRequired": "Choose or name the dataset first",
+      "sourceRequired": "Fill in the source before starting",
+      "textRequired": "Upload the main text file before starting",
+      "uploadsInProgress": "Uploads in progress; you can save once they finish"
+    },
+    "provenance": {
+      "title": "Corpus provenance",
+      "description": "Enter a corpus ID to see which ingestion job and approval wrote it.",
+      "corpusId": "Corpus ID",
+      "search": "Look up",
+      "none": "This record was not written by an ingestion job.",
+      "task": "Ingestion job",
+      "proposal": "Proposal",
+      "approvedBy": "Approved by",
+      "committedAt": "Written at",
+      "recordRow": "Batch · row",
+      "openConversation": "Open in conversation"
+    },
+    "actions": {
+      "cancel": "Cancel job",
+      "complete": "Complete job",
+      "cancelConfirm": "The agent will stop and the job can't continue. Ingested records and the conversation are kept.",
+      "completeConfirm": "Is all ingestion work for this job done? You won't be able to send messages or upload files afterwards."
+    },
+    "report": {
+      "loading": "Loading report…",
+      "none": "This task has no ingestion report (nothing was inserted).",
+      "notClosed": "After ingestion, the agent drafts the report in the chat; ask it there for changes. Ending the task turns the latest draft into the final report.",
+      "withoutNarrative": "This version has no summary, only content compiled from system records.",
+      "unreadable": "The report text can't be loaded right now. You can still download it.",
+      "kinds": {
+        "final": "Final",
+        "draft": "Draft"
+      },
+      "statuses": {
+        "generating": "Generating",
+        "ready": "Ready",
+        "ready_without_narrative": "Ready (no AI summary)",
+        "failed": "Failed"
+      },
+      "formats": {
+        "md": "Report",
+        "xlsx": "Excel details",
+        "json": "JSON"
+      }
+    },
+    "files": {
+      "pickFiles": "Upload files",
+      "pickFolder": "Upload folder",
+      "skipped": "Skipped {count, plural, one {# file} other {# files}} in the folder that didn't match the allowed types",
+      "closed": "The job has ended; uploads are closed.",
+      "locked": "The agent is running or waiting on you; upload once it stops.",
+      "hint": "Files go under input/ in the job workspace. Existing files can't be overwritten.",
+      "empty": "No files uploaded yet",
+      "status": {
+        "UPLOADING": "Uploading",
+        "UPLOADED": "Uploaded",
+        "FAILED": "Failed"
+      }
+    },
+    "approvals": {
+      "plan": "Ingestion plan ({count} steps)",
+      "empty": "No proposals yet",
+      "decided": "Decided by {name}",
+      "status": {
+        "pending": "Pending",
+        "authorized": "Approved, not applied",
+        "applying": "Writing",
+        "approved": "Written",
+        "denied": "Denied",
+        "failed": "Write failed",
+        "expired": "Expired",
+        "cancelled": "Withdrawn"
+      }
+    },
+    "records": {
+      "loading": "Loading…",
+      "empty": "No ingested records yet",
+      "more": "Load more"
+    },
+    "timeline": {
+      "config": "Task settings",
+      "created": "Task created",
+      "files": "Uploaded {count, plural, one {# file} other {# files}}",
+      "noFiles": "No files uploaded yet",
+      "filesFailed": "{count} failed",
+      "session": "Agent conversation started",
+      "question": "Agent asked {count, plural, one {# question} other {# questions}}",
+      "questionStatus": {
+        "pending": "Waiting for your answer",
+        "answered": "Answered",
+        "cancelled": "Unanswered · cancelled"
+      },
+      "write": "Wrote {count, plural, one {# record} other {# records}}",
+      "approvedBy": "Approved by {name}",
+      "report": "Report v{version} · {kind}",
+      "end": {
+        "completed": "Task completed",
+        "cancelled": "Task cancelled"
+      },
+      "working": "Agent is working",
+      "error": "The agent stopped with an error",
+      "errorHint": "Click Continue in the chat to resume",
+      "next": "Complete task · final report",
+      "viewInChat": "View in chat"
+    },
+    "chat": {
+      "loading": "Loading conversation",
+      "runningTool": "Running {name}",
+      "thinking": "Thinking",
+      "thought": "Thought",
+      "toolCalls": "{count, plural, one {# tool call} other {# tool calls}}",
+      "toolFailures": "{count} failed",
+      "toolInput": "Input",
+      "toolOutput": "Output",
+      "toolError": "Error",
+      "eventsDisconnected": "Live updates disconnected, reconnecting",
+      "loadOlder": "Load earlier messages",
+      "empty": "The agent has not started on this job yet.",
+      "emptyClosed": "This job has no conversation.",
+      "start": "Start cleaning",
+      "pausedHint": "The agent has paused and is waiting for the next step.",
+      "continue": "Continue",
+      "wrapUpHint": "Ingestion and the draft report are done. Download the report to review it, or tell the agent below what to change. When it looks right, complete the task and the latest draft becomes the final report.",
+      "downloadReport": "Download report",
+      "completeTask": "Complete task",
+      "interrupted": "This reply was interrupted",
+      "working": "Working",
+      "compaction": {
+        "started": "Compacting context; will continue automatically",
+        "retrying": "Adjusting compaction; will continue automatically",
+        "deferred": "Compaction didn't finish, but there is still room to continue",
+        "completed": "Context compacted"
+      },
+      "cancelledNotice": "The job was cancelled and can't continue. Ingested records and the conversation are kept.",
+      "completedNotice": "The job is complete; no more messages can be sent.",
+      "applying": "An approved write is running or its result is unknown",
+      "reconcile": "Check write result",
+      "reconciling": "Checking…",
+      "unknownCall": "Unknown result: {name}",
+      "resumeNote": "What you verified (required)",
+      "resume": "Continue",
+      "stoppedTitle": "The agent stopped",
+      "unknownHint": "These tool calls started but were interrupted. Check whether they took effect before continuing.",
+      "retry": "Reconnect",
+      "inputLabel": "Message to the agent",
+      "placeholder": "Enter to send, Shift+Enter for a new line",
+      "placeholderBlocked": "The agent is running or waiting on you",
+      "placeholderInterrupted": "The agent stopped. Click Continue above first",
+      "placeholderQuestion": "Answer the question above first",
+      "placeholderApproval": "Review the proposal above first",
+      "send": "Send"
+    },
+    "approval": {
+      "plan": "Ingestion plan ({count} steps, approved as a whole)",
+      "expiresAt": "Waiting for your approval until {time}",
+      "approved": "Approved",
+      "denied": "Denied",
+      "notePlaceholder": "Note (optional; when denying, say why so the agent can adjust)",
+      "deny": "Deny",
+      "approve": "Approve and write",
+      "submitting": "Submitting…",
+      "notExecuted": "Decision recorded; the agent hasn't applied it yet.",
+      "execute": "Apply write",
+      "continueDenied": "Continue with denial"
+    },
+    "approvalResult": {
+      "status": {
+        "approved": "Approved and written",
+        "denied": "Denied",
+        "failed": "Write failed"
+      },
+      "alreadyApplied": "data already existed",
+      "idRange": "corpus #{from}–#{to}",
+      "note": "Note: {note}"
+    },
+    "question": {
+      "title": "Your decision is needed",
+      "defaultHeader": "Question {n}",
+      "status": {
+        "answered": "Answered",
+        "cancelled": "Cancelled",
+        "rejected": "Ignored",
+        "pending": "Awaiting answer",
+        "asking": "Asking"
+      },
+      "answeredCount": "{done}/{total} answered",
+      "multiSelect": "Select any",
+      "other": "Other",
+      "otherPlaceholder": "Please specify",
+      "allAnswered": "All answered",
+      "answerAll": "Answer every question to submit",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling…",
+      "next": "Next",
+      "submit": "Submit and continue",
+      "submitting": "Submitting…",
+      "unansweredCancelled": "Not answered (cancelled)",
+      "waiting": "Awaiting answer"
+    },
+    "subtask": {
+      "count": "{count, plural, one {# subtask} other {# subtasks}}",
+      "duration": "Took {seconds}s",
+      "step": "Step {n}",
+      "unresolved": "Open questions (raised by the main agent)",
+      "status": {
+        "queued": "Queued",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "incomplete": "Incomplete",
+        "needs_input": "Needs your input"
+      }
+    }
   },
   "Assistant": {
     "title": "Cantonese Assistant",

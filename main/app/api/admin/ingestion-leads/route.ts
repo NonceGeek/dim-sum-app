@@ -9,7 +9,7 @@ import {
 } from "@/lib/library/ops-access";
 import { userNames } from "@/lib/library/contribution-service";
 
-/** GET /api/admin/ingestion-leads?assignee=me|all&status= */
+/** GET /api/admin/ingestion-leads?assignee=me|all&status=&id= */
 export async function GET(req: NextRequest) {
   return withLibraryOps(req, async (access) => {
     requireCapability(access, "ingestion_assignee");
@@ -17,10 +17,13 @@ export async function GET(req: NextRequest) {
     // Only admins may look beyond their own leads.
     const all = access.isAdmin && params.get("assignee") === "all";
     const status = params.get("status");
+    const id = params.get("id");
     const page = Math.max(1, Number(params.get("page")) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(params.get("pageSize")) || 20));
     const where: Prisma.ingestion_leadsWhereInput = {
-      ...(all ? {} : { assignee_id: access.userId }),
+      // 按 id 定位单条待办时不限于自己的，但非管理员仍只能看自己的
+      ...(id && /^\d+$/.test(id) ? { id: BigInt(id) } : {}),
+      ...(all || (id && access.isAdmin) ? {} : { assignee_id: access.userId }),
       ...(status && (LEAD_STATUSES as readonly string[]).includes(status)
         ? { status }
         : {}),
@@ -40,6 +43,7 @@ export async function GET(req: NextRequest) {
               other_contact: true,
               region: true,
               scale_description: true,
+              source_collection_method: true,
               modalities: true,
             },
           },
@@ -65,7 +69,7 @@ export async function GET(req: NextRequest) {
           privacyAssessmentRequired: r.privacy_assessment_required,
           rightsPrivacySummary: r.rights_privacy_summary,
           closingNote: r.closing_note,
-          ingestionTaskId: r.ingestion_task_id,
+          ingestionTaskId: r.ingestion_task_id === null ? null : String(r.ingestion_task_id),
           assigneeId: r.assignee_id,
           assigneeName: names[r.assignee_id] ?? r.assignee_id,
           createdByName: names[r.created_by] ?? r.created_by,
@@ -82,6 +86,7 @@ export async function GET(req: NextRequest) {
             otherContact: r.application.other_contact,
             region: r.application.region,
             scaleDescription: r.application.scale_description,
+            sourceCollectionMethod: r.application.source_collection_method,
             modalities: r.application.modalities,
           },
         })),
