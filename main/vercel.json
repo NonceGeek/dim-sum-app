@@ -9,6 +9,19 @@
     },
     "app/api/cron/corpus-embeddings/route.ts": {
       "regions": ["iad1"]
+    },
+    "app/api/assistant/chat/route.ts": {
+      "regions": ["sin1"],
+      "maxDuration": 60
+    },
+    "app/api/assistant/conversations/route.ts": {
+      "regions": ["sin1"]
+    },
+    "app/api/assistant/conversations/[id]/route.ts": {
+      "regions": ["sin1"]
+    },
+    "app/api/assistant/quota/route.ts": {
+      "regions": ["sin1"]
     }
   },
   "crons": [

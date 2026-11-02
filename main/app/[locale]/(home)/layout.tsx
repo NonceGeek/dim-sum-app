@@ -18,6 +18,16 @@ export default function MainMenuLayout({
     return <>{children}</>;
   }
 
+  // 小助手是全高的对话界面：消息区自己滚动，不显示页脚
+  if (pathname.startsWith("/assistant")) {
+    return (
+      <div className="flex h-dvh flex-col">
+        <Header />
+        <div className="min-h-0 flex-1">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

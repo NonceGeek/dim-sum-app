@@ -18,6 +18,7 @@ interface WeChatAuthResponse {
 
 enum MiniprogramApp {
   ReviewApp = "review-app",
+  SearchApp = "search-app",
   YueCubeGame = "yue-cube-game",
   CorpusCollectionApp = "corpus-collection-app",
 }
@@ -41,6 +42,10 @@ const MINIPROGRAM_CONFIGS: Record<
   MiniprogramApp,
   { appId: string | undefined; appSecret: string | undefined }
 > = {
+  [MiniprogramApp.SearchApp]: {
+    appId: process.env.WECHAT_MINIPROGRAM_SEARCH_APPID,
+    appSecret: process.env.WECHAT_MINIPROGRAM_SEARCH_SECRET,
+  },
   [MiniprogramApp.ReviewApp]: {
     appId: process.env.WECHAT_MINIPROGRAM_APPID,
     appSecret: process.env.WECHAT_MINIPROGRAM_SECRET,

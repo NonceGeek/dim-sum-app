@@ -24,6 +24,10 @@ import TextType from "@/components/ui/text-type";
 import { useSearchDropdown } from "@/lib/hooks/useSearchDropdown";
 import { getCategoryNickname, useAllCategories } from "@/lib/api/category";
 import { useHotTerms } from "@/lib/api/public";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useLoginGate } from "@/components/assistant/login-gate";
+import { AiSparkle } from "@/components/assistant/ai-visuals";
+import { useAiPalette } from "@/lib/assistant/ai-palette";
 import GradientText from "@/components/ui/gradient-text";
 import {
   Popover,
@@ -38,6 +42,10 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
+
+type InputMode = "search" | "assistant";
+const INPUT_MODE_STORAGE_KEY = "home-input-mode";
+
 export default function HomePage() {
   const router = useRouter();
   const t = useTranslations("Home");
@@ -49,6 +57,20 @@ export default function HomePage() {
   const [datasetInputValue, setDatasetInputValue] = useState("");
   const [luckyHovered, setLuckyHovered] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  // 搜索 / 问小助手 两种模式，记住用户上次的选择
+  const [inputMode, setInputMode] = useState<InputMode>("search");
+  const { isAuthenticated } = useAuthStore();
+  const { openLogin, dialogs: loginDialogs } = useLoginGate();
+  const isAssistantMode = inputMode === "assistant";
+  const aiPalette = useAiPalette();
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(INPUT_MODE_STORAGE_KEY) === "assistant") setInputMode("assistant");
+    } catch {
+      // 浏览器存储不可用时默认搜索模式
+    }
+  }, []);
   // 经典搜索入口暂时隐藏；保留常量便于以后恢复切换按钮。
   const useLegacySearch = false;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -124,6 +146,34 @@ export default function HomePage() {
     if (!hotTermsFetching) setLuckyHovered(false);
   }, [hotTermsFetching]);
 
+  // 带着输入内容打开小助手新对话；未登录时先登录，登录后带着问题回到小助手
+  const askAssistant = () => {
+    const term = query.trim();
+    const target = term ? `/assistant?q=${encodeURIComponent(term)}` : "/assistant";
+    abortSuggestions();
+    closeDropdown();
+    if (!isAuthenticated) {
+      openLogin(target);
+      return;
+    }
+    router.push(target);
+  };
+
+  const switchMode = (mode: InputMode) => {
+    setInputMode(mode);
+    try {
+      window.localStorage.setItem(INPUT_MODE_STORAGE_KEY, mode);
+    } catch {
+      // 忽略存储失败
+    }
+    closeDropdown();
+    inputRef.current?.focus();
+    // 未登录切到问小助手：先弹窗询问是否登录，同意后走登录流程，登录后回到首页（模式已记住）
+    if (mode === "assistant" && !isAuthenticated) {
+      openLogin("/");
+    }
+  };
+
   const handleManualSearch = () => {
     if (!query.trim()) return;
     addToHistory(query.trim());
@@ -133,6 +183,13 @@ export default function HomePage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isAssistantMode) {
+      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+        e.preventDefault();
+        askAssistant();
+      }
+      return;
+    }
     if (e.key === "Enter") {
       e.preventDefault();
       if (showDropdown && activeIndex >= 0) {
@@ -249,15 +306,20 @@ export default function HomePage() {
             edgeSensitivity={25}
             coneSpread={30}
             fillOpacity={0.3}
-            glowColor="210 80 70"
+            // 问小助手模式切换为与小助手页一致的 AI 配色
+            glowColor={isAssistantMode ? aiPalette.glowHsl : "210 80 70"}
             backgroundColor="var(--background)"
-            colors={["#3193ff", "#007fff", "#5aa8ff"]}
+            colors={isAssistantMode ? [...aiPalette.colors] : ["#3193ff", "#007fff", "#5aa8ff"]}
             className="w-full"
           >
             <div className="px-2.5 py-2">
               {/* Input row */}
               <div className="flex items-center h-11">
-                <Search className="h-4 w-4 text-muted-foreground mr-2.5 flex-shrink-0" />
+                {isAssistantMode ? (
+                  <AiSparkle className="mr-2.5 h-4 w-4 flex-shrink-0" />
+                ) : (
+                  <Search className="h-4 w-4 text-muted-foreground mr-2.5 flex-shrink-0" />
+                )}
                 <input
                   ref={inputRef}
                   type="text"
@@ -265,11 +327,12 @@ export default function HomePage() {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={() => {
-                    handleFocus();
+                    // 问小助手模式不弹出搜索联想
+                    if (!isAssistantMode) handleFocus();
                     setSearchFocused(true);
                   }}
                   onBlur={() => setSearchFocused(false)}
-                  placeholder={t("searchPlaceholder")}
+                  placeholder={isAssistantMode ? t("assistantPlaceholder") : t("searchPlaceholder")}
                   className="flex-1 h-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
                 />
               </div>
@@ -277,9 +340,60 @@ export default function HomePage() {
               {/* Button row */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
                 {/* 经典搜索切换按钮暂时隐藏，默认使用新版 entry 搜索。 */}
+                {/* 搜索 / 问小助手 分段切换，选中块滑动过渡 */}
+                {/* 切换比右侧主按钮矮一档（约 30px 对 36px），突出“搜索 / 提问”是主操作 */}
+                <div className="flex items-center rounded-lg bg-muted/50 p-0.5" role="tablist">
+                  {(["search", "assistant"] as const).map((mode) => {
+                    const selected = inputMode === mode;
+                    const isAssistant = mode === "assistant";
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => switchMode(mode)}
+                        className={cn(
+                          "relative flex h-[26px] items-center gap-1 rounded-md px-2.5 text-[13px] transition-colors",
+                          selected ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {selected && (
+                          <motion.span
+                            layoutId="home-input-mode"
+                            className="absolute inset-0 rounded-md bg-background shadow-xs"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                          />
+                        )}
+                        {isAssistant ? (
+                          // 选中时星星弹出并转半圈
+                          <motion.span
+                            key={selected ? "on" : "off"}
+                            className="relative inline-flex"
+                            initial={selected ? { scale: 0.4, rotate: -120 } : false}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", bounce: 0.5, duration: 0.6 }}
+                          >
+                            <AiSparkle className="h-3 w-3" />
+                          </motion.span>
+                        ) : (
+                          <Search className="relative h-3 w-3" />
+                        )}
+                        <span
+                          className={cn("relative", isAssistant && selected && "bg-clip-text text-transparent")}
+                          style={isAssistant && selected ? { backgroundImage: aiPalette.linear } : undefined}
+                        >
+                          {isAssistant ? t("askAssistant") : t("modeSearch")}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
                 <div className="flex items-center justify-end gap-2 ml-auto">
                   {/* Dataset selector */}
+                  {/* 数据集筛选只对搜索有效 */}
+                  {!isAssistantMode && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -373,12 +487,17 @@ export default function HomePage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  )}
 
                   <Button
-                    onClick={handleManualSearch}
-                    className="h-9 px-6 rounded-lg text-sm font-medium"
+                    onClick={isAssistantMode ? askAssistant : handleManualSearch}
+                    className={cn(
+                      "h-9 px-6 rounded-lg text-sm font-medium",
+                      isAssistantMode && "text-white shadow-md hover:opacity-90",
+                    )}
+                    style={isAssistantMode ? { backgroundImage: aiPalette.linear } : undefined}
                   >
-                    {t("searchButton")}
+                    {isAssistantMode ? t("assistantSubmit") : t("searchButton")}
                   </Button>
                 </div>
               </div>
@@ -566,6 +685,7 @@ export default function HomePage() {
       <div className="relative z-10">
         <MinimalFooter />
       </div>
+      {loginDialogs}
     </div>
   );
 }

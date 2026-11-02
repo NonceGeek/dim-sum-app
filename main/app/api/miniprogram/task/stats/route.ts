@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
   // assigneeRef: 标注员 ID，多个 ID 用英文逗号分隔；不传则统计所有标注员
   const assigneeRef = searchParams.get("assigneeRef");
   const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
+  const contentAttribute = searchParams.get("contentAttribute") || undefined;
+  const categoryId = searchParams.get("categoryId") || undefined;
 
   if (!corpusName) {
     return NextResponse.json(
@@ -28,6 +30,8 @@ export async function GET(req: NextRequest) {
         corpusName,
         assigneeRef: assigneeRef || undefined,
         taskType,
+        contentAttribute,
+        categoryId,
       });
 
       // 根据 assigneeRefs 查询用户名和头像

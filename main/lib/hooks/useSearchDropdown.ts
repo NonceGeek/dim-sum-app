@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { SearchResult } from '@/lib/api/search';
+import type { SearchSuggestion } from '@/lib/search/suggestions';
 import { useSearchHistoryStore } from '@/lib/store/useSearchHistoryStore';
 
 const DEBOUNCE_MS = 300;
-const MAX_SUGGESTIONS = 6;
 
 type DropdownMode = 'history' | 'suggestions';
 
@@ -17,7 +16,7 @@ interface UseSearchDropdownOptions {
 interface UseSearchDropdownReturn {
   showDropdown: boolean;
   mode: DropdownMode;
-  suggestions: SearchResult[];
+  suggestions: SearchSuggestion[];
   history: string[];
   activeIndex: number;
   wrapperRef: React.RefObject<HTMLElement | null>;
@@ -40,7 +39,7 @@ export function useSearchDropdown({
   const { history, add, remove, clear } = useSearchHistoryStore();
 
   const [showDropdown, setShowDropdown] = useState(false);
-  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,24 +80,20 @@ export function useSearchDropdown({
       abortRef.current = controller;
 
       try {
-        const params_category = selectedDataset;
-        const table_name =
-          params_category.includes('all') || !params_category.length
-            ? ['cantonese_corpus_all']
-            : JSON.stringify(selectedDataset);
-
-        const url =
-          process.env.NEXT_PUBLIC_BACKEND_URL +
-          `/v2/text_search?table_name=${table_name}&column=data&keyword=${encodeURIComponent(query.trim())}`;
-
-        const res = await fetch(url, { signal: controller.signal });
+        const params = new URLSearchParams({ q: query.trim() });
+        if (selectedDataset.length) params.set('dataset', selectedDataset.join(','));
+        const res = await fetch(`/api/search/suggestions?${params}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
         if (!res.ok) throw new Error('suggestion fetch failed');
-        const data: SearchResult[] = await res.json();
-        setSuggestions(data.slice(0, MAX_SUGGESTIONS));
+        const data: { suggestions: SearchSuggestion[] } = await res.json();
+        if (controller.signal.aborted) return;
+        setSuggestions(data.suggestions);
         setActiveIndex(-1);
       } catch (err) {
         // AbortError is expected on cancel — silently ignore
-        if ((err as Error).name !== 'AbortError') {
+        if (!controller.signal.aborted && (err as Error).name !== 'AbortError') {
           setSuggestions([]);
         }
       } finally {

@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { activitySql,withAdminAccess } from "@/lib/admin/access";
+import { NextRequest,NextResponse } from "next/server";
 
 type TypeRow = {
   submission_type: string;
@@ -15,22 +14,24 @@ type TagRow = {
 };
 
 export async function GET(req: NextRequest) {
-  return requireAdmin(req, async () => {
-    const [types, tags] = await prisma.$transaction([
-      prisma.$queryRaw<TypeRow[]>`
+  return withAdminAccess(req, async (access, db) => {
+    const [types, tags] = await Promise.all([
+      db.$queryRaw<TypeRow[]>`
         SELECT
           "submission_type",
           COUNT(*)::bigint AS total,
           COUNT(*) FILTER (WHERE "review_status" = 'approved')::bigint AS approved,
           COUNT(*) FILTER (WHERE "review_status" = 'rejected')::bigint AS rejected
         FROM "corpus_collection_submissions"
+        WHERE ${activitySql(access)}
         GROUP BY "submission_type"
         ORDER BY total DESC
       `,
-      prisma.$queryRaw<TagRow[]>`
+      db.$queryRaw<TagRow[]>`
         SELECT tag, COUNT(*)::bigint AS total
         FROM "corpus_collection_submissions",
           jsonb_array_elements_text("tags") AS tag
+        WHERE ${activitySql(access)}
         GROUP BY tag
         ORDER BY total DESC
         LIMIT 50

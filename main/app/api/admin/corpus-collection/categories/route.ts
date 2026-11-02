@@ -1,19 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import { withAdminAccess } from "@/lib/admin/access";
 import { requireAdmin } from "@/lib/auth";
 import {
-  getNextCategorySortOrder,
-  isCorpusCollectionCategoryType,
-  parseCategoryOrder,
-  serializeCorpusCollectionCategory,
+	getNextCategorySortOrder,
+	isCorpusCollectionCategoryType,
+	parseCategoryOrder,
+	serializeCorpusCollectionCategory,
 } from "@/lib/corpus-collection-category";
 import { prisma } from "@/lib/prisma";
+import { NextRequest,NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const searchParams = new URL(req.url).searchParams;
   const type = searchParams.get("type");
   const status = searchParams.get("status") || undefined;
 
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async () => {
     const items = await prisma.corpus_collection_categories.findMany({
       where: { type: type || undefined, status },
       orderBy: [{ sort_order: "asc" }, { created_at: "desc" }],

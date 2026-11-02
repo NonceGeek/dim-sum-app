@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -15,14 +22,20 @@ const STATUS_TONE: Record<string, string> = {
 
 export async function json<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error || "Request failed");
+  if (!res.ok)
+    throw new Error((data as { error?: string }).error || "Request failed");
   return data as T;
 }
 
 export function StatusBadge({ status }: { status: string }) {
   const t = useTranslations("LibraryOps.status");
   return (
-    <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-medium", STATUS_TONE[status])}>
+    <span
+      className={cn(
+        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+        STATUS_TONE[status],
+      )}
+    >
       {t(status)}
     </span>
   );
@@ -34,7 +47,10 @@ export function useOptionLabel() {
     value ? (t.has(`${group}.${value}`) ? t(`${group}.${value}`) : value) : "—";
 }
 
-function useUsers(capability: "contribution_review" | "ingestion_assignee", enabled: boolean) {
+function useUsers(
+  capability: "contribution_review" | "ingestion_assignee",
+  enabled: boolean,
+) {
   return useQuery({
     queryKey: ["library-ops-users", capability],
     enabled,
@@ -59,19 +75,25 @@ export function UserSelect({
   const t = useTranslations("LibraryOps");
   const users = useUsers(capability, true);
   return (
-    <select
-      id={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+    <Select
+      value={value || "__empty__"}
+      onValueChange={(v) => onChange(v === "__empty__" ? "" : v)}
+      disabled={users.isLoading}
     >
-      <option value="">{users.isLoading ? t("loading") : t("chooseUser")}</option>
-      {users.data?.users.map((u) => (
-        <option key={u.id} value={u.id}>
-          {u.name}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger id={id} className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__empty__">
+          {users.isLoading ? t("loading") : t("chooseUser")}
+        </SelectItem>
+        {users.data?.users.map((u) => (
+          <SelectItem key={u.id} value={u.id}>
+            {u.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -88,19 +110,21 @@ export function SelectField({
 }) {
   const t = useTranslations("LibraryOps");
   return (
-    <select
-      id={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+    <Select
+      value={value || "__empty__"}
+      onValueChange={(v) => onChange(v === "__empty__" ? "" : v)}
     >
-      <option value="">{t("choose")}</option>
-      {options.map(([v, label]) => (
-        <option key={v} value={v}>
-          {label}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger id={id} className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__empty__">{t("choose")}</SelectItem>
+        {options.map(([v, label]) => (
+          <SelectItem key={v} value={v}>
+            {label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
-

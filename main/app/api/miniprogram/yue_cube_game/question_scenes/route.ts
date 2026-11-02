@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMiniprogramAuth } from "@/lib/miniprogram-auth";
 import {
   getQuestionScenes,
   type YueCubeGameMode,
@@ -17,15 +16,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return requireMiniprogramAuth(req, async () => {
-    try {
-      return NextResponse.json(await getQuestionScenes(mode as YueCubeGameMode));
-    } catch (error) {
-      console.error("[YueCubeGame] Failed to load scenes", error);
-      return NextResponse.json(
-        { error: "Failed to load scenes" },
-        { status: 500 }
-      );
-    }
-  });
+  // Scene metadata is shared by all visitors; no user context is required.
+  try {
+    return NextResponse.json(await getQuestionScenes(mode as YueCubeGameMode));
+  } catch (error) {
+    console.error("[YueCubeGame] Failed to load scenes", error);
+    return NextResponse.json(
+      { error: "Failed to load scenes" },
+      { status: 500 }
+    );
+  }
 }

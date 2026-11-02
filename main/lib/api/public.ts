@@ -24,11 +24,11 @@ export function useHotTerms(count = 6) {
     queryKey: ["hotTerms", count],
     queryFn: () =>
       api
-        .get<{ terms: string[] }>(`/api/public/hot-terms?count=${count}`)
+        .get<{ terms: string[] }>(`/api/public/hot-terms?count=${count}`, { cache: "no-store" })
         .then((r) => r.terms ?? []),
-    // Cache for 1 day — terms stay stable within a session; user can force-refresh via "试试手气"
-    staleTime: 24 * 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
+    // Revalidate on returning to the homepage: dataset visibility may have changed.
+    staleTime: 0,
+    gcTime: 0,
     refetchOnWindowFocus: false,
   });
-} 
+}

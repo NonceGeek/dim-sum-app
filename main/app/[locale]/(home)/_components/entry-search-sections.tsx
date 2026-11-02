@@ -1,6 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { newAnalyticsId, track } from "@/lib/analytics/client";
+import {
+  SHARE_ATTRIBUTION_PARAM,
+  SHARE_ATTRIBUTION_VALUE,
+  SHARE_ID_PARAM,
+} from "@/lib/analytics/events";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +34,14 @@ import { ImageCard } from "@/components/media/image-card";
 import { CardVideoPreview } from "@/components/media/card-video-preview";
 import { getCorpusItemByUniqueId, type SearchResult } from "@/lib/api/search";
 import type { EntryIdentity, EntrySearchResponse } from "@/lib/search/entry-identity";
+import {
+  contextText,
+  displayCategory,
+  entryHref,
+  getNoteContext,
+  isRecord,
+  primaryJyutping,
+} from "@/lib/search/entry-display";
 import { toast } from "sonner";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -56,15 +70,6 @@ type EntrySearchSectionsProps = {
 
 type SearchMediaFilter = "text" | "audio" | "video" | "image" | "model3d";
 
-function displayCategory(entry: EntryIdentity): string {
-  return (
-    entry.category.primary?.name ||
-    entry.category.secondary?.name ||
-    entry.source.categoryDisplayName ||
-    entry.source.categoryName
-  );
-}
-
 function displaySource(entry: EntryIdentity): string {
   return entry.source.categoryDisplayName || entry.source.categoryName;
 }
@@ -74,12 +79,39 @@ function compactId(entryId: string): string {
   return `${entryId.slice(0, 8)}...${entryId.slice(-4)}`;
 }
 
-function entryHref(entry: EntryIdentity, returnQuery?: string): string {
-  const query = returnQuery?.trim();
-  if (!query) return entry.share.seoUrl;
+type SearchSection = "primary" | "similar" | "recommended";
 
-  const params = new URLSearchParams({ fromSearch: query });
-  return `${entry.share.seoUrl}?${params.toString()}`;
+/** Fires search_result_click when a click inside a result lands on an entry link. */
+function trackResultClick(
+  event: React.MouseEvent,
+  entry: EntryIdentity,
+  section: SearchSection,
+  position: number,
+  query?: string,
+) {
+  if (!(event.target as Element).closest("a[href*='/entries/']")) return;
+  track("search_result_click", {
+    query: query ?? "",
+    section,
+    entryId: entry.entryId,
+    position,
+    contentAttribute: entry.contentAttribute,
+  });
+}
+
+/** What the user is shown when a video fails (#508 fallback_type): text, plus audio if any. */
+function videoFallback(entry: EntryIdentity) {
+  return entry.assets.audioUrl ? ("text_audio" as const) : ("text" as const);
+}
+
+/** Copied share links carry ?from=share&sid=<share_id> so landings can be attributed (#508). */
+function shareLink(entry: EntryIdentity, shareId: string): string {
+  const url = new URL(absoluteUrl(entry.share.seoUrl), "https://placeholder.invalid");
+  url.searchParams.set(SHARE_ATTRIBUTION_PARAM, SHARE_ATTRIBUTION_VALUE);
+  url.searchParams.set(SHARE_ID_PARAM, shareId);
+  return url.origin === "https://placeholder.invalid"
+    ? `${url.pathname}${url.search}`
+    : url.toString();
 }
 
 function absoluteUrl(pathOrUrl: string): string {
@@ -98,10 +130,6 @@ type SharePronunciation = {
   other: string | null;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function blockText(blocks: Record<string, unknown>[], type: string): string | null {
   const values = blocks
     .filter((block) => block.type === type)
@@ -113,50 +141,6 @@ function blockText(blocks: Record<string, unknown>[], type: string): string | nu
     .map((content) => content.trim());
 
   return values.length ? values.join("\n") : null;
-}
-
-function contextText(context: Record<string, unknown> | null, keys: string[]): string | null {
-  if (!context) return null;
-
-  for (const key of keys) {
-    const value = context[key];
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (Array.isArray(value)) {
-      const text = value
-        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-        .map((item) => item.trim())
-        .join("、");
-      if (text) return text;
-    }
-  }
-
-  return null;
-}
-
-function getNoteContext(note: unknown): Record<string, unknown> | null {
-  if (!isRecord(note) || !isRecord(note.context)) return null;
-  return note.context;
-}
-
-function structuredJyutping(structuredNote: unknown): string | null {
-  if (!isRecord(structuredNote) || !Array.isArray(structuredNote.data)) return null;
-
-  const values = structuredNote.data
-    .filter(isRecord)
-    .map((item) => item.jyutping)
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-    .map((value) => value.trim());
-  const uniqueValues = Array.from(new Set(values));
-
-  return uniqueValues.length ? uniqueValues.join(" / ") : null;
-}
-
-function primaryJyutping(entry: EntryIdentity): string | null {
-  return (
-    structuredJyutping(entry.raw.structuredNote) ||
-    contextText(getNoteContext(entry.raw.note), ["pinyin", "song_name_pin"]) ||
-    entry.jyutping
-  );
 }
 
 function getSharePronunciations(entry: EntryIdentity): SharePronunciation[] {
@@ -243,9 +227,11 @@ function getSharePronunciations(entry: EntryIdentity): SharePronunciation[] {
   return [];
 }
 
+/** Resolves true only when the clipboard write succeeded. */
 async function copyText(value: string, successMessage: string) {
   await navigator.clipboard.writeText(value);
   toast.success(successMessage);
+  return true;
 }
 
 function canEditEntry(entry: EntryIdentity, user: { role?: string } | null | undefined) {
@@ -263,12 +249,14 @@ type CardAudioPlayback = {
 };
 
 function CardMediaPreview({
+  section,
   entry,
   labels,
   returnQuery,
   audioPlayback,
   onToggleAudio,
 }: {
+  section: SearchSection;
   entry: EntryIdentity;
   labels: MediaLabels;
   returnQuery?: string;
@@ -293,6 +281,12 @@ function CardMediaPreview({
           title={entry.entryName}
           url={videoUrl}
           poster={coverImage}
+          analytics={{
+            entryId: entry.entryId,
+            fallbackType: videoFallback(entry),
+            query: returnQuery,
+            section,
+          }}
         />
       ) : coverImage ? (
         <ImageCard
@@ -340,9 +334,11 @@ function CardMediaPreview({
 function PrimaryMediaPreview({
   entry,
   labels,
+  query,
 }: {
   entry: EntryIdentity;
   labels: MediaLabels;
+  query?: string;
 }) {
   const { audioUrl, videoUrl, videoTranscript, coverImage, model3dUrl } =
     entry.assets;
@@ -375,6 +371,13 @@ function PrimaryMediaPreview({
               poster={coverImage}
               transcript={videoTranscript}
               transcriptLabel={labels.videoTranscript}
+              analytics={{
+                entryId: entry.entryId,
+                surface: "search_primary",
+                fallbackType: videoFallback(entry),
+                query,
+                section: "primary",
+              }}
             />
           )}
         </div>
@@ -513,8 +516,21 @@ function PrimaryIdentityInfo({
   );
 }
 
+const reportedShareOpens = new Set<string>();
+
+/** Mounted inside the dialog content: when it runs, the preview has rendered (#508). */
+function ShareOpenReporter({ entryId, shareId }: { entryId: string; shareId: string }) {
+  useEffect(() => {
+    if (reportedShareOpens.has(shareId)) return; // re-renders and remounts don't repeat
+    reportedShareOpens.add(shareId);
+    track("share_card_open", { entryId, shareId, surface: "search_primary" });
+  }, [entryId, shareId]);
+  return null;
+}
+
 function SharePreview({
   entry,
+  shareId,
   open,
   labels,
   onOpenChange,
@@ -546,16 +562,17 @@ function SharePreview({
     other: string;
   };
   onOpenChange: (open: boolean) => void;
+  shareId: string | null;
 }) {
   const { theme } = useTheme();
   const previewRef = useRef<HTMLDivElement>(null);
 
-  if (!entry) return null;
+  if (!entry || !shareId) return null;
 
   const sourceName =
     entry.source.categoryDisplayName || entry.source.categoryName;
   const categoryName = [entry.category.primary?.name, entry.category.secondary?.name].filter(Boolean).join(" / ");
-  const shareUrl = absoluteUrl(entry.share.seoUrl);
+  const shareUrl = shareLink(entry, shareId);
   const hasTags =
     entry.tags.related.length > 0 || entry.tags.recommended.length > 0;
   const contributorId = entry.source.contributorIds.filter(Boolean).join(", ");
@@ -579,7 +596,9 @@ function SharePreview({
       link.download = `dimsum-${entry.entryName}.png`;
       link.href = dataUrl;
       link.click();
+      track("share_image_download", { entryId: entry.entryId, shareId, success: true });
     } catch (error) {
+      track("share_image_download", { entryId: entry.entryId, shareId, success: false });
       console.error("Failed to generate share preview image:", error);
       toast.error(labels.downloadImageFailed);
     }
@@ -588,6 +607,7 @@ function SharePreview({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] gap-0 overflow-y-auto p-0 sm:max-w-4xl">
+        <ShareOpenReporter entryId={entry.entryId} shareId={shareId} />
         <DialogHeader>
           <DialogTitle className="px-4 pt-5 pr-10 text-xl font-semibold sm:px-7 sm:pt-7 sm:text-2xl">
             {labels.title}
@@ -740,7 +760,14 @@ function SharePreview({
             type="button"
             variant="outline"
             className="flex-1 sm:flex-none"
-            onClick={() => copyText(shareUrl, labels.copied)}
+            onClick={() => {
+              // Count only successful copies (#508); this button sits in the card preview.
+              void copyText(shareUrl, labels.copied)
+                .then(() =>
+                  track("share_link_copy", { entryId: entry.entryId, shareId, copyEntry: "share_card" }),
+                )
+                .catch(() => undefined);
+            }}
           >
             {labels.copyLink}
           </Button>
@@ -754,6 +781,13 @@ function SharePreview({
                 href={entry.share.cardUrl + `&mode=${theme === "dark" ? "dark" : "light"}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  track("share_card_link_click", {
+                    entryId: entry.entryId,
+                    shareId,
+                    surface: "search_primary",
+                  })
+                }
               >
                 {labels.openCard}
               </a>
@@ -813,6 +847,7 @@ function PrimaryEntry({
         <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
           <Link
             href={entryHref(entry, returnQuery)}
+            onClick={(event) => trackResultClick(event, entry, "primary", 0, returnQuery)}
             className="min-w-0 max-w-5xl break-words text-3xl font-semibold leading-tight text-foreground transition-colors hover:text-primary sm:text-4xl"
           >
             {entry.entryName}
@@ -865,6 +900,7 @@ function PrimaryEntry({
           <PrimaryMediaPreview
             entry={entry}
             labels={labels.media}
+            query={returnQuery}
           />
 
           <PrimaryIdentityInfo
@@ -949,7 +985,11 @@ function EntryTile({
   returnQuery,
   audioPlayback,
   onToggleAudio,
+  section,
+  position,
 }: {
+  section: SearchSection;
+  position: number;
   entry: EntryIdentity;
   labels: {
     media: MediaLabels;
@@ -962,7 +1002,9 @@ function EntryTile({
   const displayJyutping = primaryJyutping(entry);
 
   return (
-    <article className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
+    <article
+      onClickCapture={(event) => trackResultClick(event, entry, section, position, returnQuery)}
+      className="group flex min-h-[196px] flex-col rounded-lg border border-border/80 bg-background p-4 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-black/10">
       <Link href={entryHref(entry, returnQuery)} className="mb-4 block min-w-0">
         <div className="mb-2 text-xs font-medium text-muted-foreground">
           {displayCategory(entry)}
@@ -983,6 +1025,7 @@ function EntryTile({
       </Link>
       <div className="mt-auto space-y-3">
         <CardMediaPreview
+          section={section}
           entry={entry}
           labels={labels.media}
           returnQuery={returnQuery}
@@ -1026,6 +1069,7 @@ function EntryTileSkeleton({ dense = false }: { dense?: boolean }) {
 }
 
 function ResultSection({
+  section,
   title,
   entries,
   refreshLabel,
@@ -1040,6 +1084,7 @@ function ResultSection({
   audioPlayback,
   onToggleAudio,
 }: {
+  section: SearchSection;
   title: string;
   entries: EntryIdentity[];
   refreshLabel: string;
@@ -1107,9 +1152,11 @@ function ResultSection({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            {entries.map((entry) => (
+            {entries.map((entry, index) => (
               <EntryTile
                 key={entry.entryId}
+                section={section}
+                position={index}
                 entry={entry}
                 labels={labels}
                 dense={dense}
@@ -1225,6 +1272,7 @@ export function EntrySearchSections({
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [shareEntry, setShareEntry] = useState<EntryIdentity | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [audioPlayback, setAudioPlayback] = useState<CardAudioPlayback>({
     entryId: null,
@@ -1345,7 +1393,11 @@ export function EntrySearchSections({
           canEdit={canEditEntry(result.primary, user)}
           isEditLoading={editingEntryId === result.primary.entryId}
           onEdit={handleEditEntry}
-          onShare={setShareEntry}
+          onShare={(entry) => {
+            // A new share_id per opening; share_card_open fires once the preview renders.
+            setShareId(newAnalyticsId());
+            setShareEntry(entry);
+          }}
           returnQuery={result.query}
         />
       ) : (
@@ -1358,6 +1410,7 @@ export function EntrySearchSections({
         />
       )}
       <ResultSection
+        section="similar"
         title={t("similarTitle")}
         entries={result.similar}
         refreshLabel={t("refresh")}
@@ -1387,6 +1440,7 @@ export function EntrySearchSections({
         }
       />
       <ResultSection
+        section="recommended"
         title={t("recommendedTitle")}
         entries={result.recommended}
         refreshLabel={t("refresh")}
@@ -1402,6 +1456,7 @@ export function EntrySearchSections({
       />
       <SharePreview
         entry={shareEntry}
+        shareId={shareId}
         open={Boolean(shareEntry)}
         labels={{
           title: t("sharePreviewTitle"),

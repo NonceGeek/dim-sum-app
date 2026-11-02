@@ -1,27 +1,29 @@
-import { Prisma } from "@prisma/client";
-import { z } from "zod";
+import { lockUsers } from "@/lib/admin/security";
 import { prisma } from "@/lib/prisma";
 import { AccessError } from "@/lib/services/submission-access";
+import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import {
-  ACTION_EVENT,
-  ApplicationAction,
-  LeadAction,
-  formatSerial,
-  leadTransition,
-  transition,
+	ACTION_EVENT,
+	ApplicationAction,
+	LeadAction,
+	formatSerial,
+	leadTransition,
+	transition,
 } from "./application-workflow";
 import {
-  ContributionApplicationInput,
-  DatasetContactRequestInput,
-} from "./options";
-import {
-  LibraryOpsAccess,
-  assertUserHasCapability,
-  requireCapability,
+	LibraryOpsAccess,
+	assertUserHasCapability,
+	loadLibraryOpsAccess,
+	requireCapability,
 } from "./ops-access";
 import {
-  PUBLIC_SUBMISSION_LIMIT,
-  PUBLIC_SUBMISSION_WINDOW_MS,
+	ContributionApplicationInput,
+	DatasetContactRequestInput,
+} from "./options";
+import {
+	PUBLIC_SUBMISSION_LIMIT,
+	PUBLIC_SUBMISSION_WINDOW_MS,
 } from "./submission-guard";
 
 /*
@@ -228,6 +230,9 @@ export async function performApplicationAction(
   // Accept allocates a daily lead number; a concurrent accept may collide and retries.
   return withSerialRetry(() => prisma.$transaction(
     async (tx) => {
+      await lockUsers(tx, [access.userId, ...[input.handlerId,input.assigneeId].filter((id): id is string => typeof id === "string")]);
+      access = await loadLibraryOpsAccess(access.userId, tx);
+      requireCapability(access, "contribution_review");
       await tx.$queryRaw`SELECT id FROM contribution_applications WHERE id = ${id} FOR UPDATE`;
       const current = await tx.contribution_applications.findUnique({
         where: { id },
@@ -342,6 +347,9 @@ export async function performLeadAction(
   requireCapability(access, "ingestion_assignee");
   const input = parseBody(LEAD_ACTION_SCHEMAS[action], body) as Record<string, any>;
   return prisma.$transaction(async (tx) => {
+    await lockUsers(tx, [access.userId, ...(typeof input.assigneeId === "string" ? [input.assigneeId] : [])]);
+    access = await loadLibraryOpsAccess(access.userId, tx);
+    requireCapability(access, "ingestion_assignee");
     await tx.$queryRaw`SELECT id FROM ingestion_leads WHERE id = ${id} FOR UPDATE`;
     const lead = await tx.ingestion_leads.findUnique({ where: { id } });
     if (!lead) throw new AccessError(404, "待办不存在");

@@ -1,32 +1,32 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { AccessError } from "@/lib/services/submission-access";
-import {
-  PRIVATE_HEADERS,
-  requireCapability,
-  withLibraryOps,
-} from "@/lib/library/ops-access";
+import { assertDataset,datasetWhere,withAdminAccess } from "@/lib/admin/access";
+import { hasDatasetAdmin } from "@/lib/admin/policy";
 import { userNames } from "@/lib/library/contribution-service";
+import {
+	PRIVATE_HEADERS
+} from "@/lib/library/ops-access";
+import { AccessError } from "@/lib/services/submission-access";
+import { NextRequest,NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function GET(req: NextRequest) {
-  return withLibraryOps(req, async (access) => {
-    requireCapability(access, "contribution_review");
+  return withAdminAccess(req, async (access, db) => {
+    if (!hasDatasetAdmin(access)) throw new AccessError(403, "需要语料管理员角色");
     const params = new URL(req.url).searchParams;
     const status = params.get("status");
     const page = Math.max(1, Number(params.get("page")) || 1);
     const pageSize = 20;
-    const where = status === "OPEN" || status === "HANDLED" ? { status } : {};
-    const [rows, total] = await prisma.$transaction([
-      prisma.dataset_contact_requests.findMany({
+    const allowed = await db.cantonese_categories.findMany({ where: datasetWhere(access, "manage"), select: { name: true } });
+    const where = { ...(status === "OPEN" || status === "HANDLED" ? { status } : {}), ...(access.isPlatformAdmin ? {} : { dataset_name: { in: allowed.map(d => d.name) } }) };
+    const [rows, total] = await Promise.all([
+      db.dataset_contact_requests.findMany({
         where,
         orderBy: [{ status: "desc" }, { created_at: "desc" }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-      prisma.dataset_contact_requests.count({ where }),
+      db.dataset_contact_requests.count({ where }),
     ]);
-    const datasets = await prisma.cantonese_categories.findMany({
+    const datasets = await db.cantonese_categories.findMany({
       where: { name: { in: [...new Set(rows.map((r) => r.dataset_name))] } },
       select: { name: true, nickname: true },
     });
@@ -65,17 +65,18 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
-  return withLibraryOps(req, async (access) => {
-    requireCapability(access, "contribution_review");
+  return withAdminAccess(req, async (access, db) => {
+    if (!hasDatasetAdmin(access)) throw new AccessError(403, "需要语料管理员角色");
     const parsed = patchSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) throw new AccessError(400, "参数无效");
     const handled = parsed.data.status === "HANDLED";
-    const existing = await prisma.dataset_contact_requests.findUnique({
+    const existing = await db.dataset_contact_requests.findUnique({
       where: { id: BigInt(parsed.data.id) },
-      select: { id: true },
+      select: { id: true, dataset_name: true },
     });
     if (!existing) throw new AccessError(404, "记录不存在");
-    const updated = await prisma.dataset_contact_requests.update({
+    await assertDataset(access, existing.dataset_name, "manage", db);
+    const updated = await db.dataset_contact_requests.update({
       where: { id: BigInt(parsed.data.id) },
       data: {
         status: parsed.data.status,

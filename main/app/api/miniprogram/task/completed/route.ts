@@ -18,7 +18,12 @@ export async function GET(req: NextRequest) {
   const pageSize = parseNumber(searchParams.get("pageSize"), 10);
   // assigneeRef: 要查看谁的任务列表；不传时默认查看 actorRef（当前用户）自己的任务
   const assigneeRef = searchParams.get("assigneeRef");
+  const corpusName = searchParams.get("corpusName") || undefined;
+  const violationType = searchParams.get("violationType") || undefined;
+  const q = searchParams.get("q") || undefined;
   const taskType = searchParams.get("taskType") || PROOFREADING_TASK_TYPES;
+  const contentAttribute = searchParams.get("contentAttribute") || undefined;
+  const categoryId = searchParams.get("categoryId") || undefined;
 
   return requireMiniprogramMarker(req, async (_req, user) => {
     if (!user.userId) {
@@ -35,7 +40,12 @@ export async function GET(req: NextRequest) {
         status,
         page,
         pageSize,
+        corpusName,
+        violationType,
+        q,
         taskType,
+        contentAttribute,
+        categoryId,
       });
 
       return NextResponse.json(data);

@@ -6,6 +6,8 @@ export function isDelegatedCollectionPage(pathname: string) {
     /^\/admin\/corpus-collection\/(submissions|review-batches|questionnaire-insights)(\/|$)/.test(
       pathname,
     ) ||
+    /^\/admin\/(categories|corpus|analytics|business-permissions)(\/|$)/.test(pathname) ||
+    /^\/admin\/corpus-collection\/(activities|comments|analytics|questionnaire-settings|categories)(\/|$)/.test(pathname) ||
     isLibraryOpsPage(pathname)
   );
 }

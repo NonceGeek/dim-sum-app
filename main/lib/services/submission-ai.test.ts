@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { startSubmissionBatches } from "./submission-ai";
+import test from "node:test";
 import { AccessError } from "./submission-access";
+import { startSubmissionBatches } from "./submission-ai";
 function fixture() {
   const rows = [10, 20].map((id, i) => ({
     id: BigInt(i + 1),
@@ -26,6 +26,8 @@ function fixture() {
     $queryRaw: async () => [],
     user: {
       findUnique: async () => ({
+        adminBusinessRoles: [],
+        adminScopeGrants: state.roleActive ? state.grants.map(g => ({ scope_type: "activity", scope_id: String(g.activity_id), role: "OPERATOR", actions: g.submission_actions, revoked_at: null })) : [],
         status: "ACTIVE",
         isSystemAdmin: false,
         isSuperAdmin: false,
