@@ -61,6 +61,10 @@ export const copy = {
     cancel: "取消",
     external: "外部网站",
     qrHint: "使用微信扫描二维码打开小程序。",
+    wechatHint:
+      "在微信中打开小程序，浏览器可能会请求确认。若未打开，可重试或使用下方二维码。",
+    wechatRetry: "在微信中打开",
+    qrFallback: "无法打开？使用微信扫码，或在手机微信内长按识别。",
     noLaunch: "暂无可用启动入口",
     loginFirst: "登录后即可收藏应用，并在个人中心查看。",
     loginAction: "去登录",
@@ -141,6 +145,11 @@ export const copy = {
     cancel: "Cancel",
     external: "External website",
     qrHint: "Scan this code with WeChat to open the mini program.",
+    wechatHint:
+      "Open this mini program in WeChat. Your browser may ask for confirmation. Retry or use the QR code if it does not open.",
+    wechatRetry: "Open in WeChat",
+    qrFallback:
+      "Not opening? Scan with WeChat, or long-press the code inside mobile WeChat.",
     noLaunch: "No launch option available",
     loginFirst: "Sign in to save apps and find them in your account.",
     loginAction: "Sign in",

@@ -160,7 +160,10 @@ export function AppStoreAdmin() {
       setBusy(false);
     }
   }
-  async function upload(file: File, field: "coverUrl" | "iconUrl" | "qrUrl" | "demoUrl") {
+  async function upload(
+    file: File,
+    field: "coverUrl" | "iconUrl" | "qrUrl" | "demoUrl",
+  ) {
     if (file.size > 4 * 1024 * 1024) {
       toast.error(
         L(
@@ -474,6 +477,30 @@ export function AppStoreAdmin() {
                 {textField(
                   "launchUrl",
                   L("启动 / 申请 URL（HTTPS）", "Launch / request URL (HTTPS)"),
+                )}
+                {editor.draft.kind === "miniprogram" && (
+                  <>
+                    {textField(
+                      "mobileLaunchUrl",
+                      L(
+                        "手机微信跳转入口（可选）",
+                        "Mobile WeChat launch URL (optional)",
+                      ),
+                    )}
+                    {textField(
+                      "desktopLaunchUrl",
+                      L(
+                        "桌面微信跳转入口（可选）",
+                        "Desktop WeChat launch URL (optional)",
+                      ),
+                    )}
+                    <p className="text-sm text-muted-foreground sm:col-span-2">
+                      {L(
+                        "填写应用方提供并验证有效的 HTTPS 链接或微信小程序 Scheme；留空时展示二维码。二维码仍为必填备用入口。链接有有效期时需及时更新，请分别验证手机浏览器、微信内和桌面端。",
+                        "Use verified HTTPS links or WeChat mini-program Schemes supplied by the app owner. Leave blank to show the QR code. A QR code is still required as a fallback. Renew expiring links and verify mobile browsers, WeChat and desktop separately.",
+                      )}
+                    </p>
+                  </>
                 )}
                 {textField("homepageUrl", t.homepage)}
                 {textField("githubUrl", t.github)}

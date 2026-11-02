@@ -24,6 +24,45 @@ export function safeUrl(value: unknown): string {
     return "";
   }
 }
+// Custom protocols are restricted to WeChat's mini-program launch endpoint.
+export function safeMiniProgramUrl(value: unknown): string {
+  if (typeof value !== "string" || !value.trim() || value.length > 2000)
+    return "";
+  try {
+    const u = new URL(value.trim());
+    if (u.username || u.password) return "";
+    if (u.protocol === "https:") return u.href;
+    if (
+      u.protocol === "weixin:" &&
+      u.hostname === "dl" &&
+      u.pathname === "/business/" &&
+      !u.port &&
+      !u.hash &&
+      (u.searchParams.get("t") ||
+        /^wx[a-f0-9]{16}$/i.test(u.searchParams.get("appid") ?? ""))
+    )
+      return u.href;
+  } catch {}
+  return "";
+}
+export function miniProgramTarget(
+  app: Pick<AppDraft, "mobileLaunchUrl" | "desktopLaunchUrl">,
+  userAgent: string,
+  desktopTouch = false,
+): string {
+  const mobile = /Android|iPhone|iPad|iPod/i.test(userAgent) || desktopTouch;
+  return safeMiniProgramUrl(
+    mobile ? app.mobileLaunchUrl : app.desktopLaunchUrl,
+  );
+}
+const miniProgramUrl = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine(
+    (v) => !v || !!safeMiniProgramUrl(v),
+    "Use HTTPS or a valid WeChat mini-program URL Scheme",
+  );
 const url = z
   .string()
   .trim()
@@ -42,6 +81,8 @@ export const appDraftSchema = z.object({
   coverUrl: url.default(""),
   iconUrl: url.default(""),
   qrUrl: url.default(""),
+  mobileLaunchUrl: miniProgramUrl.default(""),
+  desktopLaunchUrl: miniProgramUrl.default(""),
   demoUrl: url.default(""),
   demoType: z.enum(["image", "video"]).default("video"),
   access: z.enum(["unknown", "direct", "request"]).default("unknown"),

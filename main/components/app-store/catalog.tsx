@@ -49,6 +49,7 @@ import {
   SORTS,
   catalog,
   categoryCode,
+  miniProgramTarget,
   type StoreApp,
 } from "@/lib/app-store/model";
 import { track } from "@/lib/analytics/client";
@@ -123,6 +124,7 @@ export function StoreCatalog() {
   const [dialog, setDialog] = useState<{
     kind: "launch" | "qr" | "demo" | "login";
     app?: StoreApp;
+    target?: string;
   } | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
   const q = params.get("q") ?? "";
@@ -169,9 +171,21 @@ export function StoreCatalog() {
   }
   function launch(app: StoreApp) {
     track("app_store_action", { action: "launch", appId: app.id });
-    if (app.kind === "miniprogram" || (!app.launchUrl && app.qrUrl))
-      setDialog({ kind: "qr", app });
-    else setDialog({ kind: "launch", app });
+    if (app.kind === "miniprogram" || (!app.launchUrl && app.qrUrl)) {
+      const target =
+        app.kind === "miniprogram"
+          ? miniProgramTarget(
+              app,
+              navigator.userAgent,
+              /Macintosh/.test(navigator.userAgent) &&
+                navigator.maxTouchPoints > 1,
+            )
+          : "";
+      setDialog({ kind: "qr", app, target });
+      // Keep the QR fallback available; browsers cannot reliably report launch success.
+      if (target && !app.notice && app.access !== "request")
+        window.location.assign(target);
+    } else setDialog({ kind: "launch", app });
   }
   function launchButton(app: StoreApp, className = "") {
     const text =
@@ -592,7 +606,9 @@ export function StoreCatalog() {
               {dialog?.kind === "login"
                 ? t.loginFirst
                 : dialog?.kind === "qr"
-                  ? t.qrHint
+                  ? dialog.target
+                    ? t.wechatHint
+                    : t.qrHint
                   : dialog?.kind === "demo"
                     ? t.demo
                     : t.leavingHint}
@@ -602,6 +618,26 @@ export function StoreCatalog() {
             <Button asChild>
               <Link href="/account/my-record">{t.loginAction}</Link>
             </Button>
+          )}
+          {dialog?.kind === "qr" && dialog.target && (
+            <div className="space-y-3">
+              {dialog.app?.notice && (
+                <p className="whitespace-pre-wrap text-sm">
+                  {dialog.app.notice}
+                </p>
+              )}
+              {dialog.app?.access === "request" && (
+                <p className="text-sm text-muted-foreground">{t.request}</p>
+              )}
+              <Button asChild className="w-full">
+                <a href={dialog.target}>
+                  {dialog.app?.notice || dialog.app?.access === "request"
+                    ? t.continue
+                    : t.wechatRetry}
+                </a>
+              </Button>
+              <p className="text-sm text-muted-foreground">{t.qrFallback}</p>
+            </div>
           )}
           {dialog?.kind === "qr" && dialog.app?.qrUrl && (
             <img

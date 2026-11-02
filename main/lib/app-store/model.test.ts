@@ -8,6 +8,8 @@ import {
   legacyDraft,
   publishIssues,
   safeUrl,
+  safeMiniProgramUrl,
+  miniProgramTarget,
 } from "./model";
 import type { StoreApp } from "./model";
 test("URL policy rejects scripts, credentials and relative navigation", () => {
@@ -107,5 +109,60 @@ test("search, category, instant and ordering compose without mutating the catalo
   assert.deepEqual(
     all.map((a) => a.id),
     ["1", "2"],
+  );
+});
+
+test("mini-program launch protocols reject arbitrary handlers and credentials", () => {
+  const scheme = "weixin://dl/business/?t=verified-ticket";
+  assert.equal(safeMiniProgramUrl(scheme), scheme);
+  assert.equal(
+    safeMiniProgramUrl(
+      "weixin://dl/business/?appid=wx1234567890abcdef&path=pages/home",
+    ),
+    "weixin://dl/business/?appid=wx1234567890abcdef&path=pages/home",
+  );
+  assert.equal(
+    safeMiniProgramUrl("https://wxaurl.cn/example"),
+    "https://wxaurl.cn/example",
+  );
+  for (const bad of [
+    "javascript:alert(1)",
+    "http://example.org",
+    "weixin://contacts/",
+    "weixin://dl/business/",
+    "weixin://user:pass@dl/business/?t=x",
+    "weixin://dl.evil/business/?t=x",
+    "weixin://dl/business/?appid=invalid",
+    "file:///tmp/a",
+  ]) {
+    assert.equal(safeMiniProgramUrl(bad), "", bad);
+    assert.equal(
+      appDraftSchema.safeParse({ mobileLaunchUrl: bad }).success,
+      false,
+    );
+  }
+  // General website and image fields must never gain custom-protocol support.
+  assert.equal(safeUrl(scheme), "");
+  assert.equal(appDraftSchema.safeParse({ coverUrl: scheme }).success, false);
+});
+test("mini-program target follows the device and preserves QR-only legacy defaults", () => {
+  const app = {
+    ...EMPTY_DRAFT,
+    mobileLaunchUrl: "https://wxaurl.cn/mobile",
+    desktopLaunchUrl: "weixin://dl/business/?t=desktop",
+  };
+  for (const ua of ["iPhone", "Android", "iPad", "iPhone MicroMessenger"])
+    assert.equal(miniProgramTarget(app, ua), app.mobileLaunchUrl);
+  assert.equal(miniProgramTarget(app, "Macintosh", true), app.mobileLaunchUrl);
+  for (const ua of ["Macintosh", "Windows NT 10.0", "Linux x86_64"])
+    assert.equal(miniProgramTarget(app, ua), app.desktopLaunchUrl);
+  assert.equal(
+    miniProgramTarget({ ...app, desktopLaunchUrl: "" }, "Windows"),
+    "",
+  );
+  assert.equal(miniProgramTarget(EMPTY_DRAFT, "iPhone"), "");
+  assert.equal(appDraftSchema.parse({}).mobileLaunchUrl, "");
+  assert.ok(
+    publishIssues({ ...app, kind: "miniprogram", qrUrl: "" }).includes("qrUrl"),
   );
 });
