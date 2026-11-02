@@ -1320,6 +1320,7 @@
     "unnamedUser": "后台用户",
     "backToMainApp": "返回主应用",
     "nav": {
+      "applications": "应用管理",
       "feedback": "用户反馈",
       "searchApp": "Search 小程序",
       "analytics": "数据看板",

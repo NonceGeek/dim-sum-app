@@ -35,6 +35,7 @@ model Account {
 /// 用户信息表
 /// 存储用户的基本信息
 model User {
+  appFavorites app_store_favorites[]
   searchFeedback                                                                            search_feedback[]
   adminBusinessRoles                                                                        admin_business_roles[]
   adminScopeGrants                                                                          admin_scope_grants[]
@@ -189,6 +190,8 @@ model cantonese_corpus_all {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model cantonese_corpus_apps {
+  storeProfile app_store_profiles?
+  favorites app_store_favorites[]
   id               BigInt    @id @default(autoincrement())
   name             String?
   description      String?
@@ -1932,4 +1935,37 @@ model search_daily_entries {
   entry_id   String   @db.Uuid
   entry      Json
   created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// App Store display data: only published_data is public. Existing legacy rows have no profile.
+model app_store_profiles {
+  app_id BigInt @id
+  status String @default("draft")
+  draft_data Json
+  published_data Json?
+  revision Int @default(1)
+  published_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  app cantonese_corpus_apps @relation(fields: [app_id], references: [id], onDelete: Cascade)
+}
+
+model app_store_favorites {
+  user_id String
+  app_id BigInt
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  app cantonese_corpus_apps @relation(fields: [app_id], references: [id], onDelete: Cascade)
+  @@id([user_id, app_id])
+  @@index([app_id])
+}
+
+/// Append-only server-side history; actor IDs retain historical attribution after account merges.
+model app_store_audit_logs {
+  id BigInt @id @default(autoincrement())
+  app_id BigInt
+  actor_id String
+  action String
+  revision Int
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@index([app_id, created_at])
 }
