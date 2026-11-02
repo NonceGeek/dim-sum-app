@@ -29,18 +29,6 @@ const palettes = {
   },
 };
 
-function monogram(name: string) {
-  const letters = Array.from(name).filter((c) => /[\p{L}\p{N}]/u.test(c));
-  if (!letters.length) return "D";
-  if (!/^[a-z0-9]$/i.test(letters[0])) return letters[0];
-  const capitals = name.match(/[A-Z]/g);
-  return (
-    capitals && capitals.length > 1
-      ? capitals.slice(0, 2).join("")
-      : letters.slice(0, 2).join("")
-  ).toUpperCase();
-}
-
 /** Stable vector artwork: no network request, stored image, animation or random layout. */
 export function AppArtwork({
   app,
@@ -64,7 +52,10 @@ export function AppArtwork({
   return (
     <div
       className={`relative isolate aspect-[16/9] overflow-hidden ${className}`}
-      style={{ background: `linear-gradient(125deg, ${p.start}, ${p.end})` }}
+      style={{
+        background: `linear-gradient(125deg, ${p.start}, ${p.end})`,
+        containerType: "inline-size",
+      }}
     >
       {(!app.coverUrl || coverFailed) && (
         <>
@@ -116,11 +107,11 @@ export function AppArtwork({
             className="absolute inset-0 flex items-center justify-center pb-2"
             aria-hidden="true"
           >
-            <div
-              className="flex h-[42%] aspect-square items-center justify-center rounded-[24%] border border-white/80 bg-white/75 shadow-[0_12px_32px_-12px_rgba(30,45,75,0.3),inset_0_1px_0_white]"
-              style={{ transform: `rotate(${angle}deg)` }}
-            >
-              {app.iconUrl && !iconFailed ? (
+            {app.iconUrl && !iconFailed ? (
+              <div
+                className="flex h-[42%] aspect-square items-center justify-center rounded-[24%] border border-white/80 bg-white/75 shadow-[0_12px_32px_-12px_rgba(30,45,75,0.3),inset_0_1px_0_white]"
+                style={{ transform: `rotate(${angle}deg)` }}
+              >
                 <img
                   src={app.iconUrl}
                   alt=""
@@ -128,24 +119,26 @@ export function AppArtwork({
                   className="h-[64%] w-[64%] object-contain"
                   onError={() => setIconFailed(true)}
                 />
-              ) : (
-                <span
-                  className="text-[clamp(1.75rem,3vw,3rem)] font-semibold leading-none tracking-tight"
-                  style={{ color: p.ink }}
-                >
-                  {monogram(app.name)}
-                </span>
-              )}
-            </div>
+              </div>
+            ) : (
+              <span
+                className="line-clamp-2 max-w-[80%] text-balance text-center font-semibold tracking-tight"
+                style={{
+                  color: p.ink,
+                  fontSize: "clamp(1.25rem, 8cqw, 2.75rem)",
+                  lineHeight: 1.3,
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {app.name.trim() || t[app.category]}
+              </span>
+            )}
           </div>
           <div
-            className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 px-[6%] pb-[5%]"
+            className="absolute inset-x-0 bottom-0 flex items-end justify-end px-[6%] pb-[5%]"
             style={{ color: p.ink }}
             aria-hidden="true"
           >
-            <span className="min-w-0 truncate text-xs font-medium opacity-80">
-              {app.name || t[app.category]}
-            </span>
             <span className="shrink-0 text-[8px] font-semibold tracking-[.2em] opacity-55">
               DIMSUM
             </span>
