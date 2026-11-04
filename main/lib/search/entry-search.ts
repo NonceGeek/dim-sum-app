@@ -307,6 +307,7 @@ async function fetchPrimarySearchRows(
 
 async function fetchAggregatedSearchRows(params: {
   query: string;
+  primaryCorpusId?: bigint | null;
   similarOffset: number;
   recommendedOffset: number;
   contentAttribute: ContentAttributeFilter | null;
@@ -345,7 +346,11 @@ async function fetchAggregatedSearchRows(params: {
         left join corpus_category cg on cg.corpus_id = c.id
         left join content_categories child on child.id = cg.category_id
         left join content_categories parent on parent.id = child.parent_id
-        where ${buildPrimaryMatchCondition(params.query)}
+        where ${params.primaryCorpusId === null
+          ? Prisma.sql`false`
+          : params.primaryCorpusId !== undefined
+            ? Prisma.sql`c.id = ${params.primaryCorpusId}`
+            : buildPrimaryMatchCondition(params.query)}
           ${buildContentAttributeFilter(
             Prisma.sql`c.category`,
             params.contentAttribute,
