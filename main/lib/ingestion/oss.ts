@@ -6,7 +6,7 @@ import OSS from "ali-oss";
  * 报告要读 work/ output/ audit/ proposals/）；batches/*\/report/* 的 oss:PutObject。
  * 见 yue-lint-agent apps/corpus-ingest-agent/DEPLOY.md「dim-sum-app 上传用的 RAM 用户」。
  */
-let client: OSS | undefined;
+const clients = new Map<string, OSS>();
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -14,16 +14,34 @@ function requireEnv(name: string) {
   return value;
 }
 
-function ingestOss() {
-  client ??= new OSS({
-    region: requireEnv("CORPUS_INGEST_OSS_REGION"),
-    bucket: requireEnv("CORPUS_INGEST_OSS_BUCKET"),
-    accessKeyId: requireEnv("CORPUS_INGEST_OSS_ACCESS_KEY_ID"),
-    accessKeySecret: requireEnv("CORPUS_INGEST_OSS_ACCESS_KEY_SECRET"),
-    secure: true,
-  });
+/**
+ * Vercel 海外区域直连杭州 OSS 会 connect ETIMEDOUT（同 lib/oss.ts 的处理）。
+ * 开启后服务端自己发的请求（HEAD/读写报告/列举）走传输加速接入点；
+ * 给浏览器的签名 URL 始终用地域域名：浏览器在国内直连即可，也不产生加速流量。
+ */
+function ossClient(accelerate: boolean) {
+  const key = accelerate ? "accelerate" : "region";
+  let client = clients.get(key);
+  if (!client) {
+    client = new OSS({
+      // endpoint 优先级高于 region；默认 V1 签名与 host 无关
+      ...(accelerate
+        ? { endpoint: "oss-accelerate.aliyuncs.com" }
+        : { region: requireEnv("CORPUS_INGEST_OSS_REGION") }),
+      bucket: requireEnv("CORPUS_INGEST_OSS_BUCKET"),
+      accessKeyId: requireEnv("CORPUS_INGEST_OSS_ACCESS_KEY_ID"),
+      accessKeySecret: requireEnv("CORPUS_INGEST_OSS_ACCESS_KEY_SECRET"),
+      secure: true,
+    });
+    clients.set(key, client);
+  }
   return client;
 }
+
+/** 服务端请求用 */
+const ingestOss = () => ossClient(process.env.CORPUS_INGEST_OSS_ACCELERATE?.trim() === "true");
+/** 签给浏览器的 URL 用 */
+const signingOss = () => ossClient(false);
 
 export const UPLOAD_URL_TTL_SECONDS = 30 * 60;
 
@@ -38,7 +56,7 @@ export function signNewUpload(key: string) {
     "Content-Type": "application/octet-stream",
     "x-oss-forbid-overwrite": "true",
   };
-  const url = ingestOss().signatureUrl(key, {
+  const url = signingOss().signatureUrl(key, {
     method: "PUT",
     expires: UPLOAD_URL_TTL_SECONDS,
     ...headers,
@@ -98,7 +116,7 @@ export async function putNewObject(key: string, body: string | Buffer, contentTy
 
 /** 下载用的临时 URL，带下载文件名 */
 export function signDownload(key: string, filename: string, expires = 10 * 60) {
-  return ingestOss().signatureUrl(key, {
+  return signingOss().signatureUrl(key, {
     expires,
     response: {
       "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,

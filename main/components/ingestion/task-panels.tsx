@@ -149,7 +149,8 @@ async function uploadOne(taskId: string, file: File, path: string) {
   );
   // 签名包含这些请求头（含 x-oss-forbid-overwrite），必须原样带上
   const put = await fetch(sign.url, { method: sign.method, headers: sign.headers, body: file });
-  if (!put.ok) throw new Error(`OSS ${put.status}`);
+  // 409 = 对象已存在（上次已传到 OSS 但没来得及确认）；交给 complete 核对大小后补登记
+  if (!put.ok && put.status !== 409) throw new Error(`OSS ${put.status}`);
   await json(
     await fetch(`/api/admin/ingestion-tasks/${taskId}/files/complete`, {
       method: "POST",
