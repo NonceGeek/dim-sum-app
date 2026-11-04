@@ -214,37 +214,36 @@ export function LibraryExplorer() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{t("explorer.breadcrumb")}</p>
-          <h1 className="text-2xl font-bold sm:text-3xl">{t("explorer.title")}</h1>
-          <p className="mt-1 text-muted-foreground">{t("explorer.subtitle")}</p>
+      <header className="max-w-2xl">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("explorer.title")}</h1>
+        <p className="mt-3 text-muted-foreground">{t("explorer.subtitle")}</p>
+      </header>
+
+      <div className="mb-3 mt-7 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-2xl shrink-0">
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("explorer.searchPlaceholder")}
+            className="h-12 rounded-xl pl-12 pr-9"
+            maxLength={100}
+            aria-label={t("explorer.searchPlaceholder")}
+          />
+          {q && (
+            <button
+              type="button"
+              aria-label={t("explorer.clear")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              onClick={() => setQ("")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        <Button className="hidden sm:inline-flex" onClick={() => setContributeOpen(true)}>
+        <Button className="h-12 shrink-0 gap-2 px-5 has-[>svg]:px-5" onClick={() => setContributeOpen(true)}>
           <Plus /> {t("explorer.contribute")}
         </Button>
-      </div>
-
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={t("explorer.searchPlaceholder")}
-          className="h-11 pl-9 pr-9"
-          maxLength={100}
-          aria-label={t("explorer.searchPlaceholder")}
-        />
-        {q && (
-          <button
-            type="button"
-            aria-label={t("explorer.clear")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            onClick={() => setQ("")}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
       </div>
       <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">{t("explorer.hotLabel")}</span>
