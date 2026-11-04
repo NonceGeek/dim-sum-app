@@ -291,6 +291,9 @@ export async function completeFileUpload(access: LibraryOpsAccess, id: bigint, b
   if (!file) throw new AccessError(404, "没有该文件的上传记录");
   if (file.status === "UPLOADED") return file;
   const object = await headObject(`${task.workspace_prefix}${path}`);
+  // 浏览器遇到 OSS 409（对象已存在）也会来确认；大小不符说明是另一个同名文件，不能当作本次上传
+  if (object && object.size !== Number(file.size))
+    throw new AccessError(409, `已存在大小不同的同名文件，拒绝覆盖: ${path}`);
   const updated = await prisma.$transaction(async (tx) => {
     const updated = await tx.ingestion_task_files.update({
       where: { id: file.id },
