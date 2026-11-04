@@ -11,11 +11,11 @@ import {
   ChevronDown,
   Heart,
   Search,
-  Sparkles,
   Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Sheet,
   SheetContent,
@@ -247,12 +247,8 @@ export function StoreCatalog() {
     );
   }
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-8 sm:pt-14">
+    <div className="container mx-auto px-4 py-6 sm:py-8">
       <header className="max-w-2xl">
-        <p className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[.16em] text-primary">
-          <Sparkles className="h-4 w-4" />
-          {t.eyebrow}
-        </p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           {t.title}
         </h1>
@@ -275,7 +271,7 @@ export function StoreCatalog() {
           className="h-12 rounded-xl pl-12"
         />
       </form>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-b pb-6">
+      <div className="mt-6 flex max-w-full items-center">
         <div
           className="flex max-w-full gap-2 overflow-x-auto pb-1"
           aria-label={t.all}
@@ -299,54 +295,58 @@ export function StoreCatalog() {
             </Button>
           ))}
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={instant}
-            onChange={(e) => {
-              update({ instant: e.target.checked ? "true" : "" });
-              track("app_store_action", {
-                action: "filter",
-                value: e.target.checked ? "instant" : "all-access",
-              });
-            }}
-            className="accent-primary"
-          />
-          {t.instant}
-        </label>
       </div>
-      <div className="my-6 flex items-center justify-between">
-        <p className="text-sm text-muted-foreground" aria-live="polite">
+      <div className="my-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="hidden sm:block">
+            <Select
+              value={sort}
+              onValueChange={(v) => {
+                update({ sort: v });
+                track("app_store_action", { action: "sort", value: v });
+              }}
+            >
+              <SelectTrigger aria-label={t.sort} className="min-w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SORTS.map((v) => (
+                  <SelectItem value={v} key={v}>
+                    {t[v]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            className="sm:hidden"
+            onClick={() => setSortOpen(true)}
+          >
+            {t[sort as (typeof SORTS)[number]]}
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+          <label className="flex min-h-10 cursor-pointer items-center gap-2 whitespace-nowrap text-sm">
+            <Switch
+              checked={instant}
+              onCheckedChange={(checked) => {
+                update({ instant: checked ? "true" : "" });
+                track("app_store_action", {
+                  action: "filter",
+                  value: checked ? "instant" : "all-access",
+                });
+              }}
+              aria-label={t.instant}
+            />
+            {t.instant}
+          </label>
+        </div>
+        <p
+          className="ml-auto whitespace-nowrap text-sm text-muted-foreground"
+          aria-live="polite"
+        >
           {query.isPending ? "…" : visible.length} {t.results}
         </p>
-        <div className="hidden sm:block">
-          <Select
-            value={sort}
-            onValueChange={(v) => {
-              update({ sort: v });
-              track("app_store_action", { action: "sort", value: v });
-            }}
-          >
-            <SelectTrigger aria-label={t.sort} className="min-w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SORTS.map((v) => (
-                <SelectItem value={v} key={v}>
-                  {t[v]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button
-          variant="outline"
-          className="sm:hidden"
-          onClick={() => setSortOpen(true)}
-        >
-          {t[sort as (typeof SORTS)[number]]}
-          <ChevronDown className="h-4 w-4" />
-        </Button>
       </div>
       {query.isPending ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
