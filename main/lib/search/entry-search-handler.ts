@@ -68,6 +68,17 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
     }
     const similarOffset = parseCursor(searchParams.get("similarCursor"));
     const recommendedOffset = parseCursor(searchParams.get("recommendedCursor"));
+    const logFailure = (stage: string, error: unknown) => {
+      console.error(`Entry search ${stage} failed`, {
+        requestId: analytics.requestId,
+        section,
+        semanticPart,
+        contentAttribute,
+        mediaType,
+        primaryCorpusIdProvided: primaryCorpusIdParam !== null,
+        requestElapsedMs: Math.round(performance.now() - startedAt),
+      }, error);
+    };
 
     if (!query) {
       return NextResponse.json(
@@ -105,7 +116,19 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
       );
     };
 
-    const fetchSemantic = async (): Promise<{
+    const loadEmbedding = async (): Promise<string | null> => {
+      try {
+        return await getQueryEmbeddingText(query);
+      } catch (error) {
+        logFailure("embedding; using fallback", error);
+        return null;
+      }
+    };
+
+    const fetchSemantic = async (
+      seedCorpusId = primaryCorpusId,
+      embeddingRequest?: Promise<string | null>,
+    ): Promise<{
       rows: AggregatedSearchRow[];
       status: EntrySearchResponse["sectionStatus"]["semantic"];
       reason?: SemanticReason;
@@ -117,6 +140,7 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
       const fetchFallback = async () => {
         const fallbackRows = await fetchAggregatedSearchRows({
           query,
+          primaryCorpusId: seedCorpusId,
           similarOffset,
           recommendedOffset,
           contentAttribute,
@@ -131,19 +155,14 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
         };
       };
 
-      let queryEmbeddingText: string | null = null;
-      try {
-        queryEmbeddingText = await getQueryEmbeddingText(query);
-      } catch (error) {
-        console.error("Query embedding failed; using search fallback:", error);
-      }
+      const queryEmbeddingText = await (embeddingRequest ?? loadEmbedding());
 
       if (queryEmbeddingText) {
         try {
           const rows = await fetchSemanticSearchRows({
             query,
             queryEmbeddingText,
-            primaryCorpusId,
+            primaryCorpusId: seedCorpusId,
             similarOffset,
             recommendedOffset,
             semanticPart,
@@ -156,13 +175,13 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
             status: "success",
           };
         } catch (error) {
-          console.error("Semantic entry search failed:", error);
+          logFailure("semantic", error);
           if (isPrismaStatementTimeout(error) && semanticPart === "all") {
             try {
               const similarRows = await fetchSemanticSearchRows({
                 query,
                 queryEmbeddingText,
-                primaryCorpusId,
+                primaryCorpusId: seedCorpusId,
                 similarOffset,
                 recommendedOffset,
                 semanticPart: "similar",
@@ -175,7 +194,7 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
                 reason: "statement_timeout_similar_only",
               };
             } catch (similarError) {
-              console.error("Similar-only semantic fallback failed:", similarError);
+              logFailure("similar-only fallback", similarError);
             }
           }
           if (isPrismaTransientDatabaseError(error)) {
@@ -187,7 +206,7 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
       try {
         return await fetchFallback();
       } catch (error) {
-        console.error("Entry search fallback failed:", error);
+        logFailure("fallback", error);
         if (isPrismaTransientDatabaseError(error)) {
           return { rows: [], status: "error", reason: "fallback_failed" };
         }
@@ -213,7 +232,7 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
         return NextResponse.json(response, { headers: SEARCH_CACHE_HEADERS });
       } catch (error) {
         logSearch(null, { error: "primary_failed" });
-        console.error("Primary entry search failed:", error);
+        logFailure("primary", error);
         return databaseErrorResponse(error, "Entry primary search failed");
       }
     }
@@ -239,10 +258,19 @@ export async function handleEntrySearch(req: NextRequest, analytics: { app?: "se
       );
     }
 
-    const [primaryRows, semantic] = await Promise.all([
-      fetchPrimarySearchRows(query, datasets, contentAttribute),
-      fetchSemantic(),
-    ]);
+    // Overlap the network request with primary search, but start semantic SQL
+    // only once its seed is known. A failed primary must not launch more DB work.
+    const embeddingRequest = loadEmbedding();
+    let primaryRows: AggregatedSearchRow[];
+    try {
+      primaryRows = await fetchPrimarySearchRows(query, datasets, contentAttribute);
+    } catch (error) {
+      logSearch(null, { error: "primary_failed" });
+      logFailure("primary", error);
+      return databaseErrorResponse(error, "Entry primary search failed");
+    }
+    const seedCorpusId = primaryRows.find((row) => row.section === "primary")?.id ?? null;
+    const semantic = await fetchSemantic(seedCorpusId === null ? null : BigInt(seedCorpusId), embeddingRequest);
 
     const response = buildResponse({
       query,
