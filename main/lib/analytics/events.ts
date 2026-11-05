@@ -81,6 +81,7 @@ const audioErrorFields = { loadAttemptId: uuid, errorType: z.enum(["timeout","ne
 const feedbackType = z.enum(["content_error","audio_issue","suggestion","other"]);
 
 export const CLIENT_EVENT_SCHEMAS = {
+  app_store_action: z.object({action: z.enum(["view", "search", "filter", "sort", "detail", "launch", "demo", "favorite"]), appId: id.optional(), query: query.optional(), value: z.string().max(100).optional()}),
   // landing=true marks the first view of a visit; only it carries the external referrer.
   // scene is the WeChat miniprogram launch scene value (e.g. 1007 chat card, 1011 QR code).
   page_view: z.object({

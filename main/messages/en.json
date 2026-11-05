@@ -1,4 +1,429 @@
 {
+  "AdminAnalytics": {
+    "errorType": {
+      "timeout": "Timeout",
+      "network": "Network",
+      "resource_unavailable": "Unavailable",
+      "unsupported": "Unsupported",
+      "unknown": "Unknown"
+    },
+    "fallback": {
+      "text": "Text",
+      "text_audio": "Text + audio",
+      "none": "None"
+    },
+    "source": {
+      "web": "Web",
+      "miniprogram": "Miniprogram"
+    },
+    "scene": {
+      "1001": "Discover tab entry",
+      "1007": "Card in a one-to-one chat",
+      "1008": "Card in a group chat",
+      "1011": "QR code scan",
+      "1012": "QR code in image (long press)",
+      "1035": "Official account menu",
+      "1037": "Opened from another miniprogram",
+      "1043": "Official account template message",
+      "1047": "Miniprogram code scan",
+      "1048": "Miniprogram code in image (long press)",
+      "1074": "Card from official account chat",
+      "1089": "Pull-down on chat list",
+      "1104": "Pull-down \"My miniprograms\"",
+      "1154": "Moments single-page mode",
+      "1155": "Opened from single-page mode"
+    },
+    "title": "Analytics",
+    "description": "Web and mini-program visits, searches, media and shares. Beijing-time reporting excludes admin pages and bots.",
+    "range": "Date range",
+    "preset": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "custom": "Custom"
+    },
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "refresh": "Refresh",
+    "rangeLabel": "Range: {from} to {to}",
+    "assetsRangeNote": "Corpus assets show current stock, independent of the date range",
+    "tab": {
+      "overview": "Overview",
+      "search": "Search",
+      "content": "Engagement",
+      "traffic": "Traffic",
+      "assets": "Corpus assets",
+      "miniprogram": "WeChat mini-programs"
+    },
+    "loading": "Loading…",
+    "noData": "No data in this range",
+    "trendTitle": "Daily trend · {metric}",
+    "kpi": {
+      "pv": "Page views",
+      "uv": "Visitors",
+      "searches": "Searches",
+      "shares": "Shares (copy + open)",
+      "sessions": "Sessions",
+      "noPrimaryRate": "No exact match rate",
+      "shareOpens": "Share link opens",
+      "videoPlays": "Video plays"
+    },
+    "search": {
+      "p95": "Search latency p95",
+      "topQueries": "Top queries",
+      "noPrimaryQueries": "Queries without an exact match",
+      "noPrimaryHint": "Searches whose exact-match section was empty (excluding pagination) — candidates for new entries or synonyms.",
+      "sections": "Section impressions and clicks",
+      "sectionsHint": "CTR = clicks ÷ impressions with results.",
+      "latency": "API latency by request section",
+      "latencyHint": "Server time from request to response.",
+      "fallbacks": "Fallbacks and errors",
+      "mediaFilters": "Media filter usage"
+    },
+    "section": {
+      "primary": "exact · Exact match",
+      "similar": "related · Related",
+      "recommended": "recommended · Recommended"
+    },
+    "content": {
+      "videoErrors": "Video load failures",
+      "videoErrorsHint": "Load errors or 15s timeouts before first playback, at most once per load attempt; closing or leaving does not count.",
+      "video": "Video plays and failures",
+      "shareFunnel": "Share funnel",
+      "shareFunnelHint": "Image downloads count successes only; link opens come from copied share links.",
+      "topEntries": "Most engaged entries"
+    },
+    "share": {
+      "attributedLinkOpens": "Opens linked by share_id",
+      "cardOpens": "Share dialog opened",
+      "linkCopies": "Share link copied",
+      "imageDownloads": "Share image downloaded",
+      "cardLinkClicks": "Card page opened",
+      "linkOpens": "Share link opened"
+    },
+    "surface": {
+      "search_primary": "Search · exact match",
+      "search_tile": "Search · result card",
+      "preview_dialog": "Search · enlarged preview",
+      "entry_detail": "Entry page"
+    },
+    "traffic": {
+      "sources": "Client",
+      "scenes": "Miniprogram launch scenes",
+      "scenesHint": "WeChat scene value of each miniprogram visit (landing view only).",
+      "pages": "Top pages",
+      "referrers": "Referrers",
+      "referrersHint": "Landing page of each visit only.",
+      "direct": "Direct",
+      "devices": "Devices",
+      "locales": "UI language"
+    },
+    "device": {
+      "desktop": "Desktop",
+      "mobile": "Mobile",
+      "tablet": "Tablet",
+      "unknown": "Unknown"
+    },
+    "col": {
+      "errorType": "Error type",
+      "avgElapsed": "Avg time to failure",
+      "fallback": "Fallback",
+      "source": "Client",
+      "scene": "Scene",
+      "query": "Query",
+      "searches": "Searches",
+      "users": "Users",
+      "section": "Section",
+      "impressions": "Impressions",
+      "emptyRate": "Empty rate",
+      "clicks": "Clicks",
+      "ctr": "CTR",
+      "requestSection": "Request section",
+      "requests": "Requests",
+      "status": "Status",
+      "reason": "Reason",
+      "mediaType": "Media type",
+      "changes": "Changes",
+      "surface": "Surface",
+      "plays": "Plays",
+      "failures": "Failures",
+      "failureRate": "Failure rate",
+      "step": "Step",
+      "events": "Events",
+      "entry": "Entry",
+      "shares": "Shares",
+      "shareOpens": "Link opens",
+      "page": "Page",
+      "referrer": "Referrer",
+      "visits": "Visits",
+      "device": "Device",
+      "share": "Share",
+      "locale": "Language"
+    }
+  },
+  "LibraryOps": {
+    "title": "Contribution review",
+    "description": "Review dataset contribution applications from individuals and organizations: contacts, dataset overview, rights, privacy risks and next steps.",
+    "loading": "Loading…",
+    "chooseUser": "Select a person",
+    "choose": "Select",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "confirm": "Confirm",
+    "saved": "Saved",
+    "copied": "Copied",
+    "copyFailed": "Copy failed",
+    "applicant": "Applicant",
+    "finished": "This application has been decided and cannot be changed.",
+    "leadCreated": "Accepted. Ingestion task {no} created",
+    "leadBadge": "Ingestion task {no} · {name}",
+    "detailTitle": "Application {no}",
+    "copyContact": "Copy contact",
+    "sendEmail": "Email",
+    "review": "Review",
+    "reviewHint": "Do not create an ingestion task or publish metadata until rights, authorization chain, personal data and third-party content are confirmed.",
+    "acceptedThisMonth": "Accepted this month",
+    "searchPlaceholder": "Search number, dataset, contact, organization or email",
+    "search": "Search",
+    "statusFilter": "Status",
+    "allStatuses": "All statuses",
+    "onlyMine": "Assigned to me",
+    "refresh": "Refresh",
+    "empty": "No matching records",
+    "total": "{count} total",
+    "prev": "Previous",
+    "next": "Next",
+    "status": {
+      "PENDING_INITIAL_REVIEW": "Pending review",
+      "IN_REVIEW": "In review",
+      "PENDING_APPLICANT_INFO": "Awaiting applicant",
+      "RIGHTS_PRIVACY_REVIEW": "Rights / privacy review",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected"
+    },
+    "actions": {
+      "assign": "Start review / assign",
+      "contact-logs": "Log contact",
+      "request-info": "Request information",
+      "info-received": "Information received",
+      "rights-review": "Send to rights / privacy review",
+      "review-complete": "Review complete",
+      "reject": "Reject",
+      "accept": "Accept and create ingestion task",
+      "reopen": "Reopen"
+    },
+    "form": {
+      "rightsOwner": "Reviewer",
+      "handler": "Handler",
+      "handlerHint": "Leave empty to handle it yourself.",
+      "infoTypes": "Information needed",
+      "channel": "Channel",
+      "contactedAt": "Contacted at",
+      "result": "Outcome",
+      "resultPlaceholder": "e.g. Called; they will send the license document",
+      "rejectReason": "Reason",
+      "allowResubmit": "Allow resubmission",
+      "assignee": "Ingestion owner",
+      "priority": "Priority",
+      "targetIngestionType": "Suggested ingestion type",
+      "proposedDatasetName": "Suggested dataset name",
+      "rightsMaterialRequired": "Rights documents needed",
+      "privacyAssessmentRequired": "De-identification / privacy assessment needed",
+      "handoverNote": "Handover note",
+      "noNotification": "Creates an in-system task only. No email, SMS or external notification is sent.",
+      "note": "Note"
+    },
+    "infoType": {
+      "rights": "Rights",
+      "source": "Source",
+      "license": "License",
+      "privacy": "Privacy",
+      "data_dictionary": "Data dictionary",
+      "other": "Other"
+    },
+    "channel": {
+      "email": "Email",
+      "phone": "Phone",
+      "wechat": "WeChat",
+      "meeting": "Meeting",
+      "other": "Other"
+    },
+    "rejectReason": {
+      "rights_unclear": "Unclear rights",
+      "privacy_risk": "Privacy risk",
+      "quality": "Quality",
+      "out_of_scope": "Out of scope",
+      "duplicate": "Duplicate",
+      "other": "Other"
+    },
+    "priority": {
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "ingestionType": {
+      "new_dataset": "New dataset",
+      "supplement_existing": "Add to existing dataset",
+      "to_be_confirmed": "To be confirmed"
+    },
+    "yesNo": {
+      "yes": "Yes",
+      "no": "No",
+      "pending": "To be provided"
+    },
+    "history": {
+      "handler": "Handler: {name}",
+      "assignee": "Owner: {name}"
+    },
+    "event": {
+      "submit": "Submitted",
+      "assign": "Review started / assigned",
+      "contact_log": "Contact logged",
+      "request_info": "Information requested",
+      "info_received": "Information received",
+      "rights_review": "Sent to rights / privacy review",
+      "rights_review_complete": "Rights review complete",
+      "reject": "Rejected",
+      "accept": "Accepted",
+      "reopen": "Reopened",
+      "lead_created": "Ingestion task created",
+      "lead_take": "Ingestion task taken",
+      "lead_close": "Ingestion task closed",
+      "lead_reassign": "Ingestion task reassigned"
+    },
+    "kind": {
+      "dataset": "Existing dataset",
+      "partnership": "Data partnership"
+    },
+    "fields": {
+      "contactName": "Contact",
+      "organization": "Organization",
+      "email": "Email",
+      "otherContact": "Other contact",
+      "region": "Region",
+      "submittedAt": "Submitted",
+      "contributorType": "Contributor type",
+      "contributionKind": "Application type",
+      "handler": "Handler",
+      "datasetName": "Dataset",
+      "shortDescription": "Summary",
+      "modalities": "Modality",
+      "useCase": "Primary use",
+      "scale": "Scale",
+      "referenceUrl": "Project link",
+      "source": "Source and collection",
+      "applicantNote": "Applicant notes",
+      "rightsStatus": "Rights status",
+      "rightsHolder": "Rights holder",
+      "submitterAuthority": "Applicant role",
+      "licenseStatus": "License",
+      "privacyStatus": "Personal data",
+      "intendedAccessMode": "Preferred access"
+    },
+    "sections": {
+      "contact": "Applicant and contact",
+      "dataset": "Dataset overview",
+      "rights": "Rights, license and privacy",
+      "history": "Review history"
+    },
+    "columns": {
+      "application": "Number / time",
+      "dataset": "Dataset",
+      "applicant": "Applicant",
+      "rights": "Rights & privacy",
+      "access": "Preferred access",
+      "status": "Status",
+      "handler": "Handler"
+    },
+    "leads": {
+      "title": "Ingestion tasks",
+      "description": "Ingestion tasks assigned to you after a contribution is accepted. Take them into the existing ingestion workflow; no external notifications are sent.",
+      "scope": {
+        "me": "Assigned to me",
+        "all": "All"
+      },
+      "status": {
+        "PENDING_OWNER_ACCEPTANCE": "Awaiting owner",
+        "IN_PROGRESS": "In progress",
+        "CLOSED": "Closed"
+      },
+      "empty": "No ingestion tasks",
+      "showingOne": "Showing lead {no} only",
+      "showAll": "Show all leads",
+      "from": "From {no}",
+      "closingNote": "Closing note",
+      "meta": "Owner {assignee} · created by {creator} at {time}",
+      "takenAt": "taken at {time}",
+      "actions": {
+        "take": "Take",
+        "close": "Close",
+        "reassign": "Reassign",
+        "openTask": "Open ingestion job",
+        "createTask": "Create ingestion job"
+      }
+    },
+    "contactRequests": {
+      "title": "Access requests",
+      "description": "“Contact provider / request access” messages from Library dataset pages. Reply by email, then mark as handled.",
+      "status": {
+        "OPEN": "Open",
+        "HANDLED": "Handled"
+      },
+      "columns": {
+        "time": "Submitted",
+        "dataset": "Dataset",
+        "contact": "Contact",
+        "message": "Request"
+      },
+      "type": {
+        "access_request": "Access request",
+        "contact": "Contact provider"
+      },
+      "markHandled": "Mark handled",
+      "reopen": "Reopen"
+    },
+    "profile": {
+      "title": "Library display settings",
+      "help": "These settings do not enable raw file downloads or change public access to corpus content.",
+      "listed": "Show in the public Library",
+      "listedHint": "Enable and save to show the name, description, cover and other display information in the Library list and detail page. Disable and save to hide the dataset from the list, detail page and public API.",
+      "zhName": "Chinese name (change via “Edit details”)",
+      "enName": "English name",
+      "modalities": "Modality",
+      "useCases": "Primary use",
+      "accessMode": "Access",
+      "scaleSummary": "Scale",
+      "scalePlaceholder": "e.g. 200k samples / 589 hours",
+      "languageScope": "Languages",
+      "languagePlaceholder": "e.g. Cantonese / Traditional Chinese",
+      "tags": "Public tags (comma separated)",
+      "cover": "Cover image URL",
+      "link": "Original page / external source URL",
+      "linkHint": "When set, the detail page shows an external link button.",
+      "coverPreview": "Current cover preview",
+      "ai": {
+        "title": "AI cover",
+        "description": "Same as activity banners: generate temporary candidates, then upload the chosen one to OSS. Its URL fills the cover field and takes effect after you save the display settings.",
+        "promptPlaceholder": "Describe the cover, e.g. a Cantonese nursery-rhyme dataset, warm and playful, Lingnan arcades, no text",
+        "defaultPrompt": "A wide cover image for the Cantonese dataset “{name}”, evoking Lingnan and Cantonese culture, clean and elegant, no text",
+        "generate": "Generate candidates",
+        "regenerate": "Regenerate",
+        "generated": "Cover candidates generated",
+        "generateFailed": "Failed to generate cover candidates",
+        "candidate": "Candidate {index}",
+        "expires": "Expires {date}",
+        "use": "Use this image",
+        "inUse": "Applied",
+        "applied": "Uploaded to OSS and filled into the cover URL; save to apply",
+        "uploadFailed": "Failed to upload cover"
+      },
+      "usageNotes": "Source, use and limitations (public)",
+      "cancel": "Cancel",
+      "save": "Save display settings",
+      "saved": "Library display settings saved"
+    }
+  },
   "ChannelVideo": {
     "scanHint": "Scan with WeChat and tap to open the video. No login required. Return here to review.",
     "trialHint": "Upload the version containing the scan page first. The scanning account needs access to that test version.",
@@ -41,8 +466,10 @@
     "theme": "Theme"
   },
   "Nav": {
+    "contributeDataset": "＋ Contribute a dataset",
     "home": "Home",
     "library": "Library",
+    "assistant": "Assistant",
     "appStore": "App Store",
     "docs": "Docs",
     "myAccount": "My Account",
@@ -91,9 +518,302 @@
     "legacySearch": "Classic Search",
     "searchButton": "Search",
     "viewDataStats": "View Data Stats",
-    "luckyButton": "Feeling Lucky"
+    "luckyButton": "Feeling Lucky",
+    "askAssistant": "Ask assistant",
+    "modeSearch": "Search",
+    "assistantSubmit": "Ask",
+    "assistantPlaceholder": "Ask the Cantonese assistant, e.g. how to say canteen?"
   },
   "Library": {
+    "explorer": {
+      "sortOption": "Sort: {label}",
+      "breadcrumb": "Library",
+      "title": "Explore Cantonese Corpora",
+      "subtitle": "Discover, compare and share trusted corpora for Cantonese AI, linguistics and cultural heritage.",
+      "contribute": "Contribute a dataset",
+      "hotLabel": "Popular:",
+      "searchPlaceholder": "Search by name, description or tag",
+      "resultCount": "{count} datasets",
+      "allResults": "Showing all results",
+      "applied": "Applied {items}",
+      "clearAll": "Clear all",
+      "filters": "Filters",
+      "filterTitle": "Filter datasets",
+      "multi": "Multi-select",
+      "sortLabel": "Sort",
+      "cardView": "Cards",
+      "listView": "List",
+      "emptyTitle": "No matching datasets",
+      "emptyHint": "Try removing some filters or using different keywords.",
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "showResults": "Show {count} results",
+      "loadError": "Failed to load datasets",
+      "retry": "Retry",
+      "loadMore": "Load more"
+    },
+    "groups": {
+      "modalities": "Modality",
+      "useCases": "Primary use",
+      "accessModes": "Access",
+      "quality": "Quality"
+    },
+    "options": {
+      "modality": {
+        "text": "Text",
+        "audio": "Audio",
+        "image_video": "Image / Video",
+        "multimodal": "Multimodal"
+      },
+      "useCase": {
+        "training": "Model training",
+        "safety_eval": "Safety evaluation",
+        "asr_tts": "ASR / TTS",
+        "culture_research": "Cultural research"
+      },
+      "access": {
+        "metadata_only": "Metadata only",
+        "request_access": "Request access",
+        "external": "External source"
+      },
+      "quality": {
+        "official": "Official release",
+        "verified": "Verified metadata"
+      },
+      "sort": {
+        "relevance": "Relevance",
+        "newest": "Recently updated"
+      },
+      "flag": {
+        "official": "Official",
+        "featured": "Featured",
+        "verified": "Verified",
+        "new": "New",
+        "updated": "Updated"
+      }
+    },
+    "hot": {
+      "asr": "Cantonese ASR",
+      "safety": "Safety evaluation",
+      "hk": "Hong Kong culture",
+      "metadataOnly": "Metadata only",
+      "multimodal": "Multimodal"
+    },
+    "card": {
+      "share": "Share card",
+      "details": "View details",
+      "scale": "Scale",
+      "language": "Languages",
+      "access": "Access",
+      "updated": "Updated",
+      "status": "Status",
+      "dataset": "Dataset",
+      "modality": "Modality / use"
+    },
+    "detail": {
+      "back": "Back to Library",
+      "noDownload": "⚠️ This platform does not offer direct dataset downloads. You can view public metadata, contact the data provider, or generate a share card.",
+      "about": "About",
+      "usageNotes": "Source, intended use and limitations",
+      "share": "Generate share card",
+      "requestAccess": "Request access / partnership",
+      "contact": "Contact data provider",
+      "viewOriginal": "View original page ↗",
+      "viewExternal": "View external source ↗",
+      "notFoundTitle": "Dataset not found",
+      "metadataSuffix": "DimSum AI Cantonese Corpus"
+    },
+    "share": {
+      "title": "Share card",
+      "note": "The share card contains only public metadata and the platform link — no raw data, samples or download links.",
+      "brand": "DIMSUM AI · CANTONESE CORPUS",
+      "copyLink": "Copy link",
+      "saveCard": "Save card",
+      "copied": "Link copied",
+      "copyFailed": "Copy failed. Please copy the link manually.",
+      "saved": "Card image saved",
+      "saveFailed": "Could not generate the image. Please try again."
+    },
+    "contact": {
+      "titleAccess": "Request access / partnership",
+      "titleContact": "Contact data provider",
+      "description": "Leave your contact details and needs; our team will reply by email. Submitting does not grant data access.",
+      "name": "Name",
+      "email": "Email",
+      "organization": "Organization (optional)",
+      "message": "Your request",
+      "messagePlaceholder": "e.g. purpose, scope needed, preferred collaboration",
+      "submit": "Submit",
+      "submitting": "Submitting…",
+      "success": "Submitted. We will contact you by email soon.",
+      "error": "Submission failed. Please try again later.",
+      "required": "Please fill in your name, a valid email and your request."
+    },
+    "contribute": {
+      "title": "Contribute a dataset",
+      "submittedTitle": "Application submitted",
+      "steps": {
+        "contact": "Contact",
+        "overview": "Overview",
+        "rights": "Rights & privacy",
+        "confirm": "Confirm"
+      },
+      "intro": {
+        "lead": "Share an overview of your dataset, your contact details and rights information. Once approved, we will invite you to the formal ingestion process. No raw data upload is needed at this stage.",
+        "noUpload": "No raw data upload is needed at this stage.",
+        "bullet1": "Open data, restricted access and co-development are all welcome",
+        "bullet2": "You may submit metadata, project links or de-identified sample notes only",
+        "bullet3": "Submitting does not publish or distribute your data",
+        "kindTitle": "What would you like to offer?",
+        "kind": {
+          "dataset": "I have a dataset",
+          "datasetHint": "Apply for listing or publication",
+          "partnership": "I want a data partnership",
+          "partnershipHint": "Licensing, co-building, annotation or research"
+        }
+      },
+      "contactStep": {
+        "hint": "Used only to process this application and follow up with you.",
+        "contributorType": "Contributor type",
+        "contactName": "Contact name",
+        "contactEmail": "Email",
+        "organizationName": "Organization",
+        "organizationPlaceholder": "Individuals may enter “Individual contributor”",
+        "contactRole": "Title / role",
+        "region": "Region",
+        "otherContact": "Other contact",
+        "otherContactPlaceholder": "Phone, WeChat, etc. (optional)"
+      },
+      "overviewStep": {
+        "hint": "Basic information for the initial review; the full dataset card is completed during ingestion.",
+        "datasetName": "Working dataset name",
+        "datasetNamePlaceholder": "A working title is fine",
+        "shortDescription": "One-line summary",
+        "shortDescriptionPlaceholder": "e.g. Conversational Cantonese audio with human transcripts for ASR",
+        "modalities": "Modality",
+        "useCase": "Primary use",
+        "scaleDescription": "Scale",
+        "scalePlaceholder": "e.g. 120k items / 800 hours / 5 GB",
+        "sourceCollectionMethod": "Source and collection method",
+        "sourcePlaceholder": "e.g. original recordings with consent; provided by a partner; compiled from public material."
+      },
+      "rightsStep": {
+        "hint": "Used for an initial assessment of copyright, licensing and access. Choose “to be confirmed” if unsure.",
+        "rightsStatus": "Rights status",
+        "rightsHolder": "Copyright / rights holder",
+        "rightsHolderPlaceholder": "Person or organization",
+        "submitterAuthority": "Your role",
+        "intendedAccessMode": "Preferred access",
+        "licenseStatus": "License status",
+        "licenseNameOrUrl": "License name or link",
+        "licensePlaceholder": "e.g. CC BY 4.0 or project link",
+        "privacyStatus": "Personal and sensitive information",
+        "notice": "Please disclose recordings, faces/images, minors, health/financial/legal information, or third-party content such as news, film or books. Raw data is never published, hosted or distributed before review."
+      },
+      "confirmStep": {
+        "hint": "Please review. We will contact you at the email you provided.",
+        "rightsSummary": "Rights: {rights} · Access: {access}",
+        "referenceUrl": "Project link or supporting material",
+        "referencePlaceholder": "Website, paper, project page, public data link (optional)",
+        "applicantNote": "Notes and special requirements",
+        "notePlaceholder": "e.g. NDA required, attribution, preferred collaboration (optional)",
+        "declarations": {
+          "accurate": "To the best of my knowledge the information is true and accurate, and the rights status is disclosed.",
+          "authorized": "I am authorized to submit this application, or I have marked the rights still to be confirmed.",
+          "noAutoPublish": "I understand that before DimSum AI approves it, the data will not be published, downloaded, hosted or used for model training."
+        }
+      },
+      "options": {
+        "contributorType": {
+          "individual": "Individual",
+          "individualHint": "Independent researcher or creator",
+          "research": "Research team / academia",
+          "researchHint": "University, lab or project team",
+          "enterprise": "Company",
+          "enterpriseHint": "Business, platform or data vendor",
+          "cultural_rights_holder": "Cultural institution / rights holder",
+          "cultural_rights_holderHint": "Media, archive, publisher or copyright owner"
+        },
+        "modality": {
+          "text": "Text",
+          "audio": "Audio",
+          "image": "Image",
+          "video": "Video",
+          "multimodal": "Multimodal",
+          "dictionary": "Dictionary / knowledge base"
+        },
+        "useCase": {
+          "training": "Training / fine-tuning",
+          "asr_tts": "ASR / TTS",
+          "safety_eval": "Safety evaluation",
+          "retrieval": "Retrieval / RAG",
+          "linguistics": "Linguistics",
+          "culture": "Cultural preservation",
+          "other": "Other"
+        },
+        "rightsStatus": {
+          "full_rights": "We hold all necessary rights",
+          "full_rightsHint": "I or my organization own the rights",
+          "written_authorization": "Written authorization obtained",
+          "written_authorizationHint": "You may describe the scope",
+          "partially_pending": "Some rights to be confirmed",
+          "partially_pendingHint": "Still welcome; we will review manually",
+          "uncertain": "Unsure, need advice",
+          "uncertainHint": "Please explain in the notes"
+        },
+        "submitterAuthority": {
+          "rights_holder": "Rights holder",
+          "authorized_representative": "Authorized representative",
+          "member_pending_authorization": "Project member, authorization pending",
+          "other": "Other"
+        },
+        "intendedAccessMode": {
+          "controlled": "Controlled access",
+          "after_review": "Access after approval",
+          "metadata_only": "Metadata only",
+          "to_discuss": "To be discussed"
+        },
+        "licenseStatus": {
+          "has_license": "Has a clear license",
+          "platform_template": "Use the platform template",
+          "custom_agreement": "Custom / partnership agreement",
+          "undecided": "Undecided"
+        },
+        "privacyStatus": {
+          "no_personal_info": "No identifiable personal information",
+          "deidentified": "De-identified",
+          "may_contain": "May contain, to be assessed",
+          "uncertain": "Unsure, need help"
+        }
+      },
+      "choose": "Select",
+      "required": "Required",
+      "cancel": "Not now",
+      "start": "Start →",
+      "prev": "← Back",
+      "next": "Next →",
+      "submit": "Submit application",
+      "submitting": "Submitting…",
+      "validation": {
+        "contact": "Please complete contributor type, name, a valid email and organization.",
+        "overview": "Please complete name, summary, modality, use, scale and source.",
+        "rights": "Please complete rights status, rights holder, your role, access, license and privacy.",
+        "confirm": "Please read and tick all declarations."
+      },
+      "submitError": "Submission failed. Your answers are kept — please try again later.",
+      "success": {
+        "thanks": "Thank you for contributing to the Cantonese data ecosystem.",
+        "applicationNo": "Application number",
+        "status": "Status: pending initial review",
+        "nextTitle": "Next steps",
+        "next1": "We will review your dataset overview, rights status and access preference.",
+        "next2": "If more information is needed, we will contact you at {email}.",
+        "next3": "Once approved, we will invite you to the formal ingestion process.",
+        "notice": "Until approved, the data will not be published, hosted, downloaded or used for model training.",
+        "back": "Back to Library",
+        "another": "Submit another dataset"
+      }
+    },
     "title": "Cantonese Corpus",
     "selectTag": "Select a tag",
     "classic": "Classic",
@@ -237,7 +957,7 @@
   "Profile": {
     "title": "Profile",
     "editProfile": "Edit Profile",
-    "systemAdmin": "System Admin",
+    "systemAdmin": "Platform Admin",
     "bind": "Bind",
     "unbind": "Unbind",
     "change": "Change",
@@ -503,32 +1223,32 @@
     }
   },
   "QuestionnaireSettings": {
-    "title": "Questionnaire Gate Settings",
+    "title": "Questionnaire Enable Switch",
     "description": "Choose whether activity submissions require the pre-participation questionnaire. Existing and new activities are enabled by default.",
     "enableAll": "Enable all",
     "disableAll": "Disable all",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "gateLabel": "Questionnaire gate for {activity}",
-    "summary": { "total": "Total activities", "enabled": "Gate enabled", "disabled": "Gate disabled" },
+    "gateLabel": "Questionnaire enable switch for {activity}",
+    "summary": { "total": "Total activities", "enabled": "Questionnaire enabled", "disabled": "Questionnaire disabled" },
     "list": {
       "title": "Configure by Activity",
       "description": "When disabled, that activity temporarily follows the legacy submission flow. Submissions without an activity are never affected.",
-      "loadFailed": "Unable to load gate settings.",
+      "loadFailed": "Unable to load questionnaire switch settings.",
       "reload": "Reload",
       "empty": "No activities found.",
       "columns": { "activity": "Activity", "status": "Status", "tag": "Activity tag", "gate": "Require questionnaire" }
     },
     "toast": {
-      "activityEnabled": "Questionnaire gate enabled for this activity",
-      "activityDisabled": "Questionnaire gate disabled for this activity",
-      "allEnabled": "Questionnaire gate enabled for all activities",
-      "allDisabled": "Questionnaire gate disabled for all activities",
-      "failed": "Unable to update questionnaire gate settings"
+      "activityEnabled": "Questionnaire requirement enabled for this activity",
+      "activityDisabled": "Questionnaire requirement disabled for this activity",
+      "allEnabled": "Questionnaire requirement enabled for all activities",
+      "allDisabled": "Questionnaire requirement disabled for all activities",
+      "failed": "Unable to update questionnaire switch settings"
     }
   },
   "QuestionnairePermissions": {
-    "title": "Activity questionnaire data permissions",
+    "title": "Activity Questionnaire Permission Management",
     "description": "Grant staff access to questionnaire statistics and results by activity. This does not control who can complete a questionnaire.",
     "unnamedUser": "Unnamed user",
     "activityStatus": {
@@ -555,7 +1275,7 @@
     },
     "list": {
       "title": "Existing Activity Access",
-      "description": "System administrators already have access to every activity and do not appear in this list.",
+      "description": "Platform administrators already have access to every activity and do not appear in this list.",
       "loadFailed": "Unable to load activity access.",
       "reload": "Reload",
       "allowed": "Allowed",
@@ -587,21 +1307,31 @@
     }
   },
   "AdminLayout": {
+    "libraryNav": {
+      "contributionApplications": "Contribution review",
+      "ingestionLeads": "Ingestion tasks",
+      "ingestionTasks": "Ingestion jobs",
+      "contactRequests": "Access requests"
+    },
     "panelTitle": "Admin Panel",
     "dashboardTitle": "Admin Dashboard",
     "welcomeBack": "Welcome back, {name}",
-    "unnamedUser": "Administrator",
+    "unnamedUser": "Backend user",
     "backToMainApp": "Back to Main App",
     "nav": {
+      "applications": "Applications",
+      "feedback": "User feedback",
       "searchApp": "Search mini-program",
+      "analytics": "Analytics",
+      "libraryOps": "Corpus operations",
       "dashboard": "Dashboard",
       "users": "Users",
-      "administrators": "Administrator Management",
+      "administrators": "Platform Administrator Management",
       "categories": "Datasets",
       "permissions": "Permissions",
       "corpusData": "Corpus Data",
       "corpusCollection": "Corpus Collection",
-      "corpusPermissions": "Corpus access permissions",
+      "corpusPermissions": "Annotator Permission Management",
       "permissionAudit": "Permission change records",
       "auditLogs": "Audit Logs",
       "ruleOps": "Rule Ops",
@@ -616,22 +1346,23 @@
       "reviewBatches": "AI Review Batches",
       "analytics": "Analytics",
       "questionnaireInsights": "Questionnaire Insights",
-      "questionnairePermissions": "Activity questionnaire data permissions",
-      "questionnaireSettings": "Questionnaire Settings",
+      "questionnairePermissions": "Activity Questionnaire Permission Management",
+      "questionnaireSettings": "Questionnaire Enable Switch",
       "questionnaireDefinition": "Questionnaire Definition",
-      "submissionPermissions": "Activity operations permissions",
+      "submissionPermissions": "User Permission Management",
       "submissionAudit": "Submission operation records"
     },
     "roles": {
+      "businessOperator": "Business operator",
       "superAdministrator": "Super Administrator",
-      "systemAdministrator": "System Administrator",
+      "systemAdministrator": "Platform Administrator",
       "activityOperator": "Activity Operator"
     }
   },
   "AdminAdministrators": {
-    "menuTitle": "Administrator Management",
-    "title": "Administrator Management",
-    "description": "Grant or revoke access to the admin panel. This page is only available to super administrators.",
+    "menuTitle": "Platform Administrator Management",
+    "title": "Platform Administrator Management",
+    "description": "Grant or revoke platform administrator access. This page is only available to super administrators.",
     "searchTitle": "Find an account",
     "searchDescription": "Search by name, email, or phone number. Up to 100 accounts are shown.",
     "searchPlaceholder": "Name, email, or phone number",
@@ -642,15 +1373,15 @@
     "loadFailed": "Unable to load accounts. Please try again later.",
     "unnamedUser": "Unnamed user",
     "superAdmin": "Super administrator",
-    "administrator": "Administrator",
+    "administrator": "Platform administrator",
     "regularAccount": "Regular account",
     "cannotModify": "Cannot modify",
-    "grantAdministrator": "Make administrator",
-    "revokeAdministrator": "Remove administrator",
+    "grantAdministrator": "Make platform administrator",
+    "revokeAdministrator": "Remove platform administrator",
     "empty": "No matching accounts found.",
-    "grantSuccess": "Administrator access granted",
-    "revokeSuccess": "Administrator access revoked",
-    "updateFailed": "Unable to update administrator access. Please try again later.",
+    "grantSuccess": "Platform administrator access granted",
+    "revokeSuccess": "Platform administrator access revoked",
+    "updateFailed": "Unable to update platform administrator access. Please try again later.",
     "columns": {
       "account": "Account",
       "contact": "Contact",
@@ -665,16 +1396,16 @@
       "researcher": "Researcher"
     },
     "dialog": {
-      "grantTitle": "Grant administrator access?",
-      "revokeTitle": "Revoke administrator access?",
-      "grantDescription": "After confirmation, {user} will be able to access the admin panel and administrator features.",
-      "revokeDescription": "After confirmation, {user} will no longer be able to access the admin panel. The account will not be deleted.",
+      "grantTitle": "Grant platform administrator access?",
+      "revokeTitle": "Revoke platform administrator access?",
+      "grantDescription": "After confirmation, {user} will be able to access the admin panel and platform administrator features.",
+      "revokeDescription": "After confirmation, {user} will lose platform administrator access; existing business scope grants remain separate. The account will not be deleted.",
       "cancel": "Cancel",
       "confirmGrant": "Grant access",
       "confirmRevoke": "Revoke access"
     }
   },
-  "AdminPermissions": { "title": "Corpus access permissions", "description": "Manage user access to corpus categories.", "filter": { "title": "Filter Permissions", "userPlaceholder": "Select user to view permissions", "searchUsers": "Search users...", "allUsers": "All Users", "categoryPlaceholder": "Filter by category", "allCategories": "All Categories", "clear": "Clear Filters" }, "add": { "button": "Add Permission", "title": "Add New Permission", "description": "Grant users access to corpus categories.", "users": "Users", "selectUsers": "Select users...", "searchUser": "Search user...", "categories": "Categories", "selectCategories": "Select categories...", "searchCategory": "Search category...", "level": "Permission Level", "autoRole": "Auto-set based on each user role", "selectUsersForLevel": "Select users to see their permission levels", "adding": "Adding...", "submit": "Add Permissions" }, "searching": "Searching...", "searchingUsers": "Searching users...", "noUsers": "No users found", "noUser": "No user found.", "noCategory": "No category found.", "selected": "{count} selected", "cancel": "Cancel", "na": "N/A", "viewingFor": "Viewing permissions for:", "permissionCount": "{count} permissions", "list": { "title": "Permissions List ({count})", "description": "User-corpus permission bindings" }, "loading": "Loading permissions...", "empty": "No permissions found. Click Add Permission to create one.", "columns": { "user": "User", "role": "Role", "category": "Category", "permission": "Permission", "created": "Created", "actions": "Actions" }, "permission": { "READ": "Read", "WRITE": "Write", "CREATE": "Create", "FULL": "Full" }, "role": { "LEARNER": "Learner", "TAGGER_PARTNER": "Partner Tagger", "TAGGER_OUTSOURCING": "Outsourced Tagger", "RESEARCHER": "Researcher" }, "delete": { "title": "Confirm Delete", "prefix": "Are you sure you want to revoke permission for", "on": "on", "warning": "This action cannot be undone.", "deleting": "Deleting...", "confirm": "Delete" }, "messages": { "added": "Successfully added {count} permissions", "revoked": "Permission revoked", "updated": "Permission updated" }, "errors": { "permissions": "Failed to fetch permissions", "categories": "Failed to fetch categories", "users": "Failed to fetch users", "add": "Failed to add permission", "delete": "Failed to revoke permission", "update": "Failed to update permission" } },
+  "AdminPermissions": { "title": "Annotator Permission Management", "description": "Manage user access to corpus categories.", "filter": { "title": "Filter Permissions", "userPlaceholder": "Select user to view permissions", "searchUsers": "Search users...", "allUsers": "All Users", "categoryPlaceholder": "Filter by category", "allCategories": "All Categories", "clear": "Clear Filters" }, "add": { "button": "Add Permission", "title": "Add New Permission", "description": "Grant users access to corpus categories.", "users": "Users", "selectUsers": "Select users...", "searchUser": "Search user...", "categories": "Categories", "selectCategories": "Select categories...", "searchCategory": "Search category...", "level": "Permission Level", "autoRole": "Auto-set based on each user role", "selectUsersForLevel": "Select users to see their permission levels", "adding": "Adding...", "submit": "Add Permissions" }, "searching": "Searching...", "searchingUsers": "Searching users...", "noUsers": "No users found", "noUser": "No user found.", "noCategory": "No category found.", "selected": "{count} selected", "cancel": "Cancel", "na": "N/A", "viewingFor": "Viewing permissions for:", "permissionCount": "{count} permissions", "list": { "title": "Permissions List ({count})", "description": "User-corpus permission bindings" }, "loading": "Loading permissions...", "empty": "No permissions found. Click Add Permission to create one.", "columns": { "user": "User", "role": "Role", "category": "Category", "permission": "Permission", "created": "Created", "actions": "Actions" }, "permission": { "READ": "Read", "WRITE": "Write", "CREATE": "Create", "FULL": "Full" }, "role": { "LEARNER": "Learner", "TAGGER_PARTNER": "Partner Tagger", "TAGGER_OUTSOURCING": "Outsourced Tagger", "RESEARCHER": "Researcher" }, "delete": { "title": "Confirm Delete", "prefix": "Are you sure you want to revoke permission for", "on": "on", "warning": "This action cannot be undone.", "deleting": "Deleting...", "confirm": "Delete" }, "messages": { "added": "Successfully added {count} permissions", "revoked": "Permission revoked", "updated": "Permission updated" }, "errors": { "permissions": "Failed to fetch permissions", "categories": "Failed to fetch categories", "users": "Failed to fetch users", "add": "Failed to add permission", "delete": "Failed to revoke permission", "update": "Failed to update permission" } },
   "AdminRules": { "title": "Rules & Agent Management", "description": "Connect to Agent services for rule compilation, run triggering, and history.", "compile": { "title": "Rule Compilation", "description": "Validate whether an Agent can understand a natural-language rule.", "placeholder": "Enter a rule to compile...", "submit": "Compile", "result": "Result: ", "passed": "Passed", "rejected": "Rejected" }, "run": { "title": "Trigger Rule Manually", "description": "Call the /rules/run endpoint to create a run immediately.", "autoAgent": "Select Agent automatically", "auto": "Automatic", "rulePlaceholder": "Enter a natural-language rule...", "submit": "Call /rules/run", "ruleIdExample": "e.g. grammar_check_rule", "versionExample": "v1.0.0", "corpusExample": "zyzdv2" }, "fields": { "ruleText": "Rule Text", "ruleId": "Rule ID", "version": "Rule Version (optional)", "corpus": "Corpus Name", "corpusShort": "Corpus", "agent": "Agent (optional)", "status": "Status" }, "status": { "all": "All Statuses", "pending": "Pending", "running": "Running", "completed": "Completed", "failed": "Failed", "cancelled": "Cancelled" }, "history": { "title": "Run History", "description": "View runs returned by the Agent.", "refresh": "Refresh", "rulePlaceholder": "Filter by rule ID", "corpusPlaceholder": "Filter by corpus", "pageSize": "Page Size", "violations": "Violations", "started": "Started", "ended": "Ended", "loading": "Loading...", "empty": "No runs found", "pagination": "Page {page} of {pages}, {total} total", "previous": "Previous", "next": "Next" }, "agents": { "title": "Available Agents", "description": "Data returned by the /agents endpoint.", "empty": "No agents available" }, "messages": { "enterCompile": "Enter a rule to compile", "compileFailed": "Compilation failed", "compilePassed": "Rule compilation passed", "compileRejected": "Rule compilation did not pass", "completeForm": "Complete all required rule fields", "runFailed": "Failed to trigger rule", "runStarted": "Rule run started" } },
   "SubmissionDetail": { "noData": "No data", "audio": "Audio", "loading": "Loading submission...", "back": "Back", "backToSubmissions": "Back to submissions", "featured": "Featured", "home": "Home", "openJson": "Open JSON", "media": { "title": "Media", "count": "{count, plural, one {# uploaded file} other {# uploaded files}}", "empty": "No media uploaded." }, "review": { "title": "Review Data", "description": "Automated checks and AI review results.", "precheck": "Precheck Result", "ai": "AI Review Result" }, "submission": "Submission", "unknown": "Unknown", "fields": { "type": "Type", "activity": "Activity", "created": "Created", "updated": "Updated" }, "noTags": "No tags", "stats": { "title": "Stats", "likes": "Likes", "comments": "Comments", "shares": "Shares", "views": "Views" }, "files": { "title": "Files", "images": "Images", "audio": "Audio", "video": "Video" }, "activityWindow": "Activity Window", "status": { "pending_review": "Pending Review", "ai_reviewing": "AI Reviewing", "review_needed": "Review Needed", "approved": "Approved", "rejected": "Rejected" }, "visibility": { "public": "Public", "private": "Private", "hidden": "Hidden" }, "errors": { "load": "Failed to load submission", "notFound": "Submission not found" } },
   "SubmissionsAdmin": { "channelVideo": "Channels video", "channelManualReview": "Selected Channels submissions require manual review. Deselect them to start AI review.", "title": "Submissions", "description": "Review user submissions, manage display, and send batches to AI review.", "filters": { "uuidPlaceholder": "Activity UUID fragment", "contentPlaceholder": "Search title or intro", "content": "Title/Intro contains", "uuid": "Activity UUID", "activity": "Activity", "allActivities": "All Activities", "withoutActivity": "Without Activity" }, "status": { "all": "All Statuses", "pending_review": "Pending Review", "ai_reviewing": "AI Reviewing", "review_needed": "Review Needed", "approved": "Approved", "rejected": "Rejected" }, "sendReview": "Send AI Review ({count})", "list": { "title": "Submission List ({count})", "selected": "{count} selected for batch review.", "hint": "Select pending items for AI review." }, "columns": { "submission": "Submission", "activity": "Activity", "status": "Status", "media": "Media", "display": "Display", "stats": "Stats", "actions": "Actions" }, "display": { "featured": "Featured", "home": "Home" }, "stats": { "likes": "Likes: {count}", "comments": "Comments: {count}" }, "actions": { "view": "View details", "approve": "Approve", "reject": "Reject", "reviewNeeded": "Mark review needed", "removeAward": "Remove award", "markAwarded": "Mark awarded" }, "prompts": { "reject": "Reject reason", "review": "Review note" }, "messages": { "updated": "Submission updated", "awardUpdated": "Award status updated", "batchCreated": "AI review batch created" }, "errors": { "activities": "Failed to load activities", "submissions": "Failed to load submissions", "action": "Action failed", "award": "Failed to update award status", "batch": "Failed to create AI review batch" }, "unknown": "Unknown", "loading": "Loading...", "empty": "No submissions found.",
@@ -707,7 +1438,7 @@
   },
   "AdminCategories": {
     "title": "Dataset management",
-    "description": "Manage dataset aliases, content attributes, and visibility.",
+    "description": "Manage dataset details, public Library display, and public access to corpus content.",
     "search": {
       "title": "Search Datasets",
       "placeholder": "Search by name or nickname...",
@@ -715,7 +1446,7 @@
     },
     "list": {
       "title": "Datasets List ({count})",
-      "description": "Toggle visibility for each dataset"
+      "description": "Library display and public access to corpus content are configured separately. Displaying metadata does not enable raw file downloads."
     },
     "columns": {
       "name": "Name",
@@ -723,21 +1454,23 @@
       "entries": "Entries",
       "permissions": "Permissions",
       "status": "Status",
-      "public": "Public",
-      "created": "Created"
+      "public": "Public corpus content",
+      "created": "Created",
+      "publicHint": "Controls public access to corpus content, independently of Library display."
     },
     "messages": {
-      "updated": "Dataset visibility updated"
+      "updated": "Dataset settings updated"
     },
     "errors": {
       "fetch": "Failed to fetch datasets",
       "update": "Failed to update dataset"
     },
     "dataset": {
+      "library": "Library display",
       "attribute": "Content attribute",
       "activity": "Linked activity",
       "actions": "Actions",
-      "edit": "Edit",
+      "edit": "Edit details",
       "editTitle": "Edit dataset",
       "help": "The alias is used for display; the internal identifier stays unchanged.",
       "description": "Description",
@@ -746,7 +1479,12 @@
       "cultural_knowledge": "Cultural knowledge",
       "impact": "Changing the attribute affects search scope for all {count} entries in this dataset.",
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "listed": "Listed",
+      "unlisted": "Not listed",
+      "librarySettings": "Settings",
+      "librarySettingsFor": "Library display settings for {name}",
+      "viewLibrary": "View in Library"
     }
   },
   "AdminCorpus": {
@@ -760,7 +1498,7 @@
     "title": "Users", "description": "Manage user accounts and permissions.",
     "search": { "title": "Search Users", "placeholder": "Search by name, email or phone...", "rolePlaceholder": "Filter by role", "button": "Search" },
     "list": { "title": "Users List ({count})", "description": "Manage user roles and permissions" },
-    "columns": { "user": "User", "email": "Email", "phone": "Phone", "role": "Role", "admin": "Admin", "interactions": "Interactions", "joined": "Joined", "actions": "Actions" },
+    "columns": { "user": "User", "email": "Email", "phone": "Phone", "role": "Role", "admin": "Platform administrator", "interactions": "Interactions", "joined": "Joined", "actions": "Actions" },
     "roles": { "all": "All Roles", "learner": "Learner", "taggerPartner": "Tagger Partner", "taggerOutsourcing": "Tagger Outsourcing", "researcher": "Researcher" },
     "fallback": { "user": "User", "na": "N/A" }, "pagination": "Page {page} of {total}",
     "messages": { "updated": "User updated successfully" }, "errors": { "fetch": "Failed to fetch users", "update": "Failed to update user" }
@@ -916,20 +1654,26 @@
     "invalidPhone": "Please enter a valid phone number"
   },
   "CollectionPermissions": {
+    "globalActionsTitle": "Corpus operations (not activity-scoped)",
+    "globalActionsHint": "For Library contribution review and ingestion tasks; requires the operator role above to be active.",
+    "globalActions": {
+      "contribution_review": "Contribution review",
+      "ingestion_assignee": "Can be assigned ingestion tasks"
+    },
     "searchUsers": "Search users",
     "searchPlaceholder": "Name, phone, email or full UID",
     "searchHint": "Enter at least 2 characters, then select a user to configure permissions.",
     "noUsers": "No matching active users",
     "unnamedUser": "Unnamed user",
-    "systemAdmin": "System administrator",
+    "systemAdmin": "Platform administrator",
     "moreResults": "Showing the first 20 results. Refine your search.",
 
     "title": "Activity operations permissions",
-    "description": "Configure submission review and display management permissions for each activity. Only system administrators can grant access.",
+    "description": "Configure submission review and display management permissions for each activity. Only platform administrators can grant access.",
     "lookup": "Find user",
     "error": "Unable to load or perform operation",
     "saved": "Permissions saved",
-    "adminAll": "This system administrator already has all submission permissions, including submissions without an activity.",
+    "adminAll": "This platform administrator already has all submission permissions, including submissions without an activity.",
     "role": "Operations role",
     "roles": {
       "ACTIVITY_REVIEWER": "Activity reviewer",
@@ -964,6 +1708,514 @@
       "ai_review": "AI review",
       "award": "Award",
       "visibility": "Change visibility"
+    }
+  },
+  "VideoPlayer": {
+    "close": "Close video",
+    "dialogDescription": "Video player. Close to return to the results.",
+    "enlarge": "Play in larger view",
+    "play": "Play video",
+    "loading": "Loading video…",
+    "failed": "Video is temporarily unavailable",
+    "retry": "Retry"
+  },
+  "IngestionTasks": {
+    "title": "Ingestion jobs",
+    "description": "Upload raw files and work with the ingestion agent to clean, transcribe and validate them. Writing to the corpus needs your approval.",
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "confirm": "Confirm",
+    "saved": "Saved",
+    "back": "Back to jobs",
+    "statusFilter": "Status filter",
+    "allStatuses": "All statuses",
+    "searchPlaceholder": "Search title or number",
+    "search": "Search",
+    "empty": "No ingestion jobs",
+    "prev": "Previous",
+    "next": "Next",
+    "completeNeedsRun": "The conversation hasn't started, so the job can't be completed",
+    "stats": {
+      "total": "All ingestion jobs",
+      "recent": "{count, plural, one {# new job} other {# new jobs}} in the last 30 days",
+      "attention": "Needs attention",
+      "errors": "{count, plural, one {# with an error} other {# with errors}}",
+      "processing": "Processing",
+      "drafts": "{count, plural, one {# draft} other {# drafts}} not started",
+      "todayRecords": "Records ingested today",
+      "todayBatches": "{count, plural, one {# batch} other {# batches}}"
+    },
+    "scope": {
+      "me": "Mine",
+      "all": "All"
+    },
+    "status": {
+      "PENDING": "Draft",
+      "IN_PROGRESS": "In progress",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "displayStatus": {
+      "PENDING": "Draft",
+      "PROCESSING": "Processing",
+      "WAITING_APPROVAL": "Needs approval",
+      "WAITING_INPUT": "Needs reply",
+      "ERROR": "Error",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "columns": {
+      "title": "Job title",
+      "targetDataset": "Target dataset",
+      "modalities": "Media type",
+      "status": "Status",
+      "createdBy": "Created by",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "viewDetail": "View details",
+    "fields": {
+      "title": "Job title",
+      "targetDatasetName": "Dataset",
+      "targetIngestionType": "Ingestion mode",
+      "targetContentAttribute": "Dataset type",
+      "modalities": "Media type",
+      "sourceCollectionMethod": "Source",
+      "description": "Notes",
+      "assignee": "Owner",
+      "createdAt": "Created",
+      "lead": "Ingestion lead"
+    },
+    "modality": {
+      "text": "Text",
+      "audio": "Audio",
+      "video": "Video",
+      "image": "Image"
+    },
+    "contentAttribute": {
+      "oral": "Spoken",
+      "cultural_knowledge": "Cultural knowledge"
+    },
+    "create": {
+      "title": "New ingestion job",
+      "editTitle": "Edit ingestion job draft",
+      "fromLead": "Created from ingestion lead {no}",
+      "leadNotFound": "Ingestion lead not found or not visible to you",
+      "sourceFromLead": "From the contribution application of ingestion lead {no}; cannot be changed",
+      "cardTitle": "Dataset and ingestion settings",
+      "requiredHint": "Fields marked <mark>*</mark> are required",
+      "steps": {
+        "dataset": "1. Choose or create a dataset",
+        "modalities": "2. Confirm the dataset's media",
+        "files": "3. Upload text and related media",
+        "info": "4. Source and notes"
+      },
+      "datasetMode": "Dataset",
+      "ingestionType": {
+        "supplement_existing": "Existing dataset",
+        "new_dataset": "New dataset"
+      },
+      "existingDataset": "Existing dataset",
+      "chooseDataset": "Choose a dataset",
+      "existingBadge": "Existing dataset",
+      "recordCount": "{count, number} records",
+      "newDataset": "New dataset name",
+      "newDatasetPlaceholder": "e.g. Hong Kong cha chaan teng phrases",
+      "contentAttribute": "Dataset type",
+      "modalities": "Content types in this dataset",
+      "textRequiredOption": "Text (required)",
+      "textFiles": "Main text file",
+      "textDropTitle": "Upload the main text file",
+      "textDropHint": "XLS / XLSX / CSV / DOC / DOCX / PDF; text content is required",
+      "mediaFiles": "Related media files",
+      "mediaDropTitle": "Upload audio / video / image files",
+      "mediaDropHint": "Expected: {types}; pick several files or a whole folder",
+      "mediaDropDisabled": "Tick audio, video or image above first",
+      "retry": "Retry",
+      "removeFile": "Remove",
+      "sourcePlaceholder": "Where the data comes from, how it was collected or compiled, licensing…",
+      "notePlaceholder": "File layout, anything to watch out for…",
+      "saveDraft": "Save draft",
+      "start": "Start AI cleaning",
+      "draftSaved": "Draft saved",
+      "datasetFirst": "Choose or name the dataset before uploading files",
+      "datasetRequired": "Choose or name the dataset first",
+      "sourceRequired": "Fill in the source before starting",
+      "textRequired": "Upload the main text file before starting",
+      "uploadsInProgress": "Uploads in progress; you can save once they finish"
+    },
+    "provenance": {
+      "title": "Corpus provenance",
+      "description": "Enter a corpus ID to see which ingestion job and approval wrote it.",
+      "corpusId": "Corpus ID",
+      "search": "Look up",
+      "none": "This record was not written by an ingestion job.",
+      "task": "Ingestion job",
+      "proposal": "Proposal",
+      "approvedBy": "Approved by",
+      "committedAt": "Written at",
+      "recordRow": "Batch · row",
+      "openConversation": "Open in conversation"
+    },
+    "actions": {
+      "cancel": "Cancel job",
+      "complete": "Complete job",
+      "cancelConfirm": "The agent will stop and the job can't continue. Ingested records and the conversation are kept.",
+      "completeConfirm": "Is all ingestion work for this job done? You won't be able to send messages or upload files afterwards."
+    },
+    "report": {
+      "loading": "Loading report…",
+      "none": "This task has no ingestion report (nothing was inserted).",
+      "notClosed": "After ingestion, the agent drafts the report in the chat; ask it there for changes. Ending the task turns the latest draft into the final report.",
+      "withoutNarrative": "This version has no summary, only content compiled from system records.",
+      "unreadable": "The report text can't be loaded right now. You can still download it.",
+      "kinds": {
+        "final": "Final",
+        "draft": "Draft"
+      },
+      "statuses": {
+        "generating": "Generating",
+        "ready": "Ready",
+        "ready_without_narrative": "Ready (no AI summary)",
+        "failed": "Failed"
+      },
+      "formats": {
+        "md": "Report",
+        "xlsx": "Excel details",
+        "json": "JSON"
+      }
+    },
+    "files": {
+      "pickFiles": "Upload files",
+      "pickFolder": "Upload folder",
+      "skipped": "Skipped {count, plural, one {# file} other {# files}} in the folder that didn't match the allowed types",
+      "closed": "The job has ended; uploads are closed.",
+      "locked": "The agent is running or waiting on you; upload once it stops.",
+      "hint": "Files go under input/ in the job workspace. Existing files can't be overwritten.",
+      "empty": "No files uploaded yet",
+      "status": {
+        "UPLOADING": "Uploading",
+        "UPLOADED": "Uploaded",
+        "FAILED": "Failed"
+      }
+    },
+    "approvals": {
+      "plan": "Ingestion plan ({count} steps)",
+      "empty": "No proposals yet",
+      "decided": "Decided by {name}",
+      "status": {
+        "pending": "Pending",
+        "authorized": "Approved, not applied",
+        "applying": "Writing",
+        "approved": "Written",
+        "denied": "Denied",
+        "failed": "Write failed",
+        "expired": "Expired",
+        "cancelled": "Withdrawn"
+      }
+    },
+    "records": {
+      "loading": "Loading…",
+      "empty": "No ingested records yet",
+      "more": "Load more"
+    },
+    "timeline": {
+      "config": "Task settings",
+      "created": "Task created",
+      "files": "Uploaded {count, plural, one {# file} other {# files}}",
+      "noFiles": "No files uploaded yet",
+      "filesFailed": "{count} failed",
+      "session": "Agent conversation started",
+      "question": "Agent asked {count, plural, one {# question} other {# questions}}",
+      "questionStatus": {
+        "pending": "Waiting for your answer",
+        "answered": "Answered",
+        "cancelled": "Unanswered · cancelled"
+      },
+      "write": "Wrote {count, plural, one {# record} other {# records}}",
+      "approvedBy": "Approved by {name}",
+      "report": "Report v{version} · {kind}",
+      "end": {
+        "completed": "Task completed",
+        "cancelled": "Task cancelled"
+      },
+      "working": "Agent is working",
+      "error": "The agent stopped with an error",
+      "errorHint": "Click Continue in the chat to resume",
+      "next": "Complete task · final report",
+      "viewInChat": "View in chat"
+    },
+    "chat": {
+      "loading": "Loading conversation",
+      "runningTool": "Running {name}",
+      "thinking": "Thinking",
+      "thought": "Thought",
+      "toolCalls": "{count, plural, one {# tool call} other {# tool calls}}",
+      "toolFailures": "{count} failed",
+      "toolInput": "Input",
+      "toolOutput": "Output",
+      "toolError": "Error",
+      "eventsDisconnected": "Live updates disconnected, reconnecting",
+      "loadOlder": "Load earlier messages",
+      "empty": "The agent has not started on this job yet.",
+      "emptyClosed": "This job has no conversation.",
+      "start": "Start cleaning",
+      "pausedHint": "The agent has paused and is waiting for the next step.",
+      "continue": "Continue",
+      "wrapUpHint": "Ingestion and the draft report are done. Download the report to review it, or tell the agent below what to change. When it looks right, complete the task and the latest draft becomes the final report.",
+      "downloadReport": "Download report",
+      "completeTask": "Complete task",
+      "interrupted": "This reply was interrupted",
+      "working": "Working",
+      "compaction": {
+        "started": "Compacting context; will continue automatically",
+        "retrying": "Adjusting compaction; will continue automatically",
+        "deferred": "Compaction didn't finish, but there is still room to continue",
+        "completed": "Context compacted"
+      },
+      "cancelledNotice": "The job was cancelled and can't continue. Ingested records and the conversation are kept.",
+      "completedNotice": "The job is complete; no more messages can be sent.",
+      "applying": "An approved write is running or its result is unknown",
+      "reconcile": "Check write result",
+      "reconciling": "Checking…",
+      "unknownCall": "Unknown result: {name}",
+      "resumeNote": "What you verified (required)",
+      "resume": "Continue",
+      "stoppedTitle": "The agent stopped",
+      "unknownHint": "These tool calls started but were interrupted. Check whether they took effect before continuing.",
+      "retry": "Reconnect",
+      "inputLabel": "Message to the agent",
+      "placeholder": "Enter to send, Shift+Enter for a new line",
+      "placeholderBlocked": "The agent is running or waiting on you",
+      "placeholderInterrupted": "The agent stopped. Click Continue above first",
+      "placeholderQuestion": "Answer the question above first",
+      "placeholderApproval": "Review the proposal above first",
+      "send": "Send"
+    },
+    "approval": {
+      "plan": "Ingestion plan ({count} steps, approved as a whole)",
+      "expiresAt": "Waiting for your approval until {time}",
+      "approved": "Approved",
+      "denied": "Denied",
+      "notePlaceholder": "Note (optional; when denying, say why so the agent can adjust)",
+      "deny": "Deny",
+      "approve": "Approve and write",
+      "submitting": "Submitting…",
+      "notExecuted": "Decision recorded; the agent hasn't applied it yet.",
+      "execute": "Apply write",
+      "continueDenied": "Continue with denial"
+    },
+    "approvalResult": {
+      "status": {
+        "approved": "Approved and written",
+        "denied": "Denied",
+        "failed": "Write failed"
+      },
+      "alreadyApplied": "data already existed",
+      "idRange": "corpus #{from}–#{to}",
+      "note": "Note: {note}"
+    },
+    "question": {
+      "title": "Your decision is needed",
+      "defaultHeader": "Question {n}",
+      "status": {
+        "answered": "Answered",
+        "cancelled": "Cancelled",
+        "rejected": "Ignored",
+        "pending": "Awaiting answer",
+        "asking": "Asking"
+      },
+      "answeredCount": "{done}/{total} answered",
+      "multiSelect": "Select any",
+      "other": "Other",
+      "otherPlaceholder": "Please specify",
+      "allAnswered": "All answered",
+      "answerAll": "Answer every question to submit",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling…",
+      "next": "Next",
+      "submit": "Submit and continue",
+      "submitting": "Submitting…",
+      "unansweredCancelled": "Not answered (cancelled)",
+      "waiting": "Awaiting answer"
+    },
+    "subtask": {
+      "count": "{count, plural, one {# subtask} other {# subtasks}}",
+      "duration": "Took {seconds}s",
+      "step": "Step {n}",
+      "unresolved": "Open questions (raised by the main agent)",
+      "status": {
+        "queued": "Queued",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "incomplete": "Incomplete",
+        "needs_input": "Needs your input"
+      }
+    }
+  },
+  "Assistant": {
+    "title": "Cantonese Assistant",
+    "subtitle": "Ask about a word or phrase and learn with cards, examples and quizzes",
+    "newChat": "New chat",
+    "history": "History",
+    "noHistory": "No chats yet",
+    "untitled": "Untitled chat",
+    "deleteChat": "Delete chat",
+    "deleteConfirm": "Delete this chat?",
+    "notFound": "This chat doesn't exist or was deleted",
+    "placeholder": "Ask about a word or phrase, e.g. How do you say canteen?",
+    "send": "Send",
+    "stop": "Stop",
+    "thinking": "Thinking…",
+    "error": "The assistant can't answer right now. Please try again later.",
+    "quotaRemaining": "{remaining}/{limit} left today",
+    "quotaExceeded": "You've used today's limit. Come back tomorrow.",
+    "examples_pool": ["How do you say “canteen” in Cantonese?", "What's the difference between 咩 and 乜?", "Quiz me on shopping phrases", "How do I use 早晨?", "唔该 vs 多谢: what's the difference?", "How do I ask for the bill?", "What does 搞掂 mean?", "Quiz me on transport phrases", "How do you say “never mind”?", "落雨 vs 落水: what's the difference?", "Teach me how to ask for directions", "Common phrases for yum cha"],
+    "toolSearching": "Searching “{query}”…",
+    "toolEntries": "Reading entry details…",
+    "toolQuiz": "Picking practice questions…",
+    "toolWorking": "Looking things up…",
+    "toolBlocks": "Building cards…",
+    "viewEntry": "View entry",
+    "playAudio": "Play audio",
+    "moreResults": "See more for “{query}” in search",
+    "aiGenerated": "AI generated",
+    "quizTitle": "Quiz",
+    "quizCorrect": "Correct",
+    "quizWrong": "The answer is “{answer}”",
+    "quizSummary": "{correct}/{total} correct",
+    "quizExplain": "Explain my answers",
+    "quizMore": "More questions",
+    "actionQuizItem": "Q{index} “{stem}”: chose “{chosen}” {result}, answer “{answer}”",
+    "actionQuizDone": "I finished the quiz with {correct}/{total} correct: {details}. Please explain the ones I got wrong.",
+    "actionQuizMore": "Give me another set of similar questions",
+    "examples": "Examples",
+    "relatedCorpus": "Related entries",
+    "stepSearched": "Searched “{query}”",
+    "stepEntries": "Read entry details",
+    "stepQuiz": "Picked practice questions",
+    "typing_0": "Ask about a word or phrase, learn with cards and examples",
+    "typing_1": "Hear pronunciations, compare similar words, see real usage",
+    "typing_2": "Quiz yourself and get instant feedback",
+    "loginPromptTitle": "Sign in to use the Cantonese assistant",
+    "loginPromptDescription": "The assistant saves your conversations and counts daily questions per account, so you need to sign in first. Sign in now?",
+    "loginPromptCancel": "Not now",
+    "loginPromptConfirm": "Sign in",
+    "durationSeconds": "{seconds}s",
+    "elapsedTotal": "Took {seconds}s",
+    "stepsDone": "Checked {count} sources",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "group": {
+      "today": "Today",
+      "week": "Previous 7 days",
+      "earlier": "Earlier"
+    }
+  },
+  "CorpusAssets": {
+    "summaryTitle": "Corpus assets",
+    "stockNote": "Current stock; not affected by the date range",
+    "open": "View corpus assets",
+    "loading": "Loading…",
+    "noData": "No datasets match",
+    "computedAt": "Computed {time}",
+    "refresh": "Recompute now",
+    "pending": "Pending",
+    "partial": "({count} pending)",
+    "unit": {
+      "h": "h",
+      "m": "min",
+      "s": "s"
+    },
+    "kpi": {
+      "datasets": "Datasets with corpus",
+      "publicSplit": "{public} public · {private} private",
+      "entries": "Corpus entries",
+      "audioDuration": "Audio duration",
+      "videoDuration": "Video duration",
+      "files": "{count} files",
+      "images": "Images",
+      "size": "Total storage",
+      "sizeHint": "Resources shared across datasets count once",
+      "probed": "Resources with size / duration",
+      "probedHint": "Unprobed resources show as pending"
+    },
+    "listTitle": "Datasets",
+    "searchPlaceholder": "Search name / ID",
+    "export": "Export current results",
+    "total": "{count} datasets",
+    "prev": "Previous",
+    "next": "Next",
+    "public": "Public",
+    "private": "Private",
+    "filter": {
+      "allAttributes": "All categories",
+      "allVisibility": "All visibility",
+      "media": "Contains media",
+      "allMedia": "All media"
+    },
+    "media": {
+      "audio": "Audio",
+      "video": "Video",
+      "image": "Images",
+      "model3d": "3D models"
+    },
+    "sort": {
+      "label": "Sort",
+      "entries": "By entries",
+      "avDuration": "By audio/video duration",
+      "size": "By storage",
+      "lastIngested": "By last ingested"
+    },
+    "col": {
+      "name": "Name / ID",
+      "id": "ID",
+      "attribute": "Category",
+      "visibility": "Visibility",
+      "entries": "Entries",
+      "textEntries": "Text entries",
+      "audio": "Audio / duration",
+      "video": "Video / duration",
+      "images": "Images",
+      "size": "Storage",
+      "lastIngested": "Last ingested"
+    },
+    "csv": {
+      "audioCount": "Audio files",
+      "audioSeconds": "Audio seconds (measured)",
+      "audioPending": "Audio pending",
+      "videoCount": "Video files",
+      "videoSeconds": "Video seconds (measured)",
+      "videoPending": "Video pending",
+      "models": "3D models",
+      "bytes": "Bytes (measured)",
+      "sizePending": "Size pending"
+    },
+    "back": "Back to corpus assets",
+    "manage": "Edit in dataset management",
+    "detail": {
+      "basic": "Basics",
+      "visibilityNote": "Visibility only controls access; it does not mean the content is openly licensed or cleared for model training. Change it in dataset management.",
+      "createdAt": "Created",
+      "source": "Source notes",
+      "composition": "Composition",
+      "capacity": "Storage breakdown",
+      "trend": "Ingestion trend (new in period)",
+      "trendNote": "{from} to {to}, by entry creation time; reported separately from current stock",
+      "days": "Last {days} days",
+      "newEntries": "New entries",
+      "newAv": "New audio/video duration",
+      "newAvMinutes": "New audio/video (minutes)",
+      "records": "Ingestion records",
+      "recordsPending": "Batches, success counts and times will appear here once smart ingestion (#433) ships; historical corpus has no batch records."
+    },
+    "capacity": {
+      "text": "Text",
+      "textNote": "Stored in the database, no separate files",
+      "other": "Other files (3D models)",
+      "shareNote": "Shares are of the measured {total}"
     }
   }
 }

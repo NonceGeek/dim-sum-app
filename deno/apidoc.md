@@ -93,7 +93,7 @@ curl -X GET "https://backend.aidimsum.com/main_data"
 ### 5. Get Corpus Apps
 **GET** `/corpus_apps`
 
-Retrieves all available corpus applications.
+**Historical endpoint — replaced for App Store (2026-11-02).** New App Store clients use the same-origin Next.js `GET /api/app-store/apps`. This endpoint and `cantonese_corpus_apps` retain historical records only; new applications, edits and offline status are not synchronized here. The independent service replaces this application-list role, not the other services on this server. Next.js production release status is tracked separately in the App Store rollout record.
 
 **Response:**
 ```json

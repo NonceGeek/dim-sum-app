@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { activitySql,withAdminAccess } from "@/lib/admin/access";
 import { parsePositiveInt } from "@/lib/services/corpus-collection";
+import { NextRequest,NextResponse } from "next/server";
 
 type TrendRow = {
   period: Date;
@@ -16,8 +15,8 @@ export async function GET(req: NextRequest) {
   const days = parsePositiveInt(searchParams.get("days"), 30, 365);
   const groupBy = searchParams.get("groupBy") === "week" ? "week" : "day";
 
-  return requireAdmin(req, async () => {
-    const rows = await prisma.$queryRaw<TrendRow[]>`
+  return withAdminAccess(req, async (access, db) => {
+    const rows = await db.$queryRaw<TrendRow[]>`
       SELECT
         date_trunc(${groupBy}, "created_at") AS period,
         COUNT(*)::bigint AS total,
@@ -27,7 +26,7 @@ export async function GET(req: NextRequest) {
           WHERE "review_status" IN ('pending_review', 'ai_reviewing', 'review_needed')
         )::bigint AS pending
       FROM "corpus_collection_submissions"
-      WHERE "created_at" >= NOW() - (${days} * INTERVAL '1 day')
+      WHERE ${activitySql(access)} AND "created_at" >= NOW() - (${days} * INTERVAL '1 day')
       GROUP BY period
       ORDER BY period ASC
     `;

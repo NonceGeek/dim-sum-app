@@ -1,33 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DatasetCreate } from "@/components/library-ops/dataset-create";
+import { LibraryProfileDialog } from "@/components/library-ops/library-profile-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Globe, Lock, Users, Database, Pencil } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { Switch } from "@/components/ui/switch";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { Link } from "@/i18n/navigation";
+import { canScope } from "@/lib/admin/policy";
+import { useAdminAccess } from "@/lib/hooks/use-admin-access";
+import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import { Database,Globe,Lock,Pencil,Search,Users } from "lucide-react";
+import { useLocale,useTranslations } from "next-intl";
+import { useEffect,useState } from "react";
 import { toast } from "sonner";
 
 interface Category {
@@ -38,6 +43,7 @@ interface Category {
   contentAttribute: string;
   activity: { id: string; title: string } | null;
   is_public: boolean;
+  libraryListed: boolean;
   created_at: string;
   status: string | null;
   corpusCount: number;
@@ -50,10 +56,18 @@ interface CategoriesResponse {
 
 export default function AdminCategoriesPage() {
   const t = useTranslations("AdminCategories");
+  const { data: access } = useAdminAccess();
+  const canManage = (id: number) => !!access && canScope(access,"dataset",id,"manage");
   const locale = useLocale();
   const [search, setSearch] = useState("");
+  // ?search= deep link, e.g. from the corpus asset detail page.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("search");
+    if (requested) setSearch(requested);
+  }, []);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Category | null>(null);
+  const [libraryEditing, setLibraryEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState({ nickname: "", description: "", contentAttribute: "unclassified" });
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -132,6 +146,7 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* Search */}
+      <DatasetCreate />
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">{t("search.title")}</CardTitle>
@@ -208,6 +223,7 @@ export default function AdminCategoriesPage() {
                   <TableHead>{t("dataset.attribute")}</TableHead>
                   <TableHead>{t("dataset.activity")}</TableHead>
                   <TableHead>{t("dataset.actions")}</TableHead>
+                  <TableHead>{t("dataset.library")}</TableHead>
                   <TableHead className="text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Database className="h-4 w-4" />
@@ -221,7 +237,10 @@ export default function AdminCategoriesPage() {
                     </div>
                   </TableHead>
                   <TableHead className="text-muted-foreground">{t("columns.status")}</TableHead>
-                  <TableHead className="text-muted-foreground">{t("columns.public")}</TableHead>
+                  <TableHead className="text-muted-foreground">
+                    {t("columns.public")}
+                    <p className="max-w-48 whitespace-normal text-xs font-normal">{t("columns.publicHint")}</p>
+                  </TableHead>
                   <TableHead className="text-muted-foreground">{t("columns.created")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -236,9 +255,24 @@ export default function AdminCategoriesPage() {
                     </TableCell>
                     <TableCell>{t(`dataset.${category.contentAttribute}`)}</TableCell>
                     <TableCell>{category.activity ? <a className="underline" href={`/${locale}/admin/corpus-collection/activities`}>{category.activity.title}</a> : "—"}</TableCell>
-                    <TableCell><Button size="sm" onClick={() => {
+                    <TableCell><Button disabled={!canManage(category.id)} size="sm" onClick={() => {
                       setEditing(category); setDraft({ nickname: category.nickname || category.name, description: category.description || "", contentAttribute: category.contentAttribute });
                     }}><Pencil aria-hidden="true" />{t("dataset.edit")}</Button></TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2 min-w-40">
+                        <Badge variant="secondary" className={category.libraryListed ? "bg-success/10 text-success" : "text-muted-foreground"}>
+                          {t(category.libraryListed ? "dataset.listed" : "dataset.unlisted")}
+                        </Badge>
+                        <Button disabled={!canManage(category.id)} size="sm" variant="outline" aria-label={t("dataset.librarySettingsFor", { name: category.nickname || category.name })} onClick={() => setLibraryEditing(category.name)}>
+                          {t("dataset.librarySettings")}
+                        </Button>
+                        {category.libraryListed && (
+                          <Link className="text-sm underline underline-offset-4" href={`/library/datasets/${encodeURIComponent(category.name)}`} target="_blank" rel="noopener noreferrer">
+                            {t("dataset.viewLibrary")}
+                          </Link>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {category.corpusCount}
                     </TableCell>
@@ -262,7 +296,7 @@ export default function AdminCategoriesPage() {
                       <div className="flex items-center gap-2">
                         <Switch
                           aria-label={t("columns.public")}
-                          disabled={updatePublicMutation.isPending}
+                          disabled={updatePublicMutation.isPending || !canManage(category.id)}
                           checked={category.is_public}
                           onCheckedChange={(checked) =>
                             updatePublicMutation.mutate({
@@ -310,6 +344,7 @@ export default function AdminCategoriesPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <LibraryProfileDialog key={libraryEditing} name={libraryEditing} onClose={() => setLibraryEditing(null)} />
     </div>
   );
 }

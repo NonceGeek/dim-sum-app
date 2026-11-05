@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { activityWhere,withAdminAccess } from "@/lib/admin/access";
+import { canActivityAction } from "@/lib/admin/policy";
+import { parseBigIntId,parsePositiveInt } from "@/lib/services/corpus-collection";
 import { Prisma } from "@prisma/client";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { parseBigIntId, parsePositiveInt } from "@/lib/services/corpus-collection";
+import { NextRequest,NextResponse } from "next/server";
 
 function serializeComment(comment: any) {
   return {
@@ -35,29 +35,30 @@ export async function GET(req: NextRequest) {
   const submissionId = parseBigIntId(searchParams.get("submissionId"));
   const q = searchParams.get("q");
 
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     const where: Prisma.corpus_collection_commentsWhereInput = {
+      submission: { activity: activityWhere(access) },
       status: status || undefined,
       submission_id: submissionId ?? undefined,
       content: q ? { contains: q, mode: "insensitive" } : undefined,
     };
 
-    const [items, total] = await prisma.$transaction([
-      prisma.corpus_collection_comments.findMany({
+    const [items, total] = await Promise.all([
+      db.corpus_collection_comments.findMany({
         where,
         include: {
-          submission: { select: { id: true, title: true } },
+          submission: { select: { id: true, title: true, activity_id: true } },
           user: { select: { id: true, name: true, image: true, wechatAvatar: true } },
         },
         orderBy: { created_at: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-      prisma.corpus_collection_comments.count({ where }),
+      db.corpus_collection_comments.count({ where }),
     ]);
 
     return NextResponse.json({
-      items: items.map(serializeComment),
+      items: items.map(item => ({ ...serializeComment(item), canApprove: !!item.submission?.activity_id && canActivityAction(access,item.submission.activity_id,"approve"), canReject: !!item.submission?.activity_id && canActivityAction(access,item.submission.activity_id,"reject") })),
       pagination: { page, pageSize, total },
     });
   });

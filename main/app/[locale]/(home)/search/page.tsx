@@ -35,6 +35,7 @@ import { EntrySearchSections } from "../_components/entry-search-sections";
 import { SearchHeader } from "@/components/layout/search-header";
 import { MinimalFooter } from "../_components/minimal-footer";
 import type { EntryMediaType } from "@/lib/search/entry-identity";
+import { track } from "@/lib/analytics/client";
 
 type SearchMediaFilter = EntryMediaType;
 
@@ -201,6 +202,80 @@ export default function SearchPage() {
       (recommendedRequestEnabled && entryRecommendedPending)
     : isPending;
 
+  // Analytics: one search_submit per executed query, one impression per section page.
+  const trackedKeys = useRef(new Set<string>());
+  const trackOnce = (key: string, send: () => void) => {
+    if (trackedKeys.current.has(key)) return;
+    trackedKeys.current.add(key);
+    send();
+  };
+  const sectionStatus = (status?: string) =>
+    status === "success" || status === "fallback" || status === "error"
+      ? status
+      : undefined;
+
+  useEffect(() => {
+    if (!urlKeyword) return;
+    trackedKeys.current = new Set();
+    track("search_submit", {
+      query: urlKeyword,
+      dataset: urlDataset || undefined,
+      mediaType: urlMediaType,
+    });
+  }, [urlKeyword, urlDataset, useEntryMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!useEntryMode || !entryPrimaryResult || entryPrimaryFetching) return;
+    trackOnce(`primary|${urlKeyword}|${urlDataset}`, () =>
+      track("search_section_impression", {
+        query: urlKeyword,
+        section: "primary",
+        resultCount: entryPrimaryResult.primary ? 1 : 0,
+        status: sectionStatus(entryPrimaryResult.sectionStatus?.primary),
+      }),
+    );
+  }, [entryPrimaryResult, entryPrimaryFetching]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!useEntryMode || !entrySimilarResult || entrySimilarFetching) return;
+    const page = Number(similarCursor ?? 0) || 0;
+    trackOnce(`similar|${urlKeyword}|${urlMediaType ?? ""}|${page}`, () =>
+      track("search_section_impression", {
+        query: urlKeyword,
+        section: "similar",
+        resultCount: entrySimilarResult.similar.length,
+        page,
+        status: sectionStatus(entrySimilarResult.sectionStatus?.semantic),
+        mediaType: urlMediaType,
+      }),
+    );
+    // The first semantic response also carries the first recommended batch.
+    if (similarCursor === null)
+      trackOnce(`recommended|${urlKeyword}|0`, () =>
+        track("search_section_impression", {
+          query: urlKeyword,
+          section: "recommended",
+          resultCount: entrySimilarResult.recommended.length,
+          page: 0,
+          status: sectionStatus(entrySimilarResult.sectionStatus?.semantic),
+        }),
+      );
+  }, [entrySimilarResult, entrySimilarFetching]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!useEntryMode || !entryRecommendedResult || entryRecommendedFetching) return;
+    const page = Number(recommendedCursor ?? 0) || 0;
+    trackOnce(`recommended|${urlKeyword}|${page}`, () =>
+      track("search_section_impression", {
+        query: urlKeyword,
+        section: "recommended",
+        resultCount: entryRecommendedResult.recommended.length,
+        page,
+        status: sectionStatus(entryRecommendedResult.sectionStatus?.semantic),
+      }),
+    );
+  }, [entryRecommendedResult, entryRecommendedFetching]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 搜索参数同步到 UI state（用于 SearchHeader 显示）
   const [searchPrompt, setSearchPrompt] = useState(urlKeyword);
   const [selectedDataset, setSelectedDataset] = useState<string[]>(
@@ -346,6 +421,12 @@ export default function SearchPage() {
   };
 
   const handleMediaTypeChange = (mediaType?: SearchMediaFilter) => {
+    if (mediaType !== urlMediaType)
+      track("media_filter_change", {
+        query: urlKeyword,
+        mediaType,
+        previous: urlMediaType,
+      });
     const params = new URLSearchParams(searchParams.toString());
     if (mediaType) {
       params.set("mediaType", mediaType);

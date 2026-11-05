@@ -1,16 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import { requireAdmin } from "@/lib/auth";
-import { ActivityCreationConflict, createActivityWithDataset, parseContentAttribute, type ContentAttribute } from "@/lib/dataset-management";
+import { activityWhere,withAdminAccess } from "@/lib/admin/access";
+import { canCreate } from "@/lib/admin/policy";
+import { AccessError } from "@/lib/admin/security";
+import { ActivityCreationConflict,createActivityWithDataset,parseContentAttribute,type ContentAttribute } from "@/lib/dataset-management";
 import { prisma } from "@/lib/prisma";
 import {
-  parseActivityMediaRequirements,
-  parseActivityTags,
-  parseActivityTextFields,
-  parseActivityWindow,
-  parsePositiveInt,
-  serializeActivity,
+	parseActivityMediaRequirements,
+	parseActivityTags,
+	parseActivityTextFields,
+	parseActivityWindow,
+	parsePositiveInt,
+	serializeActivity,
 } from "@/lib/services/corpus-collection";
+import { Prisma } from "@prisma/client";
+import { NextRequest,NextResponse } from "next/server";
 
 const UUID_PREFIX_PATTERN = /^[0-9a-f-]{1,36}$/i;
 
@@ -35,23 +37,24 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q");
   const qMode = searchParams.get("qMode");
 
-  return requireAdmin(req, async () => {
+  return withAdminAccess(req, async (access, db) => {
     const activityIds =
       q && qMode === "activityUuid" ? await findActivityIdsByUuidFragment(q) : undefined;
     const where: Prisma.corpus_collection_activitiesWhereInput = {
+      AND: [activityWhere(access)],
       id: activityIds ? { in: activityIds } : undefined,
       status: status || undefined,
       title: q && qMode !== "activityUuid" ? { contains: q, mode: "insensitive" } : undefined,
     };
-    const [items, total] = await prisma.$transaction([
-      prisma.corpus_collection_activities.findMany({
+    const [items, total] = await Promise.all([
+      db.corpus_collection_activities.findMany({
         where,
         include: { dataset: true, _count: { select: { submissions: true } } },
         orderBy: { created_at: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-      prisma.corpus_collection_activities.count({ where }),
+      db.corpus_collection_activities.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -62,7 +65,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  return requireAdmin(req, async (_req, userId) => {
+  return withAdminAccess(req, async (access, db) => {
+    const userId = access.userId;
+    if (!canCreate(access, "activity")) throw new AccessError(403, "需要活动管理员角色");
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Invalid activity payload" }, { status: 400 });
     let contentAttribute: ContentAttribute;
@@ -105,11 +110,11 @@ export async function POST(req: NextRequest) {
     } as Prisma.corpus_collection_activitiesUncheckedCreateInput;
 
     try {
-      const { activity, replayed } = await createActivityWithDataset(prisma, data, contentAttribute, creationKey);
+      const { activity, replayed } = await createActivityWithDataset(db, data, contentAttribute, creationKey);
       return NextResponse.json(serializeActivity(activity), { status: replayed ? 200 : 201 });
     } catch (error) {
       if (error instanceof ActivityCreationConflict || (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
-        return NextResponse.json({ error: "Activity creation conflict; use the same details when retrying" }, { status: 409 });
+        throw new AccessError(409, "Activity creation conflict; use the same details when retrying");
       }
       console.error("Activity creation failed", error instanceof Error ? error.name : "UnknownError");
       return NextResponse.json({ error: "Failed to create activity" }, { status: 500 });

@@ -1,35 +1,37 @@
 "use client";
+
+import { adminLanding } from "@/lib/admin/pages";
+import { useAdminAccess } from "@/lib/hooks/use-admin-access";
 import { useSubmissionAccess } from "@/lib/hooks/use-submission-access";
 
-import { Link } from "@/i18n/navigation";
-import Image from "next/image";
-import { Menu, Settings, LogOut, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRouter } from "@/i18n/navigation";
-import { useSession } from "next-auth/react";
-import { useAuthStore } from "@/lib/store/useAuthStore";
-import { signOut } from "next-auth/react";
-import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { LoginDialog } from "@/components/dialogs/login-dialog";
-import { RoleSelectDialog, UserRole } from "@/components/dialogs/role-select-dialog";
-import { getAccountSubmenuItems, workplaceSubmenuItems } from "./sidebar/menu-config";
+import { RoleSelectDialog,UserRole } from "@/components/dialogs/role-select-dialog";
+import { HamburgerMenuContent } from "@/components/layout/hamburger-menu-content";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
+import { Avatar,AvatarFallback,AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet,SheetContent,SheetHeader,SheetTitle,SheetTrigger } from "@/components/ui/sheet";
+import { Link,useRouter } from "@/i18n/navigation";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 import { Role } from "@prisma/client";
+import { ChevronDown,LogOut,Menu,Settings } from "lucide-react";
+import { signOut,useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
+import { useState } from "react";
+import { getAccountSubmenuItems,workplaceSubmenuItems } from "./sidebar/menu-config";
 
 const navLinks = [
   { labelKey: "library", href: "/library" },
+  { labelKey: "assistant", href: "/assistant" },
   { labelKey: "appStore", href: "/appStore" },
   { labelKey: "docs", href: "/docs" },
 ];
@@ -38,6 +40,7 @@ export function FloatingNav() {
   const router = useRouter();
   const { data: session } = useSession();
   const { data: submissionAccess } = useSubmissionAccess();
+  const { data: businessAccess } = useAdminAccess();
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
@@ -108,10 +111,10 @@ export function FloatingNav() {
                   {t(item.labelKey)}
                 </DropdownMenuItem>
               ))}
-              {(session?.user?.isSystemAdmin || submissionAccess) && (
+              {(businessAccess || submissionAccess) && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => window.open(session?.user?.isSystemAdmin ? "/admin" : "/admin/corpus-collection/submissions", "_blank")}>
+                  <DropdownMenuItem onClick={() => window.open(businessAccess ? adminLanding(businessAccess) : "/admin/corpus-collection/submissions", "_blank")}>
                     <Settings className="mr-2 h-4 w-4" />
                     {t('admin')}
                   </DropdownMenuItem>
@@ -195,10 +198,10 @@ export function FloatingNav() {
                   {t(item.labelKey)}
                 </DropdownMenuItem>
               ))}
-              {(session?.user?.isSystemAdmin || submissionAccess) && (
+              {(businessAccess || submissionAccess) && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => window.open(session?.user?.isSystemAdmin ? "/admin" : "/admin/corpus-collection/submissions", "_blank")}>
+                  <DropdownMenuItem onClick={() => window.open(businessAccess ? adminLanding(businessAccess) : "/admin/corpus-collection/submissions", "_blank")}>
                     <Settings className="mr-2 h-4 w-4" />
                     {t('admin')}
                   </DropdownMenuItem>

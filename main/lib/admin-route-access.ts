@@ -5,10 +5,23 @@ export function isDelegatedCollectionPage(pathname: string) {
     pathname === "/admin/corpus-collection" ||
     /^\/admin\/corpus-collection\/(submissions|review-batches|questionnaire-insights)(\/|$)/.test(
       pathname,
-    )
+    ) ||
+    /^\/admin\/(categories|corpus|analytics|business-permissions)(\/|$)/.test(pathname) ||
+    /^\/admin\/corpus-collection\/(activities|comments|analytics|questionnaire-settings|categories)(\/|$)/.test(pathname) ||
+    isLibraryOpsPage(pathname)
+  );
+}
+/** Library ops pages are opened to operators holding a global capability. */
+export function isLibraryOpsPage(pathname: string) {
+  return /^\/admin\/(contribution-applications|ingestion-leads|ingestion-tasks|dataset-contact-requests)(\/|$)/.test(
+    pathname,
   );
 }
 /** The review webhook has its own mandatory service authentication, not a browser session. */
+export function isCronJob(pathname: string, method: string) {
+  return method === "GET" && pathname.startsWith("/api/cron/");
+}
+
 export function isReviewWebhook(pathname: string, method: string) {
   return (
     method === "POST" &&

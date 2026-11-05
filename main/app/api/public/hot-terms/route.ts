@@ -18,13 +18,21 @@ export async function GET(req: NextRequest) {
     // 同时减少一次到 Supabase Pooler 的网络往返。
     const rows = await prisma.$queryRaw<Array<{ data: string }>>(
       Prisma.sql`
-        SELECT data
-        FROM cantonese_corpus_all
+        SELECT corpus.data
+        FROM cantonese_corpus_all corpus
+        WHERE EXISTS (
+          SELECT 1 FROM cantonese_categories dataset
+          WHERE dataset.name = corpus.category AND dataset.is_public = true
+        )
+          AND btrim(corpus.data) <> ''
         ORDER BY random()
         LIMIT ${count}
       `
     );
 
-    return NextResponse.json({ terms: rows.map((row) => row.data) });
+    return NextResponse.json(
+      { terms: rows.map((row) => row.data) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   });
 }

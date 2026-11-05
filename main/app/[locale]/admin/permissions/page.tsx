@@ -73,6 +73,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { CategoryFilter, categoryLabel, categoryIdentifier, duplicateCategoryLabels } from "@/components/admin/category-filter";
 
 interface Permission {
   id: number;
@@ -99,6 +100,7 @@ interface PermissionsResponse {
 }
 
 interface Category {
+  id: number;
   name: string;
   nickname: string | null;
 }
@@ -176,6 +178,8 @@ export default function AdminPermissionsPage() {
       return response.json();
     },
   });
+
+  const duplicateCategories = useMemo(() => duplicateCategoryLabels(categoriesData?.categories ?? []), [categoriesData]);
 
   // 获取用户列表 - 使用服务端搜索
   const { data: usersData, isLoading: isLoadingUsers } = useQuery<UsersResponse>({
@@ -301,15 +305,15 @@ export default function AdminPermissionsPage() {
   const getPermissionBadgeColor = (permission: string) => {
     switch (permission) {
       case "FULL":
-        return "bg-error text-error-foreground";
+        return "bg-error text-error-foreground dark:bg-error dark:hover:bg-error";
       case "CREATE":
-        return "bg-primary text-primary-foreground";
+        return "bg-primary text-primary-foreground dark:bg-primary dark:hover:bg-primary";
       case "WRITE":
-        return "bg-info text-info-foreground";
+        return "bg-info text-info-foreground dark:bg-info dark:hover:bg-info";
       case "READ":
-        return "bg-success text-success-foreground";
+        return "bg-success text-success-foreground dark:bg-success dark:hover:bg-success";
       default:
-        return "bg-secondary text-secondary-foreground";
+        return "bg-secondary text-secondary-foreground dark:bg-secondary dark:hover:bg-secondary";
     }
   };
 
@@ -382,25 +386,15 @@ export default function AdminPermissionsPage() {
               </SelectContent>
             </Select>
 
-            {/* 分类筛选 */}
-            <Select
-              value={categoryFilter || undefined}
-              onValueChange={(value) =>
-                setCategoryFilter(value === "all" ? "" : value)
-              }
-            >
-              <SelectTrigger className="w-48 bg-secondary border-border text-foreground">
-                <SelectValue placeholder={t("filter.categoryPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("filter.allCategories")}</SelectItem>
-                {categoriesData?.categories.map((cat) => (
-                  <SelectItem key={cat.name} value={cat.name}>
-                    {cat.nickname || cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* 分类筛选：名称与编号搜索，同名分类保留各自唯一绑定。 */}
+            <CategoryFilter
+              categories={categoriesData?.categories ?? []}
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              allLabel={t("filter.allCategories")}
+              searchLabel={t("add.searchCategory")}
+              emptyLabel={t("noCategory")}
+            />
 
             {/* 清除筛选按钮 */}
             {(selectedUserId || categoryFilter) && (
@@ -564,7 +558,7 @@ export default function AdminPermissionsPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0 bg-card border-border max-h-[400px]">
-                        <Command className="bg-card border-border" shouldFilter={false}>
+                        <Command className="bg-card border-border">
                           <CommandInput placeholder={t("add.searchCategory")} className="text-foreground" />
                           <CommandList onWheel={(e) => e.stopPropagation()}>
                             <CommandEmpty className="py-2 text-sm text-muted-foreground text-center">{t("noCategory")}</CommandEmpty>
@@ -573,6 +567,7 @@ export default function AdminPermissionsPage() {
                                 <CommandItem
                                   key={cat.name}
                                   value={cat.name}
+                                  keywords={[categoryLabel(cat), categoryIdentifier(cat), String(cat.id)]}
                                   onSelect={(currentValue) => {
                                     setNewPermission((prev) => {
                                       const isSelected = prev.category_names.includes(cat.name);
@@ -602,7 +597,9 @@ export default function AdminPermissionsPage() {
                                     >
                                       <Check className={cn("h-4 w-4")} />
                                     </div>
-                                    <span>{cat.nickname || cat.name}</span>
+                                    <span className="min-w-0 break-words">{categoryLabel(cat)}
+                                      {duplicateCategories.has(categoryLabel(cat)) && <span className="block text-xs text-muted-foreground">{categoryIdentifier(cat)}</span>}
+                                    </span>
                                   </div>
                                 </CommandItem>
                               ))}
@@ -619,7 +616,7 @@ export default function AdminPermissionsPage() {
                           const cat = categoriesData?.categories.find(c => c.name === catName);
                           return (
                             <Badge key={catName} variant="secondary" className="bg-secondary text-secondary-foreground hover:bg-accent">
-                              {cat?.nickname || catName}
+                              {cat ? `${categoryLabel(cat)}${duplicateCategories.has(categoryLabel(cat)) ? ` · ${categoryIdentifier(cat)}` : ""}` : catName}
                               <button
                                 className="ml-1 hover:text-foreground"
                                 onClick={() => {
@@ -797,7 +794,7 @@ export default function AdminPermissionsPage() {
                         }
                       >
                         <SelectTrigger
-                          className={`w-28 h-8 ${getPermissionBadgeColor(perm.permission)} border-0 text-xs`}
+                          className={`w-28 h-9 ${getPermissionBadgeColor(perm.permission)} border-0 text-sm font-medium hover:brightness-95 data-[state=open]:brightness-95`}
                         >
                           <SelectValue />
                         </SelectTrigger>

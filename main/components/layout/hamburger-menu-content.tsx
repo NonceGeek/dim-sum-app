@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 
 const navLinks = [
   { labelKey: "library", href: "/library" },
+  { labelKey: "assistant", href: "/assistant" },
+  { labelKey: "contributeDataset", href: "/library/contribute" },
   { labelKey: "appStore", href: "/appStore" },
   { labelKey: "docs", href: "/docs" },
 ] as const;

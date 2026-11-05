@@ -6,11 +6,13 @@ const ACCELERATE_ENDPOINT = "oss-accelerate.aliyuncs.com";
 
 const OSS_BUCKET_BY_PURPOSE = {
   avatar: "dimsum-user-avatar",
+  appStore: "dimsum-user-avatar",
   submissionMedia: "dimsum-audio",
   corpusAsset: "dimsum-user-avatar",
 } as const;
 
 const UPLOAD_RULES = {
+  appStore: { directory: "app-store", maxSize: 4 * 1024 * 1024, allowedTypes: new Set<string>(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"]) },
   avatar: {
     directory: "avatars",
     maxSize: 5 * 1024 * 1024,

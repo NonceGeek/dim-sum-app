@@ -3,7 +3,7 @@ import { routing } from './i18n/routing';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { Role } from '@prisma/client';
-import { isDelegatedCollectionPage, isReviewWebhook } from '@/lib/admin-route-access';
+import { isCronJob, isDelegatedCollectionPage, isReviewWebhook } from '@/lib/admin-route-access';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -15,6 +15,7 @@ const protectedPatterns = [
   /^\/marker(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/workplace(\/|$)/,
+  /^\/assistant(\/|$)/,
 ];
 
 // Routes that require specific roles
@@ -38,7 +39,7 @@ export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Service callbacks must reach their own mandatory Bearer-token validation.
-  if (isReviewWebhook(pathname, request.method)) return NextResponse.next();
+  if (isReviewWebhook(pathname, request.method) || isCronJob(pathname, request.method)) return NextResponse.next();
 
   // Skip i18n for API routes and static files
   if (
@@ -47,6 +48,11 @@ export default async function proxy(request: NextRequest) {
     pathname.startsWith('/_vercel/') ||
     pathname.includes('.')
   ) {
+    // This exact read-only catalog serves published snapshots to visitors.
+    // Do not exempt the whole namespace or any mutation method.
+    if (request.method === 'GET' && pathname === '/api/app-store/apps') {
+      return NextResponse.next();
+    }
     // Still apply auth for protected API routes
     if (pathname.startsWith('/api/') && !pathname.startsWith('/api/public') && !pathname.startsWith('/api/search') && !pathname.startsWith('/api/entries') && !pathname.startsWith('/api/auth') && !pathname.startsWith('/api/miniprogram')) {
       const token = await getToken({ req: request });

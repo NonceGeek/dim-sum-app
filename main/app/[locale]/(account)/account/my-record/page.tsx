@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "next-intl";
+import { SavedApps } from "@/components/app-store/saved-apps";
+import { appCopy } from "@/components/app-store/copy";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Loader, Pause, Play, Search, Star } from "lucide-react";
@@ -45,12 +48,15 @@ import { cn } from "@/lib/utils";
 //   },
 // ];
 export default function MyRecordPage() {
+  const t = appCopy(useLocale());
+  const [favoriteType, setFavoriteType] = useState("corpus");
+  const appFavorites = favoriteType === "apps";
   const [activeTab, setActiveTab] = useState("Bookmarked");
   const [category, setCategory] = useState("All");
   let categories = [];
   const tabs = [
-    { value: "Bookmarked", label: "My Favorites" },
-    { value: "Liked", label: "My Likes" },
+    { value: "Bookmarked", label: t.myFavorites },
+    { value: "Liked", label: t.likes },
   ];
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
@@ -82,6 +88,7 @@ export default function MyRecordPage() {
 
   const getList = useQuery({
     queryKey: ["my-record", activeTab, page, search],
+    enabled: activeTab !== "Bookmarked" || !appFavorites,
     queryFn: async () => {
       const res = await corpusInteractApi[`get${activeTab}List`](
         page,
@@ -206,17 +213,17 @@ export default function MyRecordPage() {
     <>
       <div className="container mx-auto px-4 py-8 flex flex-col min-h-screen">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">My Record</h1>
+          <h1 className="text-3xl font-bold">{t.myRecords}</h1>
         </div>
 
         <div className="grid gap-6 flex-1">
           <Card className="p-6 bg-card transition-all duration-200 hover:shadow-lg h-full">
-            <div className="relative w-sm mx-auto">
+            <div className="relative w-full max-w-sm mx-auto">
               <div className="flex border-b relative">
                 {tabs.map((tab) => (
                   <button
                     key={tab.value}
-                    onClick={() => setActiveTab(tab.value)}
+                    onClick={() => { setActiveTab(tab.value); setPage(1); }}
                     className={`flex-1 text-center py-2 relative ${
                       activeTab === tab.value ? "text-foreground" : "text-muted-foreground"
                     }`}
@@ -238,8 +245,10 @@ export default function MyRecordPage() {
               </div>
             </div>
 
+            {activeTab === "Bookmarked" && <div className="mb-5 flex justify-center gap-2" role="group" aria-label={t.myFavorites}>{["corpus", "apps"].map(v => <button key={v} onClick={() => {setFavoriteType(v);setPage(1);}} aria-pressed={favoriteType===v} className={`rounded-full border px-4 py-2 text-sm ${favoriteType===v ? "bg-primary text-primary-foreground" : "bg-background"}`}>{v==="corpus"?t.corpus:t.apps}</button>)}</div>}
+            {activeTab === "Bookmarked" && appFavorites ? <SavedApps /> : <>
             <div className="w-full mx-auto">
-              <div className="relative w-120 mx-auto flex items-center rounded-lg bg-secondary transition-all duration-200 focus-within:ring-2 focus-within:ring-muted-foreground focus-within:border-muted-foreground">
+              <div className="relative w-full max-w-xl mx-auto flex items-center rounded-lg bg-secondary transition-all duration-200 focus-within:ring-2 focus-within:ring-muted-foreground focus-within:border-muted-foreground">
                 <Search className="w-4 text-muted-foreground ml-4" />
                 <Input
                   type="search"
@@ -448,6 +457,7 @@ export default function MyRecordPage() {
                 </div>
               )}
             </div>
+            </>}
           </Card>
         </div>
       </div>
