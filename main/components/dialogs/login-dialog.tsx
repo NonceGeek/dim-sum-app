@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { MessageCircle, Mail, Phone } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { toast } from "sonner";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -30,6 +29,7 @@ export function LoginDialog({
   role,
 }: LoginDialogProps) {
   const t = useTranslations("Auth");
+  const router = useRouter();
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [showSmsLogin, setShowSmsLogin] = useState(false);
 
@@ -42,9 +42,8 @@ export function LoginDialog({
       });
     } catch (error) {
       console.error("WeChat login error:", error);
-      toast.error(t("signInFailed"), {
-        description: t("signInFailedDesc"),
-      });
+      onClose();
+      router.replace("/?login=failed");
     }
   };
 

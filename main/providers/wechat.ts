@@ -64,6 +64,7 @@ export default function WechatProvider(
         lang: "zh_CN",
           },
         });
+        if (!response?.openid) throw new Error("WeChat user info is missing openid");
         return response;
       },
     },
@@ -73,10 +74,8 @@ export default function WechatProvider(
         name: profile.nickname,
         email: null,
         image: profile.headimgurl,
-        openId: profile.openid,
-        unionId: profile.unionid,
       };
     },
     options,
   };
-} 
+}

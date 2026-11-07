@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { FloatingNav } from "@/components/layout/floating-nav";
 import { MinimalFooter } from "./_components/minimal-footer";
@@ -61,8 +62,34 @@ export default function HomePage() {
   const [inputMode, setInputMode] = useState<InputMode>("search");
   const { isAuthenticated } = useAuthStore();
   const { openLogin, dialogs: loginDialogs } = useLoginGate();
+  const loginStatus = useSearchParams().get("login");
   const isAssistantMode = inputMode === "assistant";
   const aiPalette = useAiPalette();
+
+  useEffect(() => {
+    if (loginStatus !== "required") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("login") !== "required") return;
+
+    let callbackPath = url.pathname;
+    try {
+      const target = new URL(url.searchParams.get("callbackUrl") || url.pathname, url.origin);
+      if (
+        target.origin === url.origin &&
+        target.protocol === url.protocol &&
+        !target.pathname.startsWith("//")
+      ) {
+        callbackPath = target.pathname + target.search + target.hash;
+      }
+    } catch {
+      // Invalid legacy callback URLs fall back to the localized homepage.
+    }
+
+    url.searchParams.delete("login");
+    url.searchParams.delete("callbackUrl");
+    window.history.replaceState(null, "", url);
+    openLogin(callbackPath, "role");
+  }, [loginStatus, openLogin]);
 
   useEffect(() => {
     try {
