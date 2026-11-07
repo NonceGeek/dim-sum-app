@@ -35,7 +35,7 @@ function getPathnameWithoutLocale(pathname: string): string {
   return pathname;
 }
 
-function redirectToHomeLogin(request: NextRequest, status: "required" | "failed", callbackPath?: string) {
+function redirectToHomeLogin(request: NextRequest, status: "required" | "prompt" | "failed", callbackPath?: string) {
   const locale = routing.locales.find(
     (locale) => request.nextUrl.pathname.startsWith(`/${locale}/`),
   );
@@ -87,7 +87,7 @@ export default async function proxy(request: NextRequest) {
     }
     return redirectToHomeLogin(
       request,
-      "required",
+      "prompt",
       request.nextUrl.searchParams.get("callbackUrl") || undefined,
     );
   }
