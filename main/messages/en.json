@@ -501,6 +501,7 @@
     "signInTitle": "Sign In",
     "signInSubtitle": "Sign in to continue to your account",
     "signInContinueAs": "Sign in to continue as {role}",
+    "signInRequired": "Please sign in to access this page",
     "signInFailed": "Sign in failed",
     "signInFailedDesc": "Please try again later",
     "agreementPrefix": "By signing in, you agree to our",

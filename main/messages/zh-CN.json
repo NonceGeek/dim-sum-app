@@ -502,6 +502,7 @@
     "signInTitle": "登录",
     "signInSubtitle": "登录以继续使用您的账户",
     "signInContinueAs": "以 {role} 身份登录",
+    "signInRequired": "请先登录再访问此页面",
     "signInFailed": "登录失败",
     "signInFailedDesc": "请稍后再试",
     "agreementPrefix": "登录即表示您同意我们的",

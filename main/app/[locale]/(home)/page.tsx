@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import Image from "next/image";
 import { FloatingNav } from "@/components/layout/floating-nav";
 import { MinimalFooter } from "./_components/minimal-footer";
@@ -52,6 +53,7 @@ export default function HomePage() {
   const t = useTranslations("Home");
   const tc = useTranslations("Common");
   const tSearch = useTranslations("Search");
+  const tAuth = useTranslations("Auth");
 
   const [query, setQuery] = useState("");
   const [selectedDataset, setSelectedDataset] = useState<string[]>(["all"]);
@@ -67,9 +69,9 @@ export default function HomePage() {
   const aiPalette = useAiPalette();
 
   useEffect(() => {
-    if (loginStatus !== "required") return;
+    if (loginStatus !== "required" && loginStatus !== "prompt") return;
     const url = new URL(window.location.href);
-    if (url.searchParams.get("login") !== "required") return;
+    if (url.searchParams.get("login") !== loginStatus) return;
 
     let callbackPath = url.pathname;
     try {
@@ -88,8 +90,12 @@ export default function HomePage() {
     url.searchParams.delete("login");
     url.searchParams.delete("callbackUrl");
     window.history.replaceState(null, "", url);
+    if (loginStatus === "required") {
+      // Let the global Toaster subscribe before notifying on the initial page load.
+      requestAnimationFrame(() => toast.info(tAuth("signInRequired")));
+    }
     openLogin(callbackPath, "role");
-  }, [loginStatus, openLogin]);
+  }, [loginStatus, openLogin, tAuth]);
 
   useEffect(() => {
     try {
