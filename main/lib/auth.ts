@@ -57,7 +57,8 @@ export const authOptions: AuthOptions = {
     SmsProvider(),
   ],
   pages: {
-    signIn: "",
+    signIn: "/auth/signin",
+    error: "/auth/signin",
   },
   session: {
     strategy: "jwt" as const,

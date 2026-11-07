@@ -35,6 +35,16 @@ function getPathnameWithoutLocale(pathname: string): string {
   return pathname;
 }
 
+function redirectToHomeLogin(request: NextRequest, status: "required" | "failed", callbackPath?: string) {
+  const locale = routing.locales.find(
+    (locale) => request.nextUrl.pathname.startsWith(`/${locale}/`),
+  );
+  const home = new URL(locale ? `/${locale}` : "/", request.url);
+  home.searchParams.set("login", status);
+  if (callbackPath) home.searchParams.set("callbackUrl", callbackPath);
+  return NextResponse.redirect(home);
+}
+
 export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -71,17 +81,24 @@ export default async function proxy(request: NextRequest) {
 
   // For page routes: first check auth, then apply intl
   const strippedPathname = getPathnameWithoutLocale(pathname);
+  if (strippedPathname === "/auth/signin") {
+    if (request.nextUrl.searchParams.has("error")) {
+      return redirectToHomeLogin(request, "failed");
+    }
+    return redirectToHomeLogin(
+      request,
+      "required",
+      request.nextUrl.searchParams.get("callbackUrl") || undefined,
+    );
+  }
+
   const isProtected = protectedPatterns.some(p => p.test(strippedPathname));
 
   if (isProtected) {
     const token = await getToken({ req: request });
 
     if (!token) {
-      // Determine locale for redirect
-      const locale = routing.locales.find(l => pathname.startsWith(`/${l}`)) || routing.defaultLocale;
-      const signInUrl = new URL(`/${locale}/auth/signin`, request.url);
-      signInUrl.searchParams.set('callbackUrl', request.url);
-      return NextResponse.redirect(signInUrl);
+      return redirectToHomeLogin(request, "required", pathname + request.nextUrl.search);
     }
 
     // Role-based checks

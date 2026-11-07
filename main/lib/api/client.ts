@@ -34,7 +34,7 @@ async function request<T>(url: string, config: RequestConfig = {}): Promise<T> {
     const errorData = await response.json().catch(() => ({}));
     switch (response.status) {
       case 401:
-        window.location.href = '/auth/signin';
+        window.location.href = '/?login=required';
         throw new ApiError(401, errorData.error || 'Unauthorized');
       case 403:
         throw new ApiError(403, errorData.error || 'Permission denied');
@@ -62,4 +62,4 @@ export const api = {
     request<T>(url, { ...config, method: 'DELETE' }),
 };
 
-export default api; 
+export default api;
