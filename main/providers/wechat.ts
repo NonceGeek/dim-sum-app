@@ -73,10 +73,8 @@ export default function WechatProvider(
         name: profile.nickname,
         email: null,
         image: profile.headimgurl,
-        openId: profile.openid,
-        unionId: profile.unionid,
       };
     },
     options,
   };
-} 
+}
