@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertDialog,
@@ -27,11 +27,11 @@ export function useLoginGate() {
   const [step, setStep] = useState<Step>("confirm");
   const [role, setRole] = useState<UserRole | null>(null);
 
-  const openLogin = (path: string) => {
+  const openLogin = useCallback((path: string, firstStep: "confirm" | "role" = "confirm") => {
     setRole(null);
-    setStep("confirm");
+    setStep(firstStep);
     setCallbackPath(path);
-  };
+  }, []);
 
   const close = () => {
     setCallbackPath(null);
@@ -39,8 +39,11 @@ export function useLoginGate() {
     setStep("confirm");
   };
 
-  const withRole = (path: string, selected: UserRole) =>
-    `${path}${path.includes("?") ? "&" : "?"}role=${selected}`;
+  const withRole = (path: string, selected: UserRole) => {
+    const url = new URL(path, window.location.origin);
+    url.searchParams.set("role", selected);
+    return url.pathname + url.search + url.hash;
+  };
 
   const dialogs = (
     <>

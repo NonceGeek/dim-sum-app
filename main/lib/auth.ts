@@ -17,23 +17,6 @@ interface WeChatProfile {
   headimgurl?: string;
 }
 
-// 微信账号查找条件：优先按 unionid 匹配（同一微信在 Web / 小程序的 openid 不同，
-// unionid 才是跨端唯一标识），openid 作为兜底以兼容早期未存 unionId 的记录。
-function wechatAccountWhere(profile: WeChatProfile) {
-  return profile.unionid
-    ? {
-        provider: "wechat",
-        OR: [
-          { unionId: profile.unionid },
-          { providerAccountId: profile.openid },
-        ],
-      }
-    : {
-        provider: "wechat",
-        providerAccountId: profile.openid,
-      };
-}
-
 declare module "next-auth" {
   interface Session {
     user: {
@@ -74,7 +57,8 @@ export const authOptions: AuthOptions = {
     SmsProvider(),
   ],
   pages: {
-    signIn: "",
+    signIn: "/auth/signin",
+    error: "/auth/signin",
   },
   session: {
     strategy: "jwt" as const,
@@ -115,8 +99,13 @@ export const authOptions: AuthOptions = {
         // 只在需要时查询用户角色和系统管理员状态
         if (!token.role && !token.id) {
           // console.log('Fetching user role...');
-          const dbAccount = await prisma.account.findFirst({
-            where: wechatAccountWhere(wechatProfile),
+          const dbAccount = await prisma.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
             select: {
               user: {
                 select: {
@@ -189,78 +178,88 @@ export const authOptions: AuthOptions = {
       if (account?.provider === "wechat" && profile) {
         try {
           const wechatProfile = profile as WeChatProfile;
-          // console.log('Checking existing account...');
+          const webAccountKey = {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+          };
+          const webAccountData = {
+            ...webAccountKey,
+            type: "oauth",
+            openId: wechatProfile.openid,
+            unionId: wechatProfile.unionid,
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
+            expires_at: account.expires_at,
+            scope: account.scope,
+          };
 
           // 使用事务来确保数据一致性
           await prisma.$transaction(async (tx) => {
-            const existingAccount = await tx.account.findFirst({
-              where: wechatAccountWhere(wechatProfile),
+            const existingAccount = await tx.account.findUnique({
+              where: { provider_providerAccountId: webAccountKey },
               select: {
                 id: true,
                 unionId: true,
                 user: {
                   select: {
                     id: true,
-                    role: true,
                     wechatAvatar: true,
-                    isSystemAdmin: true,
                   },
                 },
               },
             });
 
-            if (!existingAccount) {
-              // console.log('Creating new user and account...');
-              const newUser = await tx.user.create({
+            let existingUser = existingAccount?.user;
+            if (existingAccount) {
+              if (!existingAccount.unionId && wechatProfile.unionid) {
+                await tx.account.update({
+                  where: { id: existingAccount.id },
+                  data: { unionId: wechatProfile.unionid },
+                });
+              }
+            } else if (wechatProfile.unionid) {
+              const matches = await tx.account.findMany({
+                where: { provider: "wechat", unionId: wechatProfile.unionid },
+                distinct: ["userId"],
+                take: 2,
+                select: { user: { select: { id: true, wechatAvatar: true } } },
+              });
+              if (matches.length > 1) {
+                throw new Error("WeChat unionId matches multiple users");
+              }
+              existingUser = matches[0]?.user;
+              if (existingUser) {
+                // 小程序与网页的 openId 不同。补齐 NextAuth 用于精确查找的网页绑定。
+                await tx.account.createMany({
+                  data: { ...webAccountData, userId: existingUser.id },
+                  skipDuplicates: true,
+                });
+                const binding = await tx.account.findUniqueOrThrow({
+                  where: { provider_providerAccountId: webAccountKey },
+                  select: { userId: true },
+                });
+                if (binding.userId !== existingUser.id) {
+                  throw new Error("WeChat web account is linked to another user");
+                }
+              }
+            }
+
+            if (!existingUser) {
+              await tx.user.create({
                 data: {
                   name:
                     wechatProfile.nickname ||
                     `User_${Math.random().toString(36).substring(7)}`,
-                  wechatAvatar: wechatProfile.headimgurl, // 保存微信头像
-                  accounts: {
-                    create: {
-                      type: "oauth",
-                      provider: "wechat",
-                      providerAccountId: wechatProfile.openid,
-                      openId: wechatProfile.openid,
-                      unionId: wechatProfile.unionid,
-                      access_token: account.access_token,
-                      refresh_token: account.refresh_token,
-                      expires_at: account.expires_at,
-                      scope: account.scope,
-                    },
-                  },
-                },
-                select: {
-                  id: true,
-                  role: true,
-                  wechatAvatar: true,
-                  isSystemAdmin: true,
+                  wechatAvatar: wechatProfile.headimgurl,
+                  accounts: { create: webAccountData },
                 },
               });
-              // console.log('New user and account created');
-              return newUser;
-            }
-
-            // 早期记录未存 unionId 时（按 openid 兜底命中），回填 unionId，
-            // 之后跨端（小程序）登录即可按 unionid 命中同一账号
-            if (!existingAccount.unionId && wechatProfile.unionid) {
-              await tx.account.update({
-                where: { id: existingAccount.id },
-                data: { unionId: wechatProfile.unionid },
-              });
-            }
-
-            // 如果用户存在但微信头像为空，更新微信头像
-            if (!existingAccount.user.wechatAvatar) {
+            } else if (!existingUser.wechatAvatar && wechatProfile.headimgurl) {
               await tx.user.update({
-                where: { id: existingAccount.user.id },
+                where: { id: existingUser.id },
                 data: { wechatAvatar: wechatProfile.headimgurl },
               });
             }
-
-            // console.log('Existing account found');
-            return existingAccount.user;
           });
 
           // console.log('SignIn Callback end:', {

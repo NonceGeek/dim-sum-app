@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { RoleTipDialog } from "@/components/dialogs/role-tip-dialog";
 import { formatRole } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 // 定义用户角色类型
 export enum SessionUserRole {
@@ -20,10 +21,20 @@ export enum SessionUserRole {
 function AuthProviderContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const { setUser, clearUser } = useAuthStore();
+  const t = useTranslations("Auth");
   const searchParams = useSearchParams();
   const loginStatus = searchParams.get('login');
   const role = searchParams.get('role');
   const [showRoleTip, setShowRoleTip] = useState(false);
+
+  useEffect(() => {
+    if (loginStatus !== "failed") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("login") !== "failed") return;
+    url.searchParams.delete("login");
+    window.history.replaceState(null, "", url);
+    toast.error(t("signInFailed"), { description: t("signInFailedDesc") });
+  }, [loginStatus, t]);
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
@@ -46,7 +57,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
       }
 
       const url = new URL(window.location.href);
-      url.searchParams.delete('login');
+      if (loginStatus === 'success') url.searchParams.delete('login');
       url.searchParams.delete('role');
       window.history.replaceState({}, '', url.toString());
     } else if (status === "unauthenticated") {
