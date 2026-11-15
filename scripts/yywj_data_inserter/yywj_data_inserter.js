@@ -98,10 +98,11 @@ async function processData() {
     note.context.粤语拼音 = row[3];
     note.context.场景 = row[4];
     note.context.来源 = row[5];
-    // Generate audio link based on 序号 and data
+    // OSS filenames omit leading and trailing ASCII spaces in the source text.
     const padded序号 = String(row[0]).padStart(5, '0'); // Pad 序号 to 5 digits
-    const encodedData = encodeURIComponent(data); // URL-encode the 粤语原文
-    note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/yywj/${padded序号}${encodedData}.wav`;
+    const audioFileText = data.replace(/^ +| +$/g, "");
+    const encodedAudioFileText = encodeURIComponent(audioFileText);
+    note.context.audio = `https://dimsum-audio.oss-cn-guangzhou.aliyuncs.com/yywj/${padded序号}${encodedAudioFileText}.wav`;
 
     const tags = [note.context.场景];
     console.log(tags);
