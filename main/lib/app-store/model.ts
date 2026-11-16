@@ -102,6 +102,21 @@ export type StoreApp = AppDraft & {
 };
 export const EMPTY_DRAFT = appDraftSchema.parse({});
 
+export function prepareEntryUrls(draft: AppDraft): AppDraft {
+  // Keep usable links for switching back, but do not block submission on edits to hidden fields.
+  const inactiveFields =
+    draft.kind === "miniprogram"
+      ? (["launchUrl"] as const)
+      : (["mobileLaunchUrl", "desktopLaunchUrl"] as const);
+  const prepared = { ...draft };
+  for (const field of inactiveFields) {
+    if (!appDraftSchema.shape[field].safeParse(draft[field]).success) {
+      prepared[field] = "";
+    }
+  }
+  return prepared;
+}
+
 export function requiredPublicationFields(kind: AppDraft["kind"]) {
   return [
     "name",
@@ -118,7 +133,13 @@ export function publishIssues(d: AppDraft): PublicationIssue[] {
     (field) => !d[field].trim(),
   );
   const launchUrl = d.launchUrl.trim();
-  if (launchUrl && !launchUrl.startsWith("https://")) issues.push("https");
+  if (
+    d.kind !== "miniprogram" &&
+    launchUrl &&
+    !launchUrl.startsWith("https://")
+  ) {
+    issues.push("https");
+  }
   return issues;
 }
 export function categoryCode(type: string | null | undefined) {

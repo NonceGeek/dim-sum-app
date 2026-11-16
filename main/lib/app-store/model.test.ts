@@ -6,6 +6,7 @@ import {
   catalog,
   categoryCode,
   legacyDraft,
+  prepareEntryUrls,
   publishIssues,
   safeUrl,
   safeMiniProgramUrl,
@@ -38,6 +39,10 @@ test("publication allows generated artwork but still requires a usable entry", (
     qrUrl: "https://example.org/qr.png",
   };
   assert.deepEqual(publishIssues(d), []);
+  assert.deepEqual(
+    publishIssues({ ...d, launchUrl: "http://example.org" }),
+    [],
+  );
   assert.ok(
     publishIssues({
       ...d,
@@ -45,6 +50,31 @@ test("publication allows generated artwork but still requires a usable entry", (
       launchUrl: "http://example.org",
     }).includes("https"),
   );
+});
+test("changing the entry type preserves usable links and ignores invalid hidden edits", () => {
+  const miniProgram = {
+    ...EMPTY_DRAFT,
+    kind: "miniprogram" as const,
+    launchUrl: "unfinished URL",
+    mobileLaunchUrl: "https://wxaurl.cn/example",
+  };
+  assert.equal(prepareEntryUrls(miniProgram).launchUrl, "");
+  assert.equal(miniProgram.launchUrl, "unfinished URL");
+  assert.equal(
+    prepareEntryUrls({ ...miniProgram, launchUrl: "http://example.org" })
+      .launchUrl,
+    "http://example.org",
+  );
+  const resource = prepareEntryUrls({
+    ...miniProgram,
+    kind: "resource",
+    desktopLaunchUrl: "unfinished URL",
+    qrUrl: "https://example.org/qr.png",
+  });
+  assert.equal(resource.desktopLaunchUrl, "");
+  assert.equal(resource.mobileLaunchUrl, miniProgram.mobileLaunchUrl);
+  assert.equal(resource.launchUrl, "unfinished URL");
+  assert.equal(resource.qrUrl, "https://example.org/qr.png");
 });
 test("optional privacy descriptions accept text or links independently of the policy URL", () => {
   const description = "We only collect data needed for this app.";
