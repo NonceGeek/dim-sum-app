@@ -26,6 +26,7 @@ import {
   CATEGORIES,
   EMPTY_DRAFT,
   appDraftSchema,
+  prepareEntryUrls,
   publishIssues,
   requiredPublicationFields,
   type AppDraft,
@@ -116,7 +117,7 @@ export function AppStoreAdmin() {
       }
     }
 
-    const parsed = appDraftSchema.safeParse(draft);
+    const parsed = appDraftSchema.safeParse(prepareEntryUrls(draft));
     if (parsed.success) return fieldErrors;
     for (const issue of parsed.error.issues) {
       const field = issue.path[0] as keyof AppDraft;
@@ -200,6 +201,7 @@ export function AppStoreAdmin() {
   }
   async function save(action: SaveAction) {
     if (!editor || busy) return;
+    const draft = prepareEntryUrls(editor.draft);
     setBusy(true);
     try {
       let id = editor.id;
@@ -208,7 +210,7 @@ export function AppStoreAdmin() {
         const r = await saveRequest<{ id: string; revision: number }>(
           "/api/admin/applications",
           "POST",
-          editor.draft,
+          draft,
         );
         id = r.id;
         revision = r.revision;
@@ -221,10 +223,10 @@ export function AppStoreAdmin() {
         status: string;
       }>(`/api/admin/applications/${id}`, "PATCH", {
         revision,
-        draft: editor.draft,
+        draft,
         action,
       });
-      setEditor((e) => ({ ...e!, ...result }));
+      setEditor((e) => ({ ...e!, ...result, draft }));
       setDirty(false);
       setConfirm(null);
       await cache.invalidateQueries({ queryKey: ["admin-applications"] });
@@ -619,15 +621,7 @@ export function AppStoreAdmin() {
                   ["direct", t.instant],
                   ["request", t.request],
                 ])}
-                {textField(
-                  "launchUrl",
-                  L("启动 / 申请 URL", "Launch / request URL"),
-                  false,
-                  L("填写 HTTPS 链接。", "Enter an HTTPS URL."),
-                )}
-                {(editor.draft.kind === "miniprogram" ||
-                  editor.draft.mobileLaunchUrl ||
-                  editor.draft.desktopLaunchUrl) && (
+                {editor.draft.kind === "miniprogram" ? (
                   <>
                     {textField(
                       "mobileLaunchUrl",
@@ -637,15 +631,20 @@ export function AppStoreAdmin() {
                       "desktopLaunchUrl",
                       L("桌面微信跳转入口", "Desktop WeChat launch URL"),
                     )}
-                    {editor.draft.kind === "miniprogram" && (
-                      <p className="text-sm text-muted-foreground sm:col-span-2">
-                        {L(
-                          "填写应用方提供并验证有效的 HTTPS 链接或微信小程序 Scheme；留空时展示二维码。二维码仍为必填备用入口。链接有有效期时需及时更新，请分别验证手机浏览器、微信内和桌面端。",
-                          "Use verified HTTPS links or WeChat mini-program Schemes supplied by the app owner. Leave blank to show the QR code. A QR code is still required as a fallback. Renew expiring links and verify mobile browsers, WeChat and desktop separately.",
-                        )}
-                      </p>
-                    )}
+                    <p className="text-sm text-muted-foreground sm:col-span-2">
+                      {L(
+                        "发布前请在下方「素材与演示」上传微信二维码。跳转入口可填已验证的 HTTPS 链接或微信小程序 Scheme；留空时打开二维码弹窗。",
+                        "Add the WeChat QR code under Artwork & demo before publishing. Use a verified HTTPS link or WeChat mini-program Scheme for direct opening, or leave both links blank to show the QR code.",
+                      )}
+                    </p>
                   </>
+                ) : (
+                  textField(
+                    "launchUrl",
+                    L("启动 / 申请 URL", "Launch / request URL"),
+                    false,
+                    L("填写 HTTPS 链接。", "Enter an HTTPS URL."),
+                  )
                 )}
                 {textField("homepageUrl", t.homepage)}
                 {textField("githubUrl", t.github)}
