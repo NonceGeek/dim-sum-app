@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useLocale } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -27,12 +27,18 @@ import {
   EMPTY_DRAFT,
   appDraftSchema,
   publishIssues,
+  requiredPublicationFields,
   type AppDraft,
   type StoreApp,
 } from "@/lib/app-store/model";
 import { appJson } from "./favorites";
 import { appCopy } from "./copy";
 import { AppArtwork } from "./artwork";
+import { AppPrivacy } from "./privacy";
+
+type SaveAction = "save" | "publish" | "offline";
+type FieldErrors = Partial<Record<keyof AppDraft, string>>;
+
 type AdminRow = {
   id: string;
   status: string;
@@ -68,12 +74,11 @@ export function AppStoreAdmin() {
     "publish" | "offline" | "leave" | null
   >(null);
   const [dirty, setDirty] = useState(false);
-  const [privacyUrlChecked, setPrivacyUrlChecked] = useState(false);
-  const privacyUrlInput = useRef<HTMLInputElement>(null);
-  const privacyUrlInvalid = !appDraftSchema.shape.privacyUrl.safeParse(
-    editor?.draft.privacyUrl,
-  ).success;
-  const showPrivacyUrlError = privacyUrlChecked && privacyUrlInvalid;
+  const [validation, setValidation] = useState<SaveAction | null>(null);
+  const errors =
+    validation && editor ? draftErrors(editor.draft, validation) : {};
+  const required = requiredPublicationFields(editor?.draft.kind ?? "web");
+  const optional = L("（可选）", " (optional)");
   const enabled = !!query.data?.writesEnabled;
   const stateLabel = (v: string) =>
     v === "draft"
@@ -93,64 +98,132 @@ export function AppStoreAdmin() {
     setEditor((e) => ({ ...e!, draft: { ...e!.draft, [key]: value } }));
     setDirty(true);
   }
-  function checkPrivacyUrl() {
-    if (!privacyUrlInvalid) return true;
-    setPrivacyUrlChecked(true);
-    privacyUrlInput.current?.focus();
-    return false;
+  function draftErrors(draft: AppDraft, action: SaveAction): FieldErrors {
+    const fieldErrors: FieldErrors = {};
+    if (action === "publish") {
+      for (const issue of publishIssues(draft)) {
+        if (issue === "https") {
+          fieldErrors.launchUrl = L(
+            "请输入有效的 HTTPS 链接。",
+            "Enter a valid HTTPS URL.",
+          );
+        } else {
+          fieldErrors[issue] = L(
+            "发布前请填写此项。",
+            "Complete this field before publishing.",
+          );
+        }
+      }
+    }
+
+    const parsed = appDraftSchema.safeParse(draft);
+    if (parsed.success) return fieldErrors;
+    for (const issue of parsed.error.issues) {
+      const field = issue.path[0] as keyof AppDraft;
+      if (fieldErrors[field]) continue;
+      if (issue.code === "too_big" && issue.type === "string") {
+        fieldErrors[field] = L(
+          `最多可填写 ${issue.maximum} 个字符。`,
+          `Enter no more than ${issue.maximum} characters.`,
+        );
+      } else if (field === "rank") {
+        fieldErrors[field] = L(
+          "请输入 0 到 999999 之间的整数。",
+          "Enter a whole number from 0 to 999999.",
+        );
+      } else if (field === "privacyUrl") {
+        fieldErrors[field] = L(
+          "请输入有效的 HTTP(S) 链接，或留空。文字可以填在「隐私说明」。",
+          "Enter a valid HTTP(S) URL or leave this blank. Add text under Privacy description.",
+        );
+      } else if (field === "mobileLaunchUrl" || field === "desktopLaunchUrl") {
+        fieldErrors[field] = L(
+          "请输入 HTTPS 链接或有效的微信小程序跳转链接。",
+          "Enter an HTTPS URL or a valid WeChat mini program link.",
+        );
+      } else if (field.endsWith("Url")) {
+        fieldErrors[field] = L(
+          "请输入有效的 HTTP(S) 链接。",
+          "Enter a valid HTTP(S) URL.",
+        );
+      } else {
+        fieldErrors[field] = L("请检查此项内容。", "Check this field.");
+      }
+    }
+    return fieldErrors;
   }
-  async function save(action: "save" | "publish" | "offline") {
+  function submit(action: SaveAction) {
     if (!editor || busy) return;
-    const missing = action === "publish" ? publishIssues(editor.draft) : [];
-    if (missing.length) {
-      toast.error(
-        L("请完善发布必填项：", "Complete publication fields: ") +
-          missing
-            .map(
-              (k) =>
-                ({
-                  name: L("名称", "name"),
-                  summary: L("一句话介绍", "summary"),
-                  authors: L("作者", "authors"),
-                  coverUrl: L("封面", "cover"),
-                  qrUrl: L("微信二维码", "WeChat QR code"),
-                  launchUrl: L("启动链接", "launch URL"),
-                  https: L("HTTPS 启动链接", "HTTPS launch URL"),
-                })[k] ?? k,
-            )
-            .join(", "),
-      );
-      setConfirm(null);
+    const fieldErrors = draftErrors(editor.draft, action);
+    const first = Object.keys(fieldErrors)[0];
+    if (first) {
+      setValidation(action);
+      requestAnimationFrame(() => document.getElementById(first)?.focus());
       return;
     }
+    setValidation(null);
+    if (action === "save") void save(action);
+    else setConfirm(action);
+  }
+  async function saveRequest<T>(
+    url: string,
+    method: "POST" | "PATCH",
+    body: unknown,
+  ) {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 409)
+      throw new Error(
+        L(
+          "这条应用已被更新。请先备份当前修改，再刷新页面后重试。",
+          "This app has been updated. Copy your edits before refreshing and trying again.",
+        ),
+      );
+    if (res.status === 401 || res.status === 403)
+      throw new Error(
+        L(
+          "请确认已登录且有应用管理权限。",
+          "Sign in with an account that can manage applications.",
+        ),
+      );
+    if (!res.ok)
+      throw new Error(
+        L(
+          "应用未提交成功，请检查填写内容或稍后重试。当前填写内容仍在页面上。",
+          "The application could not be submitted. Check the form or try again later. Your edits are still here.",
+        ),
+      );
+    return appJson<T>(res);
+  }
+  async function save(action: SaveAction) {
+    if (!editor || busy) return;
     setBusy(true);
     try {
       let id = editor.id;
       let revision = editor.revision;
       if (!id) {
-        const r = await appJson<{ id: string; revision: number }>(
-          await fetch("/api/admin/applications", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(editor.draft),
-          }),
+        const r = await saveRequest<{ id: string; revision: number }>(
+          "/api/admin/applications",
+          "POST",
+          editor.draft,
         );
         id = r.id;
         revision = r.revision;
         // Retain the new draft ID even if the subsequent publication fails.
         setEditor((e) => ({ ...e!, id, revision, status: "draft" }));
       }
-      const result = await appJson<{
+      const result = await saveRequest<{
         id: string;
         revision: number;
         status: string;
-      }>(
-        await fetch(`/api/admin/applications/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ revision, draft: editor.draft, action }),
-        }),
-      );
+      }>(`/api/admin/applications/${id}`, "PATCH", {
+        revision,
+        draft: editor.draft,
+        action,
+      });
       setEditor((e) => ({ ...e!, ...result }));
       setDirty(false);
       setConfirm(null);
@@ -168,7 +241,15 @@ export function AppStoreAdmin() {
               ),
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t.error);
+      setConfirm(null);
+      toast.error(
+        e instanceof Error && !(e instanceof TypeError)
+          ? e.message
+          : L(
+              "提交失败，请检查网络连接后重试。当前填写内容仍在页面上。",
+              "Could not submit. Check your connection and try again. Your edits are still here.",
+            ),
+      );
     } finally {
       setBusy(false);
     }
@@ -205,23 +286,39 @@ export function AppStoreAdmin() {
       setBusy(false);
     }
   }
-  function textField(key: keyof AppDraft, label: string, multiline = false) {
+  function textField(
+    key: keyof AppDraft,
+    label: string,
+    multiline = false,
+    hint?: string,
+  ) {
+    const isRequired = required.some((field) => field === key);
+    const error = errors[key];
+    const fieldProps = {
+      id: key,
+      "aria-required": isRequired || undefined,
+      "aria-invalid": !!error || undefined,
+      "aria-describedby": error || hint ? `${key}-hint` : undefined,
+    };
     return (
       <div
         key={key}
         className={multiline ? "space-y-2 sm:col-span-2" : "space-y-2"}
       >
-        <Label htmlFor={key}>{label}</Label>
+        <Label htmlFor={key}>
+          {label}
+          {isRequired ? " *" : optional}
+        </Label>
         {multiline ? (
           <Textarea
-            id={key}
+            {...fieldProps}
             value={String(editor!.draft[key])}
             onChange={(e) => change(key, e.target.value as never)}
             rows={4}
           />
         ) : (
           <Input
-            id={key}
+            {...fieldProps}
             value={String(editor!.draft[key])}
             onChange={(e) =>
               change(
@@ -236,6 +333,18 @@ export function AppStoreAdmin() {
             max={key === "rank" ? 999999 : undefined}
           />
         )}
+        {(error || hint) && (
+          <p
+            id={`${key}-hint`}
+            className={
+              error
+                ? "text-sm text-destructive"
+                : "text-sm text-muted-foreground"
+            }
+          >
+            {error || hint}
+          </p>
+        )}
       </div>
     );
   }
@@ -246,12 +355,20 @@ export function AppStoreAdmin() {
   ) {
     return (
       <div className="space-y-2" key={key}>
-        <Label htmlFor={key}>{label}</Label>
+        <Label htmlFor={key}>
+          {label}
+          {optional}
+        </Label>
         <Select
           value={String(editor!.draft[key]) || "_none"}
           onValueChange={(v) => change(key, (v === "_none" ? "" : v) as never)}
         >
-          <SelectTrigger id={key} className="w-full">
+          <SelectTrigger
+            id={key}
+            className="w-full"
+            aria-invalid={!!errors[key] || undefined}
+            aria-describedby={errors[key] ? `${key}-hint` : undefined}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -262,6 +379,11 @@ export function AppStoreAdmin() {
             ))}
           </SelectContent>
         </Select>
+        {errors[key] && (
+          <p id={`${key}-hint`} className="text-sm text-destructive">
+            {errors[key]}
+          </p>
+        )}
       </div>
     );
   }
@@ -288,7 +410,7 @@ export function AppStoreAdmin() {
                 draft: { ...EMPTY_DRAFT },
                 status: "draft",
               });
-              setPrivacyUrlChecked(false);
+              setValidation(null);
               setDirty(false);
             }}
           >
@@ -397,10 +519,10 @@ export function AppStoreAdmin() {
                           setEditor({
                             id: row.id,
                             revision: row.revision,
-                            draft: { ...row.draft },
+                            draft: { ...EMPTY_DRAFT, ...row.draft },
                             status: row.status,
                           });
-                          setPrivacyUrlChecked(false);
+                          setValidation(null);
                           setDirty(false);
                         }}
                       >
@@ -450,10 +572,16 @@ export function AppStoreAdmin() {
               <h2 className="mb-5 font-semibold">
                 {L("基础资料", "App information")}
               </h2>
+              <p className="mb-5 text-sm text-muted-foreground">
+                {L(
+                  "带 * 的字段在发布时必填，保存草稿可以留空。",
+                  "Fields marked * are required to publish and may be left blank in a draft.",
+                )}
+              </p>
               <div className="grid gap-5 sm:grid-cols-2">
-                {textField("name", L("名称 *", "Name *"))}
-                {textField("authors", L("作者 / 团队 *", "Authors / team *"))}
-                {textField("summary", L("一句话介绍 *", "Summary *"))}
+                {textField("name", L("名称", "Name"))}
+                {textField("authors", L("作者 / 团队", "Authors / team"))}
+                {textField("summary", L("一句话介绍", "Summary"))}
                 {selectField(
                   "category",
                   L("分类", "Category"),
@@ -467,9 +595,11 @@ export function AppStoreAdmin() {
                 ])}
                 {textField(
                   "rank",
+                  L("推荐排序", "Editorial order"),
+                  false,
                   L(
-                    "推荐排序（0 为默认，正数越小越靠前）",
-                    "Editorial order (0 = default, lower positive first)",
+                    "0 为默认，正数越小越靠前。",
+                    "0 is the default. Lower positive numbers appear first.",
                   ),
                 )}
               </div>
@@ -491,38 +621,30 @@ export function AppStoreAdmin() {
                 ])}
                 {textField(
                   "launchUrl",
-                  editor.draft.kind === "miniprogram"
-                    ? L(
-                        "启动 / 申请 URL（可选，HTTPS）",
-                        "Launch / request URL (optional, HTTPS)",
-                      )
-                    : L(
-                        "启动 / 申请 URL（发布必填，HTTPS）",
-                        "Launch / request URL (required to publish, HTTPS)",
-                      ),
+                  L("启动 / 申请 URL", "Launch / request URL"),
+                  false,
+                  L("填写 HTTPS 链接。", "Enter an HTTPS URL."),
                 )}
-                {editor.draft.kind === "miniprogram" && (
+                {(editor.draft.kind === "miniprogram" ||
+                  editor.draft.mobileLaunchUrl ||
+                  editor.draft.desktopLaunchUrl) && (
                   <>
                     {textField(
                       "mobileLaunchUrl",
-                      L(
-                        "手机微信跳转入口（可选）",
-                        "Mobile WeChat launch URL (optional)",
-                      ),
+                      L("手机微信跳转入口", "Mobile WeChat launch URL"),
                     )}
                     {textField(
                       "desktopLaunchUrl",
-                      L(
-                        "桌面微信跳转入口（可选）",
-                        "Desktop WeChat launch URL (optional)",
-                      ),
+                      L("桌面微信跳转入口", "Desktop WeChat launch URL"),
                     )}
-                    <p className="text-sm text-muted-foreground sm:col-span-2">
-                      {L(
-                        "填写应用方提供并验证有效的 HTTPS 链接或微信小程序 Scheme；留空时展示二维码。二维码仍为必填备用入口。链接有有效期时需及时更新，请分别验证手机浏览器、微信内和桌面端。",
-                        "Use verified HTTPS links or WeChat mini-program Schemes supplied by the app owner. Leave blank to show the QR code. A QR code is still required as a fallback. Renew expiring links and verify mobile browsers, WeChat and desktop separately.",
-                      )}
-                    </p>
+                    {editor.draft.kind === "miniprogram" && (
+                      <p className="text-sm text-muted-foreground sm:col-span-2">
+                        {L(
+                          "填写应用方提供并验证有效的 HTTPS 链接或微信小程序 Scheme；留空时展示二维码。二维码仍为必填备用入口。链接有有效期时需及时更新，请分别验证手机浏览器、微信内和桌面端。",
+                          "Use verified HTTPS links or WeChat mini-program Schemes supplied by the app owner. Leave blank to show the QR code. A QR code is still required as a fallback. Renew expiring links and verify mobile browsers, WeChat and desktop separately.",
+                        )}
+                      </p>
+                    )}
                   </>
                 )}
                 {textField("homepageUrl", t.homepage)}
@@ -551,22 +673,15 @@ export function AppStoreAdmin() {
                       {textField(
                         field,
                         [
-                          L(
-                            "封面 URL（留空自动生成）",
-                            "Cover URL (generated when empty)",
-                          ),
-                          L("应用图标 URL（可选）", "App icon URL (optional)"),
-                          editor.draft.kind === "miniprogram"
-                            ? L(
-                                "微信二维码 URL（发布必填）",
-                                "WeChat QR URL (required to publish)",
-                              )
-                            : L(
-                                "微信二维码 URL（可选）",
-                                "WeChat QR URL (optional)",
-                              ),
-                          L("演示 URL（可选）", "Demo URL (optional)"),
+                          L("封面 URL", "Cover URL"),
+                          L("应用图标 URL", "App icon URL"),
+                          L("微信二维码 URL", "WeChat QR URL"),
+                          L("演示 URL", "Demo URL"),
                         ][i],
+                        false,
+                        field === "coverUrl"
+                          ? L("留空时自动生成。", "Generated when left blank.")
+                          : undefined,
                       )}
                       <Label className="inline-flex cursor-pointer items-center gap-2 text-xs text-primary">
                         <Upload className="h-3 w-3" />
@@ -603,44 +718,22 @@ export function AppStoreAdmin() {
                 )}
               </h2>
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="privacyUrl">
-                    {L("隐私政策链接（可选）", "Privacy policy URL (optional)")}
-                  </Label>
-                  <Input
-                    id="privacyUrl"
-                    ref={privacyUrlInput}
-                    type="url"
-                    value={editor.draft.privacyUrl}
-                    onChange={(e) => change("privacyUrl", e.target.value)}
-                    aria-invalid={showPrivacyUrlError || undefined}
-                    aria-describedby="privacyUrl-hint"
-                  />
-                  <p
-                    id="privacyUrl-hint"
-                    aria-live="polite"
-                    className={
-                      showPrivacyUrlError
-                        ? "text-sm text-destructive"
-                        : "text-sm text-muted-foreground"
-                    }
-                  >
-                    {showPrivacyUrlError
-                      ? L(
-                          "请输入有效的 HTTP(S) 链接，或留空。文字说明请填在下方。",
-                          "Enter a valid HTTP(S) URL or leave this blank. Put written notes below.",
-                        )
-                      : L(
-                          "填写 HTTP(S) 链接。文字说明请填在下方。",
-                          "Enter an HTTP(S) URL. Put written notes below.",
-                        )}
-                  </p>
-                </div>
                 {textField(
-                  "notice",
-                  L("使用与数据说明（可选）", "Usage & data notes (optional)"),
+                  "privacyDescription",
+                  t.privacyDescription,
                   true,
+                  L(
+                    "可填写文字说明，或贴入 HTTP(S) 链接。",
+                    "Enter a written description or paste an HTTP(S) URL.",
+                  ),
                 )}
+                {textField(
+                  "privacyUrl",
+                  t.privacy,
+                  false,
+                  L("填写 HTTP(S) 链接。", "Enter an HTTP(S) URL."),
+                )}
+                {textField("notice", t.notice, true)}
               </div>
             </section>
           </fieldset>
@@ -649,7 +742,7 @@ export function AppStoreAdmin() {
               <Button
                 variant="destructive"
                 disabled={busy || !enabled}
-                onClick={() => checkPrivacyUrl() && setConfirm("offline")}
+                onClick={() => submit("offline")}
               >
                 {L("下线", "Take offline")}
               </Button>
@@ -657,13 +750,13 @@ export function AppStoreAdmin() {
             <Button
               variant="outline"
               disabled={busy || !enabled}
-              onClick={() => checkPrivacyUrl() && void save("save")}
+              onClick={() => submit("save")}
             >
               {L("保存草稿", "Save draft")}
             </Button>
             <Button
               disabled={busy || !enabled}
-              onClick={() => checkPrivacyUrl() && setConfirm("publish")}
+              onClick={() => submit("publish")}
             >
               {busy ? "…" : L("立即发布", "Publish now")}
             </Button>
@@ -710,6 +803,7 @@ export function AppStoreAdmin() {
                       {editor.draft.notice}
                     </p>
                   </div>
+                  <AppPrivacy app={editor.draft} copy={t} />
                 </div>
               </div>
             </DialogContent>

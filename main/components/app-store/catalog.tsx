@@ -55,6 +55,7 @@ import {
 import { track } from "@/lib/analytics/client";
 import { appCopy } from "./copy";
 import { AppArtwork } from "./artwork";
+import { AppPrivacy } from "./privacy";
 import { appJson, useAppFavorites } from "./favorites";
 
 function Overlay({
@@ -504,7 +505,6 @@ export function StoreCatalog() {
               {[
                 [selected.homepageUrl, t.homepage],
                 [selected.githubUrl, t.github],
-                [selected.privacyUrl, t.privacy],
               ]
                 .filter(([u]) => u)
                 .map(([u, label]) => (
@@ -519,6 +519,7 @@ export function StoreCatalog() {
                   </a>
                 ))}
             </div>
+            <AppPrivacy app={selected} copy={t} />
             <div className="flex flex-wrap gap-3">
               {launchButton(selected, "min-h-11 flex-1")}
               {selected.qrUrl && selected.kind !== "miniprogram" && (
