@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Eye, Upload, ArrowLeft } from "lucide-react";
+import { Plus, Eye, Upload, ArrowLeft, Loader2 } from "lucide-react";
 import {
   CATEGORIES,
   EMPTY_DRAFT,
@@ -69,11 +69,13 @@ export function AppStoreAdmin() {
   } | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<SaveAction | "upload" | null>(null);
+  const busy = pending !== null;
   const [preview, setPreview] = useState(false);
   const [confirm, setConfirm] = useState<
     "publish" | "offline" | "leave" | null
   >(null);
+  const confirming = pending !== null && pending === confirm;
   const [dirty, setDirty] = useState(false);
   const [validation, setValidation] = useState<SaveAction | null>(null);
   const errors =
@@ -202,7 +204,7 @@ export function AppStoreAdmin() {
   async function save(action: SaveAction) {
     if (!editor || busy) return;
     const draft = prepareEntryUrls(editor.draft);
-    setBusy(true);
+    setPending(action);
     try {
       let id = editor.id;
       let revision = editor.revision;
@@ -253,13 +255,14 @@ export function AppStoreAdmin() {
             ),
       );
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   }
   async function upload(
     file: File,
     field: "coverUrl" | "iconUrl" | "qrUrl" | "demoUrl",
   ) {
+    if (busy) return;
     if (file.size > 4 * 1024 * 1024) {
       toast.error(
         L(
@@ -269,7 +272,7 @@ export function AppStoreAdmin() {
       );
       return;
     }
-    setBusy(true);
+    setPending("upload");
     try {
       const data = new FormData();
       data.set("file", file);
@@ -285,7 +288,7 @@ export function AppStoreAdmin() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t.error);
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   }
   function textField(
@@ -552,6 +555,7 @@ export function AppStoreAdmin() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Button
               variant="ghost"
+              disabled={busy}
               onClick={() => (dirty ? setConfirm("leave") : setEditor(null))}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -561,7 +565,11 @@ export function AppStoreAdmin() {
               {stateLabel(editor.status)}
               {dirty ? L(" · 未保存", " · Unsaved") : ""}
             </span>
-            <Button variant="outline" onClick={() => setPreview(true)}>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setPreview(true)}
+            >
               <Eye className="h-4 w-4" />
               {L("预览", "Preview")}
             </Button>
@@ -749,15 +757,26 @@ export function AppStoreAdmin() {
             <Button
               variant="outline"
               disabled={busy || !enabled}
+              aria-busy={pending === "save"}
               onClick={() => submit("save")}
             >
-              {L("保存草稿", "Save draft")}
+              {pending === "save" ? (
+                <>
+                  <Loader2
+                    aria-hidden="true"
+                    className="animate-spin motion-reduce:animate-none"
+                  />
+                  {L("正在保存…", "Saving…")}
+                </>
+              ) : (
+                L("保存草稿", "Save draft")
+              )}
             </Button>
             <Button
               disabled={busy || !enabled}
               onClick={() => submit("publish")}
             >
-              {busy ? "…" : L("立即发布", "Publish now")}
+              {L("立即发布", "Publish now")}
             </Button>
           </div>
           <Dialog open={preview} onOpenChange={setPreview}>
@@ -807,8 +826,11 @@ export function AppStoreAdmin() {
               </div>
             </DialogContent>
           </Dialog>
-          <Dialog open={!!confirm} onOpenChange={(v) => !v && setConfirm(null)}>
-            <DialogContent>
+          <Dialog
+            open={!!confirm}
+            onOpenChange={(v) => !v && !busy && setConfirm(null)}
+          >
+            <DialogContent showCloseButton={!busy}>
               <DialogHeader>
                 <DialogTitle>
                   {confirm === "leave"
@@ -844,6 +866,7 @@ export function AppStoreAdmin() {
                 </Button>
                 <Button
                   disabled={busy}
+                  aria-busy={confirming}
                   onClick={() => {
                     if (confirm === "leave") {
                       setEditor(null);
@@ -852,7 +875,19 @@ export function AppStoreAdmin() {
                     } else if (confirm) void save(confirm);
                   }}
                 >
-                  {busy ? "…" : L("确认", "Confirm")}
+                  {confirming ? (
+                    <>
+                      <Loader2
+                        aria-hidden="true"
+                        className="animate-spin motion-reduce:animate-none"
+                      />
+                      {confirm === "publish"
+                        ? L("正在发布…", "Publishing…")
+                        : L("正在下线…", "Taking offline…")}
+                    </>
+                  ) : (
+                    L("确认", "Confirm")
+                  )}
                 </Button>
               </div>
             </DialogContent>
