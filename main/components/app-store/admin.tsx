@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ import { Plus, Eye, Upload, ArrowLeft } from "lucide-react";
 import {
   CATEGORIES,
   EMPTY_DRAFT,
+  appDraftSchema,
   publishIssues,
   type AppDraft,
   type StoreApp,
@@ -67,6 +68,12 @@ export function AppStoreAdmin() {
     "publish" | "offline" | "leave" | null
   >(null);
   const [dirty, setDirty] = useState(false);
+  const [privacyUrlChecked, setPrivacyUrlChecked] = useState(false);
+  const privacyUrlInput = useRef<HTMLInputElement>(null);
+  const privacyUrlInvalid = !appDraftSchema.shape.privacyUrl.safeParse(
+    editor?.draft.privacyUrl,
+  ).success;
+  const showPrivacyUrlError = privacyUrlChecked && privacyUrlInvalid;
   const enabled = !!query.data?.writesEnabled;
   const stateLabel = (v: string) =>
     v === "draft"
@@ -85,6 +92,12 @@ export function AppStoreAdmin() {
   function change<K extends keyof AppDraft>(key: K, value: AppDraft[K]) {
     setEditor((e) => ({ ...e!, draft: { ...e!.draft, [key]: value } }));
     setDirty(true);
+  }
+  function checkPrivacyUrl() {
+    if (!privacyUrlInvalid) return true;
+    setPrivacyUrlChecked(true);
+    privacyUrlInput.current?.focus();
+    return false;
   }
   async function save(action: "save" | "publish" | "offline") {
     if (!editor || busy) return;
@@ -275,6 +288,7 @@ export function AppStoreAdmin() {
                 draft: { ...EMPTY_DRAFT },
                 status: "draft",
               });
+              setPrivacyUrlChecked(false);
               setDirty(false);
             }}
           >
@@ -386,6 +400,7 @@ export function AppStoreAdmin() {
                             draft: { ...row.draft },
                             status: row.status,
                           });
+                          setPrivacyUrlChecked(false);
                           setDirty(false);
                         }}
                       >
@@ -476,7 +491,15 @@ export function AppStoreAdmin() {
                 ])}
                 {textField(
                   "launchUrl",
-                  L("启动 / 申请 URL（HTTPS）", "Launch / request URL (HTTPS)"),
+                  editor.draft.kind === "miniprogram"
+                    ? L(
+                        "启动 / 申请 URL（可选，HTTPS）",
+                        "Launch / request URL (optional, HTTPS)",
+                      )
+                    : L(
+                        "启动 / 申请 URL（发布必填，HTTPS）",
+                        "Launch / request URL (required to publish, HTTPS)",
+                      ),
                 )}
                 {editor.draft.kind === "miniprogram" && (
                   <>
@@ -533,7 +556,15 @@ export function AppStoreAdmin() {
                             "Cover URL (generated when empty)",
                           ),
                           L("应用图标 URL（可选）", "App icon URL (optional)"),
-                          L("微信二维码 URL", "WeChat QR URL"),
+                          editor.draft.kind === "miniprogram"
+                            ? L(
+                                "微信二维码 URL（发布必填）",
+                                "WeChat QR URL (required to publish)",
+                              )
+                            : L(
+                                "微信二维码 URL（可选）",
+                                "WeChat QR URL (optional)",
+                              ),
                           L("演示 URL（可选）", "Demo URL (optional)"),
                         ][i],
                       )}
@@ -572,8 +603,44 @@ export function AppStoreAdmin() {
                 )}
               </h2>
               <div className="grid gap-5 sm:grid-cols-2">
-                {textField("privacyUrl", t.privacy)}
-                {textField("notice", t.notice, true)}
+                <div className="space-y-2">
+                  <Label htmlFor="privacyUrl">
+                    {L("隐私政策链接（可选）", "Privacy policy URL (optional)")}
+                  </Label>
+                  <Input
+                    id="privacyUrl"
+                    ref={privacyUrlInput}
+                    type="url"
+                    value={editor.draft.privacyUrl}
+                    onChange={(e) => change("privacyUrl", e.target.value)}
+                    aria-invalid={showPrivacyUrlError || undefined}
+                    aria-describedby="privacyUrl-hint"
+                  />
+                  <p
+                    id="privacyUrl-hint"
+                    aria-live="polite"
+                    className={
+                      showPrivacyUrlError
+                        ? "text-sm text-destructive"
+                        : "text-sm text-muted-foreground"
+                    }
+                  >
+                    {showPrivacyUrlError
+                      ? L(
+                          "请输入有效的 HTTP(S) 链接，或留空。文字说明请填在下方。",
+                          "Enter a valid HTTP(S) URL or leave this blank. Put written notes below.",
+                        )
+                      : L(
+                          "填写 HTTP(S) 链接。文字说明请填在下方。",
+                          "Enter an HTTP(S) URL. Put written notes below.",
+                        )}
+                  </p>
+                </div>
+                {textField(
+                  "notice",
+                  L("使用与数据说明（可选）", "Usage & data notes (optional)"),
+                  true,
+                )}
               </div>
             </section>
           </fieldset>
@@ -582,7 +649,7 @@ export function AppStoreAdmin() {
               <Button
                 variant="destructive"
                 disabled={busy || !enabled}
-                onClick={() => setConfirm("offline")}
+                onClick={() => checkPrivacyUrl() && setConfirm("offline")}
               >
                 {L("下线", "Take offline")}
               </Button>
@@ -590,13 +657,13 @@ export function AppStoreAdmin() {
             <Button
               variant="outline"
               disabled={busy || !enabled}
-              onClick={() => save("save")}
+              onClick={() => checkPrivacyUrl() && void save("save")}
             >
               {L("保存草稿", "Save draft")}
             </Button>
             <Button
               disabled={busy || !enabled}
-              onClick={() => setConfirm("publish")}
+              onClick={() => checkPrivacyUrl() && setConfirm("publish")}
             >
               {busy ? "…" : L("立即发布", "Publish now")}
             </Button>
