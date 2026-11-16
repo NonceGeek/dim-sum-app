@@ -90,6 +90,7 @@ export const appDraftSchema = z.object({
   devices: z.enum(["unknown", "both", "desktop", "mobile"]).default("unknown"),
   badge: z.enum(["", "featured", "experimental"]).default(""),
   notice: z.string().trim().max(1500).default(""),
+  privacyDescription: z.string().trim().max(1500).default(""),
   privacyUrl: url.default(""),
   rank: z.number().int().min(0).max(999999).default(0),
 });
@@ -101,14 +102,23 @@ export type StoreApp = AppDraft & {
 };
 export const EMPTY_DRAFT = appDraftSchema.parse({});
 
-export function publishIssues(d: AppDraft): string[] {
-  const issues: string[] = [];
-  if (!d.name) issues.push("name");
-  if (!d.summary) issues.push("summary");
-  if (!d.authors) issues.push("authors");
-  if (d.kind === "miniprogram" ? !d.qrUrl : !d.launchUrl)
-    issues.push(d.kind === "miniprogram" ? "qrUrl" : "launchUrl");
-  if (d.launchUrl && !d.launchUrl.startsWith("https://")) issues.push("https");
+export function requiredPublicationFields(kind: AppDraft["kind"]) {
+  return [
+    "name",
+    "summary",
+    "authors",
+    kind === "miniprogram" ? "qrUrl" : "launchUrl",
+  ] as const;
+}
+type PublicationIssue =
+  | ReturnType<typeof requiredPublicationFields>[number]
+  | "https";
+export function publishIssues(d: AppDraft): PublicationIssue[] {
+  const issues: PublicationIssue[] = requiredPublicationFields(d.kind).filter(
+    (field) => !d[field].trim(),
+  );
+  const launchUrl = d.launchUrl.trim();
+  if (launchUrl && !launchUrl.startsWith("https://")) issues.push("https");
   return issues;
 }
 export function categoryCode(type: string | null | undefined) {

@@ -46,6 +46,29 @@ test("publication allows generated artwork but still requires a usable entry", (
     }).includes("https"),
   );
 });
+test("optional privacy descriptions accept text or links independently of the policy URL", () => {
+  const description = "We only collect data needed for this app.";
+  const policy = "https://example.org/privacy";
+  const blank = appDraftSchema.parse({
+    privacyUrl: "   ",
+    privacyDescription: description,
+  });
+  assert.equal(blank.privacyUrl, "");
+  assert.equal(blank.privacyDescription, description);
+  const legacy = appDraftSchema.parse({ privacyUrl: policy });
+  assert.equal(legacy.privacyUrl, policy);
+  assert.equal(legacy.privacyDescription, "");
+  const both = appDraftSchema.parse({
+    privacyDescription: policy,
+    privacyUrl: policy,
+  });
+  assert.equal(both.privacyDescription, policy);
+  assert.equal(both.privacyUrl, policy);
+  assert.equal(
+    appDraftSchema.safeParse({ privacyUrl: description }).success,
+    false,
+  );
+});
 test("legacy category links map to stable codes", () => {
   assert.equal(categoryCode("Learning"), "learning");
   assert.equal(categoryCode("Gaming"), "game");
