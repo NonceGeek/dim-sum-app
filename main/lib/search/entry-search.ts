@@ -375,6 +375,11 @@ async function fetchAggregatedSearchRows(params: {
           join public_corpus candidate on candidate.id = e.corpus_id
           where e.field_type = 'doc'
             and e.corpus_id <> (select id from primary_row)
+            -- Filter rare media before LIMIT; recommended stays unfiltered.
+            ${buildRelatedMediaFilter(
+              Prisma.sql`candidate.media_types`,
+              params.mediaType,
+            )}
             and (
               select src.embedding
               from corpus_field_embeddings src
@@ -421,13 +426,6 @@ async function fetchAggregatedSearchRows(params: {
             params.contentAttribute,
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
-      ),
-      similar_exclusion_ids as (
-        select id
-        from similar_scored
-        order by score desc, bookmark_num desc, liked_num desc
-        limit ${SIMILAR_LIMIT}
-        offset ${params.similarOffset}
       ),
       similar_ranked as (
         select
@@ -536,7 +534,7 @@ async function fetchAggregatedSearchRows(params: {
         from recommended_candidates rc
         join public_corpus c on c.id = rc.id
         where not exists (
-          select 1 from similar_exclusion_ids s where s.id = c.id
+          select 1 from similar_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
             Prisma.sql`c.category`,
@@ -743,6 +741,42 @@ async function fetchSemanticSearchRows(params: {
           and n.target_corpus_id <> coalesce((select id from primary_seed), -1)
       `
     : Prisma.empty;
+  // Rich media are rare, so filter before the vector LIMIT; otherwise text
+  // neighbors fill all 48 slots. Only "similar" honors mediaType, so
+  // "recommended" keeps the unfiltered neighbors. PostgreSQL skips CTEs the
+  // requested part does not reference.
+  const buildSemanticVectorCandidates = (mediaFilter: Prisma.Sql) => Prisma.sql`
+        select id, score
+        from (
+          select
+            e.corpus_id as id,
+            (1 - (e.embedding <=> ${params.queryEmbeddingText}::vector)) * 100 as score
+          from corpus_field_embeddings e
+          join public_corpus candidate on candidate.id = e.corpus_id
+          where e.field_type = 'doc'
+            and e.corpus_id <> coalesce((select id from primary_seed), -1)
+            ${buildContentAttributeFilter(
+              Prisma.sql`candidate.category`,
+              params.contentAttribute,
+            )}
+            ${mediaFilter}
+          order by e.embedding <=> ${params.queryEmbeddingText}::vector
+          limit 48
+        ) vector_candidates
+      `;
+  const similarVectorCte = params.mediaType
+    ? Prisma.sql`similar_semantic_candidates as (
+        ${buildSemanticVectorCandidates(
+          buildRelatedMediaFilter(
+            Prisma.sql`candidate.media_types`,
+            params.mediaType,
+          ),
+        )}
+      ),`
+    : Prisma.empty;
+  const similarVectorSource = params.mediaType
+    ? Prisma.sql`similar_semantic_candidates`
+    : Prisma.sql`semantic_candidates`;
 
   return prisma.$transaction(
     async (tx) => {
@@ -778,26 +812,12 @@ async function fetchSemanticSearchRows(params: {
         join primary_seed p on p.id = ct.corpus_id
       ),
       semantic_candidates as (
-        select id, score
-        from (
-          select
-            e.corpus_id as id,
-            (1 - (e.embedding <=> ${params.queryEmbeddingText}::vector)) * 100 as score
-          from corpus_field_embeddings e
-          join public_corpus candidate on candidate.id = e.corpus_id
-          where e.field_type = 'doc'
-            and e.corpus_id <> coalesce((select id from primary_seed), -1)
-            ${buildContentAttributeFilter(
-              Prisma.sql`candidate.category`,
-              params.contentAttribute,
-            )}
-          order by e.embedding <=> ${params.queryEmbeddingText}::vector
-          limit 48
-        ) vector_candidates
+        ${buildSemanticVectorCandidates(Prisma.empty)}
       ),
+      ${similarVectorCte}
       similar_candidates as (
         select id, score
-        from semantic_candidates
+        from ${similarVectorSource}
 
         union all
 
@@ -828,13 +848,6 @@ async function fetchSemanticSearchRows(params: {
             params.contentAttribute,
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
-      ),
-      similar_exclusion_ids as (
-        select id
-        from similar_scored
-        order by score desc, bookmark_num desc, liked_num desc
-        limit ${SIMILAR_LIMIT}
-        offset ${params.similarOffset}
       ),
       similar_ranked as (
         select
@@ -912,7 +925,7 @@ async function fetchSemanticSearchRows(params: {
         from recommended_candidates rc
         join public_corpus c on c.id = rc.id
         where not exists (
-          select 1 from similar_exclusion_ids s where s.id = c.id
+          select 1 from similar_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
             Prisma.sql`c.category`,
