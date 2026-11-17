@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   appDraftSchema,
+  catalog,
   publishIssues,
   type StoreApp,
   type AppDraft,
@@ -73,6 +75,96 @@ export async function adminApps() {
     updatedAt: row.updated_at.toISOString(),
   }));
 }
+async function lockActiveAdmin(tx: Prisma.TransactionClient, actor: string) {
+  await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${actor} FOR UPDATE`;
+  const admin = await tx.user.findUnique({
+    where: { id: actor },
+    select: { status: true, isSystemAdmin: true, isSuperAdmin: true },
+  });
+  if (
+    admin?.status !== "ACTIVE" ||
+    (!admin.isSystemAdmin && !admin.isSuperAdmin)
+  )
+    throw new StoreError(403, "Platform administrator required");
+}
+
+const orderSelect = { ...publicSelect, revision: true, draft_data: true };
+type OrderRow = Prisma.app_store_profilesGetPayload<{ select: typeof orderSelect }>;
+
+function appOrder(rows: OrderRow[]) {
+  const items = catalog(rows.map(publicApp).filter((app): app is StoreApp => !!app));
+  const version = createHash("sha256")
+    .update(JSON.stringify(rows.map((row) => [String(row.app_id), row.revision])))
+    .digest("hex");
+  return {
+    version,
+    items: items.map(({ id, name }) => ({ id, name })),
+  };
+}
+
+function publishedOrderRows(db: Prisma.TransactionClient) {
+  return db.app_store_profiles.findMany({
+    where: { status: "published" },
+    orderBy: { app_id: "asc" },
+    select: orderSelect,
+  });
+}
+
+export async function adminAppOrder() {
+  return appOrder(await publishedOrderRows(prisma));
+}
+
+export async function reorderApplications(actor: string, version: string, ids: string[]) {
+  assertWritesEnabled();
+  const conflict = () => new StoreError(409, "Published applications changed. Reload before sorting.");
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockActiveAdmin(tx, actor);
+      const rows = await publishedOrderRows(tx);
+      const current = appOrder(rows);
+      if (current.version !== version) throw conflict();
+
+      const publicIds = new Set(current.items.map(({ id }) => id));
+      if (
+        new Set(ids).size !== ids.length ||
+        ids.length !== publicIds.size ||
+        !ids.every((id) => publicIds.has(id))
+      ) {
+        throw new StoreError(400, "Order must include every visible application exactly once");
+      }
+
+      const rowsById = new Map(rows.map((row) => [String(row.app_id), row]));
+      const audit: Prisma.app_store_audit_logsCreateManyInput[] = [];
+      for (const [index, id] of ids.entries()) {
+        const row = rowsById.get(id)!;
+        const rank = index + 1;
+        // Apply only the rank. Pending edits remain separate from the public snapshot.
+        const draft = row.draft_data as Prisma.JsonObject;
+        const published = row.published_data as Prisma.JsonObject;
+        if (draft.rank === rank && published.rank === rank) continue;
+
+        const revision = row.revision + 1;
+        await tx.app_store_profiles.update({
+          where: { app_id: row.app_id },
+          data: {
+            draft_data: { ...draft, rank },
+            published_data: { ...published, rank },
+            revision,
+            // A display order change should not change the Recently updated sort.
+            updated_at: row.updated_at,
+          },
+        });
+        audit.push({ app_id: row.app_id, actor_id: actor, action: "reorder", revision });
+      }
+      if (audit.length) await tx.app_store_audit_logs.createMany({ data: audit });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034")
+      throw conflict();
+    throw error;
+  }
+}
+
 export async function saveApplication(
   actor: string,
   input: {
@@ -93,16 +185,7 @@ export async function saveApplication(
       );
   }
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${actor} FOR UPDATE`;
-    const admin = await tx.user.findUnique({
-      where: { id: actor },
-      select: { status: true, isSystemAdmin: true, isSuperAdmin: true },
-    });
-    if (
-      admin?.status !== "ACTIVE" ||
-      (!admin.isSystemAdmin && !admin.isSuperAdmin)
-    )
-      throw new StoreError(403, "Platform administrator required");
+    await lockActiveAdmin(tx, actor);
     let before = null;
     if (input.id) {
       const id = parseId(input.id);

@@ -8,6 +8,7 @@ export const CATEGORIES = [
   "community",
   "other",
 ] as const;
+export const MAX_APP_RANK = 999999;
 export const SORTS = ["recommended", "newest", "updated"] as const;
 // URLs are displayed or opened by the user, never fetched by the server.
 export function safeUrl(value: unknown): string {
@@ -92,7 +93,7 @@ export const appDraftSchema = z.object({
   notice: z.string().trim().max(1500).default(""),
   privacyDescription: z.string().trim().max(1500).default(""),
   privacyUrl: url.default(""),
-  rank: z.number().int().min(0).max(999999).default(0),
+  rank: z.number().int().min(0).max(MAX_APP_RANK).default(0),
 });
 export type AppDraft = z.infer<typeof appDraftSchema>;
 export type StoreApp = AppDraft & {
@@ -191,7 +192,7 @@ export function legacyDraft(row: LegacyApp): AppDraft {
       ? "image"
       : "video",
     badge: row.pinned ? "featured" : "",
-    rank: Math.max(0, Math.min(999999, Number(row.sorting))),
+    rank: Math.max(0, Math.min(MAX_APP_RANK, Number(row.sorting))),
   });
 }
 export function catalog(
@@ -223,7 +224,7 @@ export function catalog(
           b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id)
         );
       return (
-        (a.rank || 999999) - (b.rank || 999999) ||
+        (a.rank || MAX_APP_RANK + 1) - (b.rank || MAX_APP_RANK + 1) ||
         Number(b.badge === "featured") - Number(a.badge === "featured") ||
         a.id.localeCompare(b.id)
       );
