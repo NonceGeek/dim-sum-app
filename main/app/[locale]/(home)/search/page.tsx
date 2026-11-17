@@ -86,6 +86,17 @@ export default function SearchPage() {
     useState<EntrySearchResponse | undefined>(undefined);
   const [displayRecommendedResult, setDisplayRecommendedResult] =
     useState<EntrySearchResponse | undefined>(undefined);
+  // Reset both semantic sections during render when mediaType changes, so no
+  // request goes out with the new mediaType and the previous filter's cursors.
+  const [cursorMediaType, setCursorMediaType] = useState(urlMediaType);
+  if (cursorMediaType !== urlMediaType) {
+    setCursorMediaType(urlMediaType);
+    setSimilarCursor(null);
+    setRecommendedCursor(null);
+    setRecommendedBaseSimilarCursor(null);
+    setDisplaySimilarResult(undefined);
+    setDisplayRecommendedResult(undefined);
+  }
 
   // 用 useQuery 替代 useMutation，同样关键词命中缓存直接返回，无需重新请求
   const { data: results, isPending, error: searchError } = useSearchQuery(
@@ -120,12 +131,14 @@ export default function SearchPage() {
   } = useEntrySemanticSearchQuery(urlKeyword, {
     primaryCorpusId,
     similarCursor,
-    semanticPart: similarCursor ? "similar" : undefined,
+    semanticPart: "similar",
     mediaType: urlMediaType,
     enabled: semanticRequestEnabled,
   });
-  const recommendedRequestEnabled =
-    !!urlKeyword && useEntryMode && Boolean(recommendedCursor);
+  // Recommended runs in parallel with similar. The server excludes the
+  // media-filtered similar page at similarCursor, so recommended carries the
+  // same mediaType and the similar page that was shown when it was requested.
+  const recommendedRequestEnabled = semanticRequestEnabled;
   const {
     data: entryRecommendedResult,
     isPending: entryRecommendedPending,
@@ -136,6 +149,7 @@ export default function SearchPage() {
     similarCursor: recommendedBaseSimilarCursor,
     recommendedCursor,
     semanticPart: "recommended",
+    mediaType: urlMediaType,
     enabled: recommendedRequestEnabled,
   });
   const isInitialSimilarLoading =
@@ -143,14 +157,10 @@ export default function SearchPage() {
     !displaySimilarResult &&
     (entrySimilarPending || entrySimilarFetching);
   const isInitialRecommendedLoading =
+    recommendedRequestEnabled &&
     !displayRecommendedResult &&
     !entryRecommendedSearchError &&
-    (
-      (recommendedRequestEnabled &&
-        (entryRecommendedPending || entryRecommendedFetching)) ||
-      entrySimilarPending ||
-      entrySimilarFetching
-    );
+    (entryRecommendedPending || entryRecommendedFetching);
   const entryResult = useMemo(() => {
     if (!useEntryMode) return null;
     if (!entryPrimaryResult && !displaySimilarResult && !displayRecommendedResult) {
@@ -249,29 +259,19 @@ export default function SearchPage() {
         mediaType: urlMediaType,
       }),
     );
-    // The first semantic response also carries the first recommended batch.
-    if (similarCursor === null)
-      trackOnce(`recommended|${urlKeyword}|0`, () =>
-        track("search_section_impression", {
-          query: urlKeyword,
-          section: "recommended",
-          resultCount: entrySimilarResult.recommended.length,
-          page: 0,
-          status: sectionStatus(entrySimilarResult.sectionStatus?.semantic),
-        }),
-      );
   }, [entrySimilarResult, entrySimilarFetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!useEntryMode || !entryRecommendedResult || entryRecommendedFetching) return;
     const page = Number(recommendedCursor ?? 0) || 0;
-    trackOnce(`recommended|${urlKeyword}|${page}`, () =>
+    trackOnce(`recommended|${urlKeyword}|${urlMediaType ?? ""}|${page}`, () =>
       track("search_section_impression", {
         query: urlKeyword,
         section: "recommended",
         resultCount: entryRecommendedResult.recommended.length,
         page,
         status: sectionStatus(entryRecommendedResult.sectionStatus?.semantic),
+        mediaType: urlMediaType,
       }),
     );
   }, [entryRecommendedResult, entryRecommendedFetching]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -297,23 +297,9 @@ export default function SearchPage() {
   }, [urlKeyword, urlDataset, useEntryMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!useEntryMode) return;
-    setSimilarCursor(null);
-    setDisplaySimilarResult(undefined);
-  }, [urlMediaType, useEntryMode]);
-
-  useEffect(() => {
     if (!useEntryMode || !entrySimilarResult) return;
     setDisplaySimilarResult(entrySimilarResult);
-    if (similarCursor === null && !displayRecommendedResult) {
-      setDisplayRecommendedResult(entrySimilarResult);
-    }
-  }, [
-    displayRecommendedResult,
-    entrySimilarResult,
-    similarCursor,
-    useEntryMode,
-  ]);
+  }, [entrySimilarResult, useEntryMode]);
 
   useEffect(() => {
     if (!useEntryMode || !entryRecommendedResult) return;
