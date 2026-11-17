@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Eye, Upload, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, Eye, Upload, ArrowLeft, Loader2, ListOrdered } from "lucide-react";
 import {
   CATEGORIES,
   EMPTY_DRAFT,
@@ -36,6 +36,7 @@ import { appJson } from "./favorites";
 import { appCopy } from "./copy";
 import { AppArtwork } from "./artwork";
 import { AppPrivacy } from "./privacy";
+import { AppOrderDialog } from "./order";
 
 type SaveAction = "save" | "publish" | "offline";
 type FieldErrors = Partial<Record<keyof AppDraft, string>>;
@@ -67,6 +68,7 @@ export function AppStoreAdmin() {
     draft: AppDraft;
     status: string;
   } | null>(null);
+  const [orderOpen, setOrderOpen] = useState(false);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [pending, setPending] = useState<SaveAction | "upload" | null>(null);
@@ -407,23 +409,30 @@ export function AppStoreAdmin() {
           </p>
         </div>
         {!editor && (
-          <Button
-            disabled={!enabled}
-            onClick={() => {
-              setEditor({
-                revision: 0,
-                draft: { ...EMPTY_DRAFT },
-                status: "draft",
-              });
-              setValidation(null);
-              setDirty(false);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            {L("新建应用", "New application")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" disabled={!enabled} onClick={() => setOrderOpen(true)}>
+              <ListOrdered className="size-4" />
+              {L("调整推荐顺序", "Adjust recommended order")}
+            </Button>
+            <Button
+              disabled={!enabled}
+              onClick={() => {
+                setEditor({
+                  revision: 0,
+                  draft: { ...EMPTY_DRAFT },
+                  status: "draft",
+                });
+                setValidation(null);
+                setDirty(false);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              {L("新建应用", "New application")}
+            </Button>
+          </div>
         )}
       </div>
+      {orderOpen && <AppOrderDialog onClose={() => setOrderOpen(false)} />}
       {query.isError && (
         <div role="alert" className="rounded-lg border p-5">
           <p>
