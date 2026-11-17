@@ -472,7 +472,7 @@ async function fetchAggregatedSearchRows(params: {
         select
           s.id,
           row_number() over (
-            order by s.score desc, s.bookmark_num desc, s.liked_num desc
+            order by s.score desc, s.bookmark_num desc, s.liked_num desc, s.id
           ) as item_order
         from similar_scored s
         where true
@@ -556,12 +556,12 @@ async function fetchAggregatedSearchRows(params: {
         select
           id,
           ${params.recommendedOffset}::bigint + row_number() over (
-            order by score desc, view_num desc, bookmark_num desc, liked_num desc
+            order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
           ) as item_order
         from (
           select *
           from recommended_ranked
-          order by score desc, view_num desc, bookmark_num desc, liked_num desc
+          order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
           limit ${RECOMMENDED_LIMIT}
           offset ${params.recommendedOffset}
         ) recommended_page
@@ -871,7 +871,7 @@ async function fetchSemanticSearchRows(params: {
         select
           s.id,
           row_number() over (
-            order by s.score desc, s.bookmark_num desc, s.liked_num desc
+            order by s.score desc, s.bookmark_num desc, s.liked_num desc, s.id
           ) as item_order
         from similar_scored s
         where true
@@ -924,12 +924,12 @@ async function fetchSemanticSearchRows(params: {
         select
           id,
           ${params.recommendedOffset}::bigint + row_number() over (
-            order by score desc, view_num desc, bookmark_num desc, liked_num desc
+            order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
           ) as item_order
         from (
           select *
           from recommended_ranked
-          order by score desc, view_num desc, bookmark_num desc, liked_num desc
+          order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
           limit ${RECOMMENDED_LIMIT}
           offset ${params.recommendedOffset}
         ) recommended_page
