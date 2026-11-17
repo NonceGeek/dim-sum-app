@@ -177,6 +177,7 @@ model cantonese_corpus_all {
   corpus_category               corpus_category?
   embedding_neighbors_as_source corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_source")
   embedding_neighbors_as_target corpus_embedding_neighbors[] @relation("corpus_embedding_neighbor_target")
+  corpus_field_embeddings        corpus_field_embeddings[]
   corpus_tags                   corpus_tags[]
   corpus_taxonomy_changes       corpus_taxonomy_changes[]
   corpus_zyzdv2                 corpus_zyzdv2[]
@@ -1068,6 +1069,7 @@ model corpus_field_embeddings {
   content_ref String
   embedding   Unsupported("vector")
   updated_at  DateTime              @default(now()) @db.Timestamptz(6)
+  corpus      cantonese_corpus_all  @relation(fields: [corpus_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([corpus_id], map: "corpus_field_emb_entry_idx")
 }
