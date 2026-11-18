@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleEntrySearch } from "./entry-search-handler";
+import { fetchAggregatedSearchRows, fetchSemanticSearchRows } from "./entry-search";
 
 const originalTransaction = prisma.$transaction;
 const originalFetch = globalThis.fetch;
@@ -111,4 +112,57 @@ test("expired semantic transaction preserves primary without another expensive f
   assert.equal(result.sectionStatus.semantic, "error");
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   assert.equal(queries.length, 2);
+});
+
+async function relatedSql(path: "semantic" | "fallback", semanticPart: "all" | "similar" | "recommended", mediaType: "model3d" | "text" | null) {
+  const queries = mockTransactions(() => []);
+  const common = { query: "帆船", primaryCorpusId: BigInt(162), similarOffset: 0, recommendedOffset: 0, contentAttribute: null, mediaType };
+  if (path === "semantic") await fetchSemanticSearchRows({ ...common, queryEmbeddingText: "[0.25]", semanticPart });
+  else await fetchAggregatedSearchRows(common);
+  return queries[0].sql;
+}
+// The text between a CTE's opening and the next top-level CTE.
+const cte = (sql: string, name: string) => {
+  const start = sql.search(new RegExp(`[\\s,]${name} as \\(`));
+  assert.ok(start >= 0, `${name} CTE exists`);
+  const rest = sql.slice(start + 1);
+  const next = rest.slice(1).search(/\n      [a-z_]+ as (not materialized )?\(/);
+  return next < 0 ? rest : rest.slice(0, next + 1);
+};
+const model3dFilter = /candidate\.media_types @> array\[\$?\??\d*\]::text\[\]/;
+
+test("similar media filters apply before the semantic vector LIMIT, leaving recommended unfiltered", async () => {
+  for (const part of ["all", "similar", "recommended"] as const) {
+    const sql = await relatedSql("semantic", part, "model3d");
+    const similarVectors = cte(sql, "similar_semantic_candidates");
+    assert.match(similarVectors, model3dFilter);
+    assert.ok(similarVectors.search(model3dFilter) < similarVectors.indexOf("limit 48"));
+    assert.match(cte(sql, "similar_candidates"), /from similar_semantic_candidates/);
+    assert.doesNotMatch(cte(sql, "semantic_candidates"), /media_types/);
+    assert.match(cte(sql, "recommended_candidates"), /from semantic_candidates\b/);
+    assert.match(cte(sql, "similar_ranked"), /s\.media_types @>/, "tag/category similar candidates are filtered too");
+  }
+  const text = await relatedSql("semantic", "similar", "text");
+  assert.match(cte(text, "similar_semantic_candidates"), /candidate\.media_types = array\['text'\]::text\[\][\s\S]*limit 48/);
+  const unfiltered = await relatedSql("semantic", "all", null);
+  assert.doesNotMatch(unfiltered, /similar_semantic_candidates|media_types (@>|=)/);
+});
+
+test("fallback similar media filters apply before the vector LIMIT 12, leaving recommended unfiltered", async () => {
+  for (const mediaType of ["model3d", "text"] as const) {
+    const sql = await relatedSql("fallback", "all", mediaType);
+    const similar = cte(sql, "similar_candidates");
+    const filter = mediaType === "text" ? /candidate\.media_types = array\['text'\]/ : model3dFilter;
+    assert.match(similar, filter);
+    assert.ok(similar.search(filter) < similar.indexOf("limit 12"));
+    assert.doesNotMatch(cte(sql, "recommended_candidates"), /media_types/);
+  }
+});
+
+test("recommended excludes the media-filtered similar page on both paths", async () => {
+  for (const path of ["semantic", "fallback"] as const) {
+    const sql = await relatedSql(path, "all", "model3d");
+    assert.doesNotMatch(sql, /similar_exclusion_ids/);
+    assert.match(cte(sql, "recommended_ranked"), /not exists \(\s*select 1 from similar_ids s where s\.id = c\.id/);
+  }
 });

@@ -77,17 +77,13 @@ async function main() {
     ),
   );
 
-  const oralSemanticUnfiltered = await request({
-    q: "船",
-    section: "semantic",
-    primaryCorpusId: String(oralSeed.corpusId),
-    contentAttribute: "oral",
-  });
-  assert.equal(oralSemanticUnfiltered.response.status, 200);
-  assert.deepEqual(
-    oralSemanticBody.recommended.map((entry) => entry.corpusId),
-    (oralSemanticUnfiltered.body as SearchResponse).recommended.map(
-      (entry) => entry.corpusId,
+  // mediaType filters only similar; recommended never repeats a shown similar entry.
+  const shownSimilarIds = new Set(
+    oralSemanticBody.similar.map((entry) => entry.corpusId),
+  );
+  assert.ok(
+    oralSemanticBody.recommended.every(
+      (entry) => !shownSimilarIds.has(entry.corpusId),
     ),
   );
 
@@ -131,7 +127,7 @@ async function main() {
       oralPrimary: oralSeed.entryName,
       oralSimilarCount: oralSemanticBody.similar.length,
       oralRecommendedCount: oralSemanticBody.recommended.length,
-      mediaFilterKeepsRecommendedStable: true,
+      recommendedExcludesShownSimilar: true,
       shipMediaTypes: shipEntry?.mediaTypes,
       invalidAttributeStatus: invalidAttribute.response.status,
       invalidMediaStatus: invalidMedia.response.status,

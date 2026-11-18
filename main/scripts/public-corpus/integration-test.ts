@@ -152,6 +152,39 @@ async function main() {
       assert.equal(rows[0].id, BigInt(1000), 'RPC must work inside read-only transactions');
     });
 
+    // A lone model3d entry ranks below more public text neighbors than either
+    // vector LIMIT. Its tag and category reach only recommended, so similar
+    // finds it only if the media filter runs before the vector LIMIT.
+    await prisma.$executeRaw`insert into content_categories values (3,'sibling','Sibling',1)`;
+    await prisma.$executeRaw`insert into cantonese_corpus_all(id,data,category)
+      select n,'sail text '||n,'published' from generate_series(3000,3059) n`;
+    await prisma.$executeRaw`insert into cantonese_corpus_all(id,data,category,view_num,media_types)
+      values (3100,'帆船（哥德堡一号）','published',1000000000,array['text','audio','model3d'])`;
+    await prisma.$executeRaw`insert into corpus_field_embeddings
+      select id,'doc',0.5002 + (id - 2999) * 0.000001 from generate_series(3000,3059) id
+      union all select 3100,'doc',0.6`;
+    await prisma.$executeRaw`insert into corpus_category values (3100,3)`;
+    await prisma.$executeRaw`insert into corpus_tags values (3100,2)`;
+    const sections = (rows: Array<{ section: string; id: bigint | number }>, section: string) =>
+      rows.filter((r) => r.section === section).map((r) => r.id);
+    const sail = { ...semantic, queryEmbeddingText: "0.5002" };
+    const unfilteredSemantic = await fetchSemanticSearchRows(sail);
+    assert.ok(!sections(unfilteredSemantic, "similar").includes(BigInt(3100)));
+    assert.ok(sections(unfilteredSemantic, "recommended").includes(BigInt(3100)), "model3d is a recommended candidate");
+    for (const part of ["all", "similar", "recommended"] as const) {
+      const rows = await fetchSemanticSearchRows({ ...sail, semanticPart: part, mediaType: "model3d" });
+      if (part !== "recommended") assert.deepEqual(sections(rows, "similar"), [BigInt(3100)]);
+      if (part !== "similar") {
+        assert.equal(sections(rows, "recommended").length, 4, "recommended ignores mediaType");
+        assert.ok(!sections(rows, "recommended").includes(BigInt(3100)), "recommended excludes shown similar rows");
+      }
+    }
+    assert.ok(sections(await fetchAggregatedSearchRows(common), "recommended").includes(BigInt(3100)));
+    const fallbackModel3d = await fetchAggregatedSearchRows({ ...common, mediaType: "model3d" });
+    assert.deepEqual(sections(fallbackModel3d, "similar"), [BigInt(3100)]);
+    assert.equal(sections(fallbackModel3d, "recommended").length, 4);
+    assert.ok(!sections(fallbackModel3d, "recommended").includes(BigInt(3100)));
+
     for (const userId of [undefined, "learner", "outsider", "reader", "disabled"]) {
       await assert.rejects(getCorpusItemForEditing(userId, hiddenId), (error: any) => error.status === (userId ? 403 : 401));
     }
@@ -171,7 +204,7 @@ async function main() {
     assert.deepEqual(await fetchAggregatedSearchRows(common), []);
     assert.equal(await fetchEntryIdentityByUniqueId(publicId), null);
     assert.equal((await getCorpusItemForEditing("outsider", publicId)).category, "published");
-    console.log("PASS: suggestions (visibility, dataset scope, limit, ranking, simplified/traditional, literal wildcards), primary, semantic, fallback, offline neighbors, pagination, staged RPC tiers, input quoting, empty scope, attributes, deterministic ties, details, role matrix, revoked grants, public-to-private transition");
+    console.log("PASS: suggestions (visibility, dataset scope, limit, ranking, simplified/traditional, literal wildcards), primary, semantic, fallback, offline neighbors, pagination, rich-media similar recall, staged RPC tiers, input quoting, empty scope, attributes, deterministic ties, details, role matrix, revoked grants, public-to-private transition");
   } finally { await prisma.$disconnect(); }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });

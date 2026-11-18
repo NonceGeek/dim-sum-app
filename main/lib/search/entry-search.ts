@@ -129,6 +129,47 @@ function buildRelatedMediaFilter(
     : Prisma.sql`and ${column} @> array[${mediaType}]::text[]`;
 }
 
+// Tag and category relations can match tens of thousands of entries. Return
+// only ids here and join public_corpus once in recommended_ranked, which also
+// adds each category match's ln(view_num + 1) term (view_weight counts them).
+function buildRecommendedRelationCandidates(
+  seedRow: Prisma.Sql,
+  seedId: Prisma.Sql,
+): Prisma.Sql {
+  return Prisma.sql`
+        select ct.corpus_id as id,
+               sum(
+                 case tr.method
+                   when 'manual' then 300.0
+                   when 'cooc' then 100.0
+                   when 'semantic' then 60.0
+                   else 40.0
+                 end * tr.score
+               )::float8 as score,
+               0::float8 as view_weight
+        from tag_related tr
+        join corpus_tags ct on ct.tag_id = tr.related_id
+        where tr.tag_id in (select tag_id from primary_tags)
+          and ct.corpus_id <> ${seedId}
+        group by ct.corpus_id
+
+        union all
+
+        select cg.corpus_id as id, 5::float8 as score, 1::float8 as view_weight
+        from corpus_category cg
+        where cg.category_id = (select secondary_category_id from ${seedRow})
+          and cg.corpus_id <> ${seedId}
+
+        union all
+
+        select cg.corpus_id as id, 2::float8 as score, 1::float8 as view_weight
+        from corpus_category cg
+        join content_categories child on child.id = cg.category_id
+        where child.parent_id = (select primary_category_id from ${seedRow})
+          and cg.corpus_id <> ${seedId}
+  `;
+}
+
 function normalizeTags(value: CorpusTagRow[] | null): CorpusTagRow[] {
   return Array.isArray(value) ? value : [];
 }
@@ -375,6 +416,11 @@ async function fetchAggregatedSearchRows(params: {
           join public_corpus candidate on candidate.id = e.corpus_id
           where e.field_type = 'doc'
             and e.corpus_id <> (select id from primary_row)
+            -- Filter rare media before LIMIT; recommended stays unfiltered.
+            ${buildRelatedMediaFilter(
+              Prisma.sql`candidate.media_types`,
+              params.mediaType,
+            )}
             and (
               select src.embedding
               from corpus_field_embeddings src
@@ -422,18 +468,11 @@ async function fetchAggregatedSearchRows(params: {
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
       ),
-      similar_exclusion_ids as (
-        select id
-        from similar_scored
-        order by score desc, bookmark_num desc, liked_num desc
-        limit ${SIMILAR_LIMIT}
-        offset ${params.similarOffset}
-      ),
       similar_ranked as (
         select
           s.id,
           row_number() over (
-            order by s.score desc, s.bookmark_num desc, s.liked_num desc
+            order by s.score desc, s.bookmark_num desc, s.liked_num desc, s.id
           ) as item_order
         from similar_scored s
         where true
@@ -450,7 +489,7 @@ async function fetchAggregatedSearchRows(params: {
         offset ${params.similarOffset}
       ),
       recommended_candidates as (
-        select id, score
+        select id, score, 0::float8 as view_weight
         from (
           select
             e.corpus_id as id,
@@ -488,55 +527,23 @@ async function fetchAggregatedSearchRows(params: {
 
         union all
 
-        select c.id,
-               sum(
-                 case tr.method
-                   when 'manual' then 300.0
-                   when 'cooc' then 100.0
-                   when 'semantic' then 60.0
-                   else 40.0
-                 end * tr.score
-               ) as score
-        from tag_related tr
-        join corpus_tags ct on ct.tag_id = tr.related_id
-        join public_corpus c on c.id = ct.corpus_id
-        where tr.tag_id in (select tag_id from primary_tags)
-          and c.id <> (select id from primary_row)
-        group by c.id
-
-        union all
-
-        select c.id,
-               ln(c.view_num::float + 1) + 5 as score
-        from public_corpus c
-        join corpus_category cg on cg.corpus_id = c.id
-        where cg.category_id = (select secondary_category_id from primary_row)
-          and c.id <> (select id from primary_row)
-
-        union all
-
-        select c.id,
-               ln(c.view_num::float + 1) + 2 as score
-        from public_corpus c
-        join corpus_category cg on cg.corpus_id = c.id
-        join content_categories child on child.id = cg.category_id
-        where child.parent_id = (select primary_category_id from primary_row)
-          and c.id <> (select id from primary_row)
+        ${buildRecommendedRelationCandidates(
+          Prisma.sql`primary_row`,
+          Prisma.sql`(select id from primary_row)`,
+        )}
       ),
       recommended_ranked as (
         select
           c.id,
-          row_number() over (
-            order by
-              sum(rc.score) desc,
-              c.view_num desc,
-              c.bookmark_num desc,
-              c.liked_num desc
-          ) as item_order
+          sum(rc.score)
+            + sum(rc.view_weight) * ln(c.view_num::float + 1) as score,
+          c.view_num,
+          c.bookmark_num,
+          c.liked_num
         from recommended_candidates rc
         join public_corpus c on c.id = rc.id
         where not exists (
-          select 1 from similar_exclusion_ids s where s.id = c.id
+          select 1 from similar_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
             Prisma.sql`c.category`,
@@ -544,12 +551,20 @@ async function fetchAggregatedSearchRows(params: {
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
+      -- Sort only for the requested page instead of numbering every candidate.
       recommended_ids as (
-        select id, item_order
-        from recommended_ranked
-        order by item_order
-        limit ${RECOMMENDED_LIMIT}
-        offset ${params.recommendedOffset}
+        select
+          id,
+          ${params.recommendedOffset}::bigint + row_number() over (
+            order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
+          ) as item_order
+        from (
+          select *
+          from recommended_ranked
+          order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
+          limit ${RECOMMENDED_LIMIT}
+          offset ${params.recommendedOffset}
+        ) recommended_page
       ),
       result_ids as (
         select 'primary'::text as section, 0::bigint as item_order, id
@@ -730,7 +745,8 @@ async function fetchSemanticSearchRows(params: {
 
         select
           n.target_corpus_id as id,
-          n.similarity * ${OFFLINE_NEIGHBORS_WEIGHT} as score
+          n.similarity * ${OFFLINE_NEIGHBORS_WEIGHT} as score,
+          0::float8 as view_weight
         from similar_ids s
         join corpus_embedding_neighbor_builds b
           on b.field_type = 'doc'
@@ -743,6 +759,42 @@ async function fetchSemanticSearchRows(params: {
           and n.target_corpus_id <> coalesce((select id from primary_seed), -1)
       `
     : Prisma.empty;
+  // Rich media are rare, so filter before the vector LIMIT; otherwise text
+  // neighbors fill all 48 slots. Only "similar" honors mediaType, so
+  // "recommended" keeps the unfiltered neighbors. PostgreSQL skips CTEs the
+  // requested part does not reference.
+  const buildSemanticVectorCandidates = (mediaFilter: Prisma.Sql) => Prisma.sql`
+        select id, score
+        from (
+          select
+            e.corpus_id as id,
+            (1 - (e.embedding <=> ${params.queryEmbeddingText}::vector)) * 100 as score
+          from corpus_field_embeddings e
+          join public_corpus candidate on candidate.id = e.corpus_id
+          where e.field_type = 'doc'
+            and e.corpus_id <> coalesce((select id from primary_seed), -1)
+            ${buildContentAttributeFilter(
+              Prisma.sql`candidate.category`,
+              params.contentAttribute,
+            )}
+            ${mediaFilter}
+          order by e.embedding <=> ${params.queryEmbeddingText}::vector
+          limit 48
+        ) vector_candidates
+      `;
+  const similarVectorCte = params.mediaType
+    ? Prisma.sql`similar_semantic_candidates as (
+        ${buildSemanticVectorCandidates(
+          buildRelatedMediaFilter(
+            Prisma.sql`candidate.media_types`,
+            params.mediaType,
+          ),
+        )}
+      ),`
+    : Prisma.empty;
+  const similarVectorSource = params.mediaType
+    ? Prisma.sql`similar_semantic_candidates`
+    : Prisma.sql`semantic_candidates`;
 
   return prisma.$transaction(
     async (tx) => {
@@ -778,26 +830,12 @@ async function fetchSemanticSearchRows(params: {
         join primary_seed p on p.id = ct.corpus_id
       ),
       semantic_candidates as (
-        select id, score
-        from (
-          select
-            e.corpus_id as id,
-            (1 - (e.embedding <=> ${params.queryEmbeddingText}::vector)) * 100 as score
-          from corpus_field_embeddings e
-          join public_corpus candidate on candidate.id = e.corpus_id
-          where e.field_type = 'doc'
-            and e.corpus_id <> coalesce((select id from primary_seed), -1)
-            ${buildContentAttributeFilter(
-              Prisma.sql`candidate.category`,
-              params.contentAttribute,
-            )}
-          order by e.embedding <=> ${params.queryEmbeddingText}::vector
-          limit 48
-        ) vector_candidates
+        ${buildSemanticVectorCandidates(Prisma.empty)}
       ),
+      ${similarVectorCte}
       similar_candidates as (
         select id, score
-        from semantic_candidates
+        from ${similarVectorSource}
 
         union all
 
@@ -829,18 +867,11 @@ async function fetchSemanticSearchRows(params: {
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num, c.media_types
       ),
-      similar_exclusion_ids as (
-        select id
-        from similar_scored
-        order by score desc, bookmark_num desc, liked_num desc
-        limit ${SIMILAR_LIMIT}
-        offset ${params.similarOffset}
-      ),
       similar_ranked as (
         select
           s.id,
           row_number() over (
-            order by s.score desc, s.bookmark_num desc, s.liked_num desc
+            order by s.score desc, s.bookmark_num desc, s.liked_num desc, s.id
           ) as item_order
         from similar_scored s
         where true
@@ -857,62 +888,30 @@ async function fetchSemanticSearchRows(params: {
         offset ${params.similarOffset}
       ),
       recommended_candidates as (
-        select id, score * 0.35 as score
+        select id, score * 0.35 as score, 0::float8 as view_weight
         from semantic_candidates
 
         ${offlineNeighborCandidates}
 
         union all
 
-        select c.id,
-               sum(
-                 case tr.method
-                   when 'manual' then 300.0
-                   when 'cooc' then 100.0
-                   when 'semantic' then 60.0
-                   else 40.0
-                 end * tr.score
-               ) as score
-        from tag_related tr
-        join corpus_tags ct on ct.tag_id = tr.related_id
-        join public_corpus c on c.id = ct.corpus_id
-        where tr.tag_id in (select tag_id from primary_tags)
-          and c.id <> coalesce((select id from primary_seed), -1)
-        group by c.id
-
-        union all
-
-        select c.id,
-               ln(c.view_num::float + 1) + 5 as score
-        from public_corpus c
-        join corpus_category cg on cg.corpus_id = c.id
-        where cg.category_id = (select secondary_category_id from primary_seed)
-          and c.id <> coalesce((select id from primary_seed), -1)
-
-        union all
-
-        select c.id,
-               ln(c.view_num::float + 1) + 2 as score
-        from public_corpus c
-        join corpus_category cg on cg.corpus_id = c.id
-        join content_categories child on child.id = cg.category_id
-        where child.parent_id = (select primary_category_id from primary_seed)
-          and c.id <> coalesce((select id from primary_seed), -1)
+        ${buildRecommendedRelationCandidates(
+          Prisma.sql`primary_seed`,
+          Prisma.sql`coalesce((select id from primary_seed), -1)`,
+        )}
       ),
       recommended_ranked as (
         select
           c.id,
-          row_number() over (
-            order by
-              sum(rc.score) desc,
-              c.view_num desc,
-              c.bookmark_num desc,
-              c.liked_num desc
-          ) as item_order
+          sum(rc.score)
+            + sum(rc.view_weight) * ln(c.view_num::float + 1) as score,
+          c.view_num,
+          c.bookmark_num,
+          c.liked_num
         from recommended_candidates rc
         join public_corpus c on c.id = rc.id
         where not exists (
-          select 1 from similar_exclusion_ids s where s.id = c.id
+          select 1 from similar_ids s where s.id = c.id
         )
           ${buildContentAttributeFilter(
             Prisma.sql`c.category`,
@@ -920,12 +919,20 @@ async function fetchSemanticSearchRows(params: {
           )}
         group by c.id, c.view_num, c.bookmark_num, c.liked_num
       ),
+      -- Sort only for the requested page instead of numbering every candidate.
       recommended_ids as (
-        select id, item_order
-        from recommended_ranked
-        order by item_order
-        limit ${RECOMMENDED_LIMIT}
-        offset ${params.recommendedOffset}
+        select
+          id,
+          ${params.recommendedOffset}::bigint + row_number() over (
+            order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
+          ) as item_order
+        from (
+          select *
+          from recommended_ranked
+          order by score desc, view_num desc, bookmark_num desc, liked_num desc, id
+          limit ${RECOMMENDED_LIMIT}
+          offset ${params.recommendedOffset}
+        ) recommended_page
       ),
       result_ids as (
         ${resultIds}
