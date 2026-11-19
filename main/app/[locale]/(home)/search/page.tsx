@@ -106,11 +106,20 @@ export default function SearchPage() {
     !!urlKeyword && useEntryMode,
   );
   const { data: suggestions } = useSearchSuggestionsQuery(urlKeyword, urlDataset, useEntryMode);
+  const defaultPrimary = entryPrimaryResult?.primary;
+  // Suggestions use raw corpus text; entryName may be a cleaned display title.
+  const defaultPrimaryTerm =
+    suggestions?.find((item) => item.id === String(defaultPrimary?.corpusId))?.data ??
+    defaultPrimary?.entryName ??
+    urlKeyword;
   const primaryTerms = useMemo(
-    () => Array.from(new Set((suggestions ?? []).map((item) => item.data))).slice(0, 6),
-    [suggestions],
+    () => Array.from(new Set([
+      ...(defaultPrimary ? [defaultPrimaryTerm] : []),
+      ...(selectedPrimaryTerm ? [selectedPrimaryTerm] : []),
+      ...(suggestions ?? []).map((item) => item.data),
+    ])).slice(0, 6),
+    [defaultPrimary, defaultPrimaryTerm, selectedPrimaryTerm, suggestions],
   );
-  const defaultPrimaryTerm = entryPrimaryResult?.primary?.entryName ?? urlKeyword;
   const activePrimaryTerm = selectedPrimaryTerm || defaultPrimaryTerm;
   const switchingPrimary = !!selectedPrimaryTerm && selectedPrimaryTerm !== defaultPrimaryTerm;
   const {
