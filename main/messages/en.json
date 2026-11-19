@@ -984,6 +984,8 @@
     "expand": "Expand"
   },
   "Search": {
+    "primarySuggestions": "Exact search suggestions",
+    "resetPrimarySuggestion": "Reset",
     "selectDataset": "Please select",
     "orSelectSpecific": "Or select specific",
     "searchDatasetPlaceholder": "Search datasets",

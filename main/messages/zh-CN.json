@@ -985,6 +985,8 @@
     "expand": "展开"
   },
   "Search": {
+    "primarySuggestions": "精准搜索联想标签",
+    "resetPrimarySuggestion": "恢复原结果",
     "selectDataset": "请选择",
     "orSelectSpecific": "或选择具体语料集",
     "searchDatasetPlaceholder": "搜索数据集",

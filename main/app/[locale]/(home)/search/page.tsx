@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useEntryPrimarySearchQuery,
   useEntrySemanticSearchQuery,
+  useSearchSuggestionsQuery,
   useSearchQuery,
   useSearch,
   type EntrySearchResponse,
@@ -70,6 +71,7 @@ export default function SearchPage() {
   const urlKeyword = searchParams.get("q") || "";
   const urlDataset = searchParams.get("dataset") || "";
   const useEntryMode = searchParams.get("mode") === "entry";
+  const selectedPrimaryTerm = useEntryMode ? searchParams.get("primary") || "" : "";
   const mediaTypeParam = searchParams.get("mediaType");
   const urlMediaType = SEARCH_MEDIA_FILTERS.has(
     mediaTypeParam as SearchMediaFilter,
@@ -103,6 +105,27 @@ export default function SearchPage() {
     datasetName.length ? datasetName : ["all"],
     !!urlKeyword && useEntryMode,
   );
+  const { data: suggestions } = useSearchSuggestionsQuery(urlKeyword, urlDataset, useEntryMode);
+  const primaryTerms = useMemo(
+    () => Array.from(new Set((suggestions ?? []).map((item) => item.data))).slice(0, 6),
+    [suggestions],
+  );
+  const defaultPrimaryTerm = entryPrimaryResult?.primary?.entryName ?? urlKeyword;
+  const activePrimaryTerm = selectedPrimaryTerm || defaultPrimaryTerm;
+  const switchingPrimary = !!selectedPrimaryTerm && selectedPrimaryTerm !== defaultPrimaryTerm;
+  const {
+    data: selectedPrimaryResult,
+    isPending: selectedPrimaryPending,
+    isFetching: selectedPrimaryFetching,
+    error: selectedPrimaryError,
+  } = useEntryPrimarySearchQuery(
+    selectedPrimaryTerm,
+    datasetName.length ? datasetName : ["all"],
+    useEntryMode && switchingPrimary,
+  );
+  const visiblePrimaryResult = switchingPrimary ? selectedPrimaryResult : entryPrimaryResult;
+  const visiblePrimaryPending = switchingPrimary ? selectedPrimaryPending : entryPrimaryPending;
+  const visiblePrimaryFetching = switchingPrimary ? selectedPrimaryFetching : entryPrimaryFetching;
   const semanticRequestEnabled =
     !!urlKeyword &&
     useEntryMode &&
@@ -153,17 +176,17 @@ export default function SearchPage() {
     );
   const entryResult = useMemo(() => {
     if (!useEntryMode) return null;
-    if (!entryPrimaryResult && !displaySimilarResult && !displayRecommendedResult) {
+    if (!entryPrimaryResult && !visiblePrimaryResult && !displaySimilarResult && !displayRecommendedResult) {
       return null;
     }
 
     return {
       query: urlKeyword,
-      primary: entryPrimaryResult?.primary ?? null,
+      primary: visiblePrimaryResult?.primary ?? null,
       similar: displaySimilarResult?.similar ?? [],
       recommended: displayRecommendedResult?.recommended ?? [],
       loadingSections: {
-        primary: entryPrimaryPending || entryPrimaryFetching,
+        primary: visiblePrimaryPending || visiblePrimaryFetching,
         semantic:
           entrySimilarPending ||
           entrySimilarFetching ||
@@ -171,7 +194,7 @@ export default function SearchPage() {
             (entryRecommendedPending || entryRecommendedFetching)),
       },
       sectionStatus: {
-        primary: entryPrimaryResult?.sectionStatus?.primary ?? "idle",
+        primary: visiblePrimaryResult?.sectionStatus?.primary ?? "idle",
         semantic:
           displaySimilarResult?.sectionStatus?.semantic ??
           displayRecommendedResult?.sectionStatus?.semantic ??
@@ -188,6 +211,9 @@ export default function SearchPage() {
     entryPrimaryFetching,
     entryPrimaryPending,
     entryPrimaryResult,
+    visiblePrimaryResult,
+    visiblePrimaryPending,
+    visiblePrimaryFetching,
     entryRecommendedFetching,
     entryRecommendedPending,
     entrySimilarFetching,
@@ -225,16 +251,16 @@ export default function SearchPage() {
   }, [urlKeyword, urlDataset, useEntryMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!useEntryMode || !entryPrimaryResult || entryPrimaryFetching) return;
-    trackOnce(`primary|${urlKeyword}|${urlDataset}`, () =>
+    if (!useEntryMode || !visiblePrimaryResult || visiblePrimaryFetching) return;
+    trackOnce(`primary|${urlKeyword}|${urlDataset}|${activePrimaryTerm}`, () =>
       track("search_section_impression", {
         query: urlKeyword,
         section: "primary",
-        resultCount: entryPrimaryResult.primary ? 1 : 0,
-        status: sectionStatus(entryPrimaryResult.sectionStatus?.primary),
+        resultCount: visiblePrimaryResult.primary ? 1 : 0,
+        status: sectionStatus(visiblePrimaryResult.sectionStatus?.primary),
       }),
     );
-  }, [entryPrimaryResult, entryPrimaryFetching]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visiblePrimaryResult, visiblePrimaryFetching, activePrimaryTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!useEntryMode || !entrySimilarResult || entrySimilarFetching) return;
@@ -327,6 +353,10 @@ export default function SearchPage() {
   useEffect(() => {
     if (entryPrimarySearchError) toast.error(t("searchFailed"), { description: (entryPrimarySearchError as Error).message });
   }, [entryPrimarySearchError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectedPrimaryError) toast.error(t("searchFailed"), { description: selectedPrimaryError.message });
+  }, [selectedPrimaryError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (entrySimilarSearchError) toast.error(t("searchFailed"), { description: (entrySimilarSearchError as Error).message });
@@ -436,6 +466,13 @@ export default function SearchPage() {
     router.replace(`/search?${params.toString()}`, { scroll: false });
   };
 
+  const handlePrimaryTermChange = (term: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (term === defaultPrimaryTerm) params.delete("primary");
+    else params.set("primary", term);
+    router.push(`/search?${params.toString()}`, { scroll: false });
+  };
+
   // 在渲染层把原始 category name 映射为 nickname，不在 mutation 里 await
   const enrichedResults = useMemo(() => {
     if (!results || !categories) return results;
@@ -526,6 +563,33 @@ export default function SearchPage() {
 
       {/* ── Main content ─────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col">
+        {useEntryMode && primaryTerms.length > 0 && (
+          <div className="px-4 pt-2 pb-1 sm:pl-[188px]">
+            <div role="group" aria-label={t("primarySuggestions")} className="flex max-w-5xl flex-wrap gap-2">
+              {primaryTerms.map((term) => (
+                <button
+                  key={term}
+                  type="button"
+                  aria-pressed={activePrimaryTerm === term}
+                  onClick={() => handlePrimaryTermChange(term)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    activePrimaryTerm === term
+                      ? "border-primary bg-primary/10 text-primary font-medium"
+                      : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  {term}
+                </button>
+              ))}
+              {switchingPrimary && !primaryTerms.includes(defaultPrimaryTerm) && (
+                <button type="button" onClick={() => handlePrimaryTermChange(defaultPrimaryTerm)} className="px-2 text-sm text-muted-foreground hover:text-foreground">
+                  {t("resetPrimarySuggestion")}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {/* ── Category tabs ────────────────────────────────────────────── */}
         {enrichedResults && enrichedResults.length > 0 && !useEntryMode && (
           <div ref={tabsRef}>
@@ -592,7 +656,7 @@ export default function SearchPage() {
                 <EntrySearchSections
                   result={entryResult}
                   primaryDatasetLabel={primaryDatasetLabel}
-                  isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
+                  isLoadingPrimary={visiblePrimaryPending && !visiblePrimaryResult}
                   isLoadingSimilar={isInitialSimilarLoading}
                   isLoadingRecommended={isInitialRecommendedLoading}
                   isRefreshingSimilar={entrySimilarFetching}
@@ -615,7 +679,7 @@ export default function SearchPage() {
               <EntrySearchSections
                 result={entryResult}
                 primaryDatasetLabel={primaryDatasetLabel}
-                isLoadingPrimary={entryPrimaryPending && !entryPrimaryResult}
+                isLoadingPrimary={visiblePrimaryPending && !visiblePrimaryResult}
                 isLoadingSimilar={isInitialSimilarLoading}
                 isLoadingRecommended={isInitialRecommendedLoading}
                 isRefreshingSimilar={entrySimilarFetching}
