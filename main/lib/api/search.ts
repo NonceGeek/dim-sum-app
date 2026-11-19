@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, QueryClient } from "@tanstack/re
 import { fetchAllCategories, CategoryInfo } from "./category";
 import { backendFetch } from "./backend";
 import { api } from "./client";
+import type { SearchSuggestion } from "@/lib/search/suggestions";
 import type {
   EntryMediaType,
   EntrySearchResponse,
@@ -71,6 +72,26 @@ type EntrySearchParams = {
   semanticPart?: "similar" | "recommended";
   mediaType?: EntryMediaType;
 };
+
+export function useSearchSuggestionsQuery(keyword: string, dataset: string, enabled = true) {
+  return useQuery<SearchSuggestion[]>({
+    queryKey: ["search-suggestions", keyword, dataset],
+    queryFn: async ({ signal }) => {
+      const params = new URLSearchParams({ q: keyword.trim() });
+      if (dataset) params.set("dataset", dataset);
+      const response = await fetch(`/api/search/suggestions?${params}`, {
+        signal,
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Suggestion fetch failed");
+      const data: { suggestions: SearchSuggestion[] } = await response.json();
+      return data.suggestions;
+    },
+    enabled: enabled && !!keyword.trim(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
 
 
 /**
